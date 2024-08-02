@@ -12,8 +12,6 @@ export const PlayedStatus: React.FC<{ item: BaseItemDto }> = ({ item }) => {
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
 
-  console.log("PlayedStatus", item.UserData);
-
   const queryClient = useQueryClient();
 
   return (

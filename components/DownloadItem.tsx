@@ -10,157 +10,171 @@ import { useCallback, useEffect, useState } from "react";
 import { TouchableOpacity, View } from "react-native";
 import ProgressCircle from "./ProgressCircle";
 import { router } from "expo-router";
+import { getPlaybackInfo, useDownloadMedia } from "@/utils/jellyfin";
+import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
+import { ProcessItem, runningProcesses } from "@/utils/atoms/downloads";
 
 type DownloadProps = {
   item: BaseItemDto;
   url: string;
 };
 
-type ProcessItem = {
-  item: BaseItemDto;
-  progress: number;
-};
+// const useRemuxHlsToMp4 = (inputUrl: string, item: BaseItemDto) => {
+//   if (!item.Id || !item.Name) {
+//     writeToLog("ERROR", "useRemuxHlsToMp4 ~ missing arguments", {
+//       item,
+//       inputUrl,
+//     });
+//     throw new Error("Item must have an Id and Name");
+//   }
 
-export const runningProcesses = atom<ProcessItem | null>(null);
+//   const [session, setSession] = useAtom<ProcessItem | null>(runningProcesses);
 
-const useRemuxHlsToMp4 = (inputUrl: string, item: BaseItemDto) => {
-  if (!item.Id || !item.Name) {
-    writeToLog("ERROR", "useRemuxHlsToMp4 ~ missing arguments", {
-      item,
-      inputUrl,
-    });
-    throw new Error("Item must have an Id and Name");
-  }
+//   const output = `${FileSystem.documentDirectory}${item.Id}.mp4`;
 
-  const [session, setSession] = useAtom<ProcessItem | null>(runningProcesses);
+//   const command = `-y -fflags +genpts -i ${inputUrl} -c copy -max_muxing_queue_size 9999 ${output}`;
 
-  const output = `${FileSystem.documentDirectory}${item.Id}.mp4`;
+//   const startRemuxing = useCallback(async () => {
+//     if (!item.Id || !item.Name) {
+//       writeToLog(
+//         "ERROR",
+//         "useRemuxHlsToMp4 ~ startRemuxing ~ missing arguments",
+//         {
+//           item,
+//           inputUrl,
+//         }
+//       );
+//       throw new Error("Item must have an Id and Name");
+//     }
 
-  const command = `-y -fflags +genpts -i ${inputUrl} -c copy -max_muxing_queue_size 9999 ${output}`;
+//     writeToLog(
+//       "INFO",
+//       `useRemuxHlsToMp4 ~ startRemuxing for item ${item.Id} with url ${inputUrl}`,
+//       {
+//         item,
+//         inputUrl,
+//       }
+//     );
 
-  const startRemuxing = useCallback(async () => {
-    if (!item.Id || !item.Name) {
-      writeToLog(
-        "ERROR",
-        "useRemuxHlsToMp4 ~ startRemuxing ~ missing arguments",
-        {
-          item,
-          inputUrl,
-        }
-      );
-      throw new Error("Item must have an Id and Name");
-    }
+//     try {
+//       setSession({
+//         item,
+//         progress: 0,
+//       });
 
-    writeToLog(
-      "INFO",
-      `useRemuxHlsToMp4 ~ startRemuxing for item ${item.Id} with url ${inputUrl}`,
-      {
-        item,
-        inputUrl,
-      }
-    );
+//       FFmpegKitConfig.enableStatisticsCallback((statistics) => {
+//         let percentage = 0;
 
-    try {
-      setSession({
-        item,
-        progress: 0,
-      });
+//         const videoLength =
+//           (item.MediaSources?.[0].RunTimeTicks || 0) / 10000000; // In seconds
+//         const fps = item.MediaStreams?.[0].RealFrameRate || 25;
+//         const totalFrames = videoLength * fps;
 
-      FFmpegKitConfig.enableStatisticsCallback((statistics) => {
-        let percentage = 0;
+//         const processedFrames = statistics.getVideoFrameNumber();
 
-        const videoLength =
-          (item.MediaSources?.[0].RunTimeTicks || 0) / 10000000; // In seconds
-        const fps = item.MediaStreams?.[0].RealFrameRate || 25;
-        const totalFrames = videoLength * fps;
+//         if (totalFrames > 0) {
+//           percentage = Math.floor((processedFrames / totalFrames) * 100);
+//         }
 
-        const processedFrames = statistics.getVideoFrameNumber();
+//         setSession((prev) => {
+//           return prev?.item.Id === item.Id!
+//             ? { ...prev, progress: percentage }
+//             : prev;
+//         });
+//       });
 
-        if (totalFrames > 0) {
-          percentage = Math.floor((processedFrames / totalFrames) * 100);
-        }
+//       await FFmpegKit.executeAsync(command, async (session) => {
+//         const returnCode = await session.getReturnCode();
+//         if (returnCode.isValueSuccess()) {
+//           const currentFiles: BaseItemDto[] = JSON.parse(
+//             (await AsyncStorage.getItem("downloaded_files")) || "[]"
+//           );
 
-        setSession((prev) => {
-          return prev?.item.Id === item.Id!
-            ? { ...prev, progress: percentage }
-            : prev;
-        });
-      });
+//           const otherItems = currentFiles.filter((i) => i.Id !== item.Id);
 
-      await FFmpegKit.executeAsync(command, async (session) => {
-        const returnCode = await session.getReturnCode();
-        if (returnCode.isValueSuccess()) {
-          const currentFiles: BaseItemDto[] = JSON.parse(
-            (await AsyncStorage.getItem("downloaded_files")) || "[]"
-          );
+//           await AsyncStorage.setItem(
+//             "downloaded_files",
+//             JSON.stringify([...otherItems, item])
+//           );
 
-          const otherItems = currentFiles.filter((i) => i.Id !== item.Id);
+//           writeToLog(
+//             "INFO",
+//             `useRemuxHlsToMp4 ~ remuxing completed successfully for item: ${item.Name}`,
+//             {
+//               item,
+//               inputUrl,
+//             }
+//           );
+//           setSession(null);
+//         } else if (returnCode.isValueError()) {
+//           console.error("Failed to remux:");
+//           writeToLog(
+//             "ERROR",
+//             `useRemuxHlsToMp4 ~ remuxing failed for item: ${item.Name}`,
+//             {
+//               item,
+//               inputUrl,
+//             }
+//           );
+//           setSession(null);
+//         } else if (returnCode.isValueCancel()) {
+//           console.log("Remuxing was cancelled");
+//           writeToLog(
+//             "INFO",
+//             `useRemuxHlsToMp4 ~ remuxing was canceled for item: ${item.Name}`,
+//             {
+//               item,
+//               inputUrl,
+//             }
+//           );
+//           setSession(null);
+//         }
+//       });
+//     } catch (error) {
+//       console.error("Failed to remux:", error);
+//       writeToLog(
+//         "ERROR",
+//         `useRemuxHlsToMp4 ~ remuxing failed for item: ${item.Name}`,
+//         {
+//           item,
+//           inputUrl,
+//         }
+//       );
+//     }
+//   }, [inputUrl, output, item, command]);
 
-          await AsyncStorage.setItem(
-            "downloaded_files",
-            JSON.stringify([...otherItems, item])
-          );
+//   const cancelRemuxing = useCallback(async () => {
+//     FFmpegKit.cancel();
+//     setSession(null);
+//     console.log("Remuxing cancelled");
+//   }, []);
 
-          writeToLog(
-            "INFO",
-            `useRemuxHlsToMp4 ~ remuxing completed successfully for item: ${item.Name}`,
-            {
-              item,
-              inputUrl,
-            }
-          );
-          setSession(null);
-        } else if (returnCode.isValueError()) {
-          console.error("Failed to remux:");
-          writeToLog(
-            "ERROR",
-            `useRemuxHlsToMp4 ~ remuxing failed for item: ${item.Name}`,
-            {
-              item,
-              inputUrl,
-            }
-          );
-          setSession(null);
-        } else if (returnCode.isValueCancel()) {
-          console.log("Remuxing was cancelled");
-          writeToLog(
-            "INFO",
-            `useRemuxHlsToMp4 ~ remuxing was canceled for item: ${item.Name}`,
-            {
-              item,
-              inputUrl,
-            }
-          );
-          setSession(null);
-        }
-      });
-    } catch (error) {
-      console.error("Failed to remux:", error);
-      writeToLog(
-        "ERROR",
-        `useRemuxHlsToMp4 ~ remuxing failed for item: ${item.Name}`,
-        {
-          item,
-          inputUrl,
-        }
-      );
-    }
-  }, [inputUrl, output, item, command]);
-
-  const cancelRemuxing = useCallback(async () => {
-    FFmpegKit.cancel();
-    setSession(null);
-    console.log("Remuxing cancelled");
-  }, []);
-
-  return { session, startRemuxing, cancelRemuxing };
-};
+//   return { session, startRemuxing, cancelRemuxing };
+// };
 
 export const DownloadItem: React.FC<DownloadProps> = ({ url, item }) => {
-  const { session, startRemuxing, cancelRemuxing } = useRemuxHlsToMp4(
-    url,
-    item
-  );
+  // const { session, startRemuxing, cancelRemuxing } = useRemuxHlsToMp4(
+  //   url,
+  //   item
+  // );
+
+  const [api] = useAtom(apiAtom);
+  const [user] = useAtom(userAtom);
+  const [process] = useAtom(runningProcesses);
+
+  const { downloadMedia, isDownloading, error } = useDownloadMedia(api);
+
+  const downloadFile = useCallback(async () => {
+    const playbackInfo = await getPlaybackInfo(api, item.Id, user?.Id);
+
+    const source = playbackInfo?.MediaSources?.[0];
+
+    if (source?.SupportsDirectPlay && item.CanDownload) {
+      downloadMedia(item);
+    } else {
+      console.log("file not supported");
+    }
+  }, [item, user]);
 
   const [downloaded, setDownloaded] = useState<boolean>(false);
   const [key, setKey] = useState<string>("");
@@ -175,7 +189,7 @@ export const DownloadItem: React.FC<DownloadProps> = ({ url, item }) => {
     })();
   }, [key]);
 
-  if (session && session.item.Id !== item.Id!) {
+  if (process && process.item.Id !== item.Id!) {
     return (
       <TouchableOpacity onPress={() => {}} style={{ opacity: 0.5 }}>
         <Ionicons name="cloud-download-outline" size={24} color="white" />
@@ -185,16 +199,16 @@ export const DownloadItem: React.FC<DownloadProps> = ({ url, item }) => {
 
   return (
     <View>
-      {session ? (
+      {process ? (
         <TouchableOpacity
           onPress={() => {
-            cancelRemuxing();
+            // cancelRemuxing();
           }}
           className="-rotate-45"
         >
           <ProgressCircle
             size={22}
-            fill={session.progress}
+            fill={process.progress}
             width={3}
             tintColor="#3498db"
             backgroundColor="#bdc3c7"
@@ -213,7 +227,7 @@ export const DownloadItem: React.FC<DownloadProps> = ({ url, item }) => {
       ) : (
         <TouchableOpacity
           onPress={() => {
-            startRemuxing();
+            downloadFile();
           }}
         >
           <Ionicons name="cloud-download-outline" size={28} color="white" />

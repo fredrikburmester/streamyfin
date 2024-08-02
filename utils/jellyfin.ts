@@ -3,9 +3,86 @@ import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import {
   getMediaInfoApi,
   getUserLibraryApi,
-  getPlaystateApi,
 } from "@jellyfin/sdk/lib/utils/api";
 import { iosProfile } from "./device-profiles";
+import * as FileSystem from "expo-file-system";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useAtom } from "jotai";
+import { runningProcesses } from "./atoms/downloads";
+import { useCallback, useState } from "react";
+
+export const useDownloadMedia = (api: Api | null) => {
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [progress, setProgress] = useAtom(runningProcesses);
+
+  const downloadMedia = useCallback(
+    async (item: BaseItemDto | null) => {
+      if (!item?.Id || !api) {
+        setError("Invalid item or API");
+        return false;
+      }
+
+      setIsDownloading(true);
+      setError(null);
+
+      const itemId = item.Id;
+
+      try {
+        const filename = `${itemId}.mp4`;
+        const fileUri = `${FileSystem.documentDirectory}${filename}`;
+
+        const downloadResumable = FileSystem.createDownloadResumable(
+          `${api.basePath}/Items/${itemId}/Download`,
+          fileUri,
+          {
+            headers: {
+              Authorization: `MediaBrowser DeviceId="${api.deviceInfo.id}", Token="${api.accessToken}"`,
+            },
+          },
+          (downloadProgress) => {
+            const currentProgress =
+              downloadProgress.totalBytesWritten /
+              downloadProgress.totalBytesExpectedToWrite;
+            console.log(`Download progress: ${currentProgress * 100}%`);
+
+            setProgress({
+              item,
+              progress: currentProgress * 100,
+            });
+          }
+        );
+
+        const res = await downloadResumable.downloadAsync();
+        const uri = res?.uri;
+
+        console.log("File downloaded to:", uri);
+
+        const currentFiles: BaseItemDto[] = JSON.parse(
+          (await AsyncStorage.getItem("downloaded_files")) || "[]"
+        );
+
+        const otherItems = currentFiles.filter((i) => i.Id !== itemId);
+
+        await AsyncStorage.setItem(
+          "downloaded_files",
+          JSON.stringify([...otherItems, item])
+        );
+
+        setIsDownloading(false);
+        return true;
+      } catch (error) {
+        console.error("Error downloading media:", error);
+        setError("Failed to download media");
+        setIsDownloading(false);
+        return false;
+      }
+    },
+    [api, setProgress]
+  );
+
+  return { downloadMedia, isDownloading, error };
+};
 
 export const markAsNotPlayed = async ({
   api,
@@ -126,8 +203,6 @@ export const nextUp = async ({
       }
     );
 
-    console.log(response.data);
-
     return response?.data.Items as BaseItemDto[];
   } catch (error) {
     const e = error as any;
@@ -195,7 +270,7 @@ export const reportPlaybackProgress = async ({
   }
 
   try {
-    const response = await api.axiosInstance.post(
+    await api.axiosInstance.post(
       `${api.basePath}/Sessions/Playing/Progress`,
       {
         ItemId: itemId,
