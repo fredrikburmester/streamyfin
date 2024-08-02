@@ -30,11 +30,16 @@ const Login: React.FC = () => {
 
   const handleLogin = async () => {
     setLoading(true);
-    const result = CredentialsSchema.safeParse(credentials);
-    if (result.success) {
-      await login(credentials.username, credentials.password);
+    try {
+      const result = CredentialsSchema.safeParse(credentials);
+      if (result.success) {
+        await login(credentials.username, credentials.password);
+      }
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const parsedServerURL = useMemo(() => {
@@ -65,47 +70,53 @@ const Login: React.FC = () => {
         style={{ flex: 1 }}
       >
         <View className="flex flex-col px-4 justify-center h-full gap-y-2">
-          <Text className="text-3xl font-bold">Jellyfin</Text>
-          <Text className="opacity-50 mb-2">Server: {api.basePath}</Text>
-          <Button
-            onPress={() => {
-              removeServer();
-              setServerURL("");
-            }}
-          >
-            Change server
-          </Button>
-          <Text className="text-2xl font-bold">Log in</Text>
-          <Input
-            placeholder="Username"
-            onChangeText={(text) =>
-              setCredentials({ ...credentials, username: text })
-            }
-            value={credentials.username}
-            autoFocus
-            secureTextEntry={false}
-            keyboardType="default"
-            returnKeyType="done"
-            autoCapitalize="none"
-            textContentType="username"
-            clearButtonMode="while-editing"
-            maxLength={500}
-          />
-          <Input
-            className="mb-2"
-            placeholder="Password"
-            onChangeText={(text) =>
-              setCredentials({ ...credentials, password: text })
-            }
-            value={credentials.password}
-            secureTextEntry
-            keyboardType="default"
-            returnKeyType="done"
-            autoCapitalize="none"
-            textContentType="password"
-            clearButtonMode="while-editing"
-            maxLength={500}
-          />
+          <View>
+            <Text className="text-3xl font-bold">Jellyfin</Text>
+            <Text className="opacity-50 mb-2">Server: {api.basePath}</Text>
+            <Button
+              onPress={() => {
+                removeServer();
+                setServerURL("");
+              }}
+            >
+              Change server
+            </Button>
+          </View>
+          <View className="flex flex-col space-y-2">
+            <Text className="text-2xl font-bold">Log in</Text>
+            <Input
+              placeholder="Username"
+              onChangeText={(text) =>
+                setCredentials({ ...credentials, username: text })
+              }
+              value={credentials.username}
+              autoFocus
+              secureTextEntry={false}
+              keyboardType="default"
+              returnKeyType="done"
+              autoCapitalize="none"
+              textContentType="username"
+              clearButtonMode="while-editing"
+              maxLength={500}
+            />
+
+            <Input
+              className="mb-2"
+              placeholder="Password"
+              onChangeText={(text) =>
+                setCredentials({ ...credentials, password: text })
+              }
+              value={credentials.password}
+              secureTextEntry
+              keyboardType="default"
+              returnKeyType="done"
+              autoCapitalize="none"
+              textContentType="password"
+              clearButtonMode="while-editing"
+              maxLength={500}
+            />
+          </View>
+
           <Button onPress={handleLogin} loading={loading}>
             Log in
           </Button>

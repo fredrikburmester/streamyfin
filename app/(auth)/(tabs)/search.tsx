@@ -1,7 +1,12 @@
+import { HorizontalScroll } from "@/components/common/HorrizontalScroll";
 import { Input } from "@/components/common/Input";
 import { Text } from "@/components/common/Text";
+import ContinueWatchingPoster from "@/components/ContinueWatchingPoster";
+import { ItemCardText } from "@/components/ItemCardText";
+import MoviePoster from "@/components/MoviePoster";
+import Poster from "@/components/Poster";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
-import { Ionicons } from "@expo/vector-icons";
+import { getUserItemData } from "@/utils/jellyfin";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import { getSearchApi } from "@jellyfin/sdk/lib/utils/api";
 import { useQuery } from "@tanstack/react-query";
@@ -12,29 +17,12 @@ import { ScrollView, TouchableOpacity, View } from "react-native";
 
 export default function search() {
   const [search, setSearch] = useState<string>("");
-  const [totalResults, setTotalResults] = useState<number>(0);
 
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
 
-  // useEffect(() => {
-  //   (async () => {
-  //     if (!api || search.length === 0) return;
-  //     const searchApi = await getSearchApi(api).getSearchHints({
-  //       searchTerm: search,
-  //       limit: 10,
-  //       includeItemTypes: ["Movie"],
-  //     });
-
-  //     const data = searchApi.data;
-
-  //     setTotalResults(data.TotalRecordCount || 0);
-  //     setData(data.SearchHints || []);
-  //   })();
-  // }, [search]);
-
-  const { data } = useQuery({
-    queryKey: ["search", search],
+  const { data: movies } = useQuery({
+    queryKey: ["search-movies", search],
     queryFn: async () => {
       if (!api || !user || search.length === 0) return [];
 
@@ -48,44 +36,166 @@ export default function search() {
     },
   });
 
-  return (
-    <View className="p-4">
-      <View className="mb-4">
-        <Input
-          placeholder="Search here..."
-          value={search}
-          onChangeText={(text) => setSearch(text)}
-        />
-      </View>
+  const { data: series } = useQuery({
+    queryKey: ["search-series", search],
+    queryFn: async () => {
+      if (!api || !user || search.length === 0) return [];
 
-      <ScrollView>
-        <View className="rounded-xl overflow-hidden">
-          {data?.map((item, index) => (
-            <RenderItem item={item} key={index} />
-          ))}
+      const searchApi = await getSearchApi(api).getSearchHints({
+        searchTerm: search,
+        limit: 10,
+        includeItemTypes: ["Series"],
+      });
+
+      return searchApi.data.SearchHints;
+    },
+  });
+  const { data: episodes } = useQuery({
+    queryKey: ["search-episodes", search],
+    queryFn: async () => {
+      if (!api || !user || search.length === 0) return [];
+
+      const searchApi = await getSearchApi(api).getSearchHints({
+        searchTerm: search,
+        limit: 10,
+        includeItemTypes: ["Episode"],
+      });
+
+      return searchApi.data.SearchHints;
+    },
+  });
+
+  return (
+    <ScrollView keyboardDismissMode="on-drag">
+      <View className="p-4 flex flex-col">
+        <View className="mb-4">
+          <Input
+            autoCorrect={false}
+            returnKeyType="done"
+            keyboardType="web-search"
+            placeholder="Search here..."
+            value={search}
+            onChangeText={(text) => setSearch(text)}
+          />
         </View>
-      </ScrollView>
-    </View>
+
+        <Text className="font-bold text-2xl mb-2">Movies</Text>
+        <SearchItemWrapper
+          ids={movies?.map((m) => m.Id!)}
+          renderItem={(data) => (
+            <HorizontalScroll<BaseItemDto>
+              data={data}
+              renderItem={(item) => (
+                <TouchableOpacity
+                  key={item.Id}
+                  className="flex flex-col w-32"
+                  onPress={() => router.push(`/items/${item.Id}/page`)}
+                >
+                  <MoviePoster item={item} key={item.Id} />
+                  <Text className="mt-2">{item.Name}</Text>
+                  <Text className="opacity-50 text-xs">
+                    {item.ProductionYear}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            />
+          )}
+        />
+        <Text className="font-bold text-2xl my-2">Series</Text>
+        <SearchItemWrapper
+          ids={series?.map((m) => m.Id!)}
+          renderItem={(data) => (
+            <HorizontalScroll<BaseItemDto>
+              data={data}
+              renderItem={(item) => (
+                <TouchableOpacity
+                  key={item.Id}
+                  onPress={() => router.push(`/series/${item.Id}/page`)}
+                  className="flex flex-col w-32"
+                >
+                  <Poster itemId={item.Id} key={item.Id} />
+                  <Text className="mt-2">{item.Name}</Text>
+                  <Text className="opacity-50 text-xs">
+                    {item.ProductionYear}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            />
+          )}
+        />
+        <Text className="font-bold text-2xl my-2">Episodes</Text>
+        <SearchItemWrapper
+          ids={episodes?.map((m) => m.Id!)}
+          renderItem={(data) => (
+            <HorizontalScroll<BaseItemDto>
+              data={data}
+              renderItem={(item) => (
+                <TouchableOpacity
+                  key={item.Id}
+                  onPress={() => router.push(`/items/${item.Id}/page`)}
+                  className="flex flex-col w-48"
+                >
+                  <ContinueWatchingPoster item={item} />
+                  <ItemCardText item={item} />
+                </TouchableOpacity>
+              )}
+            />
+          )}
+        />
+
+        {/* <Text>Series</Text>
+
+        <HorizontalScroll
+          data={series}
+          renderItem={(item, index) => <Poster itemId={item.Id} key={index} />}
+        />
+
+        <Text>Episodes</Text>
+        <HorizontalScroll
+          data={episodes}
+          renderItem={(item, index) => (
+            <ContinueWatchingPoster item={item} key={index} />
+          )}
+        /> */}
+      </View>
+    </ScrollView>
   );
 }
 
-type RenderItemProps = {
-  item: BaseItemDto;
+type Props = {
+  ids?: string[] | null;
+  renderItem: (data: BaseItemDto[]) => React.ReactNode;
 };
 
-const RenderItem: React.FC<RenderItemProps> = ({ item }) => {
-  return (
-    <TouchableOpacity
-      onPress={() => router.push(`/(auth)/items/${item.Id}/page`)}
-      className="flex flex-row items-center justify-between p-4 bg-neutral-900 border-neutral-800"
-    >
-      <View className="flex flex-col">
-        <Text className="font-bold">{item.Name}</Text>
-        {item.Type === "Movie" && (
-          <Text className="opacity-50">{item.ProductionYear}</Text>
-        )}
-      </View>
-      <Ionicons name="arrow-forward" size={24} color="white" />
-    </TouchableOpacity>
-  );
+const SearchItemWrapper: React.FC<Props> = ({ ids, renderItem }) => {
+  const [api] = useAtom(apiAtom);
+  const [user] = useAtom(userAtom);
+
+  const { data, isLoading: l1 } = useQuery({
+    queryKey: ["items", ids],
+    queryFn: async () => {
+      if (!user?.Id || !api || !ids || ids.length === 0) {
+        return [];
+      }
+
+      const itemPromises = ids.map((id) =>
+        getUserItemData({
+          api,
+          userId: user.Id,
+          itemId: id,
+        })
+      );
+
+      const results = await Promise.all(itemPromises);
+
+      // Filter out null items
+      return results.filter((item) => item !== null);
+    },
+    enabled: !!ids && ids.length > 0 && !!api && !!user?.Id,
+    staleTime: Infinity,
+  });
+
+  if (!data) return <Text className="opacity-50 text-xs">No results</Text>;
+
+  return renderItem(data);
 };

@@ -61,7 +61,9 @@ export const SimilarItems: React.FC<SimilarItemsProps> = ({ itemId }) => {
           </View>
         </ScrollView>
       )}
-      {similarItems?.length === 0 && <Text>No similar items</Text>}
+      {similarItems?.length === 0 && (
+        <Text className="px-4">No similar items</Text>
+      )}
     </View>
   );
 };

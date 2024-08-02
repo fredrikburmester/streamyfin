@@ -8,10 +8,8 @@ type VideoPlayerProps = {
 export const OfflineVideoPlayer: React.FC<VideoPlayerProps> = ({ url }) => {
   const videoRef = useRef<VideoRef | null>(null);
 
-  console.log(url);
-
   const onError = (error: any) => {
-    console.log("Video Error: ", error);
+    console.error("Video Error: ", error);
   };
 
   useEffect(() => {

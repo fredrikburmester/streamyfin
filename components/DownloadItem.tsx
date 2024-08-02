@@ -1,14 +1,15 @@
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 
-import * as FileSystem from "expo-file-system";
-import { atom, useAtom } from "jotai";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { writeToLog } from "@/utils/log";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { FFmpegKit, FFmpegKitConfig, Session } from "ffmpeg-kit-react-native";
-import ProgressCircle from "./ProgressCircle";
+import * as FileSystem from "expo-file-system";
+import { FFmpegKit, FFmpegKitConfig } from "ffmpeg-kit-react-native";
+import { atom, useAtom } from "jotai";
+import { useCallback, useEffect, useState } from "react";
 import { TouchableOpacity, View } from "react-native";
-import { Text } from "./common/Text";
+import ProgressCircle from "./ProgressCircle";
+import { router } from "expo-router";
 
 type DownloadProps = {
   item: BaseItemDto;
@@ -23,7 +24,13 @@ type ProcessItem = {
 export const runningProcesses = atom<ProcessItem | null>(null);
 
 const useRemuxHlsToMp4 = (inputUrl: string, item: BaseItemDto) => {
-  if (!item.Id || !item.Name) throw new Error("Item must have an Id and Name");
+  if (!item.Id || !item.Name) {
+    writeToLog("ERROR", "useRemuxHlsToMp4 ~ missing arguments", {
+      item,
+      inputUrl,
+    });
+    throw new Error("Item must have an Id and Name");
+  }
 
   const [session, setSession] = useAtom<ProcessItem | null>(runningProcesses);
 
@@ -32,8 +39,26 @@ const useRemuxHlsToMp4 = (inputUrl: string, item: BaseItemDto) => {
   const command = `-y -fflags +genpts -i ${inputUrl} -c copy -max_muxing_queue_size 9999 ${output}`;
 
   const startRemuxing = useCallback(async () => {
-    if (!item.Id || !item.Name)
+    if (!item.Id || !item.Name) {
+      writeToLog(
+        "ERROR",
+        "useRemuxHlsToMp4 ~ startRemuxing ~ missing arguments",
+        {
+          item,
+          inputUrl,
+        }
+      );
       throw new Error("Item must have an Id and Name");
+    }
+
+    writeToLog(
+      "INFO",
+      `useRemuxHlsToMp4 ~ startRemuxing for item ${item.Id} with url ${inputUrl}`,
+      {
+        item,
+        inputUrl,
+      }
+    );
 
     try {
       setSession({
@@ -54,14 +79,6 @@ const useRemuxHlsToMp4 = (inputUrl: string, item: BaseItemDto) => {
         if (totalFrames > 0) {
           percentage = Math.floor((processedFrames / totalFrames) * 100);
         }
-
-        console.log({
-          videoLength,
-          fps,
-          totalFrames,
-          processedFrames: statistics.getVideoFrameNumber(),
-          percentage,
-        });
 
         setSession((prev) => {
           return prev?.item.Id === item.Id!
@@ -84,18 +101,49 @@ const useRemuxHlsToMp4 = (inputUrl: string, item: BaseItemDto) => {
             JSON.stringify([...otherItems, item])
           );
 
-          console.log("Remuxing completed successfully");
+          writeToLog(
+            "INFO",
+            `useRemuxHlsToMp4 ~ remuxing completed successfully for item: ${item.Name}`,
+            {
+              item,
+              inputUrl,
+            }
+          );
           setSession(null);
         } else if (returnCode.isValueError()) {
           console.error("Failed to remux:");
+          writeToLog(
+            "ERROR",
+            `useRemuxHlsToMp4 ~ remuxing failed for item: ${item.Name}`,
+            {
+              item,
+              inputUrl,
+            }
+          );
           setSession(null);
         } else if (returnCode.isValueCancel()) {
           console.log("Remuxing was cancelled");
+          writeToLog(
+            "INFO",
+            `useRemuxHlsToMp4 ~ remuxing was canceled for item: ${item.Name}`,
+            {
+              item,
+              inputUrl,
+            }
+          );
           setSession(null);
         }
       });
     } catch (error) {
       console.error("Failed to remux:", error);
+      writeToLog(
+        "ERROR",
+        `useRemuxHlsToMp4 ~ remuxing failed for item: ${item.Name}`,
+        {
+          item,
+          inputUrl,
+        }
+      );
     }
   }, [inputUrl, output, item, command]);
 
@@ -142,6 +190,7 @@ export const DownloadItem: React.FC<DownloadProps> = ({ url, item }) => {
           onPress={() => {
             cancelRemuxing();
           }}
+          className="-rotate-45"
         >
           <ProgressCircle
             size={22}
@@ -152,16 +201,22 @@ export const DownloadItem: React.FC<DownloadProps> = ({ url, item }) => {
           />
         </TouchableOpacity>
       ) : downloaded ? (
-        <>
-          <Ionicons name="checkmark-circle-outline" size={24} color="white" />
-        </>
+        <TouchableOpacity
+          onPress={() => {
+            router.push(
+              `/(auth)/player/offline/page?url=${item.Id}.mp4&itemId=${item.Id}`
+            );
+          }}
+        >
+          <Ionicons name="cloud-download" size={28} color="#16a34a" />
+        </TouchableOpacity>
       ) : (
         <TouchableOpacity
           onPress={() => {
             startRemuxing();
           }}
         >
-          <Ionicons name="cloud-download-outline" size={24} color="white" />
+          <Ionicons name="cloud-download-outline" size={28} color="white" />
         </TouchableOpacity>
       )}
     </View>

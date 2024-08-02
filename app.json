@@ -39,6 +39,7 @@
       "expo-font",
       "expo-video",
       "react-native-compressor",
+      // "react-native-google-cast",
       [
         "react-native-video",
         {

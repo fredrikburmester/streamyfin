@@ -1,5 +1,6 @@
-import React, { PropsWithChildren, ReactNode } from "react";
+import React, { PropsWithChildren, ReactNode, useMemo } from "react";
 import { TouchableOpacity, Text, ActivityIndicator, View } from "react-native";
+import * as Haptics from "expo-haptics";
 
 interface ButtonProps {
   onPress?: () => void;
@@ -8,6 +9,7 @@ interface ButtonProps {
   disabled?: boolean;
   children?: string;
   loading?: boolean;
+  color?: "purple" | "red";
   iconRight?: ReactNode;
 }
 
@@ -17,19 +19,32 @@ export const Button: React.FC<PropsWithChildren<ButtonProps>> = ({
   textClassName = "",
   disabled = false,
   loading = false,
+  color = "purple",
   iconRight,
   children,
 }) => {
+  const colorClasses = useMemo(() => {
+    switch (color) {
+      case "purple":
+        return "bg-purple-600 active:bg-purple-700";
+      case "red":
+        return "bg-red-500 active:bg-red-600";
+    }
+  }, [color]);
+
   return (
     <TouchableOpacity
       className={`
-        bg-purple-600 p-3 rounded-xl items-center justify-center
-        ${disabled ? "bg-neutral-400" : "active:bg-purple-600"}
-        ${loading && "opacity-50"}
+        p-3 rounded-xl items-center justify-center
+        ${loading || (disabled && "opacity-50")}
+        ${colorClasses}
         ${className}
       `}
       onPress={() => {
-        if (!loading && !disabled && onPress) onPress();
+        if (!loading && !disabled && onPress) {
+          onPress();
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }
       }}
       disabled={disabled || loading}
     >
