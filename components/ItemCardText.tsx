@@ -1,9 +1,10 @@
 import React from "react";
 import { View } from "react-native";
 import { Text } from "./common/Text";
+import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 
 type ItemCardProps = {
-  item: any;
+  item: BaseItemDto;
 };
 
 export const ItemCardText: React.FC<ItemCardProps> = ({ item }) => {
@@ -16,17 +17,17 @@ export const ItemCardText: React.FC<ItemCardProps> = ({ item }) => {
             style={{ flexWrap: "wrap" }}
             className="flex text-xs opacity-50 break-all"
           >
-            {`S${item.SeasonName?.replace("Season ", "").padStart(
-              2,
-              "0"
-            )}:E${item.IndexNumber.toString().padStart(2, "0")}`}{" "}
+            {`S${item.SeasonName?.replace(
+              "Season ",
+              ""
+            )}:E${item.IndexNumber?.toString()}`}{" "}
             {item.Name}
           </Text>
         </>
       ) : (
         <>
           <Text>{item.Name}</Text>
-          <Text></Text>
+          <Text className="text-xs opacity-50">{item.ProductionYear}</Text>
         </>
       )}
     </View>

@@ -19,7 +19,6 @@ export default function TabLayout() {
         options={{
           headerShown: true,
           headerStyle: { backgroundColor: "black" },
-
           title: "Home",
           tabBarIcon: ({ color, focused }) => (
             <TabBarIcon

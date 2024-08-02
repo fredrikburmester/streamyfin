@@ -1,22 +1,27 @@
 import { apiAtom } from "@/providers/JellyfinProvider";
-import { getBackdrop } from "@/utils/jellyfin";
+import { getBackdrop, getPrimaryImageById } from "@/utils/jellyfin";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import { useQuery } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import { useAtom } from "jotai";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { View } from "react-native";
+import { WatchedIndicator } from "./WatchedIndicator";
 
 type MoviePosterProps = {
   item: BaseItemDto;
+  showProgress?: boolean;
 };
 
-const MoviePoster: React.FC<MoviePosterProps> = ({ item }) => {
+const MoviePoster: React.FC<MoviePosterProps> = ({
+  item,
+  showProgress = false,
+}) => {
   const [api] = useAtom(apiAtom);
 
   const { data: url } = useQuery({
     queryKey: ["backdrop", item.Id],
-    queryFn: async () => getBackdrop(api, item),
+    queryFn: async () => getPrimaryImageById(api, item.Id),
     enabled: !!api && !!item.Id,
     staleTime: Infinity,
   });
@@ -25,10 +30,18 @@ const MoviePoster: React.FC<MoviePosterProps> = ({ item }) => {
     item.UserData?.PlayedPercentage || 0
   );
 
-  if (!url) return <View></View>;
+  if (!url)
+    return (
+      <View
+        className="rounded-md overflow-hidden border border-neutral-900"
+        style={{
+          aspectRatio: "10/15",
+        }}
+      ></View>
+    );
 
   return (
-    <View className="rounded-md overflow-hidden">
+    <View className="relative rounded-md overflow-hidden border border-neutral-900">
       <Image
         key={item.Id}
         id={item.Id}
@@ -41,7 +54,10 @@ const MoviePoster: React.FC<MoviePosterProps> = ({ item }) => {
           aspectRatio: "10/15",
         }}
       />
-      {progress > 0 && <View className="h-1.5 bg-red-600 w-full"></View>}
+      <WatchedIndicator item={item} />
+      {showProgress && progress > 0 && (
+        <View className="h-1 bg-red-600 w-full"></View>
+      )}
     </View>
   );
 };

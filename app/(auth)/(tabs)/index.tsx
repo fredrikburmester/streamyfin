@@ -1,7 +1,7 @@
+import { HorizontalScroll } from "@/components/common/HorrizontalScroll";
 import { Text } from "@/components/common/Text";
 import ContinueWatchingPoster from "@/components/ContinueWatchingPoster";
 import { ItemCardText } from "@/components/ItemCardText";
-import { Loading } from "@/components/Loading";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import { getItemsApi, getSuggestionsApi } from "@jellyfin/sdk/lib/utils/api";
@@ -26,6 +26,9 @@ export default function index() {
       if (!api || !user?.Id) {
         return [];
       }
+
+      console.log("[2] Items");
+
       const response = await getItemsApi(api).getResumeItems({
         userId: user.Id,
       });
@@ -47,6 +50,18 @@ export default function index() {
           userId: user.Id,
         })
       ).data;
+
+      const order = ["boxsets", "tvshows", "movies"];
+
+      const cs = data.Items?.sort((a, b) => {
+        if (
+          order.indexOf(a.CollectionType!) < order.indexOf(b.CollectionType!)
+        ) {
+          return 1;
+        }
+
+        return -1;
+      });
 
       return data.Items || [];
     },
@@ -85,56 +100,53 @@ export default function index() {
 
   return (
     <ScrollView nestedScrollEnabled>
-      <View className="py-4 px-4 gap-y-2">
-        <Text className="text-2xl font-bold">Continue Watching</Text>
-        <ScrollView horizontal>
-          <View className="flex flex-row gap-x-2">
-            {data.map((item) => (
-              <TouchableOpacity
-                key={item.Id}
-                onPress={() => router.push(`/items/${item.Id}/page`)}
-                className="flex flex-col w-48"
-              >
-                <View>
-                  <ContinueWatchingPoster item={item} />
-                  <ItemCardText item={item} />
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </ScrollView>
-        <Text className="text-2xl font-bold">Collections</Text>
-        <ScrollView horizontal>
-          <View className="flex flex-row gap-x-2">
-            {collections?.map((item) => (
-              <TouchableOpacity
-                key={item.Id}
-                onPress={() => router.push(`/collections/${item.Id}/page`)}
-                className="flex flex-col w-48"
-              >
-                <View>
-                  <ContinueWatchingPoster item={item} />
-                  <ItemCardText item={item} />
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </ScrollView>
-        <Text className="text-2xl font-bold">Suggestions</Text>
-        <ScrollView horizontal>
-          <View className="flex flex-row gap-x-2">
-            {suggestions?.map((item) => (
-              <TouchableOpacity
-                key={item.Id}
-                onPress={() => router.push(`/items/${item.Id}/page`)}
-                className="flex flex-col w-48"
-              >
+      <View className="py-4 gap-y-2">
+        <Text className="px-4 text-2xl font-bold mb-2">Continue Watching</Text>
+        <HorizontalScroll<BaseItemDto>
+          data={data}
+          renderItem={(item, index) => (
+            <TouchableOpacity
+              key={index}
+              onPress={() => router.push(`/items/${item.Id}/page`)}
+              className="flex flex-col w-48"
+            >
+              <View>
                 <ContinueWatchingPoster item={item} />
                 <ItemCardText item={item} />
-              </TouchableOpacity>
-            ))}
-          </View>
-        </ScrollView>
+              </View>
+            </TouchableOpacity>
+          )}
+        />
+        <Text className="px-4 text-2xl font-bold mb-2">Collections</Text>
+        <HorizontalScroll<BaseItemDto>
+          data={collections}
+          renderItem={(item, index) => (
+            <TouchableOpacity
+              key={index}
+              onPress={() => router.push(`/collections/${item.Id}/page`)}
+              className="flex flex-col w-48"
+            >
+              <View>
+                <ContinueWatchingPoster item={item} />
+                <ItemCardText item={item} />
+              </View>
+            </TouchableOpacity>
+          )}
+        />
+        <Text className="px-4 text-2xl font-bold mb-2">Suggestions</Text>
+        <HorizontalScroll<BaseItemDto>
+          data={suggestions}
+          renderItem={(item, index) => (
+            <TouchableOpacity
+              key={index}
+              onPress={() => router.push(`/items/${item.Id}/page`)}
+              className="flex flex-col w-48"
+            >
+              <ContinueWatchingPoster item={item} />
+              <ItemCardText item={item} />
+            </TouchableOpacity>
+          )}
+        />
       </View>
     </ScrollView>
   );

@@ -36,8 +36,6 @@ const page: React.FC = () => {
         })
       ).data;
 
-      console.log(data.Items?.find((item) => item.Id == collectionId));
-
       return data.Items?.find((item) => item.Id == collectionId);
     },
     enabled: !!api && !!user?.Id,
@@ -143,6 +141,8 @@ const page: React.FC = () => {
                 onPress={() => {
                   if (collection?.CollectionType === "movies") {
                     router.push(`/items/${item.Id}/page`);
+                  } else if (collection?.CollectionType === "tvshows") {
+                    router.push(`/series/${item.Id}/page`);
                   }
                 }}
               >

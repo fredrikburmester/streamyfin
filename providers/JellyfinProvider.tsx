@@ -2,6 +2,7 @@ import { Api, Jellyfin } from "@jellyfin/sdk";
 import { UserDto } from "@jellyfin/sdk/lib/generated-client/models";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { isLoaded } from "expo-font";
 import { router, useSegments } from "expo-router";
 import { atom, useAtom } from "jotai";
 import React, {
@@ -37,8 +38,8 @@ export const JellyfinProvider: React.FC<{ children: ReactNode }> = ({
   const [jellyfin] = useState(
     () =>
       new Jellyfin({
-        clientInfo: { name: "My Client Application", version: "1.0.0" },
-        deviceInfo: { name: "Device Name", id: "unique-device-id" },
+        clientInfo: { name: "Streamyfin", version: "1.0.0" },
+        deviceInfo: { name: "iOS", id: "unique-device-id" },
       })
   );
 
@@ -55,7 +56,9 @@ export const JellyfinProvider: React.FC<{ children: ReactNode }> = ({
   const setServerMutation = useMutation({
     mutationFn: async (server: Server) => {
       const apiInstance = jellyfin.createApi(server.address);
+
       if (!apiInstance.basePath) throw new Error("Failed to connect");
+
       setApi(apiInstance);
       await AsyncStorage.setItem("serverUrl", server.address);
     },
@@ -86,17 +89,13 @@ export const JellyfinProvider: React.FC<{ children: ReactNode }> = ({
 
       const auth = await api.authenticateUserByName(username, password);
 
-      if (!auth.data.User) {
-        console.info("Failed to authenticate user");
-        return;
-      }
-
-      setUser(auth.data.User);
-      await AsyncStorage.setItem("user", JSON.stringify(auth.data.User));
-
-      if (auth.data.AccessToken) {
+      if (auth.data.AccessToken && auth.data.User) {
+        setUser(auth.data.User);
+        await AsyncStorage.setItem("user", JSON.stringify(auth.data.User));
         setApi(jellyfin.createApi(api?.basePath, auth.data?.AccessToken));
         await AsyncStorage.setItem("token", auth.data?.AccessToken);
+      } else {
+        throw new Error("Invalid username or password");
       }
     },
     onError: (error) => {
@@ -107,8 +106,8 @@ export const JellyfinProvider: React.FC<{ children: ReactNode }> = ({
   const logoutMutation = useMutation({
     mutationFn: async () => {
       setUser(null);
+      setApi(null);
       await AsyncStorage.removeItem("token");
-      if (api) await api.logout();
     },
     onError: (error) => {
       console.error("Logout failed:", error);
@@ -116,7 +115,7 @@ export const JellyfinProvider: React.FC<{ children: ReactNode }> = ({
   });
 
   const { isLoading, isFetching } = useQuery({
-    queryKey: ["initializeJellyfin"],
+    queryKey: ["initializeJellyfin", user?.Id, api?.basePath],
     queryFn: async () => {
       try {
         const token = await AsyncStorage.getItem("token");
@@ -125,10 +124,18 @@ export const JellyfinProvider: React.FC<{ children: ReactNode }> = ({
           (await AsyncStorage.getItem("user")) as string
         ) as UserDto;
 
+        console.log({
+          token,
+          serverUrl,
+          user,
+        });
+
         if (serverUrl && token && user.Id) {
+          console.log("[0] Setting api");
           const apiInstance = jellyfin.createApi(serverUrl, token);
           setApi(apiInstance);
           setUser(user);
+          console.log(apiInstance.accessToken);
         }
 
         return true;
@@ -136,7 +143,8 @@ export const JellyfinProvider: React.FC<{ children: ReactNode }> = ({
         console.error(e);
       }
     },
-    staleTime: Infinity,
+    staleTime: 0,
+    enabled: !user?.Id || !api,
   });
 
   const contextValue: JellyfinContextValue = {
@@ -164,16 +172,18 @@ export const useJellyfin = (): JellyfinContextValue => {
   return context;
 };
 
-function useProtectedRoute(user: UserDto | null, isLoading: boolean) {
+function useProtectedRoute(user: UserDto | null, loading = false) {
   const segments = useSegments();
+
   useEffect(() => {
-    if (isLoading) return;
+    if (loading) return;
+
     const inAuthGroup = segments[0] === "(auth)";
-    const inLoginGroup = segments[0] === "(public)";
+
     if (!user?.Id && inAuthGroup) {
       router.replace("/login");
-    } else if (user?.Id && inLoginGroup) {
+    } else if (user?.Id && !inAuthGroup) {
       router.replace("/");
     }
-  }, [user, segments]);
+  }, [user, segments, loading]);
 }

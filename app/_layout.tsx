@@ -69,7 +69,6 @@ export default function RootLayout() {
                 name="(auth)/settings"
                 options={{
                   headerShown: true,
-
                   title: "Settings",
                   presentation: "modal",
                   headerLeft: () => (
@@ -106,7 +105,16 @@ export default function RootLayout() {
                 }}
               />
               <Stack.Screen
-                name="(public)/login"
+                name="(auth)/series/[id]/page"
+                options={{
+                  title: "",
+                  headerShown: true,
+                  headerStyle: { backgroundColor: "transparent" },
+                  headerShadowVisible: true,
+                }}
+              />
+              <Stack.Screen
+                name="login"
                 options={{ headerShown: false, title: "Login" }}
               />
               <Stack.Screen name="+not-found" />

@@ -7,6 +7,172 @@ import {
 } from "@jellyfin/sdk/lib/utils/api";
 import { iosProfile } from "./device-profiles";
 
+export const markAsNotPlayed = async ({
+  api,
+  itemId,
+  userId,
+}: {
+  api?: Api | null;
+  itemId?: string | null;
+  userId?: string | null;
+}) => {
+  if (!itemId || !userId || !api) {
+    return false;
+  }
+
+  try {
+    const response = await api.axiosInstance.delete(
+      `${api.basePath}/UserPlayedItems/${itemId}`,
+      {
+        params: {
+          userId,
+        },
+        headers: {
+          Authorization: `MediaBrowser DeviceId="${api.deviceInfo.id}", Token="${api.accessToken}"`,
+        },
+      }
+    );
+
+    if (response.status === 200) return true;
+    return false;
+  } catch (error) {
+    const e = error as any;
+    console.error("Failed to report playback progress", e.message, e.status);
+    return [];
+  }
+};
+
+export const markAsPlayed = async ({
+  api,
+  itemId,
+  userId,
+}: {
+  api?: Api | null;
+  itemId?: string | null;
+  userId?: string | null;
+}) => {
+  if (!itemId || !userId || !api) {
+    return false;
+  }
+
+  try {
+    const response = await api.axiosInstance.post(
+      `${api.basePath}/UserPlayedItems/${itemId}`,
+      {
+        userId,
+        datePlayed: new Date().toISOString(),
+      },
+      {
+        headers: {
+          Authorization: `MediaBrowser DeviceId="${api.deviceInfo.id}", Token="${api.accessToken}"`,
+        },
+      }
+    );
+
+    if (response.status === 200) return true;
+    return false;
+  } catch (error) {
+    const e = error as any;
+    console.error("Failed to report playback progress:", {
+      message: e.message,
+      status: e.response?.status,
+      statusText: e.response?.statusText,
+      url: e.config?.url,
+      method: e.config?.method,
+      data: e.response?.data,
+      headers: e.response?.headers,
+    });
+
+    if (e.response) {
+      // The request was made and the server responded with a status code
+      // that falls out of the range of 2xx
+      console.error("Server responded with error:", e.response.data);
+    } else if (e.request) {
+      // The request was made but no response was received
+      console.error("No response received from server");
+    } else {
+      // Something happened in setting up the request that triggered an Error
+      console.error("Error setting up the request:", e.message);
+    }
+    return [];
+  }
+};
+
+export const nextUp = async ({
+  itemId,
+  userId,
+  api,
+}: {
+  itemId?: string | null;
+  userId?: string | null;
+  api?: Api | null;
+}) => {
+  if (!itemId || !userId || !api) {
+    return [];
+  }
+
+  try {
+    const response = await api.axiosInstance.get(
+      `${api.basePath}/Shows/NextUp`,
+      {
+        params: {
+          SeriesId: itemId,
+          UserId: userId,
+          Fields: "MediaSourceCount",
+        },
+        headers: {
+          Authorization: `MediaBrowser DeviceId="${api.deviceInfo.id}", Token="${api.accessToken}"`,
+        },
+      }
+    );
+
+    console.log(response.data);
+
+    return response?.data.Items as BaseItemDto[];
+  } catch (error) {
+    const e = error as any;
+    console.error("Failed to report playback progress", e.message, e.status);
+    return [];
+  }
+};
+
+export const reportPlaybackStopped = async ({
+  api,
+  sessionId,
+  itemId,
+  positionTicks,
+}: {
+  api: Api | null | undefined;
+  sessionId: string | null | undefined;
+  itemId: string | null | undefined;
+  positionTicks: number | null | undefined;
+}) => {
+  if (!api || !sessionId || !itemId || !positionTicks) {
+    console.log("Missing required parameters", {
+      api,
+      sessionId,
+      itemId,
+      positionTicks,
+    });
+    return;
+  }
+
+  try {
+    await api.axiosInstance.delete(`${api.basePath}/PlayingItems/${itemId}`, {
+      params: {
+        playSessionId: sessionId,
+        positionTicks: Math.round(positionTicks),
+        mediaSourceId: itemId,
+      },
+      headers: {
+        Authorization: `MediaBrowser DeviceId="${api.deviceInfo.id}", Token="${api.accessToken}"`,
+      },
+    });
+  } catch (error) {
+    console.error("Failed to report playback progress", error);
+  }
+};
+
 export const reportPlaybackProgress = async ({
   api,
   sessionId,
@@ -47,15 +213,6 @@ export const reportPlaybackProgress = async ({
     );
   } catch (error) {
     console.error("Failed to report playback progress", error);
-    if (error.response) {
-      console.error("Error data:", error.response.data);
-      console.error("Error status:", error.response.status);
-      console.error("Error headers:", error.response.headers);
-    } else if (error.request) {
-      console.error("No response received:", error.request);
-    } else {
-      console.error("Error message:", error.message);
-    }
   }
 };
 
@@ -196,12 +353,14 @@ export const getStreamUrl = async ({
   userId,
   startTimeTicks = 0,
   maxStreamingBitrate = 140000000,
+  forceTranscoding = false,
 }: {
   api: Api | null | undefined;
   item: BaseItemDto | null | undefined;
   userId: string | null | undefined;
   startTimeTicks: number;
   maxStreamingBitrate?: number;
+  forceTranscoding?: boolean;
 }) => {
   if (!api || !userId || !item?.Id) {
     return null;
@@ -210,26 +369,24 @@ export const getStreamUrl = async ({
   const itemId = item.Id;
   let url: string = "";
 
-  console.info(
-    `Retrieving stream URL for item ID: ${item.Id} with start position: ${startTimeTicks}.`
-  );
-
   try {
     const response = await api.axiosInstance.post(
       `${api.basePath}/Items/${itemId}/PlaybackInfo`,
       {
-        DeviceProfile: iosProfile,
+        DeviceProfile: {
+          ...iosProfile,
+          MaxStaticBitrate: maxStreamingBitrate,
+          MaxStreamingBitrate: maxStreamingBitrate,
+        },
+        UserId: userId,
+        MaxStreamingBitrate: maxStreamingBitrate,
+        StartTimeTicks: startTimeTicks,
+        EnableTranscoding: forceTranscoding,
+        AutoOpenLiveStream: true,
+        MediaSourceId: itemId,
+        AllowVideoStreamCopy: forceTranscoding ? false : true,
       },
       {
-        params: {
-          itemId,
-          userId,
-          startTimeTicks,
-          maxStreamingBitrate,
-          mediaSourceId: itemId,
-          enableTranscoding: true,
-          autoOpenLiveStream: true,
-        },
         headers: {
           Authorization: `MediaBrowser DeviceId="${api.deviceInfo.id}", Token="${api.accessToken}"`,
         },
@@ -286,7 +443,7 @@ export const getStreamUrl = async ({
 export const getBackdrop = (
   api: Api | null | undefined,
   item: BaseItemDto | null | undefined,
-  quality: number = 10
+  quality: number = 50
 ) => {
   if (!api || !item) {
     console.warn("getBackdrop ~ Missing API or Item");
@@ -294,18 +451,57 @@ export const getBackdrop = (
   }
 
   if (item.BackdropImageTags && item.BackdropImageTags[0]) {
-    return `${api.basePath}/Items/${item?.Id}/Images/Backdrop?quality=${quality}&tag=${item?.BackdropImageTags?.[0]}`;
+    return `${api.basePath}/Items/${item?.Id}/Images/Backdrop?quality=${quality}&fillWidth=500&tag=${item?.BackdropImageTags?.[0]}`;
   }
 
   if (item.ImageTags && item.ImageTags.Primary) {
-    return `${api.basePath}/Items/${item?.Id}/Images/Primary?quality=${quality}&tag=${item.ImageTags.Primary}`;
+    return `${api.basePath}/Items/${item?.Id}/Images/Primary?quality=${quality}&fillWidth=500&tag=${item.ImageTags.Primary}`;
   }
 
   if (item.ParentBackdropImageTags && item.ParentBackdropImageTags[0]) {
-    return `${api.basePath}/Items/${item?.Id}/Images/Primary?quality=${quality}&tag=${item.ImageTags?.Primary}`;
+    return `${api.basePath}/Items/${item?.Id}/Images/Primary?quality=${quality}&fillWidth=500&tag=${item.ImageTags?.Primary}`;
   }
 
   return null;
+};
+
+/**
+ * Retrieves the backdrop image URL for a given item.
+ *
+ * @param api - The Jellyfin API instance.
+ * @param item - The media item to retrieve the backdrop image URL for.
+ * @param quality - The desired image quality (default: 10).
+ */
+export const getBackdropById = (
+  api: Api | null | undefined,
+  itemId: string | null | undefined,
+  quality: number = 10
+) => {
+  if (!api) {
+    console.warn("getBackdrop ~ Missing API or Item");
+    return null;
+  }
+
+  return `${api.basePath}/Items/${itemId}/Images/Backdrop?quality=${quality}`;
+};
+
+/**
+ * Retrieves the primary image URL for a given item.
+ *
+ * @param api - The Jellyfin API instance.
+ * @param item - The media item to retrieve the backdrop image URL for.
+ * @param quality - The desired image quality (default: 10).
+ */
+export const getPrimaryImageById = (
+  api: Api | null | undefined,
+  itemId: string | null | undefined,
+  quality: number = 10
+) => {
+  if (!api) {
+    return null;
+  }
+
+  return `${api.basePath}/Items/${itemId}/Images/Primary?quality=${quality}`;
 };
 
 /**
@@ -354,3 +550,10 @@ function buildStreamUrl({
     `${serverUrl}/Videos/${itemId}/stream.mp4?${streamParams.toString()}`
   );
 }
+
+export const bitrateToString = (bitrate: number) => {
+  const kbps = bitrate / 1000;
+  const mbps = (bitrate / 1000000).toFixed(2);
+
+  return `${mbps} Mb/s`;
+};
