@@ -27,8 +27,6 @@ export default function index() {
         return [];
       }
 
-      console.log("[2] Items");
-
       const response = await getItemsApi(api).getResumeItems({
         userId: user.Id,
       });

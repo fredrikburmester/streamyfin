@@ -10,8 +10,10 @@ import { getMediaInfoApi } from "@jellyfin/sdk/lib/utils/api";
 import { useQuery } from "@tanstack/react-query";
 import { useAtom } from "jotai";
 import Video, {
+  OnBufferData,
   OnPlaybackStateChangedData,
   OnProgressData,
+  OnVideoErrorData,
   VideoRef,
 } from "react-native-video";
 import { apiAtom, useJellyfin, userAtom } from "@/providers/JellyfinProvider";
@@ -146,8 +148,12 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ itemId }) => {
     // console.log("Seek to time: ", seekTime);
   };
 
-  const onError = (error: any) => {
-    // console.log("Video Error: ", error);
+  const onError = (error: OnVideoErrorData) => {
+    console.log("Video Error: ", JSON.stringify(error.error));
+  };
+
+  const onBuffer = (error: OnBufferData) => {
+    console.log("Video buffering: ", error.isBuffering);
   };
 
   const play = () => {
@@ -187,6 +193,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ itemId }) => {
             startPosition,
           }}
           ref={videoRef}
+          onBuffer={onBuffer}
           onSeek={(t) => onSeek(t)}
           onError={onError}
           onProgress={(e) => onProgress(e)}

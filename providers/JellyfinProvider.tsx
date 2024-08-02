@@ -106,7 +106,6 @@ export const JellyfinProvider: React.FC<{ children: ReactNode }> = ({
   const logoutMutation = useMutation({
     mutationFn: async () => {
       setUser(null);
-      setApi(null);
       await AsyncStorage.removeItem("token");
     },
     onError: (error) => {
@@ -124,18 +123,10 @@ export const JellyfinProvider: React.FC<{ children: ReactNode }> = ({
           (await AsyncStorage.getItem("user")) as string
         ) as UserDto;
 
-        console.log({
-          token,
-          serverUrl,
-          user,
-        });
-
         if (serverUrl && token && user.Id) {
-          console.log("[0] Setting api");
           const apiInstance = jellyfin.createApi(serverUrl, token);
           setApi(apiInstance);
           setUser(user);
-          console.log(apiInstance.accessToken);
         }
 
         return true;
