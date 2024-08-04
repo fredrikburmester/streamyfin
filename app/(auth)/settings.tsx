@@ -1,9 +1,9 @@
 import { Button } from "@/components/Button";
 import { Text } from "@/components/common/Text";
-import { runningProcesses } from "@/components/DownloadItem";
 import { ListItem } from "@/components/ListItem";
 import ProgressCircle from "@/components/ProgressCircle";
 import { apiAtom, useJellyfin, userAtom } from "@/providers/JellyfinProvider";
+import { runningProcesses } from "@/utils/atoms/downloads";
 import { readFromLog } from "@/utils/log";
 import { Ionicons } from "@expo/vector-icons";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
@@ -38,14 +38,11 @@ const deleteFile = async (id: string | null | undefined) => {
     (err) => console.error(err)
   );
 
-  AsyncStorage.setItem(
-    "downloaded_files",
-    JSON.stringify([
-      JSON.parse(
-        (await AsyncStorage.getItem("downloaded_files")) || "[]"
-      ).filter((f: string) => f !== id),
-    ])
+  const currentFiles = JSON.parse(
+    (await AsyncStorage.getItem("downloaded_files")) ?? "[]"
   );
+  const updatedFiles = currentFiles.filter((f: string) => f !== id);
+  await AsyncStorage.setItem("downloaded_files", JSON.stringify(updatedFiles));
 };
 
 const listDownloadedFiles = async () => {
@@ -80,6 +77,11 @@ export default function settings() {
       const data = JSON.parse(
         (await AsyncStorage.getItem("downloaded_files")) || "[]"
       ) as BaseItemDto[];
+
+      console.log(
+        "Files",
+        data.map((i) => i.Name)
+      );
 
       setFiles(data);
     })();
@@ -160,8 +162,8 @@ export default function settings() {
         <Button
           className="mb-2"
           color="red"
-          onPress={() => {
-            deleteAllFiles();
+          onPress={async () => {
+            await deleteAllFiles();
             setKey((prevKey) => prevKey + 1);
           }}
         >
