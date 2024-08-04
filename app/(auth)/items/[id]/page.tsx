@@ -37,28 +37,13 @@ const page: React.FC = () => {
     staleTime: Infinity,
   });
 
-  const { data: playbackURL, isLoading: l2 } = useQuery({
-    queryKey: ["playbackUrl", id],
-    queryFn: async () => {
-      if (!api || !user?.Id) return;
-      return await getStreamUrl({
-        api,
-        userId: user.Id,
-        item,
-        startTimeTicks: item?.UserData?.PlaybackPositionTicks || 0,
-      });
-    },
-    enabled: !!id && !!api && !!user?.Id && !!item,
-    staleTime: Infinity,
-  });
-
   useEffect(() => {
     navigation.setOptions({
       headerRight: () => {
         <Ionicons name="accessibility" />;
       },
     });
-  }, [item, playbackURL, navigation]);
+  }, [item, navigation]);
 
   const { data: posterUrl } = useQuery({
     queryKey: ["backdrop", item?.Id],
@@ -67,7 +52,7 @@ const page: React.FC = () => {
     staleTime: Infinity,
   });
 
-  if (l1 || l2)
+  if (l1)
     return (
       <View className="justify-center items-center h-full">
         <ActivityIndicator />
@@ -75,7 +60,6 @@ const page: React.FC = () => {
     );
 
   if (!item?.Id) return null;
-  if (!playbackURL) return null;
 
   return (
     <ScrollView style={[{ flex: 1 }]} keyboardDismissMode="on-drag">
@@ -109,7 +93,7 @@ const page: React.FC = () => {
         </View>
 
         <View className="flex flex-row justify-center items-center w-full my-4 space-x-4">
-          {playbackURL && <DownloadItem item={item} url={playbackURL} />}
+          <DownloadItem item={item} />
           <View className="ml-4">
             <PlayedStatus item={item} />
           </View>

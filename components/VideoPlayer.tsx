@@ -72,7 +72,17 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ itemId }) => {
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
 
-  const {} = useJellyfin();
+  const { data: item } = useQuery({
+    queryKey: ["item", itemId],
+    queryFn: async () =>
+      await getUserItemData({
+        api,
+        userId: user?.Id,
+        itemId,
+      }),
+    enabled: !!itemId && !!api,
+    staleTime: 0,
+  });
 
   const { data: sessionData } = useQuery({
     queryKey: ["sessionData", itemId],
@@ -85,23 +95,11 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ itemId }) => {
       return playbackData.data;
     },
     enabled: !!itemId && !!api && !!user?.Id,
-    staleTime: Infinity,
-  });
-
-  const { data: item } = useQuery({
-    queryKey: ["item", itemId],
-    queryFn: async () =>
-      await getUserItemData({
-        api,
-        userId: user?.Id,
-        itemId,
-      }),
-    enabled: !!itemId && !!api,
-    staleTime: Infinity,
+    staleTime: 0,
   });
 
   const { data: playbackURL } = useQuery({
-    queryKey: ["playbackUrl", itemId, maxBitrate, forceTranscoding],
+    queryKey: ["playbackUrl", itemId, maxBitrate],
     queryFn: async () => {
       if (!api || !user?.Id || !sessionData) return null;
 
@@ -112,14 +110,13 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ itemId }) => {
         startTimeTicks: item?.UserData?.PlaybackPositionTicks || 0,
         maxStreamingBitrate: maxBitrate,
         sessionData,
-        forceTranscoding: forceTranscoding,
       });
 
       console.log("Transcode URL:", url);
 
       return url;
     },
-    enabled: !!itemId && !!api && !!user?.Id && !!item && !!sessionData,
+    enabled: !!sessionData,
     staleTime: 0,
   });
 
@@ -185,11 +182,11 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ itemId }) => {
 
   return (
     <View>
-      {enableVideo && (
+      {playbackURL && (
         <Video
           style={{ width: 0, height: 0 }}
           source={{
-            uri: playbackURL!,
+            uri: playbackURL,
             isNetwork: true,
             startPosition,
           }}
@@ -221,13 +218,6 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ itemId }) => {
         />
       )}
       <View className="flex flex-row items-center justify-between">
-        <View className="flex flex-col mb-2">
-          <Text className="opacity-50 text-xs mb-1">Force transcoding</Text>
-          <Switch
-            value={forceTranscoding}
-            onValueChange={setForceTranscoding}
-          />
-        </View>
         <DropdownMenu.Root>
           <DropdownMenu.Trigger>
             <View className="flex flex-col mb-2">
