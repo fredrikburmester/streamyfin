@@ -5,11 +5,13 @@ import { ItemCardText } from "@/components/ItemCardText";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import { getItemsApi, getSuggestionsApi } from "@jellyfin/sdk/lib/utils/api";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useAtom } from "jotai";
+import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
+  RefreshControl,
   ScrollView,
   TouchableOpacity,
   View,
@@ -21,7 +23,7 @@ export default function index() {
   const router = useRouter();
 
   const { data, isLoading, isError } = useQuery<BaseItemDto[]>({
-    queryKey: ["resumeItems", api, user?.Id],
+    queryKey: ["resumeItems", user?.Id],
     queryFn: async () => {
       if (!api || !user?.Id) {
         return [];
@@ -85,6 +87,18 @@ export default function index() {
     staleTime: 60,
   });
 
+  const queryClient = useQueryClient();
+
+  const [loading, setLoading] = useState(false);
+
+  const refetch = useCallback(async () => {
+    setLoading(true);
+    await queryClient.refetchQueries({ queryKey: ["resumeItems", user?.Id] });
+    await queryClient.refetchQueries({ queryKey: ["items", user?.Id] });
+    await queryClient.refetchQueries({ queryKey: ["suggestions", user?.Id] });
+    setLoading(false);
+  }, [queryClient, user?.Id]);
+
   if (isError)
     return (
       <View className="flex flex-col items-center justify-center h-full -mt-12">
@@ -105,7 +119,12 @@ export default function index() {
   if (!data || data.length === 0) return <Text>No data...</Text>;
 
   return (
-    <ScrollView nestedScrollEnabled>
+    <ScrollView
+      nestedScrollEnabled
+      refreshControl={
+        <RefreshControl refreshing={loading} onRefresh={refetch} />
+      }
+    >
       <View className="py-4 gap-y-2">
         <Text className="px-4 text-2xl font-bold mb-2">Continue Watching</Text>
         <HorizontalScroll<BaseItemDto>

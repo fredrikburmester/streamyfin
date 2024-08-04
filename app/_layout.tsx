@@ -30,12 +30,10 @@ export default function RootLayout() {
       defaultOptions: {
         queries: {
           staleTime: 60,
-          refetchOnMount: false,
-          refetchInterval: false,
-          refetchIntervalInBackground: false,
-          refetchOnReconnect: false,
-          refetchOnWindowFocus: false,
-          retryOnMount: false,
+          refetchOnMount: true,
+          refetchOnReconnect: true,
+          refetchOnWindowFocus: true,
+          retryOnMount: true,
         },
       },
     })

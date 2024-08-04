@@ -51,9 +51,10 @@
     </dict>
     <key>NSCameraUsageDescription</key>
     <string>The app needs access to your camera to scan barcodes.</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>The app needs access to your microphone.</string>
     <key>NSUserActivityTypes</key>
     <array>
-      <string>$(PRODUCT_BUNDLE_IDENTIFIER).expo.index_route</string>
       <string>$(PRODUCT_BUNDLE_IDENTIFIER).expo.index_route</string>
     </array>
     <key>UILaunchStoryboardName</key>

@@ -84,7 +84,7 @@ export const SeasonPicker: React.FC<Props> = ({ item }) => {
     <View className="mb-2">
       <DropdownMenu.Root>
         <DropdownMenu.Trigger>
-          <View className="flex flex-row">
+          <View className="flex flex-row px-4">
             <TouchableOpacity className="bg-neutral-900 rounded-2xl border-neutral-900 border px-3 py-2 flex flex-row items-center justify-between">
               <Text>Season {selectedSeason}</Text>
             </TouchableOpacity>

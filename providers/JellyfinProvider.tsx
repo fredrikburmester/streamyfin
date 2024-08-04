@@ -118,6 +118,7 @@ export const JellyfinProvider: React.FC<{ children: ReactNode }> = ({
     queryFn: async () => {
       try {
         const token = await AsyncStorage.getItem("token");
+        console.log({ token });
         const serverUrl = await AsyncStorage.getItem("serverUrl");
         const user = JSON.parse(
           (await AsyncStorage.getItem("user")) as string
