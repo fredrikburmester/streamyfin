@@ -1,6 +1,7 @@
 import { Api } from "@jellyfin/sdk";
 import {
   BaseItemDto,
+  MediaSourceInfo,
   PlaybackInfoResponse,
 } from "@jellyfin/sdk/lib/generated-client/models";
 import {
@@ -13,6 +14,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAtom } from "jotai";
 import { runningProcesses } from "./atoms/downloads";
 import { useCallback, useState } from "react";
+import { createVideoUrl } from "./video/createVideoUrl";
 
 export const useDownloadMedia = (api: Api | null) => {
   const [isDownloading, setIsDownloading] = useState(false);
@@ -421,20 +423,12 @@ export const getItemById = async (
   }
 };
 
-/**
- * Retrieves a stream URL for the given item ID and user ID.
- *
- * @param api - The Jellyfin API instance.
- * @param itemId - The ID of the media item to retrieve the stream URL for.
- * @param userId - The ID of the user requesting the stream URL.
- */
 export const getStreamUrl = async ({
   api,
   item,
   userId,
   startTimeTicks = 0,
-  maxStreamingBitrate = 140000000,
-  forceTranscoding = false,
+  maxStreamingBitrate,
   sessionData,
 }: {
   api: Api | null | undefined;
@@ -442,17 +436,15 @@ export const getStreamUrl = async ({
   userId: string | null | undefined;
   startTimeTicks: number;
   maxStreamingBitrate?: number;
-  forceTranscoding?: boolean;
   sessionData: PlaybackInfoResponse;
 }) => {
   if (!api || !userId || !item?.Id) {
     return null;
   }
 
-  const itemId = item.Id;
-  let url: string = "";
-
   try {
+    const itemId = item.Id;
+
     const response = await api.axiosInstance.post(
       `${api.basePath}/Items/${itemId}/PlaybackInfo`,
       {
@@ -464,10 +456,10 @@ export const getStreamUrl = async ({
         UserId: userId,
         MaxStreamingBitrate: maxStreamingBitrate,
         StartTimeTicks: startTimeTicks,
-        EnableTranscoding: forceTranscoding,
+        EnableTranscoding: maxStreamingBitrate ? true : undefined,
         AutoOpenLiveStream: true,
         MediaSourceId: itemId,
-        AllowVideoStreamCopy: forceTranscoding ? false : true,
+        AllowVideoStreamCopy: maxStreamingBitrate ? false : true,
       },
       {
         headers: {
@@ -476,78 +468,37 @@ export const getStreamUrl = async ({
       }
     );
 
-    const data = response.data;
-    const mediaSource = item.MediaSources?.[0];
-    const sessionId = sessionData.PlaySessionId;
+    const mediaSource = response.data.MediaSources?.[0] as MediaSourceInfo;
 
-    if (!mediaSource) throw new Error("no media source");
-    if (!sessionId) throw new Error("no sessionId");
+    if (!mediaSource) {
+      throw new Error("No media source");
+    }
+    if (!sessionData.PlaySessionId) {
+      throw new Error("no PlaySessionId");
+    }
 
     const streamParams = new URLSearchParams({
-      Static: "true",
-      api_key: api.accessToken,
-      playSessionId: sessionData.PlaySessionId || "",
-      videoCodec: "hevc,h264",
-      audioCodec: "aac,mp3,ac3,eac3,flac,alac",
-      maxAudioChannels: "6",
+      itemId,
+      deviceId: "",
       mediaSourceId: itemId,
-      Tag: mediaSource.ETag || "",
-      VideoBitrate: "324036",
-      TranscodingMaxAudioChannels: "2",
-      RequireAvc: "false",
-      SegmentContainer: "mp4",
-      MinSegments: "2",
-      BreakOnNonKeyFrames: "True",
-      "h264-level": "40",
-      "h264-videobitdepth": "8",
-      "h264-profile": "high",
-      "h264-audiochannels": "2",
-      "aac-profile": "lc",
-      "h264-rangetype": "SDR",
-      "h264-deinterlace": "true",
-      TranscodeReasons: "ContainerBitrateExceedsLimit",
+      videoCodec: "h264,h264",
+      audioCodec: "aac",
+      playSessionId: sessionData.PlaySessionId,
+      transcodingMaxAudioChannels: "2",
+      tag: mediaSource.ETag || "",
+      segmentContainer: "mp4",
     });
 
-    url = `${
-      api.basePath
-    }/Videos/${itemId}/main.m3u8?${streamParams.toString()}`;
+    if (maxStreamingBitrate) {
+      // streamParams.append("videoBitRate", maxStreamingBitrate.toString());
+      // streamParams.append("transcodeReasons", "ContainerBitrateExceedsLimit");
+    }
 
-    //   if (item.MediaSources?.[0].SupportsDirectPlay) {
-    //     console.log("Direct play supported");
-    //   }
-
-    //   if (
-    //     item.MediaSources?.[0].SupportsTranscoding &&
-    //     data.MediaSources?.[0].TranscodingUrl
-    //   ) {
-    //     console.log("Supports transcoding");
-    //   }
-
-    //   if (
-    //     item.MediaSources?.[0].SupportsTranscoding &&
-    //     !data.MediaSources?.[0].TranscodingUrl
-    //   ) {
-    //     console.log("Supports transcoding, but no URL found");
-    //   }
-
-    //   if (data.MediaSources?.[0].TranscodingUrl) {
-    //     url = api.basePath + data.MediaSources?.[0].TranscodingUrl;
-    //   } else {
-    //     url = buildStreamUrl({
-    //       apiKey: api.accessToken || "",
-    //       sessionId: "",
-    //       itemId: itemId,
-    //       serverUrl: api.basePath || "",
-    //       deviceId: "unique-device-id",
-    //       mediaSourceId: data.MediaSources?.[0].Id || "",
-    //       tag: data.MediaSources?.[0]?.ETag || "",
-    //     }).toString();
-    //   }
-  } catch (e) {
-    console.error(e);
+    return `/Videos/${itemId}/main.m3u8?${streamParams.toString()}`;
+  } catch (error) {
+    console.log(error);
+    return null;
   }
-
-  return url;
 };
 
 /**

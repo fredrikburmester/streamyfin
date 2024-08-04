@@ -16,7 +16,6 @@ import { ProcessItem, runningProcesses } from "@/utils/atoms/downloads";
 
 type DownloadProps = {
   item: BaseItemDto;
-  url: string;
 };
 
 // const useRemuxHlsToMp4 = (inputUrl: string, item: BaseItemDto) => {
@@ -152,7 +151,7 @@ type DownloadProps = {
 //   return { session, startRemuxing, cancelRemuxing };
 // };
 
-export const DownloadItem: React.FC<DownloadProps> = ({ url, item }) => {
+export const DownloadItem: React.FC<DownloadProps> = ({ item }) => {
   // const { session, startRemuxing, cancelRemuxing } = useRemuxHlsToMp4(
   //   url,
   //   item
