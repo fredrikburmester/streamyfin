@@ -1,5 +1,8 @@
 import { Api } from "@jellyfin/sdk";
-import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
+import {
+  BaseItemDto,
+  PlaybackInfoResponse,
+} from "@jellyfin/sdk/lib/generated-client/models";
 import {
   getMediaInfoApi,
   getUserLibraryApi,
@@ -59,14 +62,17 @@ export const useDownloadMedia = (api: Api | null) => {
         console.log("File downloaded to:", uri);
 
         const currentFiles: BaseItemDto[] = JSON.parse(
-          (await AsyncStorage.getItem("downloaded_files")) || "[]"
+          (await AsyncStorage.getItem("downloaded_files")) ?? "[]"
         );
 
-        const otherItems = currentFiles.filter((i) => i.Id !== itemId);
+        const updatedFiles = [
+          ...currentFiles.filter((file) => file.Id !== itemId),
+          item,
+        ];
 
         await AsyncStorage.setItem(
           "downloaded_files",
-          JSON.stringify([...otherItems, item])
+          JSON.stringify(updatedFiles)
         );
 
         setIsDownloading(false);
@@ -429,6 +435,7 @@ export const getStreamUrl = async ({
   startTimeTicks = 0,
   maxStreamingBitrate = 140000000,
   forceTranscoding = false,
+  sessionData,
 }: {
   api: Api | null | undefined;
   item: BaseItemDto | null | undefined;
@@ -436,6 +443,7 @@ export const getStreamUrl = async ({
   startTimeTicks: number;
   maxStreamingBitrate?: number;
   forceTranscoding?: boolean;
+  sessionData: PlaybackInfoResponse;
 }) => {
   if (!api || !userId || !item?.Id) {
     return null;
@@ -469,38 +477,72 @@ export const getStreamUrl = async ({
     );
 
     const data = response.data;
+    const mediaSource = item.MediaSources?.[0];
+    const sessionId = sessionData.PlaySessionId;
 
-    if (item.MediaSources?.[0].SupportsDirectPlay) {
-      console.log("Direct play supported");
-    }
+    if (!mediaSource) throw new Error("no media source");
+    if (!sessionId) throw new Error("no sessionId");
 
-    if (
-      item.MediaSources?.[0].SupportsTranscoding &&
-      data.MediaSources?.[0].TranscodingUrl
-    ) {
-      console.log("Supports transcoding");
-    }
+    const streamParams = new URLSearchParams({
+      Static: "true",
+      api_key: api.accessToken,
+      playSessionId: sessionData.PlaySessionId || "",
+      videoCodec: "hevc,h264",
+      audioCodec: "aac,mp3,ac3,eac3,flac,alac",
+      maxAudioChannels: "6",
+      mediaSourceId: itemId,
+      Tag: mediaSource.ETag || "",
+      VideoBitrate: "324036",
+      TranscodingMaxAudioChannels: "2",
+      RequireAvc: "false",
+      SegmentContainer: "mp4",
+      MinSegments: "2",
+      BreakOnNonKeyFrames: "True",
+      "h264-level": "40",
+      "h264-videobitdepth": "8",
+      "h264-profile": "high",
+      "h264-audiochannels": "2",
+      "aac-profile": "lc",
+      "h264-rangetype": "SDR",
+      "h264-deinterlace": "true",
+      TranscodeReasons: "ContainerBitrateExceedsLimit",
+    });
 
-    if (
-      item.MediaSources?.[0].SupportsTranscoding &&
-      !data.MediaSources?.[0].TranscodingUrl
-    ) {
-      console.log("Supports transcoding, but no URL found");
-    }
+    url = `${
+      api.basePath
+    }/Videos/${itemId}/main.m3u8?${streamParams.toString()}`;
 
-    if (data.MediaSources?.[0].TranscodingUrl) {
-      url = api.basePath + data.MediaSources?.[0].TranscodingUrl;
-    } else {
-      url = buildStreamUrl({
-        apiKey: api.accessToken || "",
-        sessionId: "",
-        itemId: itemId,
-        serverUrl: api.basePath || "",
-        deviceId: "unique-device-id",
-        mediaSourceId: data.MediaSources?.[0].Id || "",
-        tag: data.MediaSources?.[0]?.ETag || "",
-      }).toString();
-    }
+    //   if (item.MediaSources?.[0].SupportsDirectPlay) {
+    //     console.log("Direct play supported");
+    //   }
+
+    //   if (
+    //     item.MediaSources?.[0].SupportsTranscoding &&
+    //     data.MediaSources?.[0].TranscodingUrl
+    //   ) {
+    //     console.log("Supports transcoding");
+    //   }
+
+    //   if (
+    //     item.MediaSources?.[0].SupportsTranscoding &&
+    //     !data.MediaSources?.[0].TranscodingUrl
+    //   ) {
+    //     console.log("Supports transcoding, but no URL found");
+    //   }
+
+    //   if (data.MediaSources?.[0].TranscodingUrl) {
+    //     url = api.basePath + data.MediaSources?.[0].TranscodingUrl;
+    //   } else {
+    //     url = buildStreamUrl({
+    //       apiKey: api.accessToken || "",
+    //       sessionId: "",
+    //       itemId: itemId,
+    //       serverUrl: api.basePath || "",
+    //       deviceId: "unique-device-id",
+    //       mediaSourceId: data.MediaSources?.[0].Id || "",
+    //       tag: data.MediaSources?.[0]?.ETag || "",
+    //     }).toString();
+    //   }
   } catch (e) {
     console.error(e);
   }

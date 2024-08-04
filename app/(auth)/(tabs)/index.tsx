@@ -85,14 +85,22 @@ export default function index() {
     staleTime: 60,
   });
 
+  if (isError)
+    return (
+      <View className="flex flex-col items-center justify-center h-full -mt-12">
+        <Text className="text-3xl font-bold mb-2">Oops!</Text>
+        <Text className="text-center opacity-70">
+          Something went wrong.{"\n"}Please log out and in again.
+        </Text>
+      </View>
+    );
+
   if (isLoading)
     return (
       <View className="justify-center items-center h-full">
         <ActivityIndicator />
       </View>
     );
-
-  if (isError) return <Text>Error loading items</Text>;
 
   if (!data || data.length === 0) return <Text>No data...</Text>;
 

@@ -103,7 +103,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ itemId }) => {
   const { data: playbackURL } = useQuery({
     queryKey: ["playbackUrl", itemId, maxBitrate, forceTranscoding],
     queryFn: async () => {
-      if (!api || !user?.Id) return null;
+      if (!api || !user?.Id || !sessionData) return null;
 
       const url = await getStreamUrl({
         api,
@@ -111,6 +111,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ itemId }) => {
         item,
         startTimeTicks: item?.UserData?.PlaybackPositionTicks || 0,
         maxStreamingBitrate: maxBitrate,
+        sessionData,
         forceTranscoding: forceTranscoding,
       });
 
@@ -118,7 +119,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ itemId }) => {
 
       return url;
     },
-    enabled: !!itemId && !!api && !!user?.Id && !!item,
+    enabled: !!itemId && !!api && !!user?.Id && !!item && !!sessionData,
     staleTime: 0,
   });
 
