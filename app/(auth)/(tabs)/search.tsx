@@ -67,8 +67,8 @@ export default function search() {
 
   return (
     <ScrollView keyboardDismissMode="on-drag">
-      <View className="p-4 flex flex-col">
-        <View className="mb-4">
+      <View className="flex flex-col py-2">
+        <View className="mb-4 px-4">
           <Input
             autoCorrect={false}
             returnKeyType="done"
@@ -79,7 +79,7 @@ export default function search() {
           />
         </View>
 
-        <Text className="font-bold text-2xl mb-2">Movies</Text>
+        <Text className="font-bold text-2xl px-4 mb-2">Movies</Text>
         <SearchItemWrapper
           ids={movies?.map((m) => m.Id!)}
           renderItem={(data) => (
@@ -101,7 +101,7 @@ export default function search() {
             />
           )}
         />
-        <Text className="font-bold text-2xl my-2">Series</Text>
+        <Text className="font-bold text-2xl px-4 my-2">Series</Text>
         <SearchItemWrapper
           ids={series?.map((m) => m.Id!)}
           renderItem={(data) => (
@@ -123,7 +123,7 @@ export default function search() {
             />
           )}
         />
-        <Text className="font-bold text-2xl my-2">Episodes</Text>
+        <Text className="font-bold text-2xl px-4 my-2">Episodes</Text>
         <SearchItemWrapper
           ids={episodes?.map((m) => m.Id!)}
           renderItem={(data) => (
@@ -195,7 +195,7 @@ const SearchItemWrapper: React.FC<Props> = ({ ids, renderItem }) => {
     staleTime: Infinity,
   });
 
-  if (!data) return <Text className="opacity-50 text-xs">No results</Text>;
+  if (!data) return <Text className="opacity-50 text-xs px-4">No results</Text>;
 
   return renderItem(data);
 };

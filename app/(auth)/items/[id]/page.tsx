@@ -13,8 +13,16 @@ import {} from "@jellyfin/sdk/lib/utils/url";
 import { useQuery } from "@tanstack/react-query";
 import { useLocalSearchParams, useNavigation } from "expo-router";
 import { useAtom } from "jotai";
-import { useEffect } from "react";
-import { ActivityIndicator, ScrollView, View } from "react-native";
+import { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  ScrollView,
+  View,
+} from "react-native";
+import { ParallaxScrollView } from "./ParallaxPage";
+import { Image } from "expo-image";
 
 const page: React.FC = () => {
   const local = useLocalSearchParams();
@@ -22,8 +30,6 @@ const page: React.FC = () => {
 
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
-
-  const navigation = useNavigation();
 
   const { data: item, isLoading: l1 } = useQuery({
     queryKey: ["item", id],
@@ -34,22 +40,14 @@ const page: React.FC = () => {
         itemId: id,
       }),
     enabled: !!id && !!api,
-    staleTime: Infinity,
+    staleTime: 60,
   });
-
-  useEffect(() => {
-    navigation.setOptions({
-      headerRight: () => {
-        <Ionicons name="accessibility" />;
-      },
-    });
-  }, [item, navigation]);
 
   const { data: posterUrl } = useQuery({
     queryKey: ["backdrop", item?.Id],
     queryFn: async () => getBackdrop(api, item),
     enabled: !!api && !!item?.Id,
-    staleTime: Infinity,
+    staleTime: 60 * 60 * 24 * 7,
   });
 
   if (l1)
@@ -59,12 +57,23 @@ const page: React.FC = () => {
       </View>
     );
 
-  if (!item?.Id) return null;
+  if (!item?.Id || !posterUrl) return null;
 
   return (
-    <ScrollView style={[{ flex: 1 }]} keyboardDismissMode="on-drag">
-      <LargePoster url={posterUrl} />
-      <View className="flex flex-col px-4 mb-4">
+    <ParallaxScrollView
+      headerImage={
+        <Image
+          source={{
+            uri: posterUrl,
+          }}
+          style={{
+            width: "100%",
+            height: 250,
+          }}
+        />
+      }
+    >
+      <View className="flex flex-col px-4 mb-4 pt-4">
         <View className="flex flex-col">
           {item.Type === "Episode" ? (
             <>
@@ -127,12 +136,10 @@ const page: React.FC = () => {
         </View>
       </ScrollView>
 
-      <View className="px-4 mb-4">
-        <CastAndCrew item={item} />
-      </View>
+      <CastAndCrew item={item} />
 
       {item.Type === "Episode" && (
-        <View className="px-4 mb-4">
+        <View className="mb-4">
           <CurrentSeries item={item} />
         </View>
       )}
@@ -140,7 +147,7 @@ const page: React.FC = () => {
       <SimilarItems itemId={item.Id} />
 
       <View className="h-12"></View>
-    </ScrollView>
+    </ParallaxScrollView>
   );
 };
 

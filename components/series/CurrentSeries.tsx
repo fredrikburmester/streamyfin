@@ -9,7 +9,7 @@ import { Text } from "../common/Text";
 export const CurrentSeries = ({ item }: { item: BaseItemDto }) => {
   return (
     <View>
-      <Text className="text-lg font-bold mb-2">Series</Text>
+      <Text className="text-lg font-bold mb-2 px-4">Series</Text>
       <HorizontalScroll<BaseItemDto>
         data={[item]}
         renderItem={(item, index) => (

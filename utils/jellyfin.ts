@@ -8,22 +8,24 @@ import {
   getMediaInfoApi,
   getUserLibraryApi,
 } from "@jellyfin/sdk/lib/utils/api";
-import { iosProfile } from "./device-profiles";
-import * as FileSystem from "expo-file-system";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as FileSystem from "expo-file-system";
 import { useAtom } from "jotai";
+import { useCallback, useRef, useState } from "react";
 import { runningProcesses } from "./atoms/downloads";
-import { useCallback, useState } from "react";
-import { createVideoUrl } from "./video/createVideoUrl";
+import { iosProfile } from "./device-profiles";
 
-export const useDownloadMedia = (api: Api | null) => {
+export const useDownloadMedia = (api: Api | null, userId?: string | null) => {
   const [isDownloading, setIsDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useAtom(runningProcesses);
+  const downloadResumableRef = useRef<FileSystem.DownloadResumable | null>(
+    null
+  );
 
   const downloadMedia = useCallback(
     async (item: BaseItemDto | null) => {
-      if (!item?.Id || !api) {
+      if (!item?.Id || !api || !userId) {
         setError("Invalid item or API");
         return false;
       }
@@ -33,12 +35,38 @@ export const useDownloadMedia = (api: Api | null) => {
 
       const itemId = item.Id;
 
+      console.info("Downloading media item", item);
+
+      // const playbackData = await getMediaInfoApi(api!).getPlaybackInfo({
+      //   itemId,
+      //   userId: userId,
+      // });
+
+      // const url = await getStreamUrl({
+      //   api,
+      //   userId: userId,
+      //   item,
+      //   startTimeTicks: item?.UserData?.PlaybackPositionTicks || 0,
+      //   sessionData: playbackData.data,
+      // });
+
+      // if (!url) {
+      //   setError("Could not get stream URL");
+      //   setIsDownloading(false);
+      //   setProgress(null);
+      //   return false;
+      // }
+
       try {
         const filename = `${itemId}.mp4`;
         const fileUri = `${FileSystem.documentDirectory}${filename}`;
 
-        const downloadResumable = FileSystem.createDownloadResumable(
-          `${api.basePath}/Items/${itemId}/Download`,
+        const url = `${api.basePath}/Items/${itemId}/Download`;
+
+        console.info("Starting download of media item from URL", url);
+
+        downloadResumableRef.current = FileSystem.createDownloadResumable(
+          url,
           fileUri,
           {
             headers: {
@@ -49,7 +77,6 @@ export const useDownloadMedia = (api: Api | null) => {
             const currentProgress =
               downloadProgress.totalBytesWritten /
               downloadProgress.totalBytesExpectedToWrite;
-            console.log(`Download progress: ${currentProgress * 100}%`);
 
             setProgress({
               item,
@@ -58,7 +85,7 @@ export const useDownloadMedia = (api: Api | null) => {
           }
         );
 
-        const res = await downloadResumable.downloadAsync();
+        const res = await downloadResumableRef.current.downloadAsync();
         const uri = res?.uri;
 
         console.log("File downloaded to:", uri);
@@ -78,6 +105,7 @@ export const useDownloadMedia = (api: Api | null) => {
         );
 
         setIsDownloading(false);
+        setProgress(null);
         return true;
       } catch (error) {
         console.error("Error downloading media:", error);
@@ -89,7 +117,22 @@ export const useDownloadMedia = (api: Api | null) => {
     [api, setProgress]
   );
 
-  return { downloadMedia, isDownloading, error };
+  const cancelDownload = useCallback(async () => {
+    if (downloadResumableRef.current) {
+      try {
+        await downloadResumableRef.current.pauseAsync();
+        setIsDownloading(false);
+        setError("Download cancelled");
+        setProgress(null);
+        downloadResumableRef.current = null;
+      } catch (error) {
+        console.error("Error cancelling download:", error);
+        setError("Failed to cancel download");
+      }
+    }
+  }, [setProgress]);
+
+  return { downloadMedia, isDownloading, error, cancelDownload };
 };
 
 export const markAsNotPlayed = async ({
@@ -442,63 +485,72 @@ export const getStreamUrl = async ({
     return null;
   }
 
-  try {
-    const itemId = item.Id;
+  const itemId = item.Id;
 
-    const response = await api.axiosInstance.post(
-      `${api.basePath}/Items/${itemId}/PlaybackInfo`,
-      {
-        DeviceProfile: {
-          ...iosProfile,
-          MaxStaticBitrate: maxStreamingBitrate,
-          MaxStreamingBitrate: maxStreamingBitrate,
-        },
-        UserId: userId,
+  const response = await api.axiosInstance.post(
+    `${api.basePath}/Items/${itemId}/PlaybackInfo`,
+    {
+      DeviceProfile: {
+        ...iosProfile,
+        MaxStaticBitrate: maxStreamingBitrate,
         MaxStreamingBitrate: maxStreamingBitrate,
-        StartTimeTicks: startTimeTicks,
-        EnableTranscoding: maxStreamingBitrate ? true : undefined,
-        AutoOpenLiveStream: true,
-        MediaSourceId: itemId,
-        AllowVideoStreamCopy: maxStreamingBitrate ? false : true,
       },
-      {
-        headers: {
-          Authorization: `MediaBrowser DeviceId="${api.deviceInfo.id}", Token="${api.accessToken}"`,
-        },
-      }
-    );
-
-    const mediaSource = response.data.MediaSources?.[0] as MediaSourceInfo;
-
-    if (!mediaSource) {
-      throw new Error("No media source");
+      UserId: userId,
+      MaxStreamingBitrate: maxStreamingBitrate,
+      StartTimeTicks: startTimeTicks,
+      EnableTranscoding: maxStreamingBitrate ? true : undefined,
+      AutoOpenLiveStream: true,
+      MediaSourceId: itemId,
+      AllowVideoStreamCopy: maxStreamingBitrate ? false : true,
+    },
+    {
+      headers: {
+        Authorization: `MediaBrowser DeviceId="${api.deviceInfo.id}", Token="${api.accessToken}"`,
+      },
     }
-    if (!sessionData.PlaySessionId) {
-      throw new Error("no PlaySessionId");
-    }
+  );
 
-    const streamParams = new URLSearchParams({
-      itemId,
-      deviceId: "",
-      mediaSourceId: itemId,
-      videoCodec: "h264,h264",
-      audioCodec: "aac",
-      playSessionId: sessionData.PlaySessionId,
-      transcodingMaxAudioChannels: "2",
-      tag: mediaSource.ETag || "",
-      segmentContainer: "mp4",
-    });
+  const mediaSource = response.data.MediaSources?.[0] as MediaSourceInfo;
 
-    if (maxStreamingBitrate) {
-      // streamParams.append("videoBitRate", maxStreamingBitrate.toString());
-      // streamParams.append("transcodeReasons", "ContainerBitrateExceedsLimit");
-    }
-
-    return `/Videos/${itemId}/main.m3u8?${streamParams.toString()}`;
-  } catch (error) {
-    console.log(error);
-    return null;
+  if (!mediaSource) {
+    throw new Error("No media source");
   }
+  if (!sessionData.PlaySessionId) {
+    throw new Error("no PlaySessionId");
+  }
+
+  const streamParams = new URLSearchParams({
+    Static: "true",
+    api_key: api.accessToken,
+    playSessionId: sessionData.PlaySessionId || "",
+    videoCodec: "h265,h264",
+    audioCodec: "aac",
+    maxAudioChannels: "6",
+    mediaSourceId: itemId,
+    Tag: mediaSource.ETag || "",
+    TranscodingMaxAudioChannels: "2",
+    RequireAvc: "false",
+    SegmentContainer: "mp4",
+    MinSegments: "2",
+    BreakOnNonKeyFrames: "True",
+    context: "Streaming",
+    "h264-level": "40",
+    "h264-videobitdepth": "8",
+    "h264-profile": "high",
+    "h264-audiochannels": "2",
+    "aac-profile": "lc",
+    "h264-rangetype": "SDR",
+    "h264-deinterlace": "true",
+  });
+
+  if (maxStreamingBitrate) {
+    streamParams.append("videoBitRate", maxStreamingBitrate.toString());
+    streamParams.append("transcodeReasons", "ContainerBitrateExceedsLimit");
+  }
+
+  return `${
+    api.basePath
+  }/Videos/${itemId}/main.m3u8?${streamParams.toString()}`;
 };
 
 /**

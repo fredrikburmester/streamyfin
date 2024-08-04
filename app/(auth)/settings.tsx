@@ -34,15 +34,22 @@ const deleteAllFiles = async () => {
 const deleteFile = async (id: string | null | undefined) => {
   if (!id) return;
 
-  FileSystem.deleteAsync(`${FileSystem.documentDirectory}/${id}.mp4`).catch(
-    (err) => console.error(err)
-  );
+  try {
+    FileSystem.deleteAsync(`${FileSystem.documentDirectory}/${id}.mp4`).catch(
+      (err) => console.error(err)
+    );
 
-  const currentFiles = JSON.parse(
-    (await AsyncStorage.getItem("downloaded_files")) ?? "[]"
-  );
-  const updatedFiles = currentFiles.filter((f: string) => f !== id);
-  await AsyncStorage.setItem("downloaded_files", JSON.stringify(updatedFiles));
+    const currentFiles = JSON.parse(
+      (await AsyncStorage.getItem("downloaded_files")) ?? "[]"
+    ) as BaseItemDto[];
+    const updatedFiles = currentFiles.filter((f) => f.Id !== id);
+    await AsyncStorage.setItem(
+      "downloaded_files",
+      JSON.stringify(updatedFiles)
+    );
+  } catch (error) {
+    console.error(error);
+  }
 };
 
 const listDownloadedFiles = async () => {
@@ -125,8 +132,8 @@ export default function settings() {
                     subTitle={file.ProductionYear?.toString()}
                     iconAfter={
                       <TouchableOpacity
-                        onPress={() => {
-                          deleteFile(file.Id);
+                        onPress={async () => {
+                          await deleteFile(file.Id);
                           setKey((prevKey) => prevKey + 1);
                         }}
                       >
@@ -142,18 +149,20 @@ export default function settings() {
               ))}
             </View>
           ) : activeProcess ? (
-            <ListItem
-              title={activeProcess.item.Name}
-              iconAfter={
-                <ProgressCircle
-                  size={22}
-                  fill={activeProcess.progress}
-                  width={3}
-                  tintColor="#3498db"
-                  backgroundColor="#bdc3c7"
-                />
-              }
-            />
+            <View className="rounded-xl overflow-hidden mb-2">
+              <ListItem
+                title={activeProcess.item.Name}
+                iconAfter={
+                  <ProgressCircle
+                    size={22}
+                    fill={activeProcess.progress}
+                    width={3}
+                    tintColor="#3498db"
+                    backgroundColor="#bdc3c7"
+                  />
+                }
+              />
+            </View>
           ) : (
             <Text className="opacity-50">No downloaded files</Text>
           )}

@@ -4,11 +4,11 @@
     "slug": "streamyfin",
     "version": "0.0.4",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.jpg",
+    "icon": "./assets/images/icon.png",
     "scheme": "streamyfin",
     "userInterfaceStyle": "dark",
     "splash": {
-      "image": "./assets/images/splash.jpg",
+      "image": "./assets/images/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -16,7 +16,8 @@
     "ios": {
       "userInterfaceStyle": "dark",
       "infoPlist": {
-        "NSCameraUsageDescription": "The app needs access to your camera to scan barcodes."
+        "NSCameraUsageDescription": "The app needs access to your camera to scan barcodes.",
+        "NSMicrophoneUsageDescription": "The app needs access to your microphone."
       },
       "supportsTablet": true,
       "bundleIdentifier": "com.fredrikburmester.streamyfin"
@@ -24,22 +25,16 @@
     "android": {
       "userInterfaceStyle": "light",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/icon.jpg",
+        "foregroundImage": "./assets/images/icon.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.fredrikburmester.streamyfin"
-    },
-    "web": {
-      "bundler": "metro",
-      "output": "static",
-      "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
       "expo-router",
       "expo-font",
       "expo-video",
       "react-native-compressor",
-      // "react-native-google-cast",
       [
         "react-native-video",
         {

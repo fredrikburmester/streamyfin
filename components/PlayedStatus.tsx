@@ -4,7 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import { useQueryClient, InvalidateQueryFilters } from "@tanstack/react-query";
 import { useAtom } from "jotai";
-import React from "react";
+import React, { useCallback } from "react";
 import { TouchableOpacity, View } from "react-native";
 import * as Haptics from "expo-haptics";
 
@@ -13,6 +13,29 @@ export const PlayedStatus: React.FC<{ item: BaseItemDto }> = ({ item }) => {
   const [user] = useAtom(userAtom);
 
   const queryClient = useQueryClient();
+
+  const invalidateQueries = useCallback(() => {
+    queryClient.invalidateQueries({
+      queryKey: ["item", item.Id],
+      refetchType: "all",
+    });
+    queryClient.invalidateQueries({
+      queryKey: ["resumeItems", user?.Id],
+      refetchType: "all",
+    });
+    queryClient.invalidateQueries({
+      queryKey: ["nextUp", item.SeriesId],
+      refetchType: "all",
+    });
+    queryClient.invalidateQueries({
+      queryKey: ["episodes"],
+      refetchType: "all",
+    });
+    queryClient.invalidateQueries({
+      queryKey: ["seasons"],
+      refetchType: "all",
+    });
+  }, [api, item.Id, queryClient, user?.Id]);
 
   return (
     <View>
@@ -24,11 +47,8 @@ export const PlayedStatus: React.FC<{ item: BaseItemDto }> = ({ item }) => {
               itemId: item?.Id,
               userId: user?.Id,
             });
-            queryClient.invalidateQueries({
-              queryKey: ["item", item.Id],
-              refetchType: "all",
-            });
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            invalidateQueries();
           }}
         >
           <Ionicons name="checkmark-circle" size={30} color="white" />
@@ -41,11 +61,8 @@ export const PlayedStatus: React.FC<{ item: BaseItemDto }> = ({ item }) => {
               itemId: item?.Id,
               userId: user?.Id,
             });
-            queryClient.invalidateQueries({
-              queryKey: ["item", item.Id],
-              refetchType: "all",
-            });
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            invalidateQueries();
           }}
         >
           <Ionicons name="checkmark-circle-outline" size={30} color="white" />

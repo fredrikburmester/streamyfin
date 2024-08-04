@@ -1,14 +1,17 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import {
-  ActivityIndicator,
-  Switch,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import * as DropdownMenu from "zeego/dropdown-menu";
+  getStreamUrl,
+  getUserItemData,
+  reportPlaybackProgress,
+  reportPlaybackStopped,
+} from "@/utils/jellyfin";
+import { runtimeTicksToMinutes } from "@/utils/time";
+import { Ionicons } from "@expo/vector-icons";
 import { getMediaInfoApi } from "@jellyfin/sdk/lib/utils/api";
 import { useQuery } from "@tanstack/react-query";
 import { useAtom } from "jotai";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, TouchableOpacity, View } from "react-native";
 import Video, {
   OnBufferData,
   OnPlaybackStateChangedData,
@@ -16,17 +19,8 @@ import Video, {
   OnVideoErrorData,
   VideoRef,
 } from "react-native-video";
-import { apiAtom, useJellyfin, userAtom } from "@/providers/JellyfinProvider";
-import {
-  getBackdrop,
-  getStreamUrl,
-  getUserItemData,
-  reportPlaybackProgress,
-  reportPlaybackStopped,
-} from "@/utils/jellyfin";
-import { Ionicons } from "@expo/vector-icons";
+import * as DropdownMenu from "zeego/dropdown-menu";
 import { Button } from "./Button";
-import { runtimeTicksToMinutes } from "@/utils/time";
 import { Text } from "./common/Text";
 
 type VideoPlayerProps = {
@@ -36,11 +30,7 @@ type VideoPlayerProps = {
 const BITRATES = [
   {
     key: "Max",
-    value: 140000000,
-  },
-  {
-    key: "10 Mb/s",
-    value: 10000000,
+    value: undefined,
   },
   {
     key: "4 Mb/s",
@@ -51,10 +41,6 @@ const BITRATES = [
     value: 2000000,
   },
   {
-    key: "1 Mb/s",
-    value: 1000000,
-  },
-  {
     key: "500 Kb/s",
     value: 500000,
   },
@@ -62,12 +48,8 @@ const BITRATES = [
 
 export const VideoPlayer: React.FC<VideoPlayerProps> = ({ itemId }) => {
   const videoRef = useRef<VideoRef | null>(null);
-  const [showPoster, setShowPoster] = useState(true);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [buffering, setBuffering] = useState(false);
-  const [maxBitrate, setMaxbitrate] = useState(140000000);
+  const [maxBitrate, setMaxbitrate] = useState<number | undefined>(undefined);
   const [paused, setPaused] = useState(true);
-  const [forceTranscoding, setForceTranscoding] = useState<boolean>(false);
 
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
@@ -81,7 +63,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ itemId }) => {
         itemId,
       }),
     enabled: !!itemId && !!api,
-    staleTime: 0,
+    staleTime: 60,
   });
 
   const { data: sessionData } = useQuery({
@@ -182,13 +164,19 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ itemId }) => {
 
   return (
     <View>
-      {playbackURL && (
+      {enableVideo === true &&
+      playbackURL !== null &&
+      playbackURL !== undefined ? (
         <Video
           style={{ width: 0, height: 0 }}
           source={{
             uri: playbackURL,
             isNetwork: true,
             startPosition,
+          }}
+          debug={{
+            enable: true,
+            thread: true,
           }}
           ref={videoRef}
           onBuffer={onBuffer}
@@ -216,7 +204,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ itemId }) => {
             backBufferDurationMs: 30 * 1000,
           }}
         />
-      )}
+      ) : null}
       <View className="flex flex-row items-center justify-between">
         <DropdownMenu.Root>
           <DropdownMenu.Trigger>
@@ -241,9 +229,9 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ itemId }) => {
             sideOffset={8}
           >
             <DropdownMenu.Label>Bitrates</DropdownMenu.Label>
-            {BITRATES?.map((b: any) => (
+            {BITRATES?.map((b: any, index: number) => (
               <DropdownMenu.Item
-                key={b.value}
+                key={index.toString()}
                 onSelect={() => {
                   setMaxbitrate(b.value);
                 }}

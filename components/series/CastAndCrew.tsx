@@ -8,7 +8,7 @@ import Poster from "../Poster";
 export const CastAndCrew = ({ item }: { item: BaseItemDto }) => {
   return (
     <View>
-      <Text className="text-lg font-bold mb-2">Cast & Crew</Text>
+      <Text className="text-lg font-bold mb-2 px-4">Cast & Crew</Text>
       <HorizontalScroll<NonNullable<BaseItemDto["People"]>[number]>
         data={item.People}
         renderItem={(item, index) => (

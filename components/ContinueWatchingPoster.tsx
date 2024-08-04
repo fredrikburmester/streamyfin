@@ -23,7 +23,7 @@ const ContinueWatchingPoster: React.FC<ContinueWatchingPosterProps> = ({
     queryKey: ["backdrop", item.Id],
     queryFn: async () => getBackdrop(api, item),
     enabled: !!api && !!item.Id,
-    staleTime: Infinity,
+    staleTime: 60 * 60 * 24 * 7,
   });
 
   const [progress, setProgress] = useState(

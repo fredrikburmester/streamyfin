@@ -18,7 +18,7 @@ const page: React.FC = () => {
   const [user] = useAtom(userAtom);
 
   const { data: item } = useQuery({
-    queryKey: ["item", seriesId],
+    queryKey: ["series", seriesId],
     queryFn: async () =>
       await getUserItemData({
         api,
@@ -26,33 +26,23 @@ const page: React.FC = () => {
         itemId: seriesId,
       }),
     enabled: !!seriesId && !!api,
-    staleTime: Infinity,
-  });
-
-  const { data: next } = useQuery({
-    queryKey: ["nextUp", seriesId],
-    queryFn: async () =>
-      await nextUp({
-        userId: user?.Id,
-        api,
-        itemId: seriesId,
-      }),
-    enabled: !!api && !!seriesId && !!user?.Id,
-    staleTime: 0,
+    staleTime: 60,
   });
 
   if (!item) return null;
 
   return (
     <ScrollView>
-      <View className="flex flex-col px-4 pt-4 pb-8">
-        <MoviePoster item={item} />
-        <View className="my-4">
-          <Text className="text-3xl font-bold">{item?.Name}</Text>
-          <Text className="">{item?.Overview}</Text>
+      <View className="flex flex-col pt-4 pb-8">
+        <View className="px-4">
+          <MoviePoster item={item} />
+          <View className="my-4">
+            <Text className="text-3xl font-bold">{item?.Name}</Text>
+            <Text className="">{item?.Overview}</Text>
+          </View>
         </View>
         <SeasonPicker item={item} />
-        <NextUp items={next} />
+        <NextUp seriesId={seriesId} />
       </View>
     </ScrollView>
   );
