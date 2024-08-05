@@ -2,7 +2,7 @@
   "expo": {
     "name": "Streamyfin",
     "slug": "streamyfin",
-    "version": "0.0.4",
+    "version": "0.0.5",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "streamyfin",
@@ -30,10 +30,14 @@
       },
       "package": "com.fredrikburmester.streamyfin"
     },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/images/favicon.png"
+    },
     "plugins": [
       "expo-router",
       "expo-font",
-      "expo-video",
       "react-native-compressor",
       [
         "react-native-video",
