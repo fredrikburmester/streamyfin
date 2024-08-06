@@ -1,14 +1,21 @@
 # 📺 Streamyfin
 
-Welcome to Streamyfin, a simple and user-friendly Jellyfin client built with Expo. If you're looking for an alternative to apps like Swiftfin for iOS or other Jellyfin clients, we hope you'll find Streamyfin to be a useful addition to your media streaming toolbox.
+Welcome to Streamyfin, a simple and user-friendly Jellyfin client built with Expo. If you're looking for an alternative to other Jellyfin clients, we hope you'll find Streamyfin to be a useful addition to your media streaming toolbox.
 
 ## 🌟 Features
 
 - 🔗 Connect to your Jellyfin instance: Easily link your Jellyfin server and access your media library.
-- 🎥 Stream any media: Enjoy smooth playback of your favorite movies, TV shows, music, and more.
+- 📱 Native video player: Playback with the platform native video player. With support for subtitles, playback speed control, and more.
 - 📥 Download media (Experimental): Save your media locally and watch it offline.
-- 📡 Chromecast media (Experimental): Cast your media to any Chromecast-enabled device for a bigger screen experience.
-- 📱 Native video player: Experience high-quality playback with our integrated video player.
+- 📡 Chromecast media (Experimental): Cast your media to any Chromecast-enabled device.
+
+## 🛠️ TestFlight
+
+As of right now only iOS users can test Streamyfin in beta via TestFlight. To join the beta program, click the link below.
+
+<a href="https://testflight.apple.com/join/CWBaAAK2">
+  <img height=75 alt="Get the beta on TestFlight" src="./assets/Get_the_beta_on_Testflight.svg"/>
+</a>
 
 ## 🚀 Getting Started
 
