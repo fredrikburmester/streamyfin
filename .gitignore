@@ -26,7 +26,7 @@ build-*
 build-*
 Streamyfin.app
 
-/ios/*
+/ios/Pods/*
 
 # Except these files
 !/ios/Streamyfin/
