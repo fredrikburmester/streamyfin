@@ -78,6 +78,19 @@ export default function RootLayout() {
                 }}
               />
               <Stack.Screen
+                name="(auth)/downloads"
+                options={{
+                  headerShown: true,
+                  title: "Downloads",
+                  presentation: "modal",
+                  headerLeft: () => (
+                    <TouchableOpacity onPress={() => router.back()}>
+                      <Feather name="x-circle" size={24} color="white" />
+                    </TouchableOpacity>
+                  ),
+                }}
+              />
+              <Stack.Screen
                 name="(auth)/player/offline/page"
                 options={{
                   title: "",

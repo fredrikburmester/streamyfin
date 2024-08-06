@@ -39,11 +39,7 @@
       "expo-router",
       "expo-font",
       "react-native-compressor",
-      [
-        "react-native-google-cast",
-        {
-        }
-      ],
+      ["react-native-google-cast", {}],
       [
         "react-native-video",
         {
@@ -53,6 +49,17 @@
             "useExoplayerSmoothStreaming": false,
             "useExoplayerHls": false,
             "useExoplayerDash": false
+          }
+        }
+      ],
+      [
+        "react-native-vlc-media-player",
+        {
+          "ios": {
+            "includeVLCKit": false
+          },
+          "android": {
+            "legacyJetifier": false
           }
         }
       ],

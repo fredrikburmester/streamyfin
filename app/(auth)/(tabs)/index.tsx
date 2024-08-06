@@ -132,8 +132,6 @@ export default function index() {
       </View>
     );
 
-  if (!data || data.length === 0) return <Text>No data...</Text>;
-
   return (
     <ScrollView
       nestedScrollEnabled

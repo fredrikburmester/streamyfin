@@ -22,7 +22,6 @@
   options.suspendSessionsWhenBackgrounded = true;
   [GCKCastContext setSharedInstanceWithOptions:options];
   [GCKCastContext sharedInstance].useDefaultExpandedMediaControls = true;
-
 #endif
 // @generated end react-native-google-cast-didFinishLaunchingWithOptions
   self.moduleName = @"main";

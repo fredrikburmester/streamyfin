@@ -1,3 +1,4 @@
+import { Chromecast } from "@/components/Chromecast";
 import { Text } from "@/components/common/Text";
 import { DownloadItem } from "@/components/DownloadItem";
 import { PlayedStatus } from "@/components/PlayedStatus";
@@ -9,7 +10,6 @@ import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import {
   getBackdrop,
   getLogoImageById,
-  getPrimaryImage,
   getUserItemData,
 } from "@/utils/jellyfin";
 import { useQuery } from "@tanstack/react-query";
@@ -24,8 +24,6 @@ import {
   View,
 } from "react-native";
 import { ParallaxScrollView } from "../../../../components/ParallaxPage";
-import { Chromecast } from "@/components/Chromecast";
-import { useRemoteMediaClient } from "react-native-google-cast";
 
 const page: React.FC = () => {
   const local = useLocalSearchParams();
@@ -114,7 +112,7 @@ const page: React.FC = () => {
                   {item?.SeriesName}
                 </Text>
               </TouchableOpacity>
-              <View className="flex flex-row items-center self-center">
+              <View className="flex flex-row items-center self-center px-4">
                 <Text className="text-center font-bold text-2xl mr-2">
                   {item?.Name}
                 </Text>
