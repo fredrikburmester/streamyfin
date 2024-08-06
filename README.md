@@ -72,6 +72,6 @@ For the full text of the license, please see the [LICENSE](LICENSE.txt) file in 
 If you have questions or need support, feel free to reach out:
 
 - GitHub Issues: Report bugs or request features here.
-- Email: fredrik.burmester@gmail.com
+- Email: [fredrik.burmester@gmail.com](mailto:fredrik.burmester@gmail.com)
 
 Thank you for checking out Streamyfin. We hope it helps you enjoy your media a little more. 🎉
