@@ -9,14 +9,15 @@ Welcome to Streamyfin, a simple and user-friendly Jellyfin client built with Exp
 - 📥 Download media (Experimental): Save your media locally and watch it offline.
 - 📡 Chromecast media (Experimental): Cast your media to any Chromecast-enabled device for a bigger screen experience.
 - 📱 Native video player: Experience high-quality playback with our integrated video player.
-- 🚀 Getting Started
 
-## Prerequisites
+## 🚀 Getting Started
+
+### Prerequisites
 
 - Ensure you have an active Jellyfin server.
 - Make sure your device is connected to the same network as your Jellyfin server.
 
-## Installation
+### Installation
 
 Clone the repository:
 
