@@ -1,10 +1,5 @@
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import { runningProcesses } from "@/utils/atoms/downloads";
-import {
-  getPlaybackInfo,
-  useDownloadMedia,
-  useRemuxHlsToMp4,
-} from "@/utils/jellyfin";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -15,6 +10,9 @@ import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, TouchableOpacity, View } from "react-native";
 import ProgressCircle from "./ProgressCircle";
 import { Text } from "./common/Text";
+import { useDownloadMedia } from "@/hooks/useDownloadMedia";
+import { useRemuxHlsToMp4 } from "@/hooks/useRemuxHlsToMp4";
+import { getPlaybackInfo } from "@/utils/jellyfin/items/getUserItemData";
 
 type DownloadProps = {
   item: BaseItemDto;
@@ -50,7 +48,7 @@ export const DownloadItem: React.FC<DownloadProps> = ({
       downloadMedia(item);
     } else {
       throw new Error(
-        "Direct play not supported thus the file cannot be downloaded"
+        "Direct play not supported thus the file cannot be downloaded",
       );
     }
   }, [item, user, playbackInfo]);
@@ -60,7 +58,7 @@ export const DownloadItem: React.FC<DownloadProps> = ({
   useEffect(() => {
     (async () => {
       const data: BaseItemDto[] = JSON.parse(
-        (await AsyncStorage.getItem("downloaded_files")) || "[]"
+        (await AsyncStorage.getItem("downloaded_files")) || "[]",
       );
 
       if (data.find((d) => d.Id === item.Id)) setDownloaded(true);
@@ -96,26 +94,28 @@ export const DownloadItem: React.FC<DownloadProps> = ({
           }}
           className="flex flex-row items-center"
         >
-          <View className="relative">
-            <View className="-rotate-45">
-              <ProgressCircle
-                size={26}
-                fill={process.progress}
-                width={3}
-                tintColor="#3498db"
-                backgroundColor="#bdc3c7"
-              />
-            </View>
-            {process.progress > 0 ? (
+          {process.progress === 0 ? (
+            <ActivityIndicator size={"small"} color={"white"} />
+          ) : (
+            <View className="relative">
+              <View className="-rotate-45">
+                <ProgressCircle
+                  size={28}
+                  fill={process.progress}
+                  width={4}
+                  tintColor="#3498db"
+                  backgroundColor="#bdc3c7"
+                />
+              </View>
               <View className="absolute top-0 left-0 font-bold w-full h-full flex flex-col items-center justify-center">
-                <Text className="text-[6px]">
+                <Text className="text-[7px]">
                   {process.progress.toFixed(0)}%
                 </Text>
               </View>
-            ) : null}
-          </View>
+            </View>
+          )}
 
-          {process?.speed && (process?.speed || 0) > 0 ? (
+          {process?.speed && process.speed > 0 ? (
             <View className="ml-2">
               <Text>{process.speed.toFixed(2)}x</Text>
             </View>
@@ -125,7 +125,7 @@ export const DownloadItem: React.FC<DownloadProps> = ({
         <TouchableOpacity
           onPress={() => {
             router.push(
-              `/(auth)/player/offline/page?url=${item.Id}.mp4&itemId=${item.Id}`
+              `/(auth)/player/offline/page?url=${item.Id}.mp4&itemId=${item.Id}`,
             );
           }}
         >

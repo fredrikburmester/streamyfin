@@ -1,5 +1,4 @@
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
-import { markAsNotPlayed, markAsPlayed } from "@/utils/jellyfin";
 import { Ionicons } from "@expo/vector-icons";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import { useQueryClient, InvalidateQueryFilters } from "@tanstack/react-query";
@@ -7,6 +6,8 @@ import { useAtom } from "jotai";
 import React, { useCallback } from "react";
 import { TouchableOpacity, View } from "react-native";
 import * as Haptics from "expo-haptics";
+import { markAsNotPlayed } from "@/utils/jellyfin/playstate/markAsNotPlayed";
+import { markAsPlayed } from "@/utils/jellyfin/playstate/markAsPlayed";
 
 export const PlayedStatus: React.FC<{ item: BaseItemDto }> = ({ item }) => {
   const [api] = useAtom(apiAtom);

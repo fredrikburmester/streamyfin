@@ -7,11 +7,7 @@ import { CurrentSeries } from "@/components/series/CurrentSeries";
 import { SimilarItems } from "@/components/SimilarItems";
 import { VideoPlayer } from "@/components/VideoPlayer";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
-import {
-  getBackdrop,
-  getLogoImageById,
-  getUserItemData,
-} from "@/utils/jellyfin";
+import { getBackdrop, getLogoImageById } from "@/utils/jellyfin";
 import { useQuery } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
@@ -24,6 +20,7 @@ import {
   View,
 } from "react-native";
 import { ParallaxScrollView } from "../../../../components/ParallaxPage";
+import { getUserItemData } from "@/utils/jellyfin/items/getUserItemData";
 
 const page: React.FC = () => {
   const local = useLocalSearchParams();
@@ -54,12 +51,12 @@ const page: React.FC = () => {
         quality: 90,
         width: 1000,
       }),
-    [item]
+    [item],
   );
 
   const logoUrl = useMemo(
     () => (item?.Type === "Movie" ? getLogoImageById({ api, item }) : null),
-    [item]
+    [item],
   );
 
   if (l1)

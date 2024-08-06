@@ -25,19 +25,14 @@ const page: React.FC = () => {
 
   const { data: collection } = useQuery({
     queryKey: ["collection", collectionId],
-    queryFn: async () => {
-      if (!api || !user?.Id) {
-        return null;
-      }
-
-      const data = (
-        await getItemsApi(api).getItems({
-          userId: user.Id,
-        })
-      ).data;
-
-      return data.Items?.find((item) => item.Id == collectionId);
-    },
+    queryFn: async () =>
+      (api &&
+        (
+          await getItemsApi(api).getItems({
+            userId: user?.Id,
+          })
+        ).data.Items?.find((item) => item.Id == collectionId)) ||
+      null,
     enabled: !!api && !!user?.Id,
     staleTime: 0,
   });
@@ -77,7 +72,7 @@ const page: React.FC = () => {
           headers: {
             Authorization: `MediaBrowser DeviceId="${api.deviceInfo.id}", Token="${api.accessToken}"`,
           },
-        }
+        },
       );
 
       return response.data || [];

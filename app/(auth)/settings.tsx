@@ -2,13 +2,13 @@ import { Button } from "@/components/Button";
 import { Text } from "@/components/common/Text";
 import { ListItem } from "@/components/ListItem";
 import { apiAtom, useJellyfin, userAtom } from "@/providers/JellyfinProvider";
-import { useFiles } from "@/utils/files/useFiles";
 import { readFromLog } from "@/utils/log";
 import { useQuery } from "@tanstack/react-query";
 import * as FileSystem from "expo-file-system";
 import { useAtom } from "jotai";
 import { ScrollView, View } from "react-native";
-import * as Haptics from  "expo-haptics";
+import * as Haptics from "expo-haptics";
+import { useFiles } from "@/hooks/useFiles";
 
 export default function settings() {
   const { logout } = useJellyfin();
@@ -39,7 +39,9 @@ export default function settings() {
             color="red"
             onPress={async () => {
               await deleteAllFiles();
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+              Haptics.notificationAsync(
+                Haptics.NotificationFeedbackType.Success,
+              );
             }}
           >
             Delete all downloaded files
