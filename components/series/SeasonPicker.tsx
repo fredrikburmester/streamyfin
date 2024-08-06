@@ -114,7 +114,7 @@ export const SeasonPicker: React.FC<Props> = ({ item }) => {
         </DropdownMenu.Content>
       </DropdownMenu.Root>
       {episodes && (
-        <View className="mt-2">
+        <View className="mt-4">
           <HorizontalScroll<BaseItemDto>
             data={episodes}
             renderItem={(item, index) => (

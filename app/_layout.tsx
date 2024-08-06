@@ -12,6 +12,7 @@ import { TouchableOpacity } from "react-native";
 
 import Feather from "@expo/vector-icons/Feather";
 import { StatusBar } from "expo-status-bar";
+import { Ionicons } from "@expo/vector-icons";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -87,10 +88,7 @@ export default function RootLayout() {
               <Stack.Screen
                 name="(auth)/items/[id]/page"
                 options={{
-                  title: "",
-                  headerShown: true,
-                  headerStyle: { backgroundColor: "transparent" },
-                  headerShadowVisible: true,
+                  headerShown: false,
                 }}
               />
               <Stack.Screen
@@ -99,16 +97,13 @@ export default function RootLayout() {
                   title: "",
                   headerShown: true,
                   headerStyle: { backgroundColor: "transparent" },
-                  headerShadowVisible: true,
+                  headerShadowVisible: false,
                 }}
               />
               <Stack.Screen
                 name="(auth)/series/[id]/page"
                 options={{
-                  title: "",
-                  headerShown: true,
-                  headerStyle: { backgroundColor: "transparent" },
-                  headerShadowVisible: true,
+                  headerShown: false,
                 }}
               />
               <Stack.Screen

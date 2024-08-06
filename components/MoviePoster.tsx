@@ -1,10 +1,10 @@
 import { apiAtom } from "@/providers/JellyfinProvider";
-import { getBackdrop, getPrimaryImageById } from "@/utils/jellyfin";
+import { getPrimaryImage, getPrimaryImageById } from "@/utils/jellyfin";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import { useQuery } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import { useAtom } from "jotai";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { View } from "react-native";
 import { WatchedIndicator } from "./WatchedIndicator";
 
@@ -19,12 +19,14 @@ const MoviePoster: React.FC<MoviePosterProps> = ({
 }) => {
   const [api] = useAtom(apiAtom);
 
-  const { data: url } = useQuery({
-    queryKey: ["backdrop", item.Id],
-    queryFn: async () => getPrimaryImageById(api, item.Id),
-    enabled: !!api && !!item.Id,
-    staleTime: Infinity,
-  });
+  const url = useMemo(
+    () =>
+      getPrimaryImage({
+        api,
+        item,
+      }),
+    [item]
+  );
 
   const [progress, setProgress] = useState(
     item.UserData?.PlayedPercentage || 0

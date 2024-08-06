@@ -1,4 +1,3 @@
-import { LargePoster } from "@/components/common/LargePoster";
 import { Text } from "@/components/common/Text";
 import { DownloadItem } from "@/components/DownloadItem";
 import { PlayedStatus } from "@/components/PlayedStatus";
@@ -7,22 +6,26 @@ import { CurrentSeries } from "@/components/series/CurrentSeries";
 import { SimilarItems } from "@/components/SimilarItems";
 import { VideoPlayer } from "@/components/VideoPlayer";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
-import { getBackdrop, getStreamUrl, getUserItemData } from "@/utils/jellyfin";
-import { Ionicons } from "@expo/vector-icons";
-import {} from "@jellyfin/sdk/lib/utils/url";
+import {
+  getBackdrop,
+  getLogoImageById,
+  getPrimaryImage,
+  getUserItemData,
+} from "@/utils/jellyfin";
 import { useQuery } from "@tanstack/react-query";
-import { useLocalSearchParams, useNavigation } from "expo-router";
+import { Image } from "expo-image";
+import { router, useLocalSearchParams } from "expo-router";
 import { useAtom } from "jotai";
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 import {
   ActivityIndicator,
-  NativeScrollEvent,
-  NativeSyntheticEvent,
   ScrollView,
+  TouchableOpacity,
   View,
 } from "react-native";
-import { ParallaxScrollView } from "./ParallaxPage";
-import { Image } from "expo-image";
+import { ParallaxScrollView } from "../../../../components/ParallaxPage";
+import { Chromecast } from "@/components/Chromecast";
+import { useRemoteMediaClient } from "react-native-google-cast";
 
 const page: React.FC = () => {
   const local = useLocalSearchParams();
@@ -43,12 +46,21 @@ const page: React.FC = () => {
     staleTime: 60,
   });
 
-  const { data: posterUrl } = useQuery({
-    queryKey: ["backdrop", item?.Id],
-    queryFn: async () => getBackdrop(api, item),
-    enabled: !!api && !!item?.Id,
-    staleTime: 60 * 60 * 24 * 7,
-  });
+  const backdropUrl = useMemo(
+    () =>
+      getBackdrop({
+        api,
+        item,
+        quality: 90,
+        width: 1000,
+      }),
+    [item]
+  );
+
+  const logoUrl = useMemo(
+    () => (item?.Type === "Movie" ? getLogoImageById({ api, item }) : null),
+    [item]
+  );
 
   if (l1)
     return (
@@ -57,35 +69,71 @@ const page: React.FC = () => {
       </View>
     );
 
-  if (!item?.Id || !posterUrl) return null;
+  if (!item?.Id || !backdropUrl) return null;
 
   return (
     <ParallaxScrollView
       headerImage={
         <Image
           source={{
-            uri: posterUrl,
+            uri: backdropUrl,
           }}
           style={{
             width: "100%",
-            height: 250,
+            height: "100%",
           }}
         />
+      }
+      logo={
+        <>
+          {logoUrl ? (
+            <Image
+              source={{
+                uri: logoUrl,
+              }}
+              style={{
+                height: 130,
+                width: "100%",
+                resizeMode: "contain",
+              }}
+            />
+          ) : null}
+        </>
       }
     >
       <View className="flex flex-col px-4 mb-4 pt-4">
         <View className="flex flex-col">
           {item.Type === "Episode" ? (
             <>
-              <Text className="text-center opacity-50">{item?.SeriesName}</Text>
-              <Text className="text-center font-bold text-2xl">
-                {item?.Name}
-              </Text>
+              <TouchableOpacity
+                onPress={() =>
+                  router.push(`/(auth)/series/${item.SeriesId}/page`)
+                }
+              >
+                <Text className="text-center opacity-50">
+                  {item?.SeriesName}
+                </Text>
+              </TouchableOpacity>
+              <View className="flex flex-row items-center self-center">
+                <Text className="text-center font-bold text-2xl mr-2">
+                  {item?.Name}
+                </Text>
+                <PlayedStatus item={item} />
+              </View>
+              <View>
+                <View className="flex flex-row items-center self-center">
+                  <TouchableOpacity onPress={() => {}}>
+                    <Text className="text-center opacity-50">
+                      {item?.SeasonName}
+                    </Text>
+                  </TouchableOpacity>
+                  <Text className="text-center opacity-50 mx-2">{"—"}</Text>
+                  <Text className="text-center opacity-50">
+                    {`Episode ${item.IndexNumber}`}
+                  </Text>
+                </View>
+              </View>
               <Text className="text-center opacity-50">
-                {`S${item?.SeasonName?.replace("Season ", "")}:E${(
-                  item.IndexNumber || 0
-                ).toString()}`}
-                {" - "}
                 {item.ProductionYear}
               </Text>
             </>
@@ -101,11 +149,9 @@ const page: React.FC = () => {
           )}
         </View>
 
-        <View className="flex flex-row justify-center items-center w-full my-4 space-x-4">
+        <View className="flex flex-row justify-between items-center w-full my-4">
           <DownloadItem item={item} />
-          <View className="ml-4">
-            <PlayedStatus item={item} />
-          </View>
+          <Chromecast />
         </View>
         <Text>{item.Overview}</Text>
       </View>

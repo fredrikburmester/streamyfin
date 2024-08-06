@@ -6,7 +6,7 @@ import { ItemCardText } from "@/components/ItemCardText";
 import MoviePoster from "@/components/MoviePoster";
 import Poster from "@/components/Poster";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
-import { getUserItemData } from "@/utils/jellyfin";
+import { getPrimaryImage, getUserItemData } from "@/utils/jellyfin";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import { getSearchApi } from "@jellyfin/sdk/lib/utils/api";
 import { useQuery } from "@tanstack/react-query";
@@ -113,7 +113,11 @@ export default function search() {
                   onPress={() => router.push(`/series/${item.Id}/page`)}
                   className="flex flex-col w-32"
                 >
-                  <Poster itemId={item.Id} key={item.Id} />
+                  <Poster
+                    item={item}
+                    key={item.Id}
+                    url={getPrimaryImage({ api, item })}
+                  />
                   <Text className="mt-2">{item.Name}</Text>
                   <Text className="opacity-50 text-xs">
                     {item.ProductionYear}

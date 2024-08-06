@@ -8,9 +8,15 @@ import {
 import { runtimeTicksToMinutes } from "@/utils/time";
 import { Ionicons } from "@expo/vector-icons";
 import { getMediaInfoApi } from "@jellyfin/sdk/lib/utils/api";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAtom } from "jotai";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { ActivityIndicator, TouchableOpacity, View } from "react-native";
 import Video, {
   OnBufferData,
@@ -22,6 +28,10 @@ import Video, {
 import * as DropdownMenu from "zeego/dropdown-menu";
 import { Button } from "./Button";
 import { Text } from "./common/Text";
+import { useCastDevice, useRemoteMediaClient } from "react-native-google-cast";
+import GoogleCast from "react-native-google-cast";
+import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
+import { chromecastProfile, iosProfile } from "@/utils/device-profiles";
 
 type VideoPlayerProps = {
   itemId: string;
@@ -50,9 +60,15 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ itemId }) => {
   const videoRef = useRef<VideoRef | null>(null);
   const [maxBitrate, setMaxbitrate] = useState<number | undefined>(undefined);
   const [paused, setPaused] = useState(true);
+  const [progress, setProgress] = useState(0);
 
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
+
+  const castDevice = useCastDevice();
+  const client = useRemoteMediaClient();
+
+  const queryClient = useQueryClient();
 
   const { data: item } = useQuery({
     queryKey: ["item", itemId],
@@ -81,7 +97,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ itemId }) => {
   });
 
   const { data: playbackURL } = useQuery({
-    queryKey: ["playbackUrl", itemId, maxBitrate],
+    queryKey: ["playbackUrl", itemId, maxBitrate, castDevice],
     queryFn: async () => {
       if (!api || !user?.Id || !sessionData) return null;
 
@@ -92,6 +108,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ itemId }) => {
         startTimeTicks: item?.UserData?.PlaybackPositionTicks || 0,
         maxStreamingBitrate: maxBitrate,
         sessionData,
+        deviceProfile: castDevice?.deviceId ? chromecastProfile : iosProfile,
       });
 
       console.log("Transcode URL:", url);
@@ -102,21 +119,22 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ itemId }) => {
     staleTime: 0,
   });
 
-  const [progress, setProgress] = useState(0);
+  const onProgress = useCallback(
+    ({ currentTime, playableDuration, seekableDuration }: OnProgressData) => {
+      if (!currentTime || !sessionData?.PlaySessionId) return;
+      if (paused) return;
 
-  const onProgress = ({
-    currentTime,
-    playableDuration,
-    seekableDuration,
-  }: OnProgressData) => {
-    setProgress(currentTime * 10000000);
-    reportPlaybackProgress({
-      api,
-      itemId: itemId,
-      positionTicks: currentTime * 10000000,
-      sessionId: sessionData?.PlaySessionId,
-    });
-  };
+      const newProgress = currentTime * 10000000;
+      setProgress(newProgress);
+      reportPlaybackProgress({
+        api,
+        itemId: itemId,
+        positionTicks: newProgress,
+        sessionId: sessionData.PlaySessionId,
+      });
+    },
+    [sessionData?.PlaySessionId, item, api, paused]
+  );
 
   const onSeek = ({
     currentTime,
@@ -139,18 +157,13 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ itemId }) => {
   const play = () => {
     if (videoRef.current) {
       videoRef.current.resume();
+      setPaused(false);
     }
   };
 
   const startPosition = useMemo(() => {
     return Math.round((item?.UserData?.PlaybackPositionTicks || 0) / 10000);
   }, [item]);
-
-  useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.pause();
-    }
-  }, []);
 
   const enableVideo = useMemo(() => {
     return (
@@ -161,6 +174,45 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ itemId }) => {
       sessionData !== undefined
     );
   }, [playbackURL, item, startPosition, sessionData]);
+
+  const cast = useCallback(() => {
+    if (client === null) {
+      console.log("no client ");
+      return;
+    }
+
+    if (!playbackURL) {
+      console.log("no playback url");
+      return;
+    }
+
+    if (!item) {
+      console.log("no item");
+      return;
+    }
+
+    client.loadMedia({
+      mediaInfo: {
+        contentUrl: playbackURL,
+        contentType: "video/mp4",
+        metadata: {
+          type: item?.Type === "Episode" ? "tvShow" : "movie",
+          title: item?.Name || "",
+          subtitle: item?.Overview || "",
+        },
+        streamDuration: Math.floor((item?.RunTimeTicks || 0) / 10000),
+      },
+      startTime: Math.floor(
+        (item?.UserData?.PlaybackPositionTicks || 0) / 10000
+      ),
+    });
+  }, [item, client, playbackURL]);
+
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.pause();
+    }
+  }, []);
 
   return (
     <View>
@@ -185,6 +237,19 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ itemId }) => {
           onProgress={(e) => onProgress(e)}
           onFullscreenPlayerDidDismiss={() => {
             videoRef.current?.pause();
+            setPaused(true);
+
+            queryClient.invalidateQueries({
+              queryKey: ["nextUp", item?.SeriesId],
+              refetchType: "all",
+            });
+            queryClient.invalidateQueries({
+              queryKey: ["episodes"],
+              refetchType: "all",
+            });
+
+            if (progress === 0) return;
+
             reportPlaybackStopped({
               api,
               itemId: item?.Id,
@@ -203,6 +268,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ itemId }) => {
             bufferForPlaybackMs: 1000,
             backBufferDurationMs: 30 * 1000,
           }}
+          ignoreSilentSwitch="ignore"
         />
       ) : null}
       <View className="flex flex-row items-center justify-between">
@@ -247,7 +313,9 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ itemId }) => {
         <Button
           disabled={!enableVideo}
           onPress={() => {
-            if (videoRef.current) {
+            if (castDevice?.deviceId && item) {
+              cast();
+            } else if (videoRef.current) {
               videoRef.current.presentFullscreenPlayer();
             }
           }}

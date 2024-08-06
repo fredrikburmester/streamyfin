@@ -1,13 +1,10 @@
 import { apiAtom } from "@/providers/JellyfinProvider";
-import { getBackdrop } from "@/utils/jellyfin";
-import { Ionicons } from "@expo/vector-icons";
+import { getPrimaryImage } from "@/utils/jellyfin";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
-import { useQuery } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import { useAtom } from "jotai";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { View } from "react-native";
-import { Text } from "./common/Text";
 import { WatchedIndicator } from "./WatchedIndicator";
 
 type ContinueWatchingPosterProps = {
@@ -19,12 +16,16 @@ const ContinueWatchingPoster: React.FC<ContinueWatchingPosterProps> = ({
 }) => {
   const [api] = useAtom(apiAtom);
 
-  const { data: url } = useQuery({
-    queryKey: ["backdrop", item.Id],
-    queryFn: async () => getBackdrop(api, item),
-    enabled: !!api && !!item.Id,
-    staleTime: 60 * 60 * 24 * 7,
-  });
+  const url = useMemo(
+    () =>
+      getPrimaryImage({
+        api,
+        item,
+        quality: 70,
+        width: 300,
+      }),
+    [item]
+  );
 
   const [progress, setProgress] = useState(
     item.UserData?.PlayedPercentage || 0
@@ -47,7 +48,7 @@ const ContinueWatchingPoster: React.FC<ContinueWatchingPosterProps> = ({
         contentFit="cover"
         className="w-full h-full"
       />
-      <WatchedIndicator item={item} />
+      {!progress && <WatchedIndicator item={item} />}
       {progress > 0 && (
         <>
           <View

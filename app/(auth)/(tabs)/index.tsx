@@ -3,12 +3,13 @@ import { Text } from "@/components/common/Text";
 import ContinueWatchingPoster from "@/components/ContinueWatchingPoster";
 import { ItemCardText } from "@/components/ItemCardText";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
+import { nextUp } from "@/utils/jellyfin";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import { getItemsApi, getSuggestionsApi } from "@jellyfin/sdk/lib/utils/api";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useAtom } from "jotai";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   RefreshControl,
@@ -37,6 +38,21 @@ export default function index() {
     enabled: !!api && !!user?.Id,
     staleTime: 60,
   });
+
+  const { data: _nextUpData } = useQuery({
+    queryKey: ["nextUp-all", user?.Id],
+    queryFn: async () =>
+      await nextUp({
+        userId: user?.Id,
+        api,
+      }),
+    enabled: !!api && !!user?.Id,
+    staleTime: 0,
+  });
+
+  const nextUpData = useMemo(() => {
+    return _nextUpData?.filter((i) => !data?.find((d) => d.Id === i.Id));
+  }, [_nextUpData]);
 
   const { data: collections } = useQuery({
     queryKey: ["collections", user?.Id],
@@ -129,6 +145,22 @@ export default function index() {
         <Text className="px-4 text-2xl font-bold mb-2">Continue Watching</Text>
         <HorizontalScroll<BaseItemDto>
           data={data}
+          renderItem={(item, index) => (
+            <TouchableOpacity
+              key={index}
+              onPress={() => router.push(`/items/${item.Id}/page`)}
+              className="flex flex-col w-48"
+            >
+              <View>
+                <ContinueWatchingPoster item={item} />
+                <ItemCardText item={item} />
+              </View>
+            </TouchableOpacity>
+          )}
+        />
+        <Text className="px-4 text-2xl font-bold mb-2">Next Up</Text>
+        <HorizontalScroll<BaseItemDto>
+          data={nextUpData}
           renderItem={(item, index) => (
             <TouchableOpacity
               key={index}

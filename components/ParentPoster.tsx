@@ -1,18 +1,24 @@
-import {
-  BaseItemDto,
-  BaseItemPerson,
-} from "@jellyfin/sdk/lib/generated-client/models";
+import { apiAtom } from "@/providers/JellyfinProvider";
+import { useQuery } from "@tanstack/react-query";
 import { Image } from "expo-image";
+import { useAtom } from "jotai";
+import { useMemo } from "react";
 import { View } from "react-native";
 
 type PosterProps = {
-  item?: BaseItemDto | BaseItemPerson | null;
-  url?: string | null;
+  id?: string;
   showProgress?: boolean;
 };
 
-const Poster: React.FC<PosterProps> = ({ item, url }) => {
-  if (!url || !item)
+const ParentPoster: React.FC<PosterProps> = ({ id }) => {
+  const [api] = useAtom(apiAtom);
+
+  const url = useMemo(
+    () => `${api?.basePath}/Items/${id}/Images/Primary`,
+    [id]
+  );
+
+  if (!url || !id)
     return (
       <View
         className="border border-neutral-900"
@@ -25,8 +31,8 @@ const Poster: React.FC<PosterProps> = ({ item, url }) => {
   return (
     <View className="rounded-md overflow-hidden border border-neutral-900">
       <Image
-        key={item.Id}
-        id={item.Id}
+        key={id}
+        id={id}
         source={{
           uri: url,
         }}
@@ -40,4 +46,4 @@ const Poster: React.FC<PosterProps> = ({ item, url }) => {
   );
 };
 
-export default Poster;
+export default ParentPoster;
