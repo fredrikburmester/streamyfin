@@ -12,6 +12,7 @@ import React, {
   useEffect,
   useState,
 } from "react";
+import uuid from "react-native-uuid";
 
 interface Server {
   address: string;
@@ -32,32 +33,50 @@ const JellyfinContext = createContext<JellyfinContextValue | undefined>(
   undefined
 );
 
+const getOrSetDeviceId = async () => {
+  let deviceId = await AsyncStorage.getItem("deviceId");
+
+  if (!deviceId) {
+    deviceId = uuid.v4() as string;
+    await AsyncStorage.setItem("deviceId", deviceId);
+  }
+
+  return deviceId;
+};
+
 export const JellyfinProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
-  const [jellyfin] = useState(
-    () =>
-      new Jellyfin({
-        clientInfo: { name: "Streamyfin", version: "1.0.0" },
-        deviceInfo: { name: "iOS", id: "unique-device-id" },
-      })
-  );
+  const [jellyfin, setJellyfin] = useState<Jellyfin | undefined>(undefined);
+
+  useEffect(() => {
+    (async () => {
+      const id = await getOrSetDeviceId();
+      setJellyfin(
+        () =>
+          new Jellyfin({
+            clientInfo: { name: "Streamyfin", version: "1.0.0" },
+            deviceInfo: { name: "iOS", id },
+          })
+      );
+    })();
+  }, []);
 
   const [api, setApi] = useAtom(apiAtom);
   const [user, setUser] = useAtom(userAtom);
 
   const discoverServers = async (url: string): Promise<Server[]> => {
-    const servers = await jellyfin.discovery.getRecommendedServerCandidates(
+    const servers = await jellyfin?.discovery.getRecommendedServerCandidates(
       url
     );
-    return servers.map((server) => ({ address: server.address }));
+    return servers?.map((server) => ({ address: server.address })) || [];
   };
 
   const setServerMutation = useMutation({
     mutationFn: async (server: Server) => {
-      const apiInstance = jellyfin.createApi(server.address);
+      const apiInstance = jellyfin?.createApi(server.address);
 
-      if (!apiInstance.basePath) throw new Error("Failed to connect");
+      if (!apiInstance?.basePath) throw new Error("Failed to connect");
 
       setApi(apiInstance);
       await AsyncStorage.setItem("serverUrl", server.address);
@@ -85,7 +104,7 @@ export const JellyfinProvider: React.FC<{ children: ReactNode }> = ({
       username: string;
       password: string;
     }) => {
-      if (!api) throw new Error("API not initialized");
+      if (!api || !jellyfin) throw new Error("API not initialized");
 
       const auth = await api.authenticateUserByName(username, password);
 
@@ -105,8 +124,8 @@ export const JellyfinProvider: React.FC<{ children: ReactNode }> = ({
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      setUser(null);
       await AsyncStorage.removeItem("token");
+      setUser(null);
     },
     onError: (error) => {
       console.error("Logout failed:", error);
@@ -114,17 +133,21 @@ export const JellyfinProvider: React.FC<{ children: ReactNode }> = ({
   });
 
   const { isLoading, isFetching } = useQuery({
-    queryKey: ["initializeJellyfin", user?.Id, api?.basePath],
+    queryKey: [
+      "initializeJellyfin",
+      user?.Id,
+      api?.basePath,
+      jellyfin?.clientInfo,
+    ],
     queryFn: async () => {
       try {
         const token = await AsyncStorage.getItem("token");
-        console.log({ token });
         const serverUrl = await AsyncStorage.getItem("serverUrl");
         const user = JSON.parse(
           (await AsyncStorage.getItem("user")) as string
         ) as UserDto;
 
-        if (serverUrl && token && user.Id) {
+        if (serverUrl && token && user.Id && jellyfin) {
           const apiInstance = jellyfin.createApi(serverUrl, token);
           setApi(apiInstance);
           setUser(user);
@@ -136,7 +159,7 @@ export const JellyfinProvider: React.FC<{ children: ReactNode }> = ({
       }
     },
     staleTime: 0,
-    enabled: !user?.Id || !api,
+    enabled: !user?.Id || !api || !jellyfin,
   });
 
   const contextValue: JellyfinContextValue = {

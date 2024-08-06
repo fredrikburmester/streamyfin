@@ -9,8 +9,10 @@ interface ButtonProps {
   disabled?: boolean;
   children?: string;
   loading?: boolean;
-  color?: "purple" | "red";
+  color?: "purple" | "red" | "black";
   iconRight?: ReactNode;
+  iconLeft?: ReactNode;
+  justify?: "center" | "between";
 }
 
 export const Button: React.FC<PropsWithChildren<ButtonProps>> = ({
@@ -21,14 +23,18 @@ export const Button: React.FC<PropsWithChildren<ButtonProps>> = ({
   loading = false,
   color = "purple",
   iconRight,
+  iconLeft,
   children,
+  justify = "center",
 }) => {
   const colorClasses = useMemo(() => {
     switch (color) {
       case "purple":
         return "bg-purple-600 active:bg-purple-700";
       case "red":
-        return "bg-red-500 active:bg-red-600";
+        return "bg-red-500";
+      case "black":
+        return "bg-black border border-neutral-900";
     }
   }, [color]);
 
@@ -51,18 +57,24 @@ export const Button: React.FC<PropsWithChildren<ButtonProps>> = ({
       {loading ? (
         <ActivityIndicator color={"white"} size={24} />
       ) : (
-        <View className="flex flex-row items-center">
+        <View
+          className={`
+            flex flex-row items-center justify-between w-full
+            ${justify === "between" ? "justify-between" : "justify-center"}`}
+        >
+          {iconLeft ? iconLeft : <View className="w-4"></View>}
           <Text
             className={`
           text-white font-bold text-base
           ${disabled ? "text-gray-300" : ""}
           ${textClassName}
-            ${iconRight ? "mr-2" : ""}
+          ${iconRight ? "mr-2" : ""}
+          ${iconLeft ? "ml-2" : ""}
         `}
           >
             {children}
           </Text>
-          {iconRight}
+          {iconRight ? iconRight : <View className="w-4"></View>}
         </View>
       )}
     </TouchableOpacity>

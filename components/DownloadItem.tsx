@@ -1,17 +1,16 @@
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
-
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import { runningProcesses } from "@/utils/atoms/downloads";
 import { getPlaybackInfo, useDownloadMedia } from "@/utils/jellyfin";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { useAtom } from "jotai";
 import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, TouchableOpacity, View } from "react-native";
 import ProgressCircle from "./ProgressCircle";
 import { Text } from "./common/Text";
-import { useQuery } from "@tanstack/react-query";
 
 type DownloadProps = {
   item: BaseItemDto;

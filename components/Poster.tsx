@@ -1,26 +1,18 @@
-import { apiAtom } from "@/providers/JellyfinProvider";
-import { getPrimaryImageById } from "@/utils/jellyfin";
-import { useQuery } from "@tanstack/react-query";
+import {
+  BaseItemDto,
+  BaseItemPerson,
+} from "@jellyfin/sdk/lib/generated-client/models";
 import { Image } from "expo-image";
-import { useAtom } from "jotai";
 import { View } from "react-native";
 
 type PosterProps = {
-  itemId?: string | null;
+  item?: BaseItemDto | BaseItemPerson | null;
+  url?: string | null;
   showProgress?: boolean;
 };
 
-const Poster: React.FC<PosterProps> = ({ itemId }) => {
-  const [api] = useAtom(apiAtom);
-
-  const { data: url } = useQuery({
-    queryKey: ["backdrop", itemId],
-    queryFn: async () => getPrimaryImageById(api, itemId),
-    enabled: !!api && !!itemId,
-    staleTime: Infinity,
-  });
-
-  if (!url || !itemId)
+const Poster: React.FC<PosterProps> = ({ item, url }) => {
+  if (!url || !item)
     return (
       <View
         className="border border-neutral-900"
@@ -33,8 +25,8 @@ const Poster: React.FC<PosterProps> = ({ itemId }) => {
   return (
     <View className="rounded-md overflow-hidden border border-neutral-900">
       <Image
-        key={itemId}
-        id={itemId}
+        key={item.Id}
+        id={item.Id}
         source={{
           uri: url,
         }}

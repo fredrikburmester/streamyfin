@@ -58,7 +58,7 @@ export const PlayedStatus: React.FC<{ item: BaseItemDto }> = ({ item }) => {
           onPress={() => {
             markAsPlayed({
               api: api,
-              itemId: item?.Id,
+              item: item,
               userId: user?.Id,
             });
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);

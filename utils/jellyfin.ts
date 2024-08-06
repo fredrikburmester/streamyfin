@@ -1,6 +1,7 @@
 import { Api } from "@jellyfin/sdk";
 import {
   BaseItemDto,
+  BaseItemPerson,
   MediaSourceInfo,
   PlaybackInfoResponse,
 } from "@jellyfin/sdk/lib/generated-client/models";
@@ -14,6 +15,7 @@ import { useAtom } from "jotai";
 import { useCallback, useRef, useState } from "react";
 import { runningProcesses } from "./atoms/downloads";
 import { iosProfile } from "./device-profiles";
+import { apiAtom } from "@/providers/JellyfinProvider";
 
 export const useDownloadMedia = (api: Api | null, userId?: string | null) => {
   const [isDownloading, setIsDownloading] = useState(false);
@@ -172,16 +174,18 @@ export const markAsNotPlayed = async ({
 
 export const markAsPlayed = async ({
   api,
-  itemId,
+  item,
   userId,
 }: {
   api?: Api | null;
-  itemId?: string | null;
+  item?: BaseItemDto | null;
   userId?: string | null;
 }) => {
-  if (!itemId || !userId || !api) {
+  if (!item || !userId || !api || !item.RunTimeTicks) {
     return false;
   }
+
+  const itemId = item.Id;
 
   try {
     const response = await api.axiosInstance.post(
@@ -197,11 +201,27 @@ export const markAsPlayed = async ({
       }
     );
 
+    const response2 = await api.axiosInstance.post(
+      `${api.basePath}/Sessions/Playing/Progress`,
+      {
+        ItemId: itemId,
+        PositionTicks: item.RunTimeTicks,
+        MediaSourceId: itemId,
+      },
+      {
+        headers: {
+          Authorization: `MediaBrowser DeviceId="${api.deviceInfo.id}", Token="${api.accessToken}"`,
+        },
+      }
+    );
+
+    console.log(response, response2);
+
     if (response.status === 200) return true;
     return false;
   } catch (error) {
     const e = error as any;
-    console.error("Failed to report playback progress:", {
+    console.error("Failed to mark as played:", {
       message: e.message,
       status: e.response?.status,
       statusText: e.response?.statusText,
@@ -235,7 +255,7 @@ export const nextUp = async ({
   userId?: string | null;
   api?: Api | null;
 }) => {
-  if (!itemId || !userId || !api) {
+  if (!userId || !api) {
     return [];
   }
 
@@ -244,7 +264,7 @@ export const nextUp = async ({
       `${api.basePath}/Shows/NextUp`,
       {
         params: {
-          SeriesId: itemId,
+          SeriesId: itemId ? itemId : undefined,
           UserId: userId,
           Fields: "MediaSourceCount",
         },
@@ -257,7 +277,7 @@ export const nextUp = async ({
     return response?.data.Items as BaseItemDto[];
   } catch (error) {
     const e = error as any;
-    console.error("Failed to report playback progress", e.message, e.status);
+    console.error("Failed to get next up", e.message, e.status);
     return [];
   }
 };
@@ -473,6 +493,7 @@ export const getStreamUrl = async ({
   startTimeTicks = 0,
   maxStreamingBitrate,
   sessionData,
+  deviceProfile = iosProfile,
 }: {
   api: Api | null | undefined;
   item: BaseItemDto | null | undefined;
@@ -480,6 +501,7 @@ export const getStreamUrl = async ({
   startTimeTicks: number;
   maxStreamingBitrate?: number;
   sessionData: PlaybackInfoResponse;
+  deviceProfile: any;
 }) => {
   if (!api || !userId || !item?.Id) {
     return null;
@@ -490,11 +512,7 @@ export const getStreamUrl = async ({
   const response = await api.axiosInstance.post(
     `${api.basePath}/Items/${itemId}/PlaybackInfo`,
     {
-      DeviceProfile: {
-        ...iosProfile,
-        MaxStaticBitrate: maxStreamingBitrate,
-        MaxStreamingBitrate: maxStreamingBitrate,
-      },
+      DeviceProfile: deviceProfile,
       UserId: userId,
       MaxStreamingBitrate: maxStreamingBitrate,
       StartTimeTicks: startTimeTicks,
@@ -519,90 +537,119 @@ export const getStreamUrl = async ({
     throw new Error("no PlaySessionId");
   }
 
-  const streamParams = new URLSearchParams({
-    Static: "true",
-    api_key: api.accessToken,
-    playSessionId: sessionData.PlaySessionId || "",
-    videoCodec: "h265,h264",
-    audioCodec: "aac",
-    maxAudioChannels: "6",
-    mediaSourceId: itemId,
-    Tag: mediaSource.ETag || "",
-    TranscodingMaxAudioChannels: "2",
-    RequireAvc: "false",
-    SegmentContainer: "mp4",
-    MinSegments: "2",
-    BreakOnNonKeyFrames: "True",
-    context: "Streaming",
-    "h264-level": "40",
-    "h264-videobitdepth": "8",
-    "h264-profile": "high",
-    "h264-audiochannels": "2",
-    "aac-profile": "lc",
-    "h264-rangetype": "SDR",
-    "h264-deinterlace": "true",
+  console.log(`${api.basePath}${mediaSource.TranscodingUrl}`);
+
+  return `${api.basePath}${mediaSource.TranscodingUrl}`;
+};
+
+/**
+ * Retrieves the primary image URL for a given item.
+ *
+ * @param api - The Jellyfin API instance.
+ * @param item - The media item to retrieve the backdrop image URL for.
+ * @param quality - The desired image quality (default: 90).
+ */
+export const getPrimaryImage = ({
+  api,
+  item,
+  quality = 90,
+  width = 500,
+}: {
+  api?: Api | null;
+  item?: BaseItemDto | BaseItemPerson | null;
+  quality?: number | null;
+  width?: number | null;
+}) => {
+  if (!item || !api) {
+    return null;
+  }
+
+  if (!isBaseItemDto(item)) {
+    return `${api?.basePath}/Items/${item?.Id}/Images/Primary`;
+  }
+
+  const backdropTag = item.BackdropImageTags?.[0];
+  const primaryTag = item.ImageTags?.["Primary"];
+
+  const params = new URLSearchParams({
+    fillWidth: width ? String(width) : "500",
+    quality: quality ? String(quality) : "90",
   });
 
-  if (maxStreamingBitrate) {
-    streamParams.append("videoBitRate", maxStreamingBitrate.toString());
-    streamParams.append("transcodeReasons", "ContainerBitrateExceedsLimit");
+  if (primaryTag) {
+    params.set("tag", primaryTag);
+  } else if (backdropTag) {
+    params.set("tag", backdropTag);
   }
 
-  return `${
-    api.basePath
-  }/Videos/${itemId}/main.m3u8?${streamParams.toString()}`;
+  return `${api?.basePath}/Items/${
+    item.Id
+  }/Images/Primary?${params.toString()}`;
 };
 
 /**
- * Retrieves the backdrop image URL for a given item.
+ * Retrieves the primary image URL for a given item.
+ *
+ * @param api - The Jellyfin API instance.
+ * @param item - The media item to retrieve the backdrop image URL for.
+ * @param quality - The desired image quality (default: 90).
+ */
+export const getPrimaryImageById = ({
+  api,
+  id,
+  quality = 90,
+  width = 500,
+}: {
+  api?: Api | null;
+  id?: string | null;
+  quality?: number | null;
+  width?: number | null;
+}) => {
+  if (!id) {
+    return null;
+  }
+
+  const params = new URLSearchParams({
+    fillWidth: width ? String(width) : "500",
+    quality: quality ? String(quality) : "90",
+  });
+
+  return `${api?.basePath}/Items/${id}/Images/Primary?${params.toString()}`;
+};
+
+function isBaseItemDto(item: any): item is BaseItemDto {
+  return item && "BackdropImageTags" in item && "ImageTags" in item;
+}
+
+/**
+ * Retrieves the primary image URL for a given item.
  *
  * @param api - The Jellyfin API instance.
  * @param item - The media item to retrieve the backdrop image URL for.
  * @param quality - The desired image quality (default: 10).
  */
-export const getBackdrop = (
-  api: Api | null | undefined,
-  item: BaseItemDto | null | undefined,
-  quality: number = 50
-) => {
+export const getLogoImageById = ({
+  api,
+  item,
+}: {
+  api?: Api | null;
+  item?: BaseItemDto | null;
+}) => {
   if (!api || !item) {
-    console.warn("getBackdrop ~ Missing API or Item");
     return null;
   }
 
-  if (item.BackdropImageTags && item.BackdropImageTags[0]) {
-    return `${api.basePath}/Items/${item?.Id}/Images/Backdrop?quality=${quality}&fillWidth=500&tag=${item?.BackdropImageTags?.[0]}`;
-  }
+  const imageTags = item.ImageTags?.["Logo"];
 
-  if (item.ImageTags && item.ImageTags.Primary) {
-    return `${api.basePath}/Items/${item?.Id}/Images/Primary?quality=${quality}&fillWidth=500&tag=${item.ImageTags.Primary}`;
-  }
+  if (!imageTags) return null;
 
-  if (item.ParentBackdropImageTags && item.ParentBackdropImageTags[0]) {
-    return `${api.basePath}/Items/${item?.Id}/Images/Primary?quality=${quality}&fillWidth=500&tag=${item.ImageTags?.Primary}`;
-  }
+  const params = new URLSearchParams();
 
-  return null;
-};
+  params.append("tag", imageTags);
+  params.append("quality", "90");
+  params.append("fillHeight", "130");
 
-/**
- * Retrieves the backdrop image URL for a given item.
- *
- * @param api - The Jellyfin API instance.
- * @param item - The media item to retrieve the backdrop image URL for.
- * @param quality - The desired image quality (default: 10).
- */
-export const getBackdropById = (
-  api: Api | null | undefined,
-  itemId: string | null | undefined,
-  quality: number = 10
-) => {
-  if (!api) {
-    console.warn("getBackdrop ~ Missing API or Item");
-    return null;
-  }
-
-  return `${api.basePath}/Items/${itemId}/Images/Backdrop?quality=${quality}`;
+  return `${api.basePath}/Items/${item.Id}/Images/Logo?${params.toString()}`;
 };
 
 /**
@@ -612,16 +659,41 @@ export const getBackdropById = (
  * @param item - The media item to retrieve the backdrop image URL for.
  * @param quality - The desired image quality (default: 10).
  */
-export const getPrimaryImageById = (
-  api: Api | null | undefined,
-  itemId: string | null | undefined,
-  quality: number = 10
-) => {
-  if (!api) {
+export const getBackdrop = ({
+  api,
+  item,
+  quality,
+  width,
+}: {
+  api?: Api | null;
+  item?: BaseItemDto | null;
+  quality?: number;
+  width?: number;
+}) => {
+  if (!api || !item) {
     return null;
   }
 
-  return `${api.basePath}/Items/${itemId}/Images/Primary?quality=${quality}`;
+  const backdropImageTags = item.BackdropImageTags?.[0];
+
+  const params = new URLSearchParams();
+
+  if (quality) {
+    params.append("quality", quality.toString());
+  }
+
+  if (width) {
+    params.append("fillWidth", width.toString());
+  }
+
+  if (backdropImageTags) {
+    params.append("tag", backdropImageTags);
+    return `${api.basePath}/Items/${
+      item.Id
+    }/Images/Backdrop/0?${params.toString()}`;
+  } else {
+    return getPrimaryImage({ api, item, quality, width });
+  }
 };
 
 /**

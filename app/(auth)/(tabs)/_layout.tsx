@@ -19,6 +19,7 @@ export default function TabLayout() {
         options={{
           headerShown: true,
           headerStyle: { backgroundColor: "black" },
+          headerShadowVisible: false,
           title: "Home",
           tabBarIcon: ({ color, focused }) => (
             <TabBarIcon
@@ -43,6 +44,7 @@ export default function TabLayout() {
         options={{
           headerStyle: { backgroundColor: "black" },
           headerShown: true,
+          headerShadowVisible: false,
           title: "Search",
           tabBarIcon: ({ color, focused }) => (
             <TabBarIcon name={focused ? "search" : "search"} color={color} />
