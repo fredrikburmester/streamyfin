@@ -329,6 +329,7 @@ PODS:
   - MMKV (1.3.4):
     - MMKVCore (~> 1.3.4)
   - MMKVCore (1.3.9)
+  - MobileVLCKit (3.5.1)
   - PromisesObjC (2.4.0)
   - Protobuf (3.27.3)
   - RCT-Folly (2024.01.01.00):
@@ -1291,6 +1292,8 @@ PODS:
     - React
   - react-native-menu (1.1.2):
     - React
+  - react-native-netinfo (11.3.1):
+    - React-Core
   - react-native-safe-area-context (4.10.5):
     - React-Core
   - react-native-video (6.4.3):
@@ -1336,6 +1339,10 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
+  - react-native-vlc-media-player (1.0.38):
+    - MobileVLCKit (= 3.5.1)
+    - React
+    - TVVLCKit (= 3.5.1)
   - React-nativeconfig (0.74.3)
   - React-NativeModulesApple (0.74.3):
     - glog
@@ -1717,8 +1724,10 @@ DEPENDENCIES:
   - react-native-get-random-values (from `../node_modules/react-native-get-random-values`)
   - react-native-google-cast (from `../node_modules/react-native-google-cast`)
   - "react-native-menu (from `../node_modules/@react-native-menu/menu`)"
+  - "react-native-netinfo (from `../node_modules/@react-native-community/netinfo`)"
   - react-native-safe-area-context (from `../node_modules/react-native-safe-area-context`)
   - react-native-video (from `../node_modules/react-native-video`)
+  - react-native-vlc-media-player (from `../node_modules/react-native-vlc-media-player`)
   - React-nativeconfig (from `../node_modules/react-native/ReactCommon`)
   - React-NativeModulesApple (from `../node_modules/react-native/ReactCommon/react/nativemodule/core/platform/ios`)
   - React-perflogger (from `../node_modules/react-native/ReactCommon/reactperflogger`)
@@ -1763,6 +1772,7 @@ SPEC REPOS:
     - libwebp
     - MMKV
     - MMKVCore
+    - MobileVLCKit
     - PromisesObjC
     - Protobuf
     - SDWebImage
@@ -1889,10 +1899,14 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-google-cast"
   react-native-menu:
     :path: "../node_modules/@react-native-menu/menu"
+  react-native-netinfo:
+    :path: "../node_modules/@react-native-community/netinfo"
   react-native-safe-area-context:
     :path: "../node_modules/react-native-safe-area-context"
   react-native-video:
     :path: "../node_modules/react-native-video"
+  react-native-vlc-media-player:
+    :path: "../node_modules/react-native-vlc-media-player"
   React-nativeconfig:
     :path: "../node_modules/react-native/ReactCommon"
   React-NativeModulesApple:
@@ -1996,6 +2010,7 @@ SPEC CHECKSUMS:
   libwebp: 1786c9f4ff8a279e4dac1e8f385004d5fc253009
   MMKV: ed58ad794b3f88c24d604a5b74f3fba17fcbaf74
   MMKVCore: af055b00e27d88cd92fad301c5fecd1ff9b26dd9
+  MobileVLCKit: 144d5f565512d1147d63b0fa1379231b3fd66535
   PromisesObjC: f5707f49cb48b9636751c5b2e7d227e43fba9f47
   Protobuf: c1cbc880ea7c4e9b157e113515c720a22ee7cf50
   RCT-Folly: 02617c592a293bd6d418e0a88ff4ee1f88329b47
@@ -2027,8 +2042,10 @@ SPEC CHECKSUMS:
   react-native-get-random-values: 21325b2244dfa6b58878f51f9aa42821e7ba3d06
   react-native-google-cast: 77c4a3acca9eab527328f8b65257d952be5f220f
   react-native-menu: d32728a357dfb360cf01cd5979cf7713c5acbb95
+  react-native-netinfo: bdb108d340cdb41875c9ced535977cac6d2ff321
   react-native-safe-area-context: a240ad4b683349e48b1d51fed1611138d1bdad97
   react-native-video: b3ba8f424c8c3f54dd9289d47bbe60fbc09bc986
+  react-native-vlc-media-player: 0f9860bded57cd6764ac55b5c0e97347069cb40a
   React-nativeconfig: fa5de9d8f4dbd5917358f8ad3ad1e08762f01dcb
   React-NativeModulesApple: 585d1b78e0597de364d259cb56007052d0bda5e5
   React-perflogger: 7bb9ba49435ff66b666e7966ee10082508a203e8

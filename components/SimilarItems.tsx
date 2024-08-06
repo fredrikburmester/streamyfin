@@ -13,6 +13,8 @@ import {
 import ContinueWatchingPoster from "./ContinueWatchingPoster";
 import { ItemCardText } from "./ItemCardText";
 import { Text } from "./common/Text";
+import MoviePoster from "./MoviePoster";
+import { useMemo } from "react";
 
 type SimilarItemsProps = {
   itemId: string;
@@ -38,6 +40,11 @@ export const SimilarItems: React.FC<SimilarItemsProps> = ({ itemId }) => {
     staleTime: Infinity,
   });
 
+  const movies = useMemo(
+    () => similarItems?.filter((i) => i.Type === "Movie") || [],
+    [similarItems]
+  );
+
   return (
     <View>
       <Text className="px-4 text-2xl font-bold mb-2">Similar items</Text>
@@ -48,22 +55,20 @@ export const SimilarItems: React.FC<SimilarItemsProps> = ({ itemId }) => {
       ) : (
         <ScrollView horizontal>
           <View className="px-4 flex flex-row gap-x-2">
-            {similarItems?.map((item) => (
+            {movies.map((item) => (
               <TouchableOpacity
                 key={item.Id}
                 onPress={() => router.push(`/items/${item.Id}/page`)}
-                className="flex flex-col w-48"
+                className="flex flex-col w-32"
               >
-                <ContinueWatchingPoster item={item} />
+                <MoviePoster item={item} />
                 <ItemCardText item={item} />
               </TouchableOpacity>
             ))}
           </View>
         </ScrollView>
       )}
-      {similarItems?.length === 0 && (
-        <Text className="px-4">No similar items</Text>
-      )}
+      {movies.length === 0 && <Text className="px-4">No similar items</Text>}
     </View>
   );
 };

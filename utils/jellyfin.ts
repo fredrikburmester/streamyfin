@@ -15,7 +15,35 @@ import { useAtom } from "jotai";
 import { useCallback, useRef, useState } from "react";
 import { runningProcesses } from "./atoms/downloads";
 import { iosProfile } from "./device-profiles";
-import { apiAtom } from "@/providers/JellyfinProvider";
+import { FFmpegKit, ReturnCode } from "ffmpeg-kit-react-native";
+
+const convertAndReplaceVideo = async (inputUri: string) => {
+  const tempOutputUri = inputUri.replace(/\.\w+$/, "_temp.mp4");
+
+  // Strip the file:/// prefix
+  const inputPath = inputUri.replace("file://", "");
+  const tempOutputPath = tempOutputUri.replace("file://", "");
+
+  const command = `-i ${inputPath} -c:v libx264 -profile:v baseline -level 3.0 -pix_fmt yuv420p -c:a aac -b:a 128k -movflags +faststart ${tempOutputPath}`;
+  try {
+    const session = await FFmpegKit.execute(command);
+    const rc: ReturnCode = await session.getReturnCode();
+    if (ReturnCode.isSuccess(rc)) {
+      console.log("Conversion successful, replacing the original file");
+
+      await FileSystem.moveAsync({
+        from: tempOutputUri,
+        to: inputUri,
+      });
+
+      console.log("Replacement successful");
+    } else {
+      console.log("Conversion failed");
+    }
+  } catch (error) {
+    console.error("Error during conversion", error);
+  }
+};
 
 export const useDownloadMedia = (api: Api | null, userId?: string | null) => {
   const [isDownloading, setIsDownloading] = useState(false);
@@ -32,40 +60,23 @@ export const useDownloadMedia = (api: Api | null, userId?: string | null) => {
         return false;
       }
 
+      console.log("MediaSources: ", JSON.stringify(item.MediaSources));
+      console.log("MediaStreams: ", JSON.stringify(item.MediaStreams));
+
       setIsDownloading(true);
       setError(null);
+      setProgress({
+        item,
+        progress: 0,
+      });
 
       const itemId = item.Id;
 
-      console.info("Downloading media item", item);
-
-      // const playbackData = await getMediaInfoApi(api!).getPlaybackInfo({
-      //   itemId,
-      //   userId: userId,
-      // });
-
-      // const url = await getStreamUrl({
-      //   api,
-      //   userId: userId,
-      //   item,
-      //   startTimeTicks: item?.UserData?.PlaybackPositionTicks || 0,
-      //   sessionData: playbackData.data,
-      // });
-
-      // if (!url) {
-      //   setError("Could not get stream URL");
-      //   setIsDownloading(false);
-      //   setProgress(null);
-      //   return false;
-      // }
-
       try {
-        const filename = `${itemId}.mp4`;
+        const filename = `${itemId}`;
         const fileUri = `${FileSystem.documentDirectory}${filename}`;
 
         const url = `${api.basePath}/Items/${itemId}/Download`;
-
-        console.info("Starting download of media item from URL", url);
 
         downloadResumableRef.current = FileSystem.createDownloadResumable(
           url,
@@ -105,6 +116,8 @@ export const useDownloadMedia = (api: Api | null, userId?: string | null) => {
           "downloaded_files",
           JSON.stringify(updatedFiles)
         );
+
+        await convertAndReplaceVideo(fileUri);
 
         setIsDownloading(false);
         setProgress(null);

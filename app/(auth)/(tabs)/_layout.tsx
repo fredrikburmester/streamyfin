@@ -27,6 +27,16 @@ export default function TabLayout() {
               color={color}
             />
           ),
+          headerLeft: () => (
+            <TouchableOpacity
+              style={{ marginHorizontal: 17 }}
+              onPress={() => {
+                router.push("/(auth)/downloads");
+              }}
+            >
+              <Feather name="download" color={"white"} size={24} />
+            </TouchableOpacity>
+          ),
           headerRight: () => (
             <TouchableOpacity
               style={{ marginHorizontal: 17 }}

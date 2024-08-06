@@ -9,7 +9,9 @@ export default function page() {
   const { itemId, url } = searchParams as { itemId: string; url: string };
 
   const fileUrl = useMemo(() => {
-    return FileSystem.documentDirectory + url;
+    const u = FileSystem.documentDirectory + url;
+    console.log({ u });
+    return u;
   }, [url]);
 
   if (!fileUrl) return null;
