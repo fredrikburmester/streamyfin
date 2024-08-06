@@ -22,3 +22,5 @@ expo-env.d.ts
 Streamyfin.app
 
 build-*
+*.mp4
+build-*
