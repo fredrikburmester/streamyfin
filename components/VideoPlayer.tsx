@@ -6,7 +6,7 @@ import {
   reportPlaybackStopped,
 } from "@/utils/jellyfin";
 import { runtimeTicksToMinutes } from "@/utils/time";
-import { Ionicons } from "@expo/vector-icons";
+import { Feather, Ionicons } from "@expo/vector-icons";
 import { getMediaInfoApi } from "@jellyfin/sdk/lib/utils/api";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAtom } from "jotai";
@@ -214,6 +214,10 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ itemId }) => {
     }
   }, []);
 
+  const chromecastReady = useMemo(() => {
+    return castDevice?.deviceId && item;
+  }, [castDevice, item]);
+
   return (
     <View>
       {enableVideo === true &&
@@ -313,13 +317,19 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ itemId }) => {
         <Button
           disabled={!enableVideo}
           onPress={() => {
-            if (castDevice?.deviceId && item) {
+            if (chromecastReady) {
               cast();
             } else if (videoRef.current) {
               videoRef.current.presentFullscreenPlayer();
             }
           }}
-          iconRight={<Ionicons name="play-circle" size={24} color="white" />}
+          iconRight={
+            chromecastReady ? (
+              <Feather name="cast" size={20} color="white" />
+            ) : (
+              <Ionicons name="play-circle" size={24} color="white" />
+            )
+          }
         >
           {runtimeTicksToMinutes(item?.RunTimeTicks)}
         </Button>
