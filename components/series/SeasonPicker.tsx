@@ -1,16 +1,15 @@
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import { useQuery } from "@tanstack/react-query";
+import { router } from "expo-router";
 import { useAtom } from "jotai";
 import { useEffect, useState } from "react";
-import { Text } from "../common/Text";
-import * as DropdownMenu from "zeego/dropdown-menu";
 import { TouchableOpacity, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import * as DropdownMenu from "zeego/dropdown-menu";
 import { HorizontalScroll } from "../common/HorrizontalScroll";
+import { Text } from "../common/Text";
 import ContinueWatchingPoster from "../ContinueWatchingPoster";
 import { ItemCardText } from "../ItemCardText";
-import { router } from "expo-router";
 
 type Props = {
   item: BaseItemDto;
