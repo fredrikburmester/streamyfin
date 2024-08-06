@@ -25,3 +25,10 @@ build-*
 *.mp4
 build-*
 Streamyfin.app
+
+/ios/*
+
+# Except these files
+!/ios/Streamyfin/
+!/ios/Streamyfin/AppDelegate.mm
+!/ios/Streamyfin/Info.plist
