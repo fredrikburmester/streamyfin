@@ -32,7 +32,7 @@ export const Button: React.FC<PropsWithChildren<ButtonProps>> = ({
       case "purple":
         return "bg-purple-600 active:bg-purple-700";
       case "red":
-        return "bg-red-500";
+        return "bg-red-600";
       case "black":
         return "bg-black border border-neutral-900";
     }

@@ -38,8 +38,8 @@ export const SeriesCard: React.FC<{ items: BaseItemDto[] }> = ({ items }) => {
             {seasonItems[0].SeasonName}
           </Text>
           {seasonItems.map((item, index) => (
-            <View className="mb-2">
-              <EpisodeCard item={item} key={item.Id} />
+            <View className="mb-2" key={index}>
+              <EpisodeCard item={item} />
             </View>
           ))}
         </View>

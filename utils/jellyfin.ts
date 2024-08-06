@@ -15,40 +15,47 @@ import { useAtom } from "jotai";
 import { useCallback, useRef, useState } from "react";
 import { runningProcesses } from "./atoms/downloads";
 import { iosProfile } from "./device-profiles";
-import { FFmpegKit, ReturnCode } from "ffmpeg-kit-react-native";
+import {
+  FFmpegKit,
+  FFmpegKitConfig,
+  ReturnCode,
+} from "ffmpeg-kit-react-native";
+import { writeToLog } from "./log";
 
-const convertAndReplaceVideo = async (inputUri: string) => {
-  const tempOutputUri = inputUri.replace(/\.\w+$/, "_temp.mp4");
+/**
+ * Try to convert the downloaded file to a supported format on-device. Leveraging the capability of modern phones.
+ *
+ * ⚠️ This function does not work, and the app crashes when running it.
+ */
+// const convertAndReplaceVideo = async (id: string) => {
+//   const input = FileSystem.documentDirectory + id;
+//   const output = FileSystem.documentDirectory + id + "_tmp.mp4";
 
-  // Strip the file:/// prefix
-  const inputPath = inputUri.replace("file://", "");
-  const tempOutputPath = tempOutputUri.replace("file://", "");
+//   const command = `-i ${input} -c:v h264 -profile:v baseline -level 3.0 -pix_fmt yuv420p -c:a aac -b:a 128k -movflags +faststart ${output}`;
+//   try {
+//     const session = await FFmpegKit.execute(command);
+//     const rc: ReturnCode = await session.getReturnCode();
+//     if (ReturnCode.isSuccess(rc)) {
+//       console.log("Conversion successful, replacing the original file");
 
-  const command = `-i ${inputPath} -c:v libx264 -profile:v baseline -level 3.0 -pix_fmt yuv420p -c:a aac -b:a 128k -movflags +faststart ${tempOutputPath}`;
-  try {
-    const session = await FFmpegKit.execute(command);
-    const rc: ReturnCode = await session.getReturnCode();
-    if (ReturnCode.isSuccess(rc)) {
-      console.log("Conversion successful, replacing the original file");
+//       await FileSystem.moveAsync({
+//         from: output,
+//         to: input,
+//       });
 
-      await FileSystem.moveAsync({
-        from: tempOutputUri,
-        to: inputUri,
-      });
-
-      console.log("Replacement successful");
-    } else {
-      console.log("Conversion failed");
-    }
-  } catch (error) {
-    console.error("Error during conversion", error);
-  }
-};
+//       console.log("Replacement successful");
+//     } else {
+//       console.log("Conversion failed");
+//     }
+//   } catch (error) {
+//     console.error("Error during conversion", error);
+//   }
+// };
 
 export const useDownloadMedia = (api: Api | null, userId?: string | null) => {
   const [isDownloading, setIsDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [progress, setProgress] = useAtom(runningProcesses);
+  const [_, setProgress] = useAtom(runningProcesses);
   const downloadResumableRef = useRef<FileSystem.DownloadResumable | null>(
     null
   );
@@ -59,9 +66,6 @@ export const useDownloadMedia = (api: Api | null, userId?: string | null) => {
         setError("Invalid item or API");
         return false;
       }
-
-      console.log("MediaSources: ", JSON.stringify(item.MediaSources));
-      console.log("MediaStreams: ", JSON.stringify(item.MediaStreams));
 
       setIsDownloading(true);
       setError(null);
@@ -76,7 +80,7 @@ export const useDownloadMedia = (api: Api | null, userId?: string | null) => {
         const filename = `${itemId}`;
         const fileUri = `${FileSystem.documentDirectory}${filename}`;
 
-        const url = `${api.basePath}/Items/${itemId}/Download`;
+        const url = `${api.basePath}/Items/${itemId}/File`;
 
         downloadResumableRef.current = FileSystem.createDownloadResumable(
           url,
@@ -117,8 +121,6 @@ export const useDownloadMedia = (api: Api | null, userId?: string | null) => {
           JSON.stringify(updatedFiles)
         );
 
-        await convertAndReplaceVideo(fileUri);
-
         setIsDownloading(false);
         setProgress(null);
         return true;
@@ -148,6 +150,113 @@ export const useDownloadMedia = (api: Api | null, userId?: string | null) => {
   }, [setProgress]);
 
   return { downloadMedia, isDownloading, error, cancelDownload };
+};
+
+export const useRemuxHlsToMp4 = (url: string, item: BaseItemDto) => {
+  const [_, setProgress] = useAtom(runningProcesses);
+
+  if (!item.Id || !item.Name) {
+    writeToLog("ERROR", "useRemuxHlsToMp4 ~ missing arguments");
+    throw new Error("Item must have an Id and Name");
+  }
+
+  const output = `${FileSystem.documentDirectory}${item.Id}.mp4`;
+
+  const command = `-y -fflags +genpts -i ${url} -c copy -bufsize 10M -max_muxing_queue_size 4096 ${output}`;
+
+  const startRemuxing = useCallback(async () => {
+    if (!item.Id || !item.Name) {
+      writeToLog(
+        "ERROR",
+        "useRemuxHlsToMp4 ~ startRemuxing ~ missing arguments"
+      );
+      throw new Error("Item must have an Id and Name");
+    }
+
+    writeToLog(
+      "INFO",
+      `useRemuxHlsToMp4 ~ startRemuxing for item ${item.Id} with url ${url}`
+    );
+
+    try {
+      setProgress({
+        item,
+        progress: 0,
+      });
+
+      FFmpegKitConfig.enableStatisticsCallback((statistics) => {
+        let percentage = 0;
+
+        const videoLength =
+          (item.MediaSources?.[0].RunTimeTicks || 0) / 10000000; // In seconds
+        const fps = item.MediaStreams?.[0].RealFrameRate || 25;
+        const totalFrames = videoLength * fps;
+
+        const processedFrames = statistics.getVideoFrameNumber();
+        const speed = statistics.getSpeed();
+
+        if (totalFrames > 0) {
+          percentage = Math.floor((processedFrames / totalFrames) * 100);
+        }
+
+        setProgress((prev) => {
+          return prev?.item.Id === item.Id!
+            ? { ...prev, progress: percentage, speed }
+            : prev;
+        });
+      });
+
+      await FFmpegKit.executeAsync(command, async (session) => {
+        const returnCode = await session.getReturnCode();
+        if (returnCode.isValueSuccess()) {
+          const currentFiles: BaseItemDto[] = JSON.parse(
+            (await AsyncStorage.getItem("downloaded_files")) || "[]"
+          );
+
+          const otherItems = currentFiles.filter((i) => i.Id !== item.Id);
+
+          await AsyncStorage.setItem(
+            "downloaded_files",
+            JSON.stringify([...otherItems, item])
+          );
+
+          writeToLog(
+            "INFO",
+            `useRemuxHlsToMp4 ~ remuxing completed successfully for item: ${item.Name}`
+          );
+          setProgress(null);
+        } else if (returnCode.isValueError()) {
+          console.error("Failed to remux:");
+          writeToLog(
+            "ERROR",
+            `useRemuxHlsToMp4 ~ remuxing failed for item: ${item.Name}`
+          );
+          setProgress(null);
+        } else if (returnCode.isValueCancel()) {
+          console.log("Remuxing was cancelled");
+          writeToLog(
+            "INFO",
+            `useRemuxHlsToMp4 ~ remuxing was canceled for item: ${item.Name}`
+          );
+          setProgress(null);
+        }
+      });
+    } catch (error) {
+      console.error("Failed to remux:", error);
+      writeToLog(
+        "ERROR",
+        `useRemuxHlsToMp4 ~ remuxing failed for item: ${item.Name}`
+      );
+    }
+  }, [output, item, command]);
+
+  const cancelRemuxing = useCallback(async () => {
+    FFmpegKit.cancel();
+    setProgress(null);
+    console.log("Remuxing cancelled");
+  }, []);
+
+  return { startRemuxing, cancelRemuxing };
 };
 
 export const markAsNotPlayed = async ({
@@ -550,8 +659,12 @@ export const getStreamUrl = async ({
     throw new Error("no PlaySessionId");
   }
 
-  console.log(`${api.basePath}${mediaSource.TranscodingUrl}`);
+  if (mediaSource.SupportsDirectPlay) {
+    console.log("Using direct stream!");
+    return `${api.basePath}/Videos/${itemId}/stream.mp4?playSessionId=${sessionData.PlaySessionId}&mediaSourceId=${itemId}&static=true`;
+  }
 
+  console.log("Using transcoded stream!");
   return `${api.basePath}${mediaSource.TranscodingUrl}`;
 };
 

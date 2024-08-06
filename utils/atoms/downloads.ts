@@ -4,6 +4,7 @@ import { atom } from "jotai";
 export type ProcessItem = {
   item: BaseItemDto;
   progress: number;
+  speed?: number;
 };
 
 export const runningProcesses = atom<ProcessItem | null>(null);

@@ -16,7 +16,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import { useAtom } from "jotai";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
   ScrollView,
@@ -28,6 +28,8 @@ import { ParallaxScrollView } from "../../../../components/ParallaxPage";
 const page: React.FC = () => {
   const local = useLocalSearchParams();
   const { id } = local as { id: string };
+
+  const [playbackURL, setPlaybackURL] = useState<string | null>(null);
 
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
@@ -148,13 +150,20 @@ const page: React.FC = () => {
         </View>
 
         <View className="flex flex-row justify-between items-center w-full my-4">
-          <DownloadItem item={item} />
+          {playbackURL && (
+            <DownloadItem item={item} playbackURL={playbackURL} />
+          )}
           <Chromecast />
         </View>
         <Text>{item.Overview}</Text>
       </View>
       <View className="flex flex-col p-4">
-        <VideoPlayer itemId={item.Id} />
+        <VideoPlayer
+          itemId={item.Id}
+          onChangePlaybackURL={(val) => {
+            setPlaybackURL(val);
+          }}
+        />
       </View>
       <ScrollView horizontal className="flex px-4 mb-4">
         <View className="flex flex-row space-x-2 ">

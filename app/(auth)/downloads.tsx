@@ -6,11 +6,11 @@ import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo } from "react";
-import { ScrollView, View } from "react-native";
+import { ActivityIndicator, ScrollView, View } from "react-native";
 import * as FileSystem from "expo-file-system";
 
 const downloads: React.FC = () => {
-  const { data: downloadedFiles } = useQuery({
+  const { data: downloadedFiles, isLoading } = useQuery({
     queryKey: ["downloaded_files"],
     queryFn: async () =>
       JSON.parse(
@@ -19,7 +19,7 @@ const downloads: React.FC = () => {
   });
 
   const movies = useMemo(
-    () => downloadedFiles?.filter((f) => f.Type === "Movie"),
+    () => downloadedFiles?.filter((f) => f.Type === "Movie") || [],
     [downloadedFiles]
   );
 
@@ -43,40 +43,45 @@ const downloads: React.FC = () => {
     );
   }, [downloadedFiles]);
 
-  useEffect(() => {
-    // Get all files from FileStorage
-    // const filename = `${itemId}.mp4`;
-    // const fileUri = `${FileSystem.documentDirectory}`;
-    (async () => {
-      if (!FileSystem.documentDirectory) return;
-      const f = await FileSystem.readDirectoryAsync(
-        FileSystem.documentDirectory
-      );
-      console.log("files", FileSystem.documentDirectory, f);
-    })();
-  }, []);
+  if (isLoading) {
+    return (
+      <View className="h-full flex flex-col items-center justify-center -mt-6">
+        <ActivityIndicator size="small" color="white" />
+      </View>
+    );
+  }
+
+  if (downloadedFiles?.length === 0) {
+    return (
+      <View className="h-full flex flex-col items-center justify-center -mt-6">
+        <Text className="text-white text-lg font-bold">
+          No downloaded files
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <ScrollView>
       <View className="px-4 py-4">
-        <View className="mb-4">
-          <View className="flex flex-row items-center justify-between mb-2">
-            <Text className="text-2xl font-bold">Movies</Text>
-            <View className="bg-purple-600 rounded-full h-6 w-6 flex items-center justify-center">
-              <Text className="text-xs font-bold">{movies?.length}</Text>
+        {movies.length > 0 && (
+          <View className="mb-4">
+            <View className="flex flex-row items-center justify-between mb-2">
+              <Text className="text-2xl font-bold">Movies</Text>
+              <View className="bg-purple-600 rounded-full h-6 w-6 flex items-center justify-center">
+                <Text className="text-xs font-bold">{movies?.length}</Text>
+              </View>
             </View>
+            {movies?.map((item: BaseItemDto) => (
+              <View className="mb-2 last:mb-0" key={item.Id}>
+                <MovieCard item={item} />
+              </View>
+            ))}
           </View>
-          {movies?.map((item: BaseItemDto) => (
-            <View className="mb-2 last:mb-0" key={item.Id}>
-              <MovieCard item={item} />
-            </View>
-          ))}
-        </View>
-        <View>
-          {groupedBySeries?.map((items: BaseItemDto[], index: number) => (
-            <SeriesCard items={items} key={items[0].SeriesId} />
-          ))}
-        </View>
+        )}
+        {groupedBySeries?.map((items: BaseItemDto[], index: number) => (
+          <SeriesCard items={items} key={items[0].SeriesId} />
+        ))}
       </View>
     </ScrollView>
   );

@@ -2,6 +2,14 @@
 
 Welcome to Streamyfin, a simple and user-friendly Jellyfin client built with Expo. If you're looking for an alternative to other Jellyfin clients, we hope you'll find Streamyfin to be a useful addition to your media streaming toolbox.
 
+<div style="display: flex; flex-direction: row; gap: 5px">
+  <img width=100 src="./assets/images/screenshots/1.jpg" />
+  <img width=100 src="./assets/images/screenshots/3.jpg" />
+  <img width=100 src="./assets/images/screenshots/4.jpg" />
+  <img width=100 src="./assets/images/screenshots/5.jpg" />
+  <img width=100 src="./assets/images/screenshots/7.jpg" />
+</div>
+
 ## 🌟 Features
 
 - 🔗 Connect to your Jellyfin instance: Easily link your Jellyfin server and access your media library.

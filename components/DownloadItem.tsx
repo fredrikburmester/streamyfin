@@ -1,8 +1,12 @@
-import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import { runningProcesses } from "@/utils/atoms/downloads";
-import { getPlaybackInfo, useDownloadMedia } from "@/utils/jellyfin";
+import {
+  getPlaybackInfo,
+  useDownloadMedia,
+  useRemuxHlsToMp4,
+} from "@/utils/jellyfin";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
@@ -14,15 +18,21 @@ import { Text } from "./common/Text";
 
 type DownloadProps = {
   item: BaseItemDto;
+  playbackURL: string;
 };
 
-export const DownloadItem: React.FC<DownloadProps> = ({ item }) => {
+export const DownloadItem: React.FC<DownloadProps> = ({
+  item,
+  playbackURL,
+}) => {
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
   const [process] = useAtom(runningProcesses);
 
   const { downloadMedia, isDownloading, error, cancelDownload } =
     useDownloadMedia(api, user?.Id);
+
+  const { startRemuxing, cancelRemuxing } = useRemuxHlsToMp4(playbackURL, item);
 
   const { data: playbackInfo, isLoading } = useQuery({
     queryKey: ["playbackInfo", item.Id],
@@ -33,6 +43,8 @@ export const DownloadItem: React.FC<DownloadProps> = ({ item }) => {
     if (!playbackInfo) return;
 
     const source = playbackInfo.MediaSources?.[0];
+
+    console.log("Source:", JSON.stringify(source));
 
     if (source?.SupportsDirectPlay && item.CanDownload) {
       downloadMedia(item);
@@ -80,22 +92,34 @@ export const DownloadItem: React.FC<DownloadProps> = ({ item }) => {
       {process ? (
         <TouchableOpacity
           onPress={() => {
-            cancelDownload();
+            cancelRemuxing();
           }}
-          className="relative"
+          className="flex flex-row items-center"
         >
-          <View className="-rotate-45">
-            <ProgressCircle
-              size={26}
-              fill={process.progress}
-              width={3}
-              tintColor="#3498db"
-              backgroundColor="#bdc3c7"
-            />
+          <View className="relative">
+            <View className="-rotate-45">
+              <ProgressCircle
+                size={26}
+                fill={process.progress}
+                width={3}
+                tintColor="#3498db"
+                backgroundColor="#bdc3c7"
+              />
+            </View>
+            {process.progress > 0 ? (
+              <View className="absolute top-0 left-0 font-bold w-full h-full flex flex-col items-center justify-center">
+                <Text className="text-[6px]">
+                  {process.progress.toFixed(0)}%
+                </Text>
+              </View>
+            ) : null}
           </View>
-          <View className="absolute top-0 left-0 font-bold w-full h-full flex flex-col items-center justify-center">
-            <Text className="text-[6px]">{process.progress.toFixed(0)}%</Text>
-          </View>
+
+          {process?.speed && (process?.speed || 0) > 0 ? (
+            <View className="ml-2">
+              <Text>{process.speed.toFixed(2)}x</Text>
+            </View>
+          ) : null}
         </TouchableOpacity>
       ) : downloaded ? (
         <TouchableOpacity
@@ -110,7 +134,8 @@ export const DownloadItem: React.FC<DownloadProps> = ({ item }) => {
       ) : (
         <TouchableOpacity
           onPress={() => {
-            downloadFile();
+            // downloadFile();
+            startRemuxing();
           }}
         >
           <Ionicons name="cloud-download-outline" size={26} color="white" />
