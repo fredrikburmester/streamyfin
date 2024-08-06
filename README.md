@@ -9,6 +9,10 @@ Welcome to Streamyfin, a simple and user-friendly Jellyfin client built with Exp
 - 📥 Download media (Experimental): Save your media locally and watch it offline.
 - 📡 Chromecast media (Experimental): Cast your media to any Chromecast-enabled device.
 
+## 🧪 Experimental Features
+
+Streamyfin includes some exciting experimental features like media downloading and Chromecast support. These are still in development, and we appreciate your patience and feedback as we work to improve them.
+
 ## 🛠️ TestFlight
 
 As of right now only iOS users can test Streamyfin in beta via TestFlight. To join the beta program, click the link below.
@@ -50,10 +54,6 @@ Run the app:
 expo start
 ```
 
-## 🧪 Experimental Features
-
-Streamyfin includes some exciting experimental features like media downloading and Chromecast support. These are still in development, and we appreciate your patience and feedback as we work to improve them.
-
 ## 🙌 Contributing
 
 We welcome any help to make Streamyfin better. If you'd like to contribute, please fork the repository and submit a pull request. For major changes, it's best to open an issue first to discuss your ideas.
@@ -80,5 +80,3 @@ If you have questions or need support, feel free to reach out:
 
 - GitHub Issues: Report bugs or request features here.
 - Email: [fredrik.burmester@gmail.com](mailto:fredrik.burmester@gmail.com)
-
-Thank you for checking out Streamyfin. We hope it helps you enjoy your media a little more. 🎉
