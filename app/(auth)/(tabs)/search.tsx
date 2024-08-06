@@ -6,7 +6,8 @@ import { ItemCardText } from "@/components/ItemCardText";
 import MoviePoster from "@/components/MoviePoster";
 import Poster from "@/components/Poster";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
-import { getPrimaryImage, getUserItemData } from "@/utils/jellyfin";
+import { getPrimaryImage } from "@/utils/jellyfin";
+import { getUserItemData } from "@/utils/jellyfin/items/getUserItemData";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import { getSearchApi } from "@jellyfin/sdk/lib/utils/api";
 import { useQuery } from "@tanstack/react-query";
@@ -146,21 +147,6 @@ export default function search() {
             />
           )}
         />
-
-        {/* <Text>Series</Text>
-
-        <HorizontalScroll
-          data={series}
-          renderItem={(item, index) => <Poster itemId={item.Id} key={index} />}
-        />
-
-        <Text>Episodes</Text>
-        <HorizontalScroll
-          data={episodes}
-          renderItem={(item, index) => (
-            <ContinueWatchingPoster item={item} key={index} />
-          )}
-        /> */}
       </View>
     </ScrollView>
   );
@@ -187,13 +173,15 @@ const SearchItemWrapper: React.FC<Props> = ({ ids, renderItem }) => {
           api,
           userId: user.Id,
           itemId: id,
-        })
+        }),
       );
 
       const results = await Promise.all(itemPromises);
 
       // Filter out null items
-      return results.filter((item) => item !== null);
+      return results.filter(
+        (item) => item !== null,
+      ) as unknown as BaseItemDto[];
     },
     enabled: !!ids && ids.length > 0 && !!api && !!user?.Id,
     staleTime: Infinity,

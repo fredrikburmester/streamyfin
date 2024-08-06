@@ -3,9 +3,12 @@ import { Text } from "@/components/common/Text";
 import ContinueWatchingPoster from "@/components/ContinueWatchingPoster";
 import { ItemCardText } from "@/components/ItemCardText";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
-import { nextUp } from "@/utils/jellyfin";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
-import { getItemsApi, getSuggestionsApi } from "@jellyfin/sdk/lib/utils/api";
+import {
+  getItemsApi,
+  getSuggestionsApi,
+  getTvShowsApi,
+} from "@jellyfin/sdk/lib/utils/api";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useAtom } from "jotai";
@@ -19,22 +22,24 @@ import {
 } from "react-native";
 
 export default function index() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
-  const router = useRouter();
+
+  const [loading, setLoading] = useState(false);
 
   const { data, isLoading, isError } = useQuery<BaseItemDto[]>({
     queryKey: ["resumeItems", user?.Id],
-    queryFn: async () => {
-      if (!api || !user?.Id) {
-        return [];
-      }
-
-      const response = await getItemsApi(api).getResumeItems({
-        userId: user.Id,
-      });
-      return response.data.Items || [];
-    },
+    queryFn: async () =>
+      (api &&
+        (
+          await getItemsApi(api).getResumeItems({
+            userId: user?.Id,
+          })
+        ).data.Items) ||
+      [],
     enabled: !!api && !!user?.Id,
     staleTime: 60,
   });
@@ -42,10 +47,14 @@ export default function index() {
   const { data: _nextUpData } = useQuery({
     queryKey: ["nextUp-all", user?.Id],
     queryFn: async () =>
-      await nextUp({
-        userId: user?.Id,
-        api,
-      }),
+      (api &&
+        (
+          await getTvShowsApi(api).getNextUp({
+            userId: user?.Id,
+            fields: ["MediaSourceCount"],
+          })
+        ).data.Items) ||
+      [],
     enabled: !!api && !!user?.Id,
     staleTime: 0,
   });
@@ -87,25 +96,19 @@ export default function index() {
 
   const { data: suggestions } = useQuery<BaseItemDto[]>({
     queryKey: ["suggestions", user?.Id],
-    queryFn: async () => {
-      if (!api || !user?.Id) {
-        return [];
-      }
-      const response = await getSuggestionsApi(api).getSuggestions({
-        userId: user.Id,
-        limit: 5,
-        mediaType: ["Video"],
-      });
-
-      return response.data.Items || [];
-    },
+    queryFn: async () =>
+      (api &&
+        (
+          await getSuggestionsApi(api).getSuggestions({
+            userId: user?.Id,
+            limit: 5,
+            mediaType: ["Video"],
+          })
+        ).data.Items) ||
+      [],
     enabled: !!api && !!user?.Id,
     staleTime: 60,
   });
-
-  const queryClient = useQueryClient();
-
-  const [loading, setLoading] = useState(false);
 
   const refetch = useCallback(async () => {
     setLoading(true);

@@ -1,15 +1,4 @@
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
-import {
-  chromecastProfile,
-  iosProfile,
-  iOSProfile_2,
-} from "@/utils/device-profiles";
-import {
-  getStreamUrl,
-  getUserItemData,
-  reportPlaybackProgress,
-  reportPlaybackStopped,
-} from "@/utils/jellyfin";
 import { runtimeTicksToMinutes } from "@/utils/time";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { getMediaInfoApi } from "@jellyfin/sdk/lib/utils/api";
@@ -34,8 +23,12 @@ import Video, {
 import * as DropdownMenu from "zeego/dropdown-menu";
 import { Button } from "./Button";
 import { Text } from "./common/Text";
-import iosFmp4 from "../utils/profiles/iosFmp4";
 import ios12 from "../utils/profiles/ios12";
+import { getUserItemData } from "@/utils/jellyfin/items/getUserItemData";
+import { getStreamUrl } from "@/utils/jellyfin";
+import { reportPlaybackProgress } from "@/utils/jellyfin/playstate/reportPlaybackProgress";
+import { chromecastProfile } from "@/utils/profiles/chromecast";
+import { reportPlaybackStopped } from "@/utils/jellyfin/playstate/reportPlaybackStopped";
 
 type VideoPlayerProps = {
   itemId: string;
@@ -75,7 +68,6 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
   const castDevice = useCastDevice();
   const client = useRemoteMediaClient();
-
   const queryClient = useQueryClient();
 
   const { data: item } = useQuery({
@@ -130,39 +122,19 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   });
 
   const onProgress = useCallback(
-    ({ currentTime, playableDuration, seekableDuration }: OnProgressData) => {
-      if (!currentTime || !sessionData?.PlaySessionId) return;
-      if (paused) return;
-
+    ({ currentTime }: OnProgressData) => {
+      if (!currentTime || !sessionData?.PlaySessionId || paused) return;
       const newProgress = currentTime * 10000000;
       setProgress(newProgress);
       reportPlaybackProgress({
         api,
-        itemId: itemId,
+        itemId,
         positionTicks: newProgress,
         sessionId: sessionData.PlaySessionId,
       });
     },
-    [sessionData?.PlaySessionId, item, api, paused]
+    [sessionData?.PlaySessionId, item, api, paused],
   );
-
-  const onSeek = ({
-    currentTime,
-    seekTime,
-  }: {
-    currentTime: number;
-    seekTime: number;
-  }) => {
-    // console.log("Seek to time: ", seekTime);
-  };
-
-  const onError = (error: OnVideoErrorData) => {
-    console.log("Video Error: ", JSON.stringify(error.error));
-  };
-
-  const onBuffer = (error: OnBufferData) => {
-    console.log("Video buffering: ", error.isBuffering);
-  };
 
   const play = () => {
     if (videoRef.current) {
@@ -171,114 +143,90 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     }
   };
 
-  const startPosition = useMemo(() => {
-    return Math.round((item?.UserData?.PlaybackPositionTicks || 0) / 10000);
-  }, [item]);
+  const pause = useCallback(() => {
+    videoRef.current?.pause();
+    setPaused(true);
 
-  const [hidePlayer, setHidePlayer] = useState(true);
+    if (progress > 0)
+      reportPlaybackStopped({
+        api,
+        itemId: item?.Id,
+        positionTicks: progress,
+        sessionId: sessionData?.PlaySessionId,
+      });
 
-  const enableVideo = useMemo(() => {
-    return (
-      playbackURL !== undefined &&
-      item !== undefined &&
-      item !== null &&
-      startPosition !== undefined &&
-      sessionData !== undefined
-    );
-  }, [playbackURL, item, startPosition, sessionData]);
+    queryClient.invalidateQueries({
+      queryKey: ["nextUp", item?.SeriesId],
+      refetchType: "all",
+    });
+    queryClient.invalidateQueries({
+      queryKey: ["episodes"],
+      refetchType: "all",
+    });
+  }, [api, item, progress, sessionData, queryClient]);
+
+  const startPosition = useMemo(
+    () =>
+      item?.UserData?.PlaybackPositionTicks
+        ? Math.round(item.UserData.PlaybackPositionTicks / 10000)
+        : null,
+    [item],
+  );
+
+  const enableVideo = useMemo(
+    () => !!(playbackURL && item && startPosition !== null && sessionData),
+    [playbackURL, item, startPosition, sessionData],
+  );
+
+  const chromecastReady = useMemo(
+    () => !!(castDevice?.deviceId && item),
+    [castDevice, item],
+  );
 
   const cast = useCallback(() => {
-    if (client === null) {
-      console.log("no client ");
-      return;
-    }
-
-    if (!playbackURL) {
-      console.log("no playback url");
-      return;
-    }
-
-    if (!item) {
-      console.log("no item");
-      return;
-    }
-
+    if (!client || !playbackURL || !item) return;
     client.loadMedia({
       mediaInfo: {
         contentUrl: playbackURL,
         contentType: "video/mp4",
         metadata: {
-          type: item?.Type === "Episode" ? "tvShow" : "movie",
-          title: item?.Name || "",
-          subtitle: item?.Overview || "",
+          type: item.Type === "Episode" ? "tvShow" : "movie",
+          title: item.Name || "",
+          subtitle: item.Overview || "",
         },
-        streamDuration: Math.floor((item?.RunTimeTicks || 0) / 10000),
+        streamDuration: Math.floor((item.RunTimeTicks || 0) / 10000),
       },
       startTime: Math.floor(
-        (item?.UserData?.PlaybackPositionTicks || 0) / 10000
+        (item.UserData?.PlaybackPositionTicks || 0) / 10000,
       ),
     });
   }, [item, client, playbackURL]);
 
   useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.pause();
-    }
+    videoRef.current?.pause();
   }, []);
-
-  const chromecastReady = useMemo(() => {
-    return castDevice?.deviceId && item;
-  }, [castDevice, item]);
 
   return (
     <View>
-      {enableVideo === true ? (
+      {enableVideo === true && startPosition !== null && !!playbackURL ? (
         <Video
           style={{ width: 0, height: 0 }}
           source={{
-            uri: playbackURL!,
+            uri: playbackURL,
             isNetwork: true,
             startPosition,
           }}
-          debug={{
-            enable: true,
-            thread: true,
-          }}
           ref={videoRef}
-          onBuffer={onBuffer}
-          onSeek={(t) => onSeek(t)}
-          onError={onError}
+          onBuffer={(e) => (e.isBuffering ? console.log("Buffering...") : null)}
           onProgress={(e) => onProgress(e)}
           onFullscreenPlayerDidDismiss={() => {
-            videoRef.current?.pause();
-            setPaused(true);
-            queryClient.invalidateQueries({
-              queryKey: ["nextUp", item?.SeriesId],
-              refetchType: "all",
-            });
-            queryClient.invalidateQueries({
-              queryKey: ["episodes"],
-              refetchType: "all",
-            });
-
-            if (progress === 0) return;
-
-            reportPlaybackStopped({
-              api,
-              itemId: item?.Id,
-              positionTicks: progress,
-              sessionId: sessionData?.PlaySessionId,
-            });
-
-            setHidePlayer(true);
+            pause();
           }}
           onFullscreenPlayerDidPresent={() => {
             play();
           }}
           paused={paused}
-          onPlaybackStateChanged={(e: OnPlaybackStateChangedData) => {}}
           ignoreSilentSwitch="ignore"
-          preferredForwardBufferDuration={1}
         />
       ) : null}
       <View className="flex flex-row items-center justify-between">
@@ -326,7 +274,6 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
             if (chromecastReady) {
               cast();
             } else {
-              setHidePlayer(false);
               setTimeout(() => {
                 if (!videoRef.current) return;
                 videoRef.current.presentFullscreenPlayer();

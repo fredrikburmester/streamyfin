@@ -7,10 +7,11 @@ import Poster from "../Poster";
 import ContinueWatchingPoster from "../ContinueWatchingPoster";
 import { ItemCardText } from "../ItemCardText";
 import { router } from "expo-router";
-import { nextUp } from "@/utils/jellyfin";
 import { useQuery } from "@tanstack/react-query";
 import { useAtom } from "jotai";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
+import { nextUp } from "@/utils/jellyfin/tvshows/nextUp";
+import { getTvShowsApi } from "@jellyfin/sdk/lib/utils/api";
 
 export const NextUp: React.FC<{ seriesId: string }> = ({ seriesId }) => {
   const [user] = useAtom(userAtom);
@@ -18,12 +19,16 @@ export const NextUp: React.FC<{ seriesId: string }> = ({ seriesId }) => {
 
   const { data: items } = useQuery({
     queryKey: ["nextUp", seriesId],
-    queryFn: async () =>
-      await nextUp({
-        userId: user?.Id,
-        api,
-        itemId: seriesId,
-      }),
+    queryFn: async () => {
+      if (!api) return null;
+      return (
+        await getTvShowsApi(api).getNextUp({
+          userId: user?.Id,
+          seriesId,
+          fields: ["MediaSourceCount"],
+        })
+      ).data.Items;
+    },
     enabled: !!api && !!seriesId && !!user?.Id,
     staleTime: 0,
   });
