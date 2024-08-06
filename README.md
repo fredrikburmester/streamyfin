@@ -21,7 +21,7 @@ Welcome to Streamyfin, a simple and user-friendly Jellyfin client built with Exp
 
 Streamyfin includes some exciting experimental features like media downloading and Chromecast support. These are still in development, and we appreciate your patience and feedback as we work to improve them.
 
-## 🛠️ TestFlight (preding review)
+## 🛠️ TestFlight (pending review)
 
 Soon iOS users can test Streamyfin in beta via TestFlight. To join the beta program, click the link below.
 
