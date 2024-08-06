@@ -351,3 +351,127 @@ export const chromecastProfile: DeviceProfile = {
     },
   ],
 };
+
+export const iOSProfile_2: DeviceProfile = {
+  Id: "iPhone",
+  Name: "iPhone",
+  MaxStreamingBitrate: 20000000,
+  MaxStaticBitrate: 30000000,
+  MusicStreamingTranscodingBitrate: 192000,
+  DirectPlayProfiles: [
+    {
+      Container: "mp4,m4v",
+      Type: "Video",
+      VideoCodec: "h264,hevc,mp4v",
+      AudioCodec: "aac,mp3,ac3,eac3,flac,alac",
+    },
+    {
+      Container: "mov",
+      Type: "Video",
+      VideoCodec: "h264,hevc",
+      AudioCodec: "aac,mp3,ac3,eac3,flac,alac",
+    },
+    {
+      Container: "m4a",
+      Type: "Audio",
+      AudioCodec: "aac,alac",
+    },
+    {
+      Container: "mp3",
+      Type: "Audio",
+      AudioCodec: "mp3",
+    },
+  ],
+  TranscodingProfiles: [
+    {
+      Container: "ts",
+      Type: "Video",
+      VideoCodec: "h264",
+      AudioCodec: "aac",
+      Context: "Streaming",
+      Protocol: "hls",
+      MaxAudioChannels: "2",
+      MinSegments: 2,
+      BreakOnNonKeyFrames: true,
+    },
+    {
+      Container: "mp3",
+      Type: "Audio",
+      AudioCodec: "mp3",
+      Context: "Streaming",
+      Protocol: "http",
+    },
+  ],
+  ContainerProfiles: [],
+  CodecProfiles: [
+    {
+      Type: "VideoAudio",
+      Codec: "aac",
+      Conditions: [
+        {
+          Condition: "Equals",
+          Property: "IsSecondaryAudio",
+          Value: "false",
+          IsRequired: false,
+        },
+      ],
+    },
+    {
+      Type: "VideoAudio",
+      Conditions: [
+        {
+          Condition: "LessThanEqual",
+          Property: "AudioChannels",
+          Value: "2",
+          IsRequired: true,
+        },
+      ],
+    },
+    {
+      Type: "Video",
+      Codec: "h264",
+      Conditions: [
+        {
+          Condition: "LessThanEqual",
+          Property: "VideoLevel",
+          Value: "51",
+          IsRequired: true,
+        },
+        {
+          Condition: "EqualsAny",
+          Property: "VideoProfile",
+          Value: "main|high|baseline",
+          IsRequired: true,
+        },
+      ],
+    },
+    {
+      Type: "Video",
+      Codec: "hevc",
+      Conditions: [
+        {
+          Condition: "LessThanEqual",
+          Property: "VideoLevel",
+          Value: "153",
+          IsRequired: true,
+        },
+        {
+          Condition: "EqualsAny",
+          Property: "VideoProfile",
+          Value: "main|main10",
+          IsRequired: true,
+        },
+      ],
+    },
+  ],
+  SubtitleProfiles: [
+    {
+      Format: "vtt",
+      Method: "External",
+    },
+    {
+      Format: "mov_text",
+      Method: "Embed",
+    },
+  ],
+};

@@ -1,5 +1,10 @@
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import {
+  chromecastProfile,
+  iosProfile,
+  iOSProfile_2,
+} from "@/utils/device-profiles";
+import {
   getStreamUrl,
   getUserItemData,
   reportPlaybackProgress,
@@ -17,7 +22,8 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { ActivityIndicator, TouchableOpacity, View } from "react-native";
+import { TouchableOpacity, View } from "react-native";
+import { useCastDevice, useRemoteMediaClient } from "react-native-google-cast";
 import Video, {
   OnBufferData,
   OnPlaybackStateChangedData,
@@ -28,13 +34,12 @@ import Video, {
 import * as DropdownMenu from "zeego/dropdown-menu";
 import { Button } from "./Button";
 import { Text } from "./common/Text";
-import { useCastDevice, useRemoteMediaClient } from "react-native-google-cast";
-import GoogleCast from "react-native-google-cast";
-import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
-import { chromecastProfile, iosProfile } from "@/utils/device-profiles";
+import iosFmp4 from "../utils/profiles/iosFmp4";
+import ios12 from "../utils/profiles/ios12";
 
 type VideoPlayerProps = {
   itemId: string;
+  onChangePlaybackURL: (url: string | null) => void;
 };
 
 const BITRATES = [
@@ -56,7 +61,10 @@ const BITRATES = [
   },
 ];
 
-export const VideoPlayer: React.FC<VideoPlayerProps> = ({ itemId }) => {
+export const VideoPlayer: React.FC<VideoPlayerProps> = ({
+  itemId,
+  onChangePlaybackURL,
+}) => {
   const videoRef = useRef<VideoRef | null>(null);
   const [maxBitrate, setMaxbitrate] = useState<number | undefined>(undefined);
   const [paused, setPaused] = useState(true);
@@ -108,10 +116,12 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ itemId }) => {
         startTimeTicks: item?.UserData?.PlaybackPositionTicks || 0,
         maxStreamingBitrate: maxBitrate,
         sessionData,
-        deviceProfile: castDevice?.deviceId ? chromecastProfile : iosProfile,
+        deviceProfile: castDevice?.deviceId ? chromecastProfile : ios12,
       });
 
       console.log("Transcode URL:", url);
+
+      onChangePlaybackURL(url);
 
       return url;
     },
@@ -164,6 +174,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ itemId }) => {
   const startPosition = useMemo(() => {
     return Math.round((item?.UserData?.PlaybackPositionTicks || 0) / 10000);
   }, [item]);
+
+  const [hidePlayer, setHidePlayer] = useState(true);
 
   const enableVideo = useMemo(() => {
     return (
@@ -220,13 +232,11 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ itemId }) => {
 
   return (
     <View>
-      {enableVideo === true &&
-      playbackURL !== null &&
-      playbackURL !== undefined ? (
+      {enableVideo === true ? (
         <Video
           style={{ width: 0, height: 0 }}
           source={{
-            uri: playbackURL,
+            uri: playbackURL!,
             isNetwork: true,
             startPosition,
           }}
@@ -242,7 +252,6 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ itemId }) => {
           onFullscreenPlayerDidDismiss={() => {
             videoRef.current?.pause();
             setPaused(true);
-
             queryClient.invalidateQueries({
               queryKey: ["nextUp", item?.SeriesId],
               refetchType: "all",
@@ -260,19 +269,16 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ itemId }) => {
               positionTicks: progress,
               sessionId: sessionData?.PlaySessionId,
             });
+
+            setHidePlayer(true);
           }}
           onFullscreenPlayerDidPresent={() => {
             play();
           }}
           paused={paused}
           onPlaybackStateChanged={(e: OnPlaybackStateChangedData) => {}}
-          bufferConfig={{
-            maxBufferMs: Infinity,
-            minBufferMs: 1000 * 60 * 2,
-            bufferForPlaybackMs: 1000,
-            backBufferDurationMs: 30 * 1000,
-          }}
           ignoreSilentSwitch="ignore"
+          preferredForwardBufferDuration={1}
         />
       ) : null}
       <View className="flex flex-row items-center justify-between">
@@ -319,8 +325,12 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ itemId }) => {
           onPress={() => {
             if (chromecastReady) {
               cast();
-            } else if (videoRef.current) {
-              videoRef.current.presentFullscreenPlayer();
+            } else {
+              setHidePlayer(false);
+              setTimeout(() => {
+                if (!videoRef.current) return;
+                videoRef.current.presentFullscreenPlayer();
+              }, 1000);
             }
           }}
           iconRight={
