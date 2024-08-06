@@ -1,50 +1,76 @@
-# Welcome to your Expo app 👋
+# 📺 Streamyfin
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Welcome to Streamyfin, a simple and user-friendly Jellyfin client built with Expo. If you're looking for an alternative to apps like Swiftfin for iOS or other Jellyfin clients, we hope you'll find Streamyfin to be a useful addition to your media streaming toolbox.
 
-## Get started
+## 🌟 Features
 
-1. Install dependencies
+- 🔗 Connect to your Jellyfin instance: Easily link your Jellyfin server and access your media library.
+- 🎥 Stream any media: Enjoy smooth playback of your favorite movies, TV shows, music, and more.
+- 📥 Download media (Experimental): Save your media locally and watch it offline.
+- 📡 Chromecast media (Experimental): Cast your media to any Chromecast-enabled device for a bigger screen experience.
+- 📱 Native video player: Experience high-quality playback with our integrated video player.
+- 🚀 Getting Started
 
-   ```bash
-   npm install
-   ```
+## Prerequisites
 
-2. Start the app
+- Ensure you have an active Jellyfin server.
+- Make sure your device is connected to the same network as your Jellyfin server.
 
-   ```bash
-    npx expo start
-   ```
+## Installation
 
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+Clone the repository:
 
 ```bash
-npm run reset-project
+git clone https://github.com/your-username/streamyfin.git
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Navigate to the project directory:
 
-## Learn more
+```bash
+cd streamyfin
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+Install the dependencies:
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+```bash
+npm install
+```
 
-## Join the community
+Run the app:
 
-Join our community of developers creating universal apps.
+```bash
+expo start
+```
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## 🧪 Experimental Features
+
+Streamyfin includes some exciting experimental features like media downloading and Chromecast support. These are still in development, and we appreciate your patience and feedback as we work to improve them.
+
+## 🙌 Contributing
+
+We welcome any help to make Streamyfin better. If you'd like to contribute, please fork the repository and submit a pull request. For major changes, it's best to open an issue first to discuss your ideas.
+
+## 📄 License
+
+Streamyfin is licensed under the [GNU General Public License v3.0 (GPL-3.0)](https://www.gnu.org/licenses/gpl-3.0.en.html).
+
+This means you are free to use, modify, and distribute this software. However, any modifications or larger works must also be released under the GPL-3.0. This license ensures that all versions of the software remain free and open source.
+
+Key points of the GPL-3.0:
+
+- You can use the software for any purpose
+- You can modify the software and distribute modified versions
+- You must include the original copyright and license notices
+- You must disclose your source code when you distribute the software
+- Any modifications or larger works must also be licensed under GPL-3.0
+
+For the full text of the license, please see the [LICENSE](LICENSE.txt) file in this repository.
+
+## 🌐 Connect with Us
+
+If you have questions or need support, feel free to reach out:
+
+- GitHub Issues: Report bugs or request features here.
+- Email: fredrik.burmester@gmail.com
+
+Thank you for checking out Streamyfin. We hope it helps you enjoy your media a little more. 🎉
