@@ -62,3 +62,15 @@ If you have questions or need support, feel free to reach out:
 
 - GitHub Issues: Report bugs or request features here.
 - Email: [fredrik.burmester@gmail.com](mailto:fredrik.burmester@gmail.com)
+
+## 📝 Credits
+
+Streamyfin is developed by Fredrik Burmester and is not affiliated with Jellyfin. The app is built with Expo, React Native, and other open-source libraries.
+
+## ✨ Acknowledgements
+
+I'd like to thank the following people and projects for their contributions to Streamyfin:
+
+- [Reiverr](https://github.com/aleksilassila/reiverr) for great help with the Jellyfin API.
+- [Jellyfin TS SDK](https://github.com/jellyfin/jellyfin-sdk-typescript) for the TypeScript SDK.
+- The Jellyfin devs for always being helpful in the Discord.
