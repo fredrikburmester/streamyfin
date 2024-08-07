@@ -3,8 +3,9 @@ import { ParallaxScrollView } from "@/components/ParallaxPage";
 import { NextUp } from "@/components/series/NextUp";
 import { SeasonPicker } from "@/components/series/SeasonPicker";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
-import { getBackdrop, getLogoImageById } from "@/utils/jellyfin";
-import { getUserItemData } from "@/utils/jellyfin/items/getUserItemData";
+import { getBackdropUrl } from "@/utils/jellyfin/image/getBackdropUrl";
+import { getLogoImageUrlById } from "@/utils/jellyfin/image/getLogoImageUrlById";
+import { getUserItemData } from "@/utils/jellyfin/user-library/getUserItemData";
 import { useQuery } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import { useLocalSearchParams } from "expo-router";
@@ -33,7 +34,7 @@ const page: React.FC = () => {
 
   const backdropUrl = useMemo(
     () =>
-      getBackdrop({
+      getBackdropUrl({
         api,
         item,
         quality: 90,
@@ -44,7 +45,7 @@ const page: React.FC = () => {
 
   const logoUrl = useMemo(
     () =>
-      getLogoImageById({
+      getLogoImageUrlById({
         api,
         item,
       }),

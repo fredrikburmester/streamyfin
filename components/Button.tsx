@@ -2,7 +2,7 @@ import React, { PropsWithChildren, ReactNode, useMemo } from "react";
 import { TouchableOpacity, Text, ActivityIndicator, View } from "react-native";
 import * as Haptics from "expo-haptics";
 
-interface ButtonProps {
+interface ButtonProps extends React.ComponentProps<typeof TouchableOpacity> {
   onPress?: () => void;
   className?: string;
   textClassName?: string;
@@ -26,6 +26,7 @@ export const Button: React.FC<PropsWithChildren<ButtonProps>> = ({
   iconLeft,
   children,
   justify = "center",
+  ...props
 }) => {
   const colorClasses = useMemo(() => {
     switch (color) {
@@ -34,7 +35,7 @@ export const Button: React.FC<PropsWithChildren<ButtonProps>> = ({
       case "red":
         return "bg-red-600";
       case "black":
-        return "bg-black border border-neutral-900";
+        return "bg-neutral-900 border border-neutral-800";
     }
   }, [color]);
 
@@ -53,6 +54,7 @@ export const Button: React.FC<PropsWithChildren<ButtonProps>> = ({
         }
       }}
       disabled={disabled || loading}
+      {...props}
     >
       {loading ? (
         <ActivityIndicator color={"white"} size={24} />

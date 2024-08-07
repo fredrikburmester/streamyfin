@@ -1,0 +1,51 @@
+import { Api } from "@jellyfin/sdk";
+import {
+  BaseItemDto,
+  BaseItemPerson,
+} from "@jellyfin/sdk/lib/generated-client/models";
+import { isBaseItemDto } from "../jellyfin";
+
+/**
+ * Retrieves the primary image URL for a given item.
+ *
+ * @param api - The Jellyfin API instance.
+ * @param item - The media item to retrieve the backdrop image URL for.
+ * @param quality - The desired image quality (default: 90).
+ */
+export const getPrimaryImageUrl = ({
+  api,
+  item,
+  quality = 90,
+  width = 500,
+}: {
+  api?: Api | null;
+  item?: BaseItemDto | BaseItemPerson | null;
+  quality?: number | null;
+  width?: number | null;
+}) => {
+  if (!item || !api) {
+    return null;
+  }
+
+  if (!isBaseItemDto(item)) {
+    return `${api?.basePath}/Items/${item?.Id}/Images/Primary`;
+  }
+
+  const backdropTag = item.BackdropImageTags?.[0];
+  const primaryTag = item.ImageTags?.["Primary"];
+
+  const params = new URLSearchParams({
+    fillWidth: width ? String(width) : "500",
+    quality: quality ? String(quality) : "90",
+  });
+
+  if (primaryTag) {
+    params.set("tag", primaryTag);
+  } else if (backdropTag) {
+    params.set("tag", backdropTag);
+  }
+
+  return `${api?.basePath}/Items/${
+    item.Id
+  }/Images/Primary?${params.toString()}`;
+};

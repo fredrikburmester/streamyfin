@@ -6,21 +6,31 @@ import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo } from "react";
-import { ActivityIndicator, ScrollView, View } from "react-native";
+import {
+  ActivityIndicator,
+  ScrollView,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import * as FileSystem from "expo-file-system";
+import { useAtom } from "jotai";
+import { runningProcesses } from "@/utils/atoms/downloads";
+import { router } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { FFmpegKit } from "ffmpeg-kit-react-native";
 
 const downloads: React.FC = () => {
   const { data: downloadedFiles, isLoading } = useQuery({
     queryKey: ["downloaded_files"],
     queryFn: async () =>
       JSON.parse(
-        (await AsyncStorage.getItem("downloaded_files")) || "[]"
+        (await AsyncStorage.getItem("downloaded_files")) || "[]",
       ) as BaseItemDto[],
   });
 
   const movies = useMemo(
     () => downloadedFiles?.filter((f) => f.Type === "Movie") || [],
-    [downloadedFiles]
+    [downloadedFiles],
   );
 
   const groupedBySeries = useMemo(() => {
@@ -39,9 +49,11 @@ const downloads: React.FC = () => {
         name: i.Name,
         codec: i.SourceType,
         media: i.MediaSources?.[0].Container,
-      }))
+      })),
     );
   }, [downloadedFiles]);
+
+  const [process, setProcess] = useAtom(runningProcesses);
 
   if (isLoading) {
     return (
@@ -64,6 +76,55 @@ const downloads: React.FC = () => {
   return (
     <ScrollView>
       <View className="px-4 py-4">
+        <View className="mb-4">
+          <Text className="text-2xl font-bold mb-2">Active download</Text>
+          {process?.item ? (
+            <TouchableOpacity
+              onPress={() =>
+                router.push(`/(auth)/items/${process.item.Id}/page`)
+              }
+              className="relative bg-neutral-900 border border-neutral-800 p-4 rounded-2xl overflow-hidden flex flex-row items-center justify-between"
+            >
+              <View>
+                <Text className="font-semibold">{process.item.Name}</Text>
+                <Text className="text-xs opacity-50">{process.item.Type}</Text>
+                <View className="flex flex-row items-center space-x-2 mt-1 text-red-600">
+                  <Text className="text-xs">
+                    {process.progress.toFixed(0)}%
+                  </Text>
+                  <Text className="text-xs">{process.speed?.toFixed(2)}x</Text>
+                  {process.startTime && (
+                    <Text className="text-xs">
+                      {formatNumber(
+                        new Date().getTime() - process.startTime.getTime(),
+                      )}
+                    </Text>
+                  )}
+                </View>
+              </View>
+              <TouchableOpacity
+                onPress={() => {
+                  FFmpegKit.cancel();
+                  setProcess(null);
+                }}
+              >
+                <Ionicons name="close" size={24} color="red" />
+              </TouchableOpacity>
+              <View
+                className={`
+                  absolute bottom-0 left-0 h-1 bg-red-600
+                `}
+                style={{
+                  width: process.progress
+                    ? `${Math.max(5, process.progress)}%`
+                    : "5%",
+                }}
+              ></View>
+            </TouchableOpacity>
+          ) : (
+            <Text className="opacity-50">No active downloads</Text>
+          )}
+        </View>
         {movies.length > 0 && (
           <View className="mb-4">
             <View className="flex flex-row items-center justify-between mb-2">
@@ -88,3 +149,15 @@ const downloads: React.FC = () => {
 };
 
 export default downloads;
+
+/*
+ * Format a number (Date.getTime) to a human readable string ex. 2m 34s
+ * @param {number} num - The number to format
+ *
+ * @returns {string} - The formatted string
+ */
+const formatNumber = (num: number) => {
+  const minutes = Math.floor(num / 60000);
+  const seconds = ((num % 60000) / 1000).toFixed(0);
+  return `${minutes}m ${seconds}s`;
+};

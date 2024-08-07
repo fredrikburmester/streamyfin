@@ -5,13 +5,14 @@ import * as ContextMenu from "zeego/context-menu";
 import { Text } from "../common/Text";
 import { useFiles } from "@/hooks/useFiles";
 import * as Haptics from "expo-haptics";
-import { useRef, useMemo } from "react";
+import { useRef, useMemo, useState } from "react";
 import Video, { VideoRef } from "react-native-video";
 import * as FileSystem from "expo-file-system";
 
 export const EpisodeCard: React.FC<{ item: BaseItemDto }> = ({ item }) => {
   const { deleteFile } = useFiles();
   const videoRef = useRef<VideoRef | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   const openFile = () => {
     videoRef.current?.presentFullscreenPlayer();
@@ -38,7 +39,7 @@ export const EpisodeCard: React.FC<{ item: BaseItemDto }> = ({ item }) => {
         <ContextMenu.Trigger>
           <TouchableOpacity
             onPress={openFile}
-            className="bg-neutral-800 border border-neutral-900 rounded-2xl p-4"
+            className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4"
           >
             <Text className=" font-bold">{item.Name}</Text>
             <Text className=" text-xs opacity-50">
@@ -79,9 +80,17 @@ export const EpisodeCard: React.FC<{ item: BaseItemDto }> = ({ item }) => {
           isNetwork: false,
         }}
         controls
+        onFullscreenPlayerDidDismiss={() => {
+          setIsPlaying(false);
+          videoRef.current?.pause();
+        }}
+        onFullscreenPlayerDidPresent={() => {
+          setIsPlaying(true);
+          videoRef.current?.resume();
+        }}
         ref={videoRef}
         resizeMode="contain"
-        reportBandwidth
+        paused={!isPlaying}
       />
     </>
   );

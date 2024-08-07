@@ -1,11 +1,11 @@
 import { apiAtom } from "@/providers/JellyfinProvider";
-import { getPrimaryImage } from "@/utils/jellyfin";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import { Image } from "expo-image";
 import { useAtom } from "jotai";
 import { useMemo, useState } from "react";
 import { View } from "react-native";
 import { WatchedIndicator } from "./WatchedIndicator";
+import { getPrimaryImageUrl } from "@/utils/jellyfin/image/getPrimaryImageUrl";
 
 type ContinueWatchingPosterProps = {
   item: BaseItemDto;
@@ -18,17 +18,17 @@ const ContinueWatchingPoster: React.FC<ContinueWatchingPosterProps> = ({
 
   const url = useMemo(
     () =>
-      getPrimaryImage({
+      getPrimaryImageUrl({
         api,
         item,
         quality: 70,
         width: 300,
       }),
-    [item]
+    [item],
   );
 
   const [progress, setProgress] = useState(
-    item.UserData?.PlayedPercentage || 0
+    item.UserData?.PlayedPercentage || 0,
   );
 
   if (!url)

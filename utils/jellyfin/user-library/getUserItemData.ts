@@ -1,8 +1,6 @@
 import { Api } from "@jellyfin/sdk";
-import {
-  getMediaInfoApi,
-  getUserLibraryApi,
-} from "@jellyfin/sdk/lib/utils/api";
+import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
+import { getUserLibraryApi } from "@jellyfin/sdk/lib/utils/api";
 
 /**
  *  Fetches the media info for a given item.
@@ -21,26 +19,9 @@ export const getUserItemData = async ({
   api: Api | null | undefined;
   itemId: string | null | undefined;
   userId: string | null | undefined;
-}) => {
+}): Promise<BaseItemDto | null> => {
   if (!api || !itemId || !userId) {
     return null;
   }
   return (await getUserLibraryApi(api).getItem({ itemId, userId })).data;
-};
-
-export const getPlaybackInfo = async (
-  api?: Api | null | undefined,
-  itemId?: string | null | undefined,
-  userId?: string | null | undefined,
-) => {
-  if (!api || !itemId || !userId) {
-    return null;
-  }
-
-  const a = await getMediaInfoApi(api).getPlaybackInfo({
-    itemId,
-    userId,
-  });
-
-  return a.data;
 };

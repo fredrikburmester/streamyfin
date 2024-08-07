@@ -2,7 +2,7 @@ import { Button } from "@/components/Button";
 import { Text } from "@/components/common/Text";
 import { ListItem } from "@/components/ListItem";
 import { apiAtom, useJellyfin, userAtom } from "@/providers/JellyfinProvider";
-import { readFromLog } from "@/utils/log";
+import { clearLogs, readFromLog } from "@/utils/log";
 import { useQuery } from "@tanstack/react-query";
 import * as FileSystem from "expo-file-system";
 import { useAtom } from "jotai";
@@ -20,6 +20,7 @@ export default function settings() {
   const { data: logs } = useQuery({
     queryKey: ["logs"],
     queryFn: async () => readFromLog(),
+    refetchInterval: 1000,
   });
 
   return (
@@ -32,9 +33,10 @@ export default function settings() {
           <ListItem title="Server" subTitle={api?.basePath} />
         </View>
 
-        <Button onPress={logout}>Log out</Button>
-
-        <View className="my-2">
+        <View className="flex flex-col space-y-2">
+          <Button color="black" onPress={logout}>
+            Log out
+          </Button>
           <Button
             color="red"
             onPress={async () => {
@@ -46,9 +48,20 @@ export default function settings() {
           >
             Delete all downloaded files
           </Button>
+          <Button
+            color="red"
+            onPress={async () => {
+              await clearLogs();
+              Haptics.notificationAsync(
+                Haptics.NotificationFeedbackType.Success,
+              );
+            }}
+          >
+            Delete all logs
+          </Button>
         </View>
 
-        <Text className="font-bold">Logs</Text>
+        <Text className="font-bold text-2xl">Logs</Text>
         <View className="flex flex-col space-y-2">
           {logs?.map((log, index) => (
             <View
@@ -66,6 +79,9 @@ export default function settings() {
               <Text>{log.message}</Text>
             </View>
           ))}
+          {logs?.length === 0 && (
+            <Text className="opacity-50">No logs available</Text>
+          )}
         </View>
       </View>
     </ScrollView>

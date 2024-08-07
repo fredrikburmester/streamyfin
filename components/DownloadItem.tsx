@@ -12,7 +12,7 @@ import ProgressCircle from "./ProgressCircle";
 import { Text } from "./common/Text";
 import { useDownloadMedia } from "@/hooks/useDownloadMedia";
 import { useRemuxHlsToMp4 } from "@/hooks/useRemuxHlsToMp4";
-import { getPlaybackInfo } from "@/utils/jellyfin/items/getUserItemData";
+import { getPlaybackInfo } from "@/utils/jellyfin/media/getPlaybackInfo";
 
 type DownloadProps = {
   item: BaseItemDto;
