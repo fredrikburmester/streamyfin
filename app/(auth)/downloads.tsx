@@ -1,5 +1,4 @@
 import { Text } from "@/components/common/Text";
-import { EpisodeCard } from "@/components/downloads/EpisodeCard";
 import { MovieCard } from "@/components/downloads/MovieCard";
 import { SeriesCard } from "@/components/downloads/SeriesCard";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
@@ -12,7 +11,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import * as FileSystem from "expo-file-system";
 import { useAtom } from "jotai";
 import { runningProcesses } from "@/utils/atoms/downloads";
 import { router } from "expo-router";
