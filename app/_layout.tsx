@@ -6,17 +6,12 @@ import { useEffect, useRef } from "react";
 import "react-native-reanimated";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Provider as JotaiProvider, useAtom } from "jotai";
+import { Provider as JotaiProvider } from "jotai";
 import { JellyfinProvider } from "@/providers/JellyfinProvider";
 import { TouchableOpacity } from "react-native";
 
 import Feather from "@expo/vector-icons/Feather";
 import { StatusBar } from "expo-status-bar";
-import { Ionicons } from "@expo/vector-icons";
-import { View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Text } from "@/components/common/Text";
-import { runningProcesses } from "@/utils/atoms/downloads";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -49,10 +44,6 @@ export default function RootLayout() {
       SplashScreen.hideAsync();
     }
   }, [loaded]);
-
-  const insets = useSafeAreaInsets();
-
-  const [process] = useAtom(runningProcesses);
 
   if (!loaded) {
     return null;
