@@ -42,19 +42,17 @@ We welcome any help to make Streamyfin better. If you'd like to contribute, plea
 
 ## 📄 License
 
-Streamyfin is licensed under the [GNU General Public License v3.0 (GPL-3.0)](https://www.gnu.org/licenses/gpl-3.0.en.html).
-
-This means you are free to use, modify, and distribute this software. However, any modifications or larger works must also be released under the GPL-3.0. This license ensures that all versions of the software remain free and open source.
-
-Key points of the GPL-3.0:
+Streamyfin is licensed under the Mozilla Public License 2.0 (MPL-2.0).
+This means you are free to use, modify, and distribute this software. The MPL-2.0 is a copyleft license that allows for more flexibility in combining the software with proprietary code.
+Key points of the MPL-2.0:
 
 - You can use the software for any purpose
 - You can modify the software and distribute modified versions
 - You must include the original copyright and license notices
-- You must disclose your source code when you distribute the software
-- Any modifications or larger works must also be licensed under GPL-3.0
-
-For the full text of the license, please see the [LICENSE](LICENSE.txt) file in this repository.
+- You must disclose your source code for any modifications to the covered files
+- Larger works may combine MPL code with code under other licenses
+- MPL-licensed components must remain under the MPL, but the larger work can be under a different license
+- For the full text of the license, please see the LICENSE file in this repository.
 
 ## 🌐 Connect with Us
 
