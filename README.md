@@ -69,6 +69,6 @@ Streamyfin is developed by Fredrik Burmester and is not affiliated with Jellyfin
 
 I'd like to thank the following people and projects for their contributions to Streamyfin:
 
-- [Reiverr](https://github.com/aleksilassila/reiverr) for great help with the Jellyfin API.
+- [Reiverr](https://github.com/aleksilassila/reiverr) for great help with understanding the Jellyfin API.
 - [Jellyfin TS SDK](https://github.com/jellyfin/jellyfin-sdk-typescript) for the TypeScript SDK.
 - The Jellyfin devs for always being helpful in the Discord.
