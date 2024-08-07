@@ -12,7 +12,7 @@ import {
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useAtom } from "jotai";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   RefreshControl,
@@ -20,6 +20,9 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import NetInfo, { NetInfoState } from "@react-native-community/netinfo";
+import { Button } from "@/components/Button";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function index() {
   const router = useRouter();
@@ -118,9 +121,48 @@ export default function index() {
     setLoading(false);
   }, [queryClient, user?.Id]);
 
+  const [isConnected, setIsConnected] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const unsubscribe = NetInfo.addEventListener((state) => {
+      setIsConnected(state.isConnected);
+    });
+
+    NetInfo.fetch().then((state) => {
+      setIsConnected(state.isConnected);
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
+  if (isConnected === false) {
+    return (
+      <View className="flex flex-col items-center justify-center h-full -mt-6 px-8">
+        <Text className="text-3xl font-bold mb-2">No Internet</Text>
+        <Text className="text-center opacity-70">
+          No worries, you can still watch{"\n"}downloaded content.
+        </Text>
+        <View className="mt-4">
+          <Button
+            color="purple"
+            onPress={() => router.push("/(auth)/downloads")}
+            justify="center"
+            iconRight={
+              <Ionicons name="arrow-forward" size={20} color="white" />
+            }
+          >
+            Go to downloads
+          </Button>
+        </View>
+      </View>
+    );
+  }
+
   if (isError)
     return (
-      <View className="flex flex-col items-center justify-center h-full -mt-12">
+      <View className="flex flex-col items-center justify-center h-full -mt-6">
         <Text className="text-3xl font-bold mb-2">Oops!</Text>
         <Text className="text-center opacity-70">
           Something went wrong.{"\n"}Please log out and in again.
