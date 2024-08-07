@@ -6,8 +6,8 @@ import { ItemCardText } from "@/components/ItemCardText";
 import MoviePoster from "@/components/MoviePoster";
 import Poster from "@/components/Poster";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
-import { getPrimaryImage } from "@/utils/jellyfin";
-import { getUserItemData } from "@/utils/jellyfin/items/getUserItemData";
+import { getPrimaryImageUrl } from "@/utils/jellyfin/image/getPrimaryImageUrl";
+import { getUserItemData } from "@/utils/jellyfin/user-library/getUserItemData";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import { getSearchApi } from "@jellyfin/sdk/lib/utils/api";
 import { useQuery } from "@tanstack/react-query";
@@ -117,7 +117,7 @@ export default function search() {
                   <Poster
                     item={item}
                     key={item.Id}
-                    url={getPrimaryImage({ api, item })}
+                    url={getPrimaryImageUrl({ api, item })}
                   />
                   <Text className="mt-2">{item.Name}</Text>
                   <Text className="opacity-50 text-xs">

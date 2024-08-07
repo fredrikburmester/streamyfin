@@ -1,5 +1,4 @@
 import { apiAtom } from "@/providers/JellyfinProvider";
-import { getPrimaryImage, getPrimaryImageById } from "@/utils/jellyfin";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import { router } from "expo-router";
 import { useAtom } from "jotai";
@@ -8,6 +7,7 @@ import { TouchableOpacity, View } from "react-native";
 import Poster from "../Poster";
 import { HorizontalScroll } from "../common/HorrizontalScroll";
 import { Text } from "../common/Text";
+import { getPrimaryImageUrlById } from "@/utils/jellyfin/image/getPrimaryImageUrlById";
 
 export const CurrentSeries = ({ item }: { item: BaseItemDto }) => {
   const [api] = useAtom(apiAtom);
@@ -25,7 +25,7 @@ export const CurrentSeries = ({ item }: { item: BaseItemDto }) => {
           >
             <Poster
               item={item}
-              url={getPrimaryImageById({ api, id: item.ParentId })}
+              url={getPrimaryImageUrlById({ api, id: item.ParentId })}
             />
             <Text>{item.SeriesName}</Text>
           </TouchableOpacity>

@@ -36,32 +36,6 @@ Soon iOS users can test Streamyfin in beta via TestFlight. To join the beta prog
 - Ensure you have an active Jellyfin server.
 - Make sure your device is connected to the same network as your Jellyfin server.
 
-### Installation
-
-Clone the repository:
-
-```bash
-git clone https://github.com/your-username/streamyfin.git
-```
-
-Navigate to the project directory:
-
-```bash
-cd streamyfin
-```
-
-Install the dependencies:
-
-```bash
-npm install
-```
-
-Run the app:
-
-```bash
-expo start
-```
-
 ## 🙌 Contributing
 
 We welcome any help to make Streamyfin better. If you'd like to contribute, please fork the repository and submit a pull request. For major changes, it's best to open an issue first to discuss your ideas.

@@ -13,22 +13,16 @@ import React, {
 } from "react";
 import { TouchableOpacity, View } from "react-native";
 import { useCastDevice, useRemoteMediaClient } from "react-native-google-cast";
-import Video, {
-  OnBufferData,
-  OnPlaybackStateChangedData,
-  OnProgressData,
-  OnVideoErrorData,
-  VideoRef,
-} from "react-native-video";
+import Video, { OnProgressData, VideoRef } from "react-native-video";
 import * as DropdownMenu from "zeego/dropdown-menu";
 import { Button } from "./Button";
 import { Text } from "./common/Text";
 import ios12 from "../utils/profiles/ios12";
-import { getUserItemData } from "@/utils/jellyfin/items/getUserItemData";
-import { getStreamUrl } from "@/utils/jellyfin";
 import { reportPlaybackProgress } from "@/utils/jellyfin/playstate/reportPlaybackProgress";
 import { chromecastProfile } from "@/utils/profiles/chromecast";
 import { reportPlaybackStopped } from "@/utils/jellyfin/playstate/reportPlaybackStopped";
+import { getUserItemData } from "@/utils/jellyfin/user-library/getUserItemData";
+import { getStreamUrl } from "@/utils/jellyfin/media/getStreamUrl";
 
 type VideoPlayerProps = {
   itemId: string;
@@ -169,7 +163,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     () =>
       item?.UserData?.PlaybackPositionTicks
         ? Math.round(item.UserData.PlaybackPositionTicks / 10000)
-        : null,
+        : 0,
     [item],
   );
 

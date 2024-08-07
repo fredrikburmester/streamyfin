@@ -13,12 +13,13 @@ import Video, {
   VideoRef,
 } from "react-native-video";
 import * as FileSystem from "expo-file-system";
-import { useMemo, useRef } from "react";
+import { useMemo, useRef, useState } from "react";
 import * as Haptics from "expo-haptics";
 
 export const MovieCard: React.FC<{ item: BaseItemDto }> = ({ item }) => {
   const { deleteFile } = useFiles();
   const videoRef = useRef<VideoRef | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   const openFile = () => {
     videoRef.current?.presentFullscreenPlayer();
@@ -45,7 +46,7 @@ export const MovieCard: React.FC<{ item: BaseItemDto }> = ({ item }) => {
         <ContextMenu.Trigger>
           <TouchableOpacity
             onPress={openFile}
-            className="bg-neutral-800 border border-neutral-900 rounded-2xl p-4"
+            className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4"
           >
             <Text className=" font-bold">{item.Name}</Text>
             <View className="flex flex-row items-center justify-between">
@@ -89,9 +90,17 @@ export const MovieCard: React.FC<{ item: BaseItemDto }> = ({ item }) => {
           isNetwork: false,
         }}
         controls
+        onFullscreenPlayerDidDismiss={() => {
+          setIsPlaying(false);
+          videoRef.current?.pause();
+        }}
+        onFullscreenPlayerDidPresent={() => {
+          setIsPlaying(true);
+          videoRef.current?.resume();
+        }}
         ref={videoRef}
         resizeMode="contain"
-        reportBandwidth
+        paused={!isPlaying}
       />
     </>
   );

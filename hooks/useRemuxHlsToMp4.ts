@@ -28,11 +28,11 @@ export const useRemuxHlsToMp4 = (url: string, item: BaseItemDto) => {
   const startRemuxing = useCallback(async () => {
     writeToLog(
       "INFO",
-      `useRemuxHlsToMp4 ~ startRemuxing for item ${item.Id} with url ${url}`,
+      `useRemuxHlsToMp4 ~ startRemuxing for item ${item.Name}`,
     );
 
     try {
-      setProgress({ item, progress: 0 });
+      setProgress({ item, progress: 0, startTime: new Date(), speed: 0 });
 
       FFmpegKitConfig.enableStatisticsCallback((statistics) => {
         const videoLength =

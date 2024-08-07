@@ -5,6 +5,7 @@ export type ProcessItem = {
   item: BaseItemDto;
   progress: number;
   speed?: number;
+  startTime?: Date;
 };
 
 export const runningProcesses = atom<ProcessItem | null>(null);

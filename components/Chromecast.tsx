@@ -33,7 +33,6 @@ export const Chromecast: React.FC<Props> = ({ item, startTimeTicks }) => {
       await discoveryManager.startDiscovery();
 
       const started = await discoveryManager.isRunning();
-      console.log("started", started);
 
       console.log({
         devices,

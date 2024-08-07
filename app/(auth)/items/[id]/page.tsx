@@ -7,7 +7,6 @@ import { CurrentSeries } from "@/components/series/CurrentSeries";
 import { SimilarItems } from "@/components/SimilarItems";
 import { VideoPlayer } from "@/components/VideoPlayer";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
-import { getBackdrop, getLogoImageById } from "@/utils/jellyfin";
 import { useQuery } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
@@ -20,7 +19,9 @@ import {
   View,
 } from "react-native";
 import { ParallaxScrollView } from "../../../../components/ParallaxPage";
-import { getUserItemData } from "@/utils/jellyfin/items/getUserItemData";
+import { getUserItemData } from "@/utils/jellyfin/user-library/getUserItemData";
+import { getBackdropUrl } from "@/utils/jellyfin/image/getBackdropUrl";
+import { getLogoImageUrlById } from "@/utils/jellyfin/image/getLogoImageUrlById";
 
 const page: React.FC = () => {
   const local = useLocalSearchParams();
@@ -45,7 +46,7 @@ const page: React.FC = () => {
 
   const backdropUrl = useMemo(
     () =>
-      getBackdrop({
+      getBackdropUrl({
         api,
         item,
         quality: 90,
@@ -55,7 +56,7 @@ const page: React.FC = () => {
   );
 
   const logoUrl = useMemo(
-    () => (item?.Type === "Movie" ? getLogoImageById({ api, item }) : null),
+    () => (item?.Type === "Movie" ? getLogoImageUrlById({ api, item }) : null),
     [item],
   );
 
