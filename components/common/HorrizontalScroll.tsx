@@ -1,7 +1,13 @@
 import React from "react";
-import { ScrollView, View, ViewStyle, ActivityIndicator } from "react-native";
+import {
+  ScrollView,
+  View,
+  ViewStyle,
+  ActivityIndicator,
+  ScrollViewProps,
+} from "react-native";
 
-interface HorizontalScrollProps<T> {
+interface HorizontalScrollProps<T> extends ScrollViewProps {
   data?: T[] | null;
   renderItem: (item: T, index: number) => React.ReactNode;
   containerStyle?: ViewStyle;
@@ -15,6 +21,7 @@ export function HorizontalScroll<T>({
   containerStyle,
   contentContainerStyle,
   loadingContainerStyle,
+  ...props
 }: HorizontalScrollProps<T>): React.ReactElement {
   if (!data) {
     return (
@@ -34,6 +41,8 @@ export function HorizontalScroll<T>({
       horizontal
       style={containerStyle}
       contentContainerStyle={contentContainerStyle}
+      showsHorizontalScrollIndicator={false}
+      {...props}
     >
       <View className="flex flex-row px-4">
         {data.map((item, index) => (
