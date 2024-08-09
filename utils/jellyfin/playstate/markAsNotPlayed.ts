@@ -17,14 +17,14 @@ export const markAsNotPlayed = async ({
   api,
   itemId,
   userId,
-}: MarkAsNotPlayedParams): Promise<boolean> => {
+}: MarkAsNotPlayedParams): Promise<void> => {
   if (!api || !itemId || !userId) {
     console.error("Invalid parameters for markAsNotPlayed");
-    return false;
+    return;
   }
 
   try {
-    const response = await api.axiosInstance.delete(
+    await api.axiosInstance.delete(
       `${api.basePath}/UserPlayedItems/${itemId}`,
       {
         params: { userId },
@@ -33,8 +33,6 @@ export const markAsNotPlayed = async ({
         },
       },
     );
-
-    return response.status === 200;
   } catch (error) {
     const axiosError = error as AxiosError;
     console.error(
@@ -42,6 +40,6 @@ export const markAsNotPlayed = async ({
       axiosError.message,
       axiosError.response?.status,
     );
-    return false;
+    return;
   }
 };

@@ -37,7 +37,7 @@ const Login: React.FC = () => {
         await login(credentials.username, credentials.password);
       }
     } catch (error) {
-      console.log(error);
+      console.error(error);
     } finally {
       setLoading(false);
     }
