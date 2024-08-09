@@ -105,8 +105,6 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         deviceProfile: castDevice?.deviceId ? chromecastProfile : ios12,
       });
 
-      console.log("Transcode URL:", url);
-
       onChangePlaybackURL(url);
 
       return url;

@@ -39,6 +39,6 @@ export const reportPlaybackProgress = async ({
       { headers: getAuthHeaders(api) },
     );
   } catch (error) {
-    console.log(error);
+    console.error(error);
   }
 };

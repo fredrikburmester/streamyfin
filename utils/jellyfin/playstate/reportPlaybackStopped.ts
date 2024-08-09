@@ -26,7 +26,7 @@ export const reportPlaybackStopped = async ({
 }: PlaybackStoppedParams): Promise<void> => {
   // Validate input parameters
   if (!api || !sessionId || !itemId || !positionTicks) {
-    console.log("Missing required parameters", {
+    console.error("Missing required parameters", {
       api,
       sessionId,
       itemId,

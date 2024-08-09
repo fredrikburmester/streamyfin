@@ -41,16 +41,6 @@ const downloads: React.FC = () => {
     return Object.values(series);
   }, [downloadedFiles]);
 
-  useEffect(() => {
-    console.log(
-      downloadedFiles?.map((i) => ({
-        name: i.Name,
-        codec: i.SourceType,
-        media: i.MediaSources?.[0].Container,
-      })),
-    );
-  }, [downloadedFiles]);
-
   const [process, setProcess] = useAtom(runningProcesses);
 
   if (isLoading) {

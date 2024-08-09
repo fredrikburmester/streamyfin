@@ -10,7 +10,6 @@ export default function page() {
 
   const fileUrl = useMemo(() => {
     const u = FileSystem.documentDirectory + url;
-    console.log({ u });
     return u;
   }, [url]);
 

@@ -42,8 +42,6 @@ export const DownloadItem: React.FC<DownloadProps> = ({
 
     const source = playbackInfo.MediaSources?.[0];
 
-    console.log("Source:", JSON.stringify(source));
-
     if (source?.SupportsDirectPlay && item.CanDownload) {
       downloadMedia(item);
     } else {

@@ -1,13 +1,13 @@
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
+import { markAsNotPlayed } from "@/utils/jellyfin/playstate/markAsNotPlayed";
+import { markAsPlayed } from "@/utils/jellyfin/playstate/markAsPlayed";
 import { Ionicons } from "@expo/vector-icons";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
-import { useQueryClient, InvalidateQueryFilters } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
+import * as Haptics from "expo-haptics";
 import { useAtom } from "jotai";
 import React, { useCallback } from "react";
 import { TouchableOpacity, View } from "react-native";
-import * as Haptics from "expo-haptics";
-import { markAsNotPlayed } from "@/utils/jellyfin/playstate/markAsNotPlayed";
-import { markAsPlayed } from "@/utils/jellyfin/playstate/markAsPlayed";
 
 export const PlayedStatus: React.FC<{ item: BaseItemDto }> = ({ item }) => {
   const [api] = useAtom(apiAtom);
@@ -18,23 +18,18 @@ export const PlayedStatus: React.FC<{ item: BaseItemDto }> = ({ item }) => {
   const invalidateQueries = useCallback(() => {
     queryClient.invalidateQueries({
       queryKey: ["item", item.Id],
-      refetchType: "all",
     });
     queryClient.invalidateQueries({
       queryKey: ["resumeItems", user?.Id],
-      refetchType: "all",
     });
     queryClient.invalidateQueries({
       queryKey: ["nextUp", item.SeriesId],
-      refetchType: "all",
     });
     queryClient.invalidateQueries({
       queryKey: ["episodes"],
-      refetchType: "all",
     });
     queryClient.invalidateQueries({
       queryKey: ["seasons"],
-      refetchType: "all",
     });
   }, [api, item.Id, queryClient, user?.Id]);
 
@@ -42,13 +37,13 @@ export const PlayedStatus: React.FC<{ item: BaseItemDto }> = ({ item }) => {
     <View>
       {item.UserData?.Played ? (
         <TouchableOpacity
-          onPress={() => {
-            markAsNotPlayed({
+          onPress={async () => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            await markAsNotPlayed({
               api: api,
               itemId: item?.Id,
               userId: user?.Id,
             });
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             invalidateQueries();
           }}
         >
@@ -56,13 +51,13 @@ export const PlayedStatus: React.FC<{ item: BaseItemDto }> = ({ item }) => {
         </TouchableOpacity>
       ) : (
         <TouchableOpacity
-          onPress={() => {
-            markAsPlayed({
+          onPress={async () => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            await markAsPlayed({
               api: api,
               item: item,
               userId: user?.Id,
             });
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             invalidateQueries();
           }}
         >
