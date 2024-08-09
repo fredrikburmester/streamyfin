@@ -137,9 +137,12 @@ const page: React.FC = () => {
             </>
           ) : (
             <>
-              <Text className="text-center font-bold text-2xl">
-                {item?.Name}
-              </Text>
+              <View className="flex flex-row items-center self-center px-4">
+                <Text className="text-center font-bold text-2xl mr-2">
+                  {item?.Name}
+                </Text>
+                <PlayedStatus item={item} />
+              </View>
               <Text className="text-center opacity-50">
                 {item?.ProductionYear}
               </Text>
