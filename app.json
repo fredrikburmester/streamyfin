@@ -29,7 +29,13 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png"
       },
-      "package": "com.fredrikburmester.streamyfin"
+      "package": "com.fredrikburmester.streamyfin",
+      "googleServicesFile": "./credentials.json",
+      "permissions": [
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
+      ],
+      "versionCode": 2
     },
     "web": {
       "bundler": "metro",
@@ -62,7 +68,9 @@
       [
         "expo-build-properties",
         {
-          "ios": { "deploymentTarget": "14.0" },
+          "ios": {
+            "deploymentTarget": "14.0"
+          },
           "android": {
             "minSdkVersion": 24,
             "packagingOptions": {
@@ -85,6 +93,12 @@
         "projectId": "e79219d1-797f-4fbe-9fa1-cfd360690a68"
       }
     },
-    "owner": "fredrikburmester"
+    "owner": "fredrikburmester",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/e79219d1-797f-4fbe-9fa1-cfd360690a68"
+    }
   }
 }
