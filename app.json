@@ -15,7 +15,6 @@
     "jsEngine": "hermes",
     "assetBundlePatterns": ["**/*"],
     "ios": {
-      "userInterfaceStyle": "dark",
       "infoPlist": {
         "NSCameraUsageDescription": "The app needs access to your camera to scan barcodes.",
         "NSMicrophoneUsageDescription": "The app needs access to your microphone."
@@ -25,17 +24,15 @@
     },
     "android": {
       "jsEngine": "jsc",
-      "userInterfaceStyle": "light",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png"
       },
       "package": "com.fredrikburmester.streamyfin",
-      "googleServicesFile": "./credentials.json",
       "permissions": [
         "android.permission.FOREGROUND_SERVICE",
         "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
       ],
-      "versionCode": 2
+      "versionCode": 3
     },
     "web": {
       "bundler": "metro",
