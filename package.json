@@ -50,7 +50,6 @@
     "react-native-compressor": "^1.8.25",
     "react-native-gesture-handler": "~2.16.1",
     "react-native-get-random-values": "^1.11.0",
-    "react-native-google-cast": "^4.8.2",
     "react-native-ios-context-menu": "^2.5.1",
     "react-native-ios-utilities": "^4.4.5",
     "react-native-reanimated": "~3.10.1",

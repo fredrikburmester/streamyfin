@@ -154,7 +154,7 @@ const page: React.FC = () => {
           {playbackURL && (
             <DownloadItem item={item} playbackURL={playbackURL} />
           )}
-          <Chromecast />
+          // <Chromecast />
         </View>
         <Text>{item.Overview}</Text>
       </View>
