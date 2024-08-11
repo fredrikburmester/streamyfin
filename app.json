@@ -63,7 +63,13 @@
           }
         }
       ],
-      ["expo-build-properties", { "ios": { "deploymentTarget": "14.0" } }]
+      [
+        "expo-build-properties",
+        {
+          "ios": { "deploymentTarget": "14.0" },
+          "android": { "minSdkVersion": 24 }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
