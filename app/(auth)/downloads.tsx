@@ -43,20 +43,21 @@ const downloads: React.FC = () => {
 
   const [process, setProcess] = useAtom(runningProcesses);
 
+  const eta = useMemo(() => {
+    const length = process?.item?.RunTimeTicks || 0;
+
+    if (!process?.speed || !process?.progress) return "";
+
+    const timeLeft =
+      (length - length * (process.progress / 100)) / process.speed;
+
+    return formatNumber(timeLeft / 10000);
+  }, [process]);
+
   if (isLoading) {
     return (
       <View className="h-full flex flex-col items-center justify-center -mt-6">
         <ActivityIndicator size="small" color="white" />
-      </View>
-    );
-  }
-
-  if (downloadedFiles?.length === 0) {
-    return (
-      <View className="h-full flex flex-col items-center justify-center -mt-6">
-        <Text className="text-white text-lg font-bold">
-          No downloaded files
-        </Text>
       </View>
     );
   }
@@ -81,13 +82,9 @@ const downloads: React.FC = () => {
                     {process.progress.toFixed(0)}%
                   </Text>
                   <Text className="text-xs">{process.speed?.toFixed(2)}x</Text>
-                  {process.startTime && (
-                    <Text className="text-xs">
-                      {formatNumber(
-                        new Date().getTime() - process.startTime.getTime(),
-                      )}
-                    </Text>
-                  )}
+                  <View>
+                    <Text className="text-xs">ETA {eta}</Text>
+                  </View>
                 </View>
               </View>
               <TouchableOpacity
