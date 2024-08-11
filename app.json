@@ -27,8 +27,7 @@
       "jsEngine": "jsc",
       "userInterfaceStyle": "light",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/icon.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/images/icon.png"
       },
       "package": "com.fredrikburmester.streamyfin"
     },
@@ -55,19 +54,8 @@
           "androidExtensions": {
             "useExoplayerRtsp": false,
             "useExoplayerSmoothStreaming": false,
-            "useExoplayerHls": false,
+            "useExoplayerHls": true,
             "useExoplayerDash": false
-          }
-        }
-      ],
-      [
-        "react-native-vlc-media-player",
-        {
-          "ios": {
-            "includeVLCKit": false
-          },
-          "android": {
-            "legacyJetifier": false
           }
         }
       ],

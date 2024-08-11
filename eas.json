@@ -20,7 +20,12 @@
         "simulator": true
       }
     },
-    "production": {}
+    "production": {
+      "channel": "0.0.6",
+      "android": {
+        "image": "latest"
+      }
+    }
   },
   "submit": {
     "production": {}

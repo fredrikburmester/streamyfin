@@ -29,15 +29,9 @@ export const OfflineVideoPlayer: React.FC<VideoPlayerProps> = ({ url }) => {
         uri: url,
         isNetwork: false,
       }}
-      controls
       ref={videoRef}
       onError={onError}
-      resizeMode="contain"
-      reportBandwidth
-      style={{
-        width: "100%",
-        aspectRatio: 16 / 9,
-      }}
+      ignoreSilentSwitch="ignore"
     />
   );
 };

@@ -32,14 +32,14 @@ export const ParallaxScrollView: React.FC<Props> = ({
           translateY: interpolate(
             scrollOffset.value,
             [-HEADER_HEIGHT, 0, HEADER_HEIGHT],
-            [-HEADER_HEIGHT / 2, 0, HEADER_HEIGHT * 0.75]
+            [-HEADER_HEIGHT / 2, 0, HEADER_HEIGHT * 0.75],
           ),
         },
         {
           scale: interpolate(
             scrollOffset.value,
             [-HEADER_HEIGHT, 0, HEADER_HEIGHT],
-            [2, 1, 1]
+            [2, 1, 1],
           ),
         },
       ],
@@ -61,7 +61,7 @@ export const ParallaxScrollView: React.FC<Props> = ({
           onPress={() => router.back()}
           className="absolute left-4 z-50 bg-black rounded-full p-2 border border-neutral-900"
           style={{
-            top: inset.top,
+            top: inset.top + 17,
           }}
         >
           <Ionicons

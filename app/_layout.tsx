@@ -1,17 +1,18 @@
-import { DarkTheme, ThemeProvider } from "@react-navigation/native";
-import { useFonts } from "expo-font";
-import { router, Stack } from "expo-router";
-import * as SplashScreen from "expo-splash-screen";
-import { useEffect, useRef } from "react";
-import "react-native-reanimated";
-
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Provider as JotaiProvider } from "jotai";
 import { JellyfinProvider } from "@/providers/JellyfinProvider";
-import { TouchableOpacity } from "react-native";
+import { DarkTheme, ThemeProvider } from "@react-navigation/native";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useFonts } from "expo-font";
+import * as NavigationBar from "expo-navigation-bar";
+import { Stack, router } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
+import { Provider as JotaiProvider } from "jotai";
+import { useEffect, useRef } from "react";
+import { Platform, TouchableOpacity } from "react-native";
+import "react-native-reanimated";
 
 import Feather from "@expo/vector-icons/Feather";
 import { StatusBar } from "expo-status-bar";
+import { Colors } from "@/constants/Colors";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -53,7 +54,7 @@ export default function RootLayout() {
     <QueryClientProvider client={queryClientRef.current}>
       <JotaiProvider>
         <JellyfinProvider>
-          <StatusBar style="auto" />
+          <StatusBar style="light" backgroundColor="#000" />
           <ThemeProvider value={DarkTheme}>
             <Stack>
               <Stack.Screen
