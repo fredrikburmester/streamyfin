@@ -10,6 +10,7 @@ export function Input(props: TextInputProps) {
       allowFontScaling={false}
       style={[{ color: "white" }, style]}
       {...otherProps}
+      placeholderTextColor={"#9CA3AF"}
     />
   );
 }
