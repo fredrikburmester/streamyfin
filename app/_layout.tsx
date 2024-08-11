@@ -104,7 +104,7 @@ export default function RootLayout() {
                 options={{
                   title: "",
                   headerShown: true,
-                  headerStyle: { backgroundColor: "transparent" },
+                  headerStyle: { backgroundColor: "black" },
                   headerShadowVisible: false,
                 }}
               />
