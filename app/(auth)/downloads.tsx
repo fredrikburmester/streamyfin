@@ -15,7 +15,6 @@ import { useAtom } from "jotai";
 import { runningProcesses } from "@/utils/atoms/downloads";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { FFmpegKit } from "ffmpeg-kit-react-native";
 
 const downloads: React.FC = () => {
   const { data: downloadedFiles, isLoading } = useQuery({
@@ -89,7 +88,6 @@ const downloads: React.FC = () => {
               </View>
               <TouchableOpacity
                 onPress={() => {
-                  FFmpegKit.cancel();
                   setProcess(null);
                 }}
               >

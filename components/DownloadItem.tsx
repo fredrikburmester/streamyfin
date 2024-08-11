@@ -11,7 +11,6 @@ import { ActivityIndicator, TouchableOpacity, View } from "react-native";
 import ProgressCircle from "./ProgressCircle";
 import { Text } from "./common/Text";
 import { useDownloadMedia } from "@/hooks/useDownloadMedia";
-import { useRemuxHlsToMp4 } from "@/hooks/useRemuxHlsToMp4";
 import { getPlaybackInfo } from "@/utils/jellyfin/media/getPlaybackInfo";
 
 type DownloadProps = {
@@ -29,8 +28,6 @@ export const DownloadItem: React.FC<DownloadProps> = ({
 
   const { downloadMedia, isDownloading, error, cancelDownload } =
     useDownloadMedia(api, user?.Id);
-
-  const { startRemuxing, cancelRemuxing } = useRemuxHlsToMp4(playbackURL, item);
 
   const { data: playbackInfo, isLoading } = useQuery({
     queryKey: ["playbackInfo", item.Id],
@@ -88,7 +85,7 @@ export const DownloadItem: React.FC<DownloadProps> = ({
       {process ? (
         <TouchableOpacity
           onPress={() => {
-            cancelRemuxing();
+            // cancelRemuxing();
           }}
           className="flex flex-row items-center"
         >
@@ -133,7 +130,7 @@ export const DownloadItem: React.FC<DownloadProps> = ({
         <TouchableOpacity
           onPress={() => {
             // downloadFile();
-            startRemuxing();
+            // startRemuxing();
           }}
         >
           <Ionicons name="cloud-download-outline" size={26} color="white" />
