@@ -40,6 +40,33 @@ Soon iOS users can test Streamyfin in beta via TestFlight. To join the beta prog
 
 We welcome any help to make Streamyfin better. If you'd like to contribute, please fork the repository and submit a pull request. For major changes, it's best to open an issue first to discuss your ideas.
 
+### Development info
+
+Add this to AppDelegate.mm:
+
+```
+- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
+{
+// @generated begin react-native-google-cast-didFinishLaunchingWithOptions - expo prebuild (DO NOT MODIFY) sync-8901be60b982d2ae9c658b1e8c50634d61bb5091
+#if __has_include(<GoogleCast/GoogleCast.h>)
+...
+
+[GCKCastContext sharedInstance].useDefaultExpandedMediaControls = true;`
+#endif
+```
+
+Add this to Info.plist:
+
+```
+<key>NSBonjourServices</key>
+<array>
+  <string>_googlecast._tcp</string>
+  <string>_CC1AD845._googlecast._tcp</string>
+</array>
+<key>NSLocalNetworkUsageDescription</key>
+<string>${PRODUCT_NAME} uses the local network to discover Cast-enabled devices on your WiFi network.</string>
+```
+
 ## 📄 License
 
 Streamyfin is licensed under the Mozilla Public License 2.0 (MPL-2.0).

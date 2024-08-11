@@ -12,6 +12,7 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
+    "jsEngine": "hermes",
     "assetBundlePatterns": ["**/*"],
     "ios": {
       "userInterfaceStyle": "dark",
@@ -23,6 +24,7 @@
       "bundleIdentifier": "com.fredrikburmester.streamyfin"
     },
     "android": {
+      "jsEngine": "jsc",
       "userInterfaceStyle": "light",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png",
@@ -39,7 +41,13 @@
       "expo-router",
       "expo-font",
       "react-native-compressor",
-      ["react-native-google-cast", {}],
+      "@config-plugins/ffmpeg-kit-react-native",
+      [
+        "react-native-google-cast",
+        {
+          "useDefaultExpandedMediaControls": true
+        }
+      ],
       [
         "react-native-video",
         {
@@ -67,7 +75,14 @@
         "expo-build-properties",
         {
           "ios": { "deploymentTarget": "14.0" },
-          "android": { "minSdkVersion": 24 }
+          "android": {
+            "minSdkVersion": 24,
+            "packagingOptions": {
+              "jniLibs": {
+                "useLegacyPackaging": true
+              }
+            }
+          }
         }
       ]
     ],

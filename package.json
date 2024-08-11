@@ -15,6 +15,7 @@
     "preset": "jest-expo"
   },
   "dependencies": {
+    "@config-plugins/ffmpeg-kit-react-native": "^8.0.0",
     "@expo/vector-icons": "^14.0.2",
     "@jellyfin/sdk": "^0.10.0",
     "@kesha-antonov/react-native-background-downloader": "^3.2.0",
