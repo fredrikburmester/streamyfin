@@ -1,26 +1,28 @@
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import { useQuery } from "@tanstack/react-query";
-import { router } from "expo-router";
-import { useAtom } from "jotai";
-import { useEffect, useState } from "react";
+import { useRouter } from "expo-router";
+import { atom, useAtom } from "jotai";
+import { useMemo } from "react";
 import { TouchableOpacity, View } from "react-native";
 import * as DropdownMenu from "zeego/dropdown-menu";
-import { HorizontalScroll } from "../common/HorrizontalScroll";
-import { Text } from "../common/Text";
 import ContinueWatchingPoster from "../ContinueWatchingPoster";
 import { ItemCardText } from "../ItemCardText";
+import { HorizontalScroll } from "../common/HorrizontalScroll";
+import { Text } from "../common/Text";
 
 type Props = {
   item: BaseItemDto;
 };
 
+export const seasonIndexAtom = atom<number>(1);
+
 export const SeasonPicker: React.FC<Props> = ({ item }) => {
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
+  const [seasonIndex, setSeasonIndex] = useAtom(seasonIndexAtom);
 
-  const [selectedSeason, setSelectedSeason] = useState<number | null>(null);
-  const [selectedSeasonId, setSelectedSeasonId] = useState<string | null>(null);
+  const router = useRouter();
 
   const { data: seasons } = useQuery({
     queryKey: ["seasons", item.Id],
@@ -38,13 +40,19 @@ export const SeasonPicker: React.FC<Props> = ({ item }) => {
           headers: {
             Authorization: `MediaBrowser DeviceId="${api.deviceInfo.id}", Token="${api.accessToken}"`,
           },
-        }
+        },
       );
 
       return response.data.Items;
     },
     enabled: !!api && !!user?.Id && !!item.Id,
   });
+
+  const selectedSeasonId: string | null = useMemo(
+    () =>
+      seasons?.find((season: any) => season.IndexNumber === seasonIndex)?.Id,
+    [seasons, seasonIndex],
+  );
 
   const { data: episodes } = useQuery({
     queryKey: ["episodes", item.Id, selectedSeasonId],
@@ -62,7 +70,7 @@ export const SeasonPicker: React.FC<Props> = ({ item }) => {
           headers: {
             Authorization: `MediaBrowser DeviceId="${api.deviceInfo.id}", Token="${api.accessToken}"`,
           },
-        }
+        },
       );
 
       return response.data.Items as BaseItemDto[];
@@ -70,22 +78,13 @@ export const SeasonPicker: React.FC<Props> = ({ item }) => {
     enabled: !!api && !!user?.Id && !!item.Id && !!selectedSeasonId,
   });
 
-  useEffect(() => {
-    if (!seasons || seasons.length === 0) return;
-
-    setSelectedSeasonId(
-      seasons.find((season: any) => season.IndexNumber === 1)?.Id
-    );
-    setSelectedSeason(1);
-  }, [seasons]);
-
   return (
     <View className="mb-2">
       <DropdownMenu.Root>
         <DropdownMenu.Trigger>
           <View className="flex flex-row px-4">
             <TouchableOpacity className="bg-neutral-900 rounded-2xl border-neutral-900 border px-3 py-2 flex flex-row items-center justify-between">
-              <Text>Season {selectedSeason}</Text>
+              <Text>Season {seasonIndex}</Text>
             </TouchableOpacity>
           </View>
         </DropdownMenu.Trigger>
@@ -103,8 +102,7 @@ export const SeasonPicker: React.FC<Props> = ({ item }) => {
             <DropdownMenu.Item
               key={season.Name}
               onSelect={() => {
-                setSelectedSeason(season.IndexNumber);
-                setSelectedSeasonId(season.Id);
+                setSeasonIndex(season.IndexNumber);
               }}
             >
               <DropdownMenu.ItemTitle>{season.Name}</DropdownMenu.ItemTitle>
