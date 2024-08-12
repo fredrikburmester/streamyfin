@@ -46,6 +46,8 @@ const page: React.FC = () => {
     value: undefined,
   });
 
+  const [selectedAudioStream, setSelectedAudioStream] = useState<number>(0);
+
   const { data: item, isLoading: l1 } = useQuery({
     queryKey: ["item", id],
     queryFn: async () =>
@@ -224,7 +226,11 @@ const page: React.FC = () => {
             onChange={(val) => setMaxBitrate(val)}
             selected={maxBitrate}
           />
-          <AudioTrackSelector item={item} onChange={() => {}} selected={null} />
+          <AudioTrackSelector
+            item={item}
+            onChange={setSelectedAudioStream}
+            selected={selectedAudioStream}
+          />
         </View>
         <PlayButton item={item} chromecastReady={false} onPress={onPressPlay} />
       </View>
