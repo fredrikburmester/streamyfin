@@ -2,7 +2,7 @@
   "expo": {
     "name": "Streamyfin",
     "slug": "streamyfin",
-    "version": "0.0.6",
+    "version": "0.1.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "streamyfin",
@@ -24,6 +24,11 @@
     },
     "android": {
       "jsEngine": "jsc",
+      "androidNavigationBar": {
+        "visible": true,
+        "barStyle": "dark-content",
+        "backgroundColor": "#000000"
+      },
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png"
       },
@@ -32,7 +37,7 @@
         "android.permission.FOREGROUND_SERVICE",
         "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
       ],
-      "versionCode": 3
+      "versionCode": 5
     },
     "web": {
       "bundler": "metro",
