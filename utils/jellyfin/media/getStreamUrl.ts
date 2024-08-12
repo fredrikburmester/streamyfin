@@ -14,6 +14,8 @@ export const getStreamUrl = async ({
   maxStreamingBitrate,
   sessionData,
   deviceProfile = ios12,
+  audioStreamIndex = 0,
+  subtitleStreamIndex = 0,
 }: {
   api: Api | null | undefined;
   item: BaseItemDto | null | undefined;
@@ -22,6 +24,8 @@ export const getStreamUrl = async ({
   maxStreamingBitrate?: number;
   sessionData: PlaybackInfoResponse;
   deviceProfile: any;
+  audioStreamIndex?: number;
+  subtitleStreamIndex?: number;
 }) => {
   if (!api || !userId || !item?.Id) {
     return null;
@@ -40,6 +44,8 @@ export const getStreamUrl = async ({
       AutoOpenLiveStream: true,
       MediaSourceId: itemId,
       AllowVideoStreamCopy: maxStreamingBitrate ? false : true,
+      AudioStreamIndex: audioStreamIndex,
+      SubtitleStreamIndex: subtitleStreamIndex,
     },
     {
       headers: {

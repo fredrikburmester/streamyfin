@@ -13,38 +13,50 @@ interface Props extends React.ComponentProps<typeof View> {
   selected: number;
 }
 
-export const AudioTrackSelector: React.FC<Props> = ({
+export const SubtitleTrackSelector: React.FC<Props> = ({
   item,
   onChange,
   selected,
   ...props
 }) => {
-  const audioStreams = useMemo(
+  const subtitleStreams = useMemo(
     () =>
-      item.MediaSources?.[0].MediaStreams?.filter((x) => x.Type === "Audio"),
+      item.MediaSources?.[0].MediaStreams?.filter(
+        (x) => x.Type === "Subtitle",
+      ) ?? [],
     [item],
   );
 
-  const selectedAudioSteam = useMemo(
-    () => audioStreams?.find((x) => x.Index === selected),
-    [audioStreams, selected],
+  const selectedSubtitleSteam = useMemo(
+    () => subtitleStreams.find((x) => x.Index === selected),
+    [subtitleStreams, selected],
   );
 
   useEffect(() => {
-    const index = item.MediaSources?.[0].DefaultAudioStreamIndex;
-    if (index !== undefined && index !== null) onChange(index);
+    const index = item.MediaSources?.[0].DefaultSubtitleStreamIndex;
+    if (index !== undefined && index !== null) {
+      onChange(index);
+    } else {
+      // Get first subtitle stream
+      const firstSubtitle = subtitleStreams.find((x) => x.Index !== undefined);
+      if (firstSubtitle?.Index !== undefined) {
+        onChange(firstSubtitle.Index);
+      }
+    }
   }, []);
+
+  if (subtitleStreams.length === 0) return null;
 
   return (
     <View className="flex flex-row items-center justify-between" {...props}>
       <DropdownMenu.Root>
         <DropdownMenu.Trigger>
           <View className="flex flex-col mb-2">
-            <Text className="opacity-50 mb-1 text-xs">Audio streams</Text>
+            <Text className="opacity-50 mb-1 text-xs">Subtitles</Text>
             <View className="flex flex-row">
               <TouchableOpacity className="bg-neutral-900 max-w-32 h-12 rounded-2xl border-neutral-900 border px-3 py-2 flex flex-row items-center justify-between">
                 <Text className="">
-                  {tc(selectedAudioSteam?.DisplayTitle, 13)}
+                  {tc(selectedSubtitleSteam?.DisplayTitle, 13)}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -59,17 +71,17 @@ export const AudioTrackSelector: React.FC<Props> = ({
           collisionPadding={8}
           sideOffset={8}
         >
-          <DropdownMenu.Label>Audio streams</DropdownMenu.Label>
-          {audioStreams?.map((audio, idx: number) => (
+          <DropdownMenu.Label>Subtitles</DropdownMenu.Label>
+          {subtitleStreams?.map((subtitle, idx: number) => (
             <DropdownMenu.Item
               key={idx.toString()}
               onSelect={() => {
-                if (audio.Index !== null && audio.Index !== undefined)
-                  onChange(audio.Index);
+                if (subtitle.Index !== undefined && subtitle.Index !== null)
+                  onChange(subtitle.Index);
               }}
             >
               <DropdownMenu.ItemTitle>
-                {audio.DisplayTitle}
+                {subtitle.DisplayTitle}
               </DropdownMenu.ItemTitle>
             </DropdownMenu.Item>
           ))}
