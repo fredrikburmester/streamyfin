@@ -144,8 +144,6 @@ const Login: React.FC = () => {
             placeholder="http(s)://..."
             onChangeText={setServerURL}
             value={serverURL}
-            autoFocus
-            secureTextEntry={false}
             keyboardType="url"
             returnKeyType="done"
             autoCapitalize="none"
