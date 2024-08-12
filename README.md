@@ -21,6 +21,10 @@ Welcome to Streamyfin, a simple and user-friendly Jellyfin client built with Exp
 
 Streamyfin includes some exciting experimental features like media downloading and Chromecast support. These are still in development, and we appreciate your patience and feedback as we work to improve them.
 
+### Downloading
+
+Downloading works by using ffmpeg to convert a HLS stream into a video file on the device. This means that you can download and view any file you can stream! The file is converted by Jellyfin on the server in real time as it is downloaded. This means a **bit longer download times** but supports any file that your server can transcode.
+
 ## 🛠️ Beta testing (iOS/Android)
 
 ## TestFlight
