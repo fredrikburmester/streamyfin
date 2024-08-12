@@ -10,12 +10,21 @@ import { useQuery } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import { useLocalSearchParams } from "expo-router";
 import { useAtom } from "jotai";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { View } from "react-native";
 
 const page: React.FC = () => {
   const params = useLocalSearchParams();
-  const { id: seriesId } = params as { id: string };
+  const { id: seriesId, seasonIndex } = params as {
+    id: string;
+    seasonIndex: string;
+  };
+
+  useEffect(() => {
+    if (seriesId) {
+      console.log("seasonIndex", seasonIndex);
+    }
+  }, [seriesId]);
 
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
@@ -84,7 +93,7 @@ const page: React.FC = () => {
         </>
       }
     >
-      <View className="flex flex-col pt-4 pb-12">
+      <View className="flex flex-col pt-4 pb-24">
         <View className="px-4 py-4">
           <Text className="text-3xl font-bold">{item?.Name}</Text>
           <Text className="">{item?.Overview}</Text>

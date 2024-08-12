@@ -68,7 +68,7 @@ export default function search() {
 
   return (
     <ScrollView keyboardDismissMode="on-drag">
-      <View className="flex flex-col py-2">
+      <View className="flex flex-col pt-2 pb-20">
         <View className="mb-4 px-4">
           <Input
             autoCorrect={false}

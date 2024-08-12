@@ -241,7 +241,7 @@ export default function index() {
         <RefreshControl refreshing={loading} onRefresh={refetch} />
       }
     >
-      <View className="flex flex-col py-4 gap-y-4">
+      <View className="flex flex-col pt-4 pb-24 gap-y-4">
         <View>
           <Text className="px-4 text-2xl font-bold mb-2">
             Continue Watching

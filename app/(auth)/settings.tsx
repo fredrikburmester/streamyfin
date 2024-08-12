@@ -64,19 +64,17 @@ export default function settings() {
         <Text className="font-bold text-2xl">Logs</Text>
         <View className="flex flex-col space-y-2">
           {logs?.map((log, index) => (
-            <View
-              key={index}
-              className="bg-neutral-800 border border-neutral-900 rounded p-2"
-            >
+            <View key={index} className="bg-neutral-900 rounded-xl p-3">
               <Text
                 className={`
+                  mb-1
               ${log.level === "INFO" && "text-blue-500"}
               ${log.level === "ERROR" && "text-red-500"}
                 `}
               >
                 {log.level}
               </Text>
-              <Text>{log.message}</Text>
+              <Text className="text-xs">{log.message}</Text>
             </View>
           ))}
           {logs?.length === 0 && (
