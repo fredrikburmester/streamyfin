@@ -1,12 +1,19 @@
 import { router, Tabs } from "expo-router";
-import React from "react";
-
+import React, { useEffect } from "react";
+import * as NavigationBar from "expo-navigation-bar";
 import { TabBarIcon } from "@/components/navigation/TabBarIcon";
 import { Colors } from "@/constants/Colors";
-import { TouchableOpacity } from "react-native";
+import { Platform, TouchableOpacity } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
 export default function TabLayout() {
+  useEffect(() => {
+    if (Platform.OS === "android") {
+      NavigationBar.setBackgroundColorAsync("#121212");
+      NavigationBar.setBorderColorAsync("#121212");
+    }
+  }, []);
+
   return (
     <Tabs
       screenOptions={{
