@@ -30,6 +30,7 @@ import { useCastDevice } from "react-native-google-cast";
 import { chromecastProfile } from "@/utils/profiles/chromecast";
 import ios12 from "@/utils/profiles/ios12";
 import { currentlyPlayingItemAtom } from "@/components/CurrentlyPlayingBar";
+import { AudioTrackSelector } from "@/components/AudioTrackSelector";
 
 const page: React.FC = () => {
   const local = useLocalSearchParams();
@@ -218,10 +219,13 @@ const page: React.FC = () => {
         <Text>{item.Overview}</Text>
       </View>
       <View className="flex flex-col p-4">
-        <BitrateSelector
-          onChange={(val) => setMaxBitrate(val)}
-          selected={maxBitrate}
-        />
+        <View className="flex flex-row items-center space-x-4 w-full">
+          <BitrateSelector
+            onChange={(val) => setMaxBitrate(val)}
+            selected={maxBitrate}
+          />
+          <AudioTrackSelector item={item} onChange={() => {}} selected={null} />
+        </View>
         <PlayButton item={item} chromecastReady={false} onPress={onPressPlay} />
       </View>
       <ScrollView horizontal className="flex px-4 mb-4">
