@@ -26,7 +26,7 @@ import { PlayButton } from "@/components/PlayButton";
 import { Bitrate, BitrateSelector } from "@/components/BitrateSelector";
 import { getMediaInfoApi } from "@jellyfin/sdk/lib/utils/api";
 import { getStreamUrl } from "@/utils/jellyfin/media/getStreamUrl";
-import { useCastDevice } from "react-native-google-cast";
+import { useCastDevice, useRemoteMediaClient } from "react-native-google-cast";
 import { chromecastProfile } from "@/utils/profiles/chromecast";
 import ios12 from "@/utils/profiles/ios12";
 import { currentlyPlayingItemAtom } from "@/components/CurrentlyPlayingBar";
@@ -39,6 +39,8 @@ const page: React.FC = () => {
   const [user] = useAtom(userAtom);
 
   const castDevice = useCastDevice();
+
+  const chromecastReady = useMemo(() => !!castDevice?.deviceId, [castDevice]);
 
   const [maxBitrate, setMaxBitrate] = useState<Bitrate>({
     key: "Max",
@@ -110,13 +112,30 @@ const page: React.FC = () => {
   });
 
   const [cp, setCp] = useAtom(currentlyPlayingItemAtom);
+  const client = useRemoteMediaClient();
 
   const onPressPlay = useCallback(() => {
     if (!playbackUrl || !item) return;
-    setCp({
-      item,
-      playbackUrl,
-    });
+
+    if (chromecastReady && client) {
+      client.loadMedia({
+        mediaInfo: {
+          contentUrl: playbackUrl,
+          contentType: "video/mp4",
+          metadata: {
+            type: item.Type === "Episode" ? "tvShow" : "movie",
+            title: item.Name || "",
+            subtitle: item.Overview || "",
+          },
+        },
+        startTime: 0,
+      });
+    } else {
+      setCp({
+        item,
+        playbackUrl,
+      });
+    }
   }, [playbackUrl, item]);
 
   if (l1)
@@ -222,7 +241,11 @@ const page: React.FC = () => {
           onChange={(val) => setMaxBitrate(val)}
           selected={maxBitrate}
         />
-        <PlayButton item={item} chromecastReady={false} onPress={onPressPlay} />
+        <PlayButton
+          item={item}
+          chromecastReady={chromecastReady}
+          onPress={onPressPlay}
+        />
       </View>
       <ScrollView horizontal className="flex px-4 mb-4">
         <View className="flex flex-row space-x-2 ">
