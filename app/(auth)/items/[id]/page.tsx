@@ -11,7 +11,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import { useAtom } from "jotai";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   ScrollView,
@@ -22,15 +22,28 @@ import { ParallaxScrollView } from "../../../../components/ParallaxPage";
 import { getUserItemData } from "@/utils/jellyfin/user-library/getUserItemData";
 import { getBackdropUrl } from "@/utils/jellyfin/image/getBackdropUrl";
 import { getLogoImageUrlById } from "@/utils/jellyfin/image/getLogoImageUrlById";
+import { PlayButton } from "@/components/PlayButton";
+import { Bitrate, BitrateSelector } from "@/components/BitrateSelector";
+import { getMediaInfoApi } from "@jellyfin/sdk/lib/utils/api";
+import { getStreamUrl } from "@/utils/jellyfin/media/getStreamUrl";
+import { useCastDevice } from "react-native-google-cast";
+import { chromecastProfile } from "@/utils/profiles/chromecast";
+import ios12 from "@/utils/profiles/ios12";
+import { currentlyPlayingItemAtom } from "@/components/CurrentlyPlayingBar";
 
 const page: React.FC = () => {
   const local = useLocalSearchParams();
   const { id } = local as { id: string };
 
-  const [playbackURL, setPlaybackURL] = useState<string | null>(null);
-
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
+
+  const castDevice = useCastDevice();
+
+  const [maxBitrate, setMaxBitrate] = useState<Bitrate>({
+    key: "Max",
+    value: undefined,
+  });
 
   const { data: item, isLoading: l1 } = useQuery({
     queryKey: ["item", id],
@@ -59,6 +72,52 @@ const page: React.FC = () => {
     () => (item?.Type === "Movie" ? getLogoImageUrlById({ api, item }) : null),
     [item],
   );
+
+  const { data: sessionData } = useQuery({
+    queryKey: ["sessionData", item?.Id],
+    queryFn: async () => {
+      if (!api || !user?.Id || !item?.Id) return null;
+      const playbackData = await getMediaInfoApi(api!).getPlaybackInfo({
+        itemId: item?.Id,
+        userId: user?.Id,
+      });
+
+      return playbackData.data;
+    },
+    enabled: !!item?.Id && !!api && !!user?.Id,
+    staleTime: 0,
+  });
+
+  const { data: playbackUrl } = useQuery({
+    queryKey: ["playbackUrl", item?.Id, maxBitrate, castDevice],
+    queryFn: async () => {
+      if (!api || !user?.Id || !sessionData) return null;
+
+      const url = await getStreamUrl({
+        api,
+        userId: user.Id,
+        item,
+        startTimeTicks: item?.UserData?.PlaybackPositionTicks || 0,
+        maxStreamingBitrate: maxBitrate.value,
+        sessionData,
+        deviceProfile: castDevice?.deviceId ? chromecastProfile : ios12,
+      });
+
+      return url;
+    },
+    enabled: !!sessionData,
+    staleTime: 0,
+  });
+
+  const [cp, setCp] = useAtom(currentlyPlayingItemAtom);
+
+  const onPressPlay = useCallback(() => {
+    if (!playbackUrl || !item) return;
+    setCp({
+      item,
+      playbackUrl,
+    });
+  }, [playbackUrl, item]);
 
   if (l1)
     return (
@@ -151,20 +210,19 @@ const page: React.FC = () => {
         </View>
 
         <View className="flex flex-row justify-between items-center w-full my-4">
-          {playbackURL && (
-            <DownloadItem item={item} playbackURL={playbackURL} />
+          {playbackUrl && (
+            <DownloadItem item={item} playbackUrl={playbackUrl} />
           )}
           <Chromecast />
         </View>
         <Text>{item.Overview}</Text>
       </View>
       <View className="flex flex-col p-4">
-        <VideoPlayer
-          itemId={item.Id}
-          onChangePlaybackURL={(val) => {
-            setPlaybackURL(val);
-          }}
+        <BitrateSelector
+          onChange={(val) => setMaxBitrate(val)}
+          selected={maxBitrate}
         />
+        <PlayButton item={item} chromecastReady={false} onPress={onPressPlay} />
       </View>
       <ScrollView horizontal className="flex px-4 mb-4">
         <View className="flex flex-row space-x-2 ">

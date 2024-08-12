@@ -16,12 +16,12 @@ import { getPlaybackInfo } from "@/utils/jellyfin/media/getPlaybackInfo";
 
 type DownloadProps = {
   item: BaseItemDto;
-  playbackURL: string;
+  playbackUrl: string;
 };
 
 export const DownloadItem: React.FC<DownloadProps> = ({
   item,
-  playbackURL,
+  playbackUrl,
 }) => {
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
@@ -30,7 +30,7 @@ export const DownloadItem: React.FC<DownloadProps> = ({
   const { downloadMedia, isDownloading, error, cancelDownload } =
     useDownloadMedia(api, user?.Id);
 
-  const { startRemuxing, cancelRemuxing } = useRemuxHlsToMp4(playbackURL, item);
+  const { startRemuxing, cancelRemuxing } = useRemuxHlsToMp4(playbackUrl, item);
 
   const { data: playbackInfo, isLoading } = useQuery({
     queryKey: ["playbackInfo", item.Id],

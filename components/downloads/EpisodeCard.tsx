@@ -1,25 +1,23 @@
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
-import { router } from "expo-router";
 import { TouchableOpacity } from "react-native";
 import * as ContextMenu from "zeego/context-menu";
 import { Text } from "../common/Text";
 import { useFiles } from "@/hooks/useFiles";
 import * as Haptics from "expo-haptics";
-import { useRef, useMemo, useState } from "react";
-import Video, { VideoRef } from "react-native-video";
+import { useCallback } from "react";
 import * as FileSystem from "expo-file-system";
+import { useAtom } from "jotai";
+import { currentlyPlayingItemAtom } from "../CurrentlyPlayingBar";
 
 export const EpisodeCard: React.FC<{ item: BaseItemDto }> = ({ item }) => {
   const { deleteFile } = useFiles();
-  const videoRef = useRef<VideoRef | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [_, setCp] = useAtom(currentlyPlayingItemAtom);
 
-  const openFile = () => {
-    videoRef.current?.presentFullscreenPlayer();
-  };
-
-  const fileUrl = useMemo(() => {
-    return `${FileSystem.documentDirectory}/${item.Id}.mp4`;
+  const openFile = useCallback(() => {
+    setCp({
+      item,
+      playbackUrl: `${FileSystem.documentDirectory}/${item.Id}.mp4`,
+    });
   }, [item]);
 
   const options = [
@@ -72,26 +70,6 @@ export const EpisodeCard: React.FC<{ item: BaseItemDto }> = ({ item }) => {
           ))}
         </ContextMenu.Content>
       </ContextMenu.Root>
-
-      <Video
-        style={{ width: 0, height: 0 }}
-        source={{
-          uri: fileUrl,
-          isNetwork: false,
-        }}
-        controls
-        onFullscreenPlayerDidDismiss={() => {
-          setIsPlaying(false);
-          videoRef.current?.pause();
-        }}
-        onFullscreenPlayerDidPresent={() => {
-          setIsPlaying(true);
-          videoRef.current?.resume();
-        }}
-        ref={videoRef}
-        resizeMode="contain"
-        paused={!isPlaying}
-      />
     </>
   );
 };

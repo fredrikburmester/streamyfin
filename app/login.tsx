@@ -151,7 +151,6 @@ const Login: React.FC = () => {
             returnKeyType="done"
             autoCapitalize="none"
             textContentType="URL"
-            clearButtonMode="while-editing"
             maxLength={500}
           />
           <Button onPress={() => handleConnect(parsedServerURL)}>

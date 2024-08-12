@@ -23,30 +23,12 @@ import { chromecastProfile } from "@/utils/profiles/chromecast";
 import { reportPlaybackStopped } from "@/utils/jellyfin/playstate/reportPlaybackStopped";
 import { getUserItemData } from "@/utils/jellyfin/user-library/getUserItemData";
 import { getStreamUrl } from "@/utils/jellyfin/media/getStreamUrl";
+import { currentlyPlayingItemAtom } from "./CurrentlyPlayingBar";
 
 type VideoPlayerProps = {
   itemId: string;
   onChangePlaybackURL: (url: string | null) => void;
 };
-
-const BITRATES = [
-  {
-    key: "Max",
-    value: undefined,
-  },
-  {
-    key: "4 Mb/s",
-    value: 4000000,
-  },
-  {
-    key: "2 Mb/s",
-    value: 2000000,
-  },
-  {
-    key: "500 Kb/s",
-    value: 500000,
-  },
-];
 
 export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   itemId,
@@ -194,6 +176,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     });
   }, [item, client, playbackURL]);
 
+  const [cp, setCp] = useAtom(currentlyPlayingItemAtom);
+
   useEffect(() => {
     videoRef.current?.pause();
   }, []);
@@ -263,14 +247,15 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         <Button
           disabled={!enableVideo}
           onPress={() => {
-            if (chromecastReady) {
-              cast();
-            } else {
-              setTimeout(() => {
-                if (!videoRef.current) return;
-                videoRef.current.presentFullscreenPlayer();
-              }, 1000);
-            }
+            // if (chromecastReady) {
+            //   cast();
+            // } else {
+            //   setTimeout(() => {
+            //     if (!videoRef.current) return;
+            //     videoRef.current.presentFullscreenPlayer();
+            //   }, 1000);
+            // }
+            if (item) setCp(item);
           }}
           iconRight={
             chromecastReady ? (

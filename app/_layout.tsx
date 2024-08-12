@@ -13,6 +13,12 @@ import "react-native-reanimated";
 import Feather from "@expo/vector-icons/Feather";
 import { StatusBar } from "expo-status-bar";
 import { Colors } from "@/constants/Colors";
+import { View } from "react-native";
+import { Text } from "@/components/common/Text";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
+import Video from "react-native-video";
+import { CurrentlyPlayingBar } from "@/components/CurrentlyPlayingBar";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -40,6 +46,8 @@ export default function RootLayout() {
     }),
   );
 
+  const insets = useSafeAreaInsets();
+
   useEffect(() => {
     if (loaded) {
       SplashScreen.hideAsync();
@@ -56,7 +64,7 @@ export default function RootLayout() {
         <JellyfinProvider>
           <StatusBar style="light" backgroundColor="#000" />
           <ThemeProvider value={DarkTheme}>
-            <Stack>
+            <Stack screenOptions={{}}>
               <Stack.Screen
                 name="(auth)/(tabs)"
                 options={{
@@ -69,12 +77,8 @@ export default function RootLayout() {
                 options={{
                   headerShown: true,
                   title: "Settings",
-                  presentation: "modal",
-                  headerLeft: () => (
-                    <TouchableOpacity onPress={() => router.back()}>
-                      <Feather name="x-circle" size={24} color="white" />
-                    </TouchableOpacity>
-                  ),
+                  headerStyle: { backgroundColor: "black" },
+                  headerShadowVisible: false,
                 }}
               />
               <Stack.Screen
@@ -82,14 +86,8 @@ export default function RootLayout() {
                 options={{
                   headerShown: true,
                   title: "Downloads",
-                }}
-              />
-              <Stack.Screen
-                name="(auth)/player/offline/page"
-                options={{
-                  title: "",
-                  headerShown: true,
-                  headerStyle: { backgroundColor: "transparent" },
+                  headerStyle: { backgroundColor: "black" },
+                  headerShadowVisible: false,
                 }}
               />
               <Stack.Screen
@@ -121,6 +119,7 @@ export default function RootLayout() {
               />
               <Stack.Screen name="+not-found" />
             </Stack>
+            <CurrentlyPlayingBar />
           </ThemeProvider>
         </JellyfinProvider>
       </JotaiProvider>
