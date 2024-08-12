@@ -12,6 +12,7 @@ import React, {
   useEffect,
   useState,
 } from "react";
+import { Platform } from "react-native";
 import uuid from "react-native-uuid";
 
 interface Server {
@@ -30,7 +31,7 @@ interface JellyfinContextValue {
 }
 
 const JellyfinContext = createContext<JellyfinContextValue | undefined>(
-  undefined
+  undefined,
 );
 
 const getOrSetDeviceId = async () => {
@@ -56,8 +57,8 @@ export const JellyfinProvider: React.FC<{ children: ReactNode }> = ({
         () =>
           new Jellyfin({
             clientInfo: { name: "Streamyfin", version: "1.0.0" },
-            deviceInfo: { name: "iOS", id },
-          })
+            deviceInfo: { name: Platform.OS === "ios" ? "iOS" : "Android", id },
+          }),
       );
     })();
   }, []);
@@ -66,9 +67,8 @@ export const JellyfinProvider: React.FC<{ children: ReactNode }> = ({
   const [user, setUser] = useAtom(userAtom);
 
   const discoverServers = async (url: string): Promise<Server[]> => {
-    const servers = await jellyfin?.discovery.getRecommendedServerCandidates(
-      url
-    );
+    const servers =
+      await jellyfin?.discovery.getRecommendedServerCandidates(url);
     return servers?.map((server) => ({ address: server.address })) || [];
   };
 
@@ -144,7 +144,7 @@ export const JellyfinProvider: React.FC<{ children: ReactNode }> = ({
         const token = await AsyncStorage.getItem("token");
         const serverUrl = await AsyncStorage.getItem("serverUrl");
         const user = JSON.parse(
-          (await AsyncStorage.getItem("user")) as string
+          (await AsyncStorage.getItem("user")) as string,
         ) as UserDto;
 
         if (serverUrl && token && user.Id && jellyfin) {
