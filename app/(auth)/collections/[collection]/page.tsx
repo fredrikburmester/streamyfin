@@ -3,12 +3,15 @@ import { Loading } from "@/components/Loading";
 import MoviePoster from "@/components/MoviePoster";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import { Ionicons } from "@expo/vector-icons";
-import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
+import {
+  BaseItemDto,
+  ItemSortBy,
+} from "@jellyfin/sdk/lib/generated-client/models";
 import { getItemsApi } from "@jellyfin/sdk/lib/utils/api";
 import { useQuery } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
 import { useAtom } from "jotai";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   ScrollView,
@@ -23,16 +26,21 @@ const page: React.FC = () => {
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
 
+  useEffect(() => {
+    console.log("CollectionId", collectionId);
+  }, [collectionId]);
+
   const { data: collection } = useQuery({
     queryKey: ["collection", collectionId],
-    queryFn: async () =>
-      (api &&
-        (
-          await getItemsApi(api).getItems({
-            userId: user?.Id,
-          })
-        ).data.Items?.find((item) => item.Id == collectionId)) ||
-      null,
+    queryFn: async () => {
+      if (!api) return null;
+      const response = await getItemsApi(api).getItems({
+        userId: user?.Id,
+        ids: [collectionId],
+      });
+      const data = response.data.Items?.[0];
+      return data;
+    },
     enabled: !!api && !!user?.Id,
     staleTime: 0,
   });
@@ -45,40 +53,84 @@ const page: React.FC = () => {
   }>({
     queryKey: ["collection-items", collectionId, startIndex],
     queryFn: async () => {
-      if (!api) return [];
+      if (!api || !collectionId)
+        return {
+          Items: [],
+          TotalRecordCount: 0,
+        };
 
-      const response = await api.axiosInstance.get(
-        `${api.basePath}/Users/${user?.Id}/Items`,
-        {
-          params: {
-            SortBy:
-              collection?.CollectionType === "movies"
-                ? "SortName,ProductionYear"
-                : "SortName",
-            SortOrder: "Ascending",
-            IncludeItemTypes:
-              collection?.CollectionType === "movies" ? "Movie" : "Series",
-            Recursive: true,
-            Fields:
-              collection?.CollectionType === "movies"
-                ? "PrimaryImageAspectRatio,MediaSourceCount"
-                : "PrimaryImageAspectRatio",
-            ImageTypeLimit: 1,
-            EnableImageTypes: "Primary,Backdrop,Banner,Thumb",
-            ParentId: collectionId,
-            Limit: 100,
-            StartIndex: startIndex,
-          },
-          headers: {
-            Authorization: `MediaBrowser DeviceId="${api.deviceInfo.id}", Token="${api.accessToken}"`,
-          },
-        },
-      );
+      const sortBy: ItemSortBy[] = [];
 
-      return response.data || [];
+      switch (collection?.CollectionType) {
+        case "movies":
+          sortBy.push("SortName", "ProductionYear");
+          break;
+        case "boxsets":
+          sortBy.push("IsFolder", "SortName");
+          break;
+        default:
+          sortBy.push("SortName");
+          break;
+      }
+
+      const response = await getItemsApi(api).getItems({
+        userId: user?.Id,
+        parentId: collectionId,
+        limit: 100,
+        startIndex,
+        sortBy,
+        sortOrder: ["Ascending"],
+      });
+
+      const data = response.data.Items;
+
+      return {
+        Items: data || [],
+        TotalRecordCount: response.data.TotalRecordCount || 0,
+      };
     },
-    enabled: !!collection && !!api,
+    enabled: !!collectionId && !!api,
   });
+  // const { data, isLoading, isError } = useQuery<{
+  //   Items: BaseItemDto[];
+  //   TotalRecordCount: number;
+  // }>({
+  //   queryKey: ["collection-items", collectionId, startIndex],
+  //   queryFn: async () => {
+  //     if (!api) return [];
+
+  //     const response = await api.axiosInstance.get(
+  //       `${api.basePath}/Users/${user?.Id}/Items`,
+  //       {
+  //         params: {
+  //           SortBy:
+  //             collection?.CollectionType === "movies"
+  //               ? "SortName,ProductionYear"
+  //               : "SortName",
+  //           SortOrder: "Ascending",
+  //           IncludeItemTypes:
+  //             collection?.CollectionType === "movies" ? "Movie" : "Series",
+  //           Recursive: true,
+  //           Fields:
+  //             collection?.CollectionType === "movies"
+  //               ? "PrimaryImageAspectRatio,MediaSourceCount"
+  //               : "PrimaryImageAspectRatio",
+  //           ImageTypeLimit: 1,
+  //           EnableImageTypes: "Primary,Backdrop,Banner,Thumb",
+  //           ParentId: collectionId,
+  //           Limit: 100,
+  //           StartIndex: startIndex,
+  //         },
+  //         headers: {
+  //           Authorization: `MediaBrowser DeviceId="${api.deviceInfo.id}", Token="${api.accessToken}"`,
+  //         },
+  //       },
+  //     );
+
+  //     return response.data || [];
+  //   },
+  //   enabled: !!collection && !!api,
+  // });
 
   const totalItems = useMemo(() => {
     return data?.TotalRecordCount;
@@ -91,7 +143,8 @@ const page: React.FC = () => {
           <Text className="font-bold text-3xl mb-2">{collection?.Name}</Text>
           <View className="flex flex-row items-center justify-between">
             <Text>
-              {startIndex + 1}-{startIndex + 100} of {totalItems}
+              {startIndex + 1}-{Math.min(startIndex + 100, totalItems || 0)} of{" "}
+              {totalItems}
             </Text>
             <View className="flex flex-row items-center space-x-2">
               <TouchableOpacity
@@ -125,7 +178,7 @@ const page: React.FC = () => {
           </View>
         ) : (
           <View className="flex flex-row flex-wrap">
-            {data?.Items?.map((item: any, index: number) => (
+            {data?.Items?.map((item: BaseItemDto, index: number) => (
               <TouchableOpacity
                 style={{
                   maxWidth: "33%",
@@ -134,10 +187,12 @@ const page: React.FC = () => {
                 }}
                 key={index}
                 onPress={() => {
-                  if (collection?.CollectionType === "movies") {
-                    router.push(`/items/${item.Id}/page`);
-                  } else if (collection?.CollectionType === "tvshows") {
+                  if (item?.Type === "Series") {
                     router.push(`/series/${item.Id}/page`);
+                  } else if (item.IsFolder) {
+                    router.push(`/collections/${item?.Id}/page`);
+                  } else {
+                    router.push(`/items/${item.Id}/page`);
                   }
                 }}
               >
