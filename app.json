@@ -3,7 +3,7 @@
     "name": "Streamyfin",
     "slug": "streamyfin",
     "version": "0.3.4",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/images/icon.png",
     "scheme": "streamyfin",
     "userInterfaceStyle": "dark",
@@ -18,7 +18,8 @@
       "requireFullScreen": true,
       "infoPlist": {
         "NSCameraUsageDescription": "The app needs access to your camera to scan barcodes.",
-        "NSMicrophoneUsageDescription": "The app needs access to your microphone."
+        "NSMicrophoneUsageDescription": "The app needs access to your microphone.",
+        "UIBackgroundModes": ["audio", "movie-playback"]
       },
       "supportsTablet": true,
       "bundleIdentifier": "com.fredrikburmester.streamyfin"
@@ -26,12 +27,6 @@
     "android": {
       "jsEngine": "hermes",
       "versionCode": 12,
-      "orientation": "default",
-      "androidNavigationBar": {
-        "visible": true,
-        "barStyle": "dark-content",
-        "backgroundColor": "#000000"
-      },
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png"
       },
