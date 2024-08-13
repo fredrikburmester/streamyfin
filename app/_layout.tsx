@@ -2,22 +2,14 @@ import { JellyfinProvider } from "@/providers/JellyfinProvider";
 import { DarkTheme, ThemeProvider } from "@react-navigation/native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useFonts } from "expo-font";
-import * as NavigationBar from "expo-navigation-bar";
-import { Stack, router } from "expo-router";
+import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { Provider as JotaiProvider } from "jotai";
-import { useEffect, useRef } from "react";
-import { Platform, TouchableOpacity } from "react-native";
+import { useEffect, useRef, useState } from "react";
 import "react-native-reanimated";
-
-import Feather from "@expo/vector-icons/Feather";
+import * as ScreenOrientation from "expo-screen-orientation";
 import { StatusBar } from "expo-status-bar";
-import { Colors } from "@/constants/Colors";
-import { View } from "react-native";
-import { Text } from "@/components/common/Text";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import Video from "react-native-video";
 import { CurrentlyPlayingBar } from "@/components/CurrentlyPlayingBar";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
@@ -46,13 +38,35 @@ export default function RootLayout() {
     }),
   );
 
-  const insets = useSafeAreaInsets();
-
   useEffect(() => {
     if (loaded) {
       SplashScreen.hideAsync();
     }
   }, [loaded]);
+
+  const [orientation, setOrientation] = useState(
+    ScreenOrientation.Orientation.PORTRAIT_UP,
+  );
+
+  useEffect(() => {
+    ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.DEFAULT);
+
+    ScreenOrientation.getOrientationAsync().then((info) => {
+      setOrientation(info);
+    });
+
+    // subscribe to future changes
+    const subscription = ScreenOrientation.addOrientationChangeListener(
+      (evt) => {
+        setOrientation(evt.orientationInfo.orientation);
+      },
+    );
+
+    // return a clean up function to unsubscribe from notifications
+    return () => {
+      ScreenOrientation.removeOrientationChangeListener(subscription);
+    };
+  }, []);
 
   if (!loaded) {
     return null;
