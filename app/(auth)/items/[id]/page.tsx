@@ -282,15 +282,15 @@ const page: React.FC = () => {
             selected={selectedSubtitleStream}
           />
         </View>
-        <View className="flex flex-row items-center justify-between space-x-2 w-full">
-          <NextEpisodeButton item={item} type="previous" />
+        <View className="flex flex-row items-center justify-between w-full">
+          <NextEpisodeButton item={item} type="previous" className="mr-2" />
           <PlayButton
             item={item}
             chromecastReady={false}
             onPress={onPressPlay}
             className="grow"
           />
-          <NextEpisodeButton item={item} />
+          <NextEpisodeButton item={item} className="ml-2" />
         </View>
       </View>
       <ScrollView horizontal className="flex px-4 mb-4">
