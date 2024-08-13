@@ -2,7 +2,7 @@
   "expo": {
     "name": "Streamyfin",
     "slug": "streamyfin",
-    "version": "0.2.2",
+    "version": "0.3.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "streamyfin",
@@ -37,7 +37,7 @@
         "android.permission.FOREGROUND_SERVICE",
         "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
       ],
-      "versionCode": 7
+      "versionCode": 9
     },
     "web": {
       "bundler": "metro",
@@ -75,6 +75,7 @@
           },
           "android": {
             "minSdkVersion": 24,
+            "usesCleartextTraffic": true,
             "packagingOptions": {
               "jniLibs": {
                 "useLegacyPackaging": true
