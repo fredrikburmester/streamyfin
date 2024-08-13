@@ -2,7 +2,7 @@
   "expo": {
     "name": "Streamyfin",
     "slug": "streamyfin",
-    "version": "0.3.1",
+    "version": "0.3.2",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "streamyfin",
@@ -15,6 +15,7 @@
     "jsEngine": "hermes",
     "assetBundlePatterns": ["**/*"],
     "ios": {
+      "requireFullScreen": true,
       "infoPlist": {
         "NSCameraUsageDescription": "The app needs access to your camera to scan barcodes.",
         "NSMicrophoneUsageDescription": "The app needs access to your microphone."
@@ -23,7 +24,9 @@
       "bundleIdentifier": "com.fredrikburmester.streamyfin"
     },
     "android": {
-      "jsEngine": "jsc",
+      "jsEngine": "hermes",
+      "versionCode": 10,
+      "orientation": "default",
       "androidNavigationBar": {
         "visible": true,
         "barStyle": "dark-content",
@@ -36,8 +39,7 @@
       "permissions": [
         "android.permission.FOREGROUND_SERVICE",
         "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
-      ],
-      "versionCode": 9
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -82,6 +84,18 @@
               }
             }
           }
+        }
+      ],
+      [
+        "expo-screen-orientation",
+        {
+          "initialOrientation": "DEFAULT"
+        }
+      ],
+      [
+        "expo-sensors",
+        {
+          "motionPermission": "Allow Streamyfin to access your device motion for landscape video watching."
         }
       ]
     ],
