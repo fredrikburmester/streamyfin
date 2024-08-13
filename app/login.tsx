@@ -55,25 +55,8 @@ const Login: React.FC = () => {
     }
   };
 
-  const parsedServerURL = useMemo(() => {
-    let parsedServerURL = serverURL.trim();
-
-    if (parsedServerURL) {
-      parsedServerURL = parsedServerURL.endsWith("/")
-        ? parsedServerURL.replace("/", "")
-        : parsedServerURL;
-      parsedServerURL = parsedServerURL.startsWith("http")
-        ? parsedServerURL
-        : "http://" + parsedServerURL;
-
-      return parsedServerURL;
-    }
-
-    return "";
-  }, [serverURL]);
-
   const handleConnect = (url: string) => {
-    setServer({ address: url });
+    setServer({ address: url.trim() });
   };
 
   if (api?.basePath) {
@@ -165,9 +148,7 @@ const Login: React.FC = () => {
             textContentType="URL"
             maxLength={500}
           />
-          <Button onPress={() => handleConnect(parsedServerURL)}>
-            Connect
-          </Button>
+          <Button onPress={() => handleConnect(serverURL)}>Connect</Button>
         </View>
       </View>
     </KeyboardAvoidingView>
