@@ -13,6 +13,22 @@ export const EpisodeCard: React.FC<{ item: BaseItemDto }> = ({ item }) => {
   const { deleteFile } = useFiles();
   const [_, setCp] = useAtom(currentlyPlayingItemAtom);
 
+  // const fetchFileSize = async () => {
+  //   try {
+  //     const filePath = `${FileSystem.documentDirectory}/${item.Id}.mp4`;
+  //     const info = await FileSystem.getInfoAsync(filePath);
+  //     return info.exists ? info.size : null;
+  //   } catch (e) {
+  //     console.log(e);
+  //     return null;
+  //   }
+  // };
+
+  // const { data: fileSize } = useQuery({
+  //   queryKey: ["fileSize", item?.Id],
+  //   queryFn: fetchFileSize,
+  // });
+
   const openFile = useCallback(() => {
     setCp({
       item,
@@ -43,6 +59,12 @@ export const EpisodeCard: React.FC<{ item: BaseItemDto }> = ({ item }) => {
             <Text className=" text-xs opacity-50">
               Episode {item.IndexNumber}
             </Text>
+            {/* <Text className=" text-xs opacity-50">
+              Size:{" "}
+              {fileSize
+                ? `${(fileSize / 1000000).toFixed(0)} MB`
+                : "Calculating..."}{" "}
+                </Text> */}
           </TouchableOpacity>
         </ContextMenu.Trigger>
         <ContextMenu.Content
