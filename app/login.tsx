@@ -71,7 +71,7 @@ const Login: React.FC = () => {
       >
         <View className="flex flex-col px-4 justify-center h-full gap-y-2">
           <View>
-            <Text className="text-3xl font-bold">Jellyfin</Text>
+            <Text className="text-3xl font-bold">Streamyfin</Text>
             <Text className="opacity-50 mb-2">Server: {api.basePath}</Text>
             <Button
               color="black"
@@ -137,7 +137,7 @@ const Login: React.FC = () => {
     >
       <View className="flex flex-col px-4 justify-center h-full">
         <View className="flex flex-col gap-y-2">
-          <Text className="text-3xl font-bold">Jellyfin</Text>
+          <Text className="text-3xl font-bold">Streamyfin</Text>
           <Text className="opacity-50">Enter a server adress</Text>
           <Input
             className="mb-2"
