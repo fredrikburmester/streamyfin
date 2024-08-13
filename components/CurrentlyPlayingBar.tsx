@@ -56,6 +56,7 @@ export const CurrentlyPlayingBar: React.FC = () => {
   const videoRef = useRef<VideoRef | null>(null);
   const [paused, setPaused] = useState(true);
   const [progress, setProgress] = useState(0);
+  const [pip, setPip] = useState(false);
 
   const aBottom = useSharedValue(0);
   const aPadding = useSharedValue(0);
@@ -229,14 +230,19 @@ export const CurrentlyPlayingBar: React.FC = () => {
               {cp.playbackUrl && (
                 <Video
                   ref={videoRef}
+                  allowsExternalPlayback
                   style={{ width: "100%", height: "100%" }}
-                  allowsExternalPlayback={true}
-                  playInBackground={true}
                   playWhenInactive={true}
+                  playInBackground={!pip}
+                  pictureInPicture={pip}
                   showNotificationControls={true}
                   ignoreSilentSwitch="ignore"
                   controls={false}
-                  poster={backdropUrl ? backdropUrl : undefined}
+                  poster={
+                    backdropUrl && item?.Type === "Audio"
+                      ? backdropUrl
+                      : undefined
+                  }
                   paused={paused}
                   onProgress={(e) => onProgress(e)}
                   subtitleStyle={{
@@ -261,15 +267,12 @@ export const CurrentlyPlayingBar: React.FC = () => {
                     );
                   }}
                   renderLoader={
-                    item?.Type === "Video" && (
+                    item?.Type !== "Audio" && (
                       <View className="flex flex-col items-center justify-center h-full">
                         <ActivityIndicator size={"small"} color={"white"} />
                       </View>
                     )
                   }
-                  subtitleStyle={{
-                    fontSize: 20,
-                  }}
                 />
               )}
             </TouchableOpacity>
