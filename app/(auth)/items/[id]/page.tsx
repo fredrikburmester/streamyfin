@@ -34,6 +34,8 @@ import CastContext, {
 import { chromecastProfile } from "@/utils/profiles/chromecast";
 import ios12 from "@/utils/profiles/ios12";
 import { currentlyPlayingItemAtom } from "@/components/CurrentlyPlayingBar";
+import { AudioTrackSelector } from "@/components/AudioTrackSelector";
+import { SubtitleTrackSelector } from "@/components/SubtitleTrackSelector";
 
 const page: React.FC = () => {
   const local = useLocalSearchParams();
@@ -45,7 +47,9 @@ const page: React.FC = () => {
   const castDevice = useCastDevice();
 
   const chromecastReady = useMemo(() => !!castDevice?.deviceId, [castDevice]);
-
+  const [selectedAudioStream, setSelectedAudioStream] = useState<number>(-1);
+  const [selectedSubtitleStream, setSelectedSubtitleStream] =
+    useState<number>(0);
   const [maxBitrate, setMaxBitrate] = useState<Bitrate>({
     key: "Max",
     value: undefined,
@@ -95,7 +99,13 @@ const page: React.FC = () => {
   });
 
   const { data: playbackUrl } = useQuery({
-    queryKey: ["playbackUrl", item?.Id, maxBitrate, castDevice],
+    queryKey: [
+      "playbackUrl",
+      item?.Id,
+      maxBitrate,
+      castDevice,
+      selectedAudioStream,
+    ],
     queryFn: async () => {
       if (!api || !user?.Id || !sessionData) return null;
 
@@ -107,7 +117,11 @@ const page: React.FC = () => {
         maxStreamingBitrate: maxBitrate.value,
         sessionData,
         deviceProfile: castDevice?.deviceId ? chromecastProfile : ios12,
+        audioStreamIndex: selectedAudioStream,
+        subtitleStreamIndex: selectedSubtitleStream,
       });
+
+      console.log("Transcode URL: ", url);
 
       return url;
     },
@@ -247,15 +261,23 @@ const page: React.FC = () => {
         <Text>{item.Overview}</Text>
       </View>
       <View className="flex flex-col p-4">
-        <BitrateSelector
-          onChange={(val) => setMaxBitrate(val)}
-          selected={maxBitrate}
-        />
-        <PlayButton
-          item={item}
-          chromecastReady={chromecastReady}
-          onPress={onPressPlay}
-        />
+        <View className="flex flex-row items-center space-x-2 w-full">
+          <BitrateSelector
+            onChange={(val) => setMaxBitrate(val)}
+            selected={maxBitrate}
+          />
+          <AudioTrackSelector
+            item={item}
+            onChange={setSelectedAudioStream}
+            selected={selectedAudioStream}
+          />
+          <SubtitleTrackSelector
+            item={item}
+            onChange={setSelectedSubtitleStream}
+            selected={selectedSubtitleStream}
+          />
+        </View>
+        <PlayButton item={item} chromecastReady={false} onPress={onPressPlay} />
       </View>
       <ScrollView horizontal className="flex px-4 mb-4">
         <View className="flex flex-row space-x-2 ">

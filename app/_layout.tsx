@@ -78,7 +78,7 @@ export default function RootLayout() {
         <JellyfinProvider>
           <StatusBar style="light" backgroundColor="#000" />
           <ThemeProvider value={DarkTheme}>
-            <Stack screenOptions={{}}>
+            <Stack>
               <Stack.Screen
                 name="(auth)/(tabs)"
                 options={{
