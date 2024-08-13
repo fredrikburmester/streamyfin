@@ -47,7 +47,9 @@ export const PlayedStatus: React.FC<{ item: BaseItemDto }> = ({ item }) => {
             invalidateQueries();
           }}
         >
-          <Ionicons name="checkmark-circle" size={26} color="white" />
+          <View className="rounded h-12 aspect-square flex items-center justify-center">
+            <Ionicons name="checkmark-circle" size={26} color="white" />
+          </View>
         </TouchableOpacity>
       ) : (
         <TouchableOpacity
@@ -61,7 +63,9 @@ export const PlayedStatus: React.FC<{ item: BaseItemDto }> = ({ item }) => {
             invalidateQueries();
           }}
         >
-          <Ionicons name="checkmark-circle-outline" size={26} color="white" />
+          <View className="rounded h-12 aspect-square flex items-center justify-center">
+            <Ionicons name="checkmark-circle-outline" size={26} color="white" />
+          </View>
         </TouchableOpacity>
       )}
     </View>

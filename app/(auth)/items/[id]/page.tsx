@@ -11,7 +11,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import { useAtom } from "jotai";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   ScrollView,
@@ -36,6 +36,10 @@ import ios12 from "@/utils/profiles/ios12";
 import { currentlyPlayingItemAtom } from "@/components/CurrentlyPlayingBar";
 import { AudioTrackSelector } from "@/components/AudioTrackSelector";
 import { SubtitleTrackSelector } from "@/components/SubtitleTrackSelector";
+import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
+import { Button } from "@/components/Button";
+import { Ionicons } from "@expo/vector-icons";
+import { NextEpisodeButton } from "@/components/series/NextEpisodeButton";
 
 const page: React.FC = () => {
   const local = useLocalSearchParams();
@@ -201,7 +205,7 @@ const page: React.FC = () => {
         </>
       }
     >
-      <View className="flex flex-col px-4 mb-4 pt-4">
+      <View className="flex flex-col px-4 pt-4">
         <View className="flex flex-col">
           {item.Type === "Episode" ? (
             <>
@@ -218,7 +222,6 @@ const page: React.FC = () => {
                 <Text className="text-center font-bold text-2xl mr-2">
                   {item?.Name}
                 </Text>
-                <PlayedStatus item={item} />
               </View>
               <View>
                 <View className="flex flex-row items-center self-center">
@@ -243,7 +246,6 @@ const page: React.FC = () => {
                 <Text className="text-center font-bold text-2xl mr-2">
                   {item?.Name}
                 </Text>
-                <PlayedStatus item={item} />
               </View>
               <Text className="text-center opacity-50">
                 {item?.ProductionYear}
@@ -253,14 +255,17 @@ const page: React.FC = () => {
         </View>
 
         <View className="flex flex-row justify-between items-center w-full my-4">
-          {playbackUrl && (
+          {playbackUrl ? (
             <DownloadItem item={item} playbackUrl={playbackUrl} />
+          ) : (
+            <View className="h-12 aspect-square flex items-center justify-center"></View>
           )}
+          <PlayedStatus item={item} />
           <Chromecast />
         </View>
         <Text>{item.Overview}</Text>
       </View>
-      <View className="flex flex-col p-4">
+      <View className="flex flex-col p-4 w-full">
         <View className="flex flex-row items-center space-x-2 w-full">
           <BitrateSelector
             onChange={(val) => setMaxBitrate(val)}
@@ -277,7 +282,16 @@ const page: React.FC = () => {
             selected={selectedSubtitleStream}
           />
         </View>
-        <PlayButton item={item} chromecastReady={false} onPress={onPressPlay} />
+        <View className="flex flex-row items-center justify-between space-x-2 w-full">
+          <NextEpisodeButton item={item} type="previous" />
+          <PlayButton
+            item={item}
+            chromecastReady={false}
+            onPress={onPressPlay}
+            className="grow"
+          />
+          <NextEpisodeButton item={item} />
+        </View>
       </View>
       <ScrollView horizontal className="flex px-4 mb-4">
         <View className="flex flex-row space-x-2 ">

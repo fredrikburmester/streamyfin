@@ -30,7 +30,7 @@ type VideoPlayerProps = {
   onChangePlaybackURL: (url: string | null) => void;
 };
 
-export const VideoPlayer: React.FC<VideoPlayerProps> = ({
+export const OldVideoPlayer: React.FC<VideoPlayerProps> = ({
   itemId,
   onChangePlaybackURL,
 }) => {
