@@ -26,15 +26,19 @@ Streamyfin includes some exciting experimental features like media downloading a
 
 Downloading works by using ffmpeg to convert a HLS stream into a video file on the device. This means that you can download and view any file you can stream! The file is converted by Jellyfin on the server in real time as it is downloaded. This means a **bit longer download times** but supports any file that your server can transcode.
 
-## 🛠️ Beta testing (iOS/Android)
+## Get it now
 
-## TestFlight
+<a href="https://apps.apple.com/se/app/streamyfin/id6593660679?l=en-GB">
+  <img height=75 alt="Get Streamyfin on App Store" src="./assets/Download_on_the_App_Store_Badge.png"/>
+</a>
+
+### TestFlight
 
 <a href="https://testflight.apple.com/join/CWBaAAK2">
   <img height=75 alt="Get the beta on TestFlight" src="./assets/Get_the_beta_on_Testflight.svg"/>
 </a>
 
-## Play Store Open Beta
+### Play Store Open Beta
 
 <a href="https://play.google.com/store/apps/details?id=com.fredrikburmester.streamyfin">
   <img height=75 alt="Get the beta on Google Play" src="./assets/en_badge_web_generic.png"/>
