@@ -28,6 +28,9 @@ import Animated, {
 } from "react-native-reanimated";
 import { useRouter, useSegments } from "expo-router";
 import { BlurView } from "expo-blur";
+import { writeToLog } from "@/utils/log";
+import { getBackdropUrl } from "@/utils/jellyfin/image/getBackdropUrl";
+import { Image } from "expo-image";
 
 export const currentlyPlayingItemAtom = atom<{
   item: BaseItemDto;
@@ -173,6 +176,17 @@ export const CurrentlyPlayingBar: React.FC = () => {
     [item],
   );
 
+  const backdropUrl = useMemo(
+    () =>
+      getBackdropUrl({
+        api,
+        item,
+        quality: 70,
+        width: 200,
+      }),
+    [item],
+  );
+
   useEffect(() => {
     if (cp?.playbackUrl) {
       play();
@@ -203,31 +217,50 @@ export const CurrentlyPlayingBar: React.FC = () => {
               onPress={() => {
                 videoRef.current?.presentFullscreenPlayer();
               }}
-              className="aspect-video h-full bg-neutral-800 rounded-md overflow-hidden"
+              className={`relative h-full bg-neutral-800 rounded-md overflow-hidden
+                ${item?.Type === "Audio" ? "aspect-square" : "aspect-video"}
+                `}
             >
               {cp.playbackUrl && (
                 <Video
+                  ref={videoRef}
                   style={{ width: "100%", height: "100%" }}
+                  allowsExternalPlayback={true}
+                  playInBackground={true}
+                  playWhenInactive={true}
+                  showNotificationControls={true}
+                  ignoreSilentSwitch="ignore"
+                  controls={false}
+                  poster={backdropUrl ? backdropUrl : undefined}
+                  paused={paused}
+                  onProgress={(e) => onProgress(e)}
+                  subtitleStyle={{
+                    fontSize: 16,
+                  }}
                   source={{
                     uri: cp.playbackUrl,
                     isNetwork: true,
                     startPosition,
                   }}
-                  controls={false}
-                  ref={videoRef}
                   onBuffer={(e) =>
                     e.isBuffering ? console.log("Buffering...") : null
                   }
-                  onProgress={(e) => onProgress(e)}
-                  paused={paused}
                   onFullscreenPlayerDidDismiss={() => {
                     play();
                   }}
-                  ignoreSilentSwitch="ignore"
+                  onError={(e) => {
+                    console.log(e);
+                    writeToLog(
+                      "ERROR",
+                      "Video playback error: " + JSON.stringify(e),
+                    );
+                  }}
                   renderLoader={
-                    <View className="flex flex-col items-center justify-center h-full">
-                      <ActivityIndicator size={"small"} color={"white"} />
-                    </View>
+                    item?.Type === "Video" && (
+                      <View className="flex flex-col items-center justify-center h-full">
+                        <ActivityIndicator size={"small"} color={"white"} />
+                      </View>
+                    )
                   }
                 />
               )}
