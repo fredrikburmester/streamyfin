@@ -19,7 +19,7 @@
       "infoPlist": {
         "NSCameraUsageDescription": "The app needs access to your camera to scan barcodes.",
         "NSMicrophoneUsageDescription": "The app needs access to your microphone.",
-        "UIBackgroundModes": ["audio", "movie-playback"]
+        "UIBackgroundModes": ["audio", "movie-playback", "picture-in-picture"]
       },
       "supportsTablet": true,
       "bundleIdentifier": "com.fredrikburmester.streamyfin"
