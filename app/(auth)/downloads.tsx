@@ -16,14 +16,18 @@ import { runningProcesses } from "@/utils/atoms/downloads";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { FFmpegKit } from "ffmpeg-kit-react-native";
+import * as FileSystem from "expo-file-system";
 
 const downloads: React.FC = () => {
+  const [process, setProcess] = useAtom(runningProcesses);
+
   const { data: downloadedFiles, isLoading } = useQuery({
-    queryKey: ["downloaded_files"],
+    queryKey: ["downloaded_files", process?.item.Id],
     queryFn: async () =>
       JSON.parse(
         (await AsyncStorage.getItem("downloaded_files")) || "[]",
       ) as BaseItemDto[],
+    staleTime: 0,
   });
 
   const movies = useMemo(
@@ -40,8 +44,6 @@ const downloads: React.FC = () => {
     });
     return Object.values(series);
   }, [downloadedFiles]);
-
-  const [process, setProcess] = useAtom(runningProcesses);
 
   const eta = useMemo(() => {
     const length = process?.item?.RunTimeTicks || 0;
@@ -77,7 +79,7 @@ const downloads: React.FC = () => {
               <View>
                 <Text className="font-semibold">{process.item.Name}</Text>
                 <Text className="text-xs opacity-50">{process.item.Type}</Text>
-                <View className="flex flex-row items-center space-x-2 mt-1 text-red-600">
+                <View className="flex flex-row items-center space-x-2 mt-1 text-purple-600">
                   <Text className="text-xs">
                     {process.progress.toFixed(0)}%
                   </Text>
@@ -97,7 +99,7 @@ const downloads: React.FC = () => {
               </TouchableOpacity>
               <View
                 className={`
-                  absolute bottom-0 left-0 h-1 bg-red-600
+                  absolute bottom-0 left-0 h-1 bg-purple-600
                 `}
                 style={{
                   width: process.progress
