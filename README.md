@@ -34,6 +34,8 @@ Downloading works by using ffmpeg to convert a HLS stream into a video file on t
 
 ### TestFlight
 
+Get the latest updates by using the TestFlight version of the app.
+
 <a href="https://testflight.apple.com/join/CWBaAAK2">
   <img height=75 alt="Get the beta on TestFlight" src="./assets/Get_the_beta_on_Testflight.svg"/>
 </a>
