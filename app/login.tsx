@@ -3,6 +3,7 @@ import { Input } from "@/components/common/Input";
 import { Text } from "@/components/common/Text";
 import { apiAtom, useJellyfin } from "@/providers/JellyfinProvider";
 import { Ionicons } from "@expo/vector-icons";
+import { AxiosError } from "axios";
 import { useAtom } from "jotai";
 import React, { useMemo, useState } from "react";
 import { KeyboardAvoidingView, Platform, View } from "react-native";
@@ -18,6 +19,7 @@ const Login: React.FC = () => {
   const [api] = useAtom(apiAtom);
 
   const [serverURL, setServerURL] = useState<string>("");
+  const [error, setError] = useState<string>("");
   const [credentials, setCredentials] = useState<{
     username: string;
     password: string;
@@ -36,7 +38,18 @@ const Login: React.FC = () => {
         await login(credentials.username, credentials.password);
       }
     } catch (error) {
-      console.error(error);
+      const e = error as AxiosError | z.ZodError;
+      if (e instanceof z.ZodError) {
+        setError("An error occured.");
+      } else {
+        if (e.response?.status === 401) {
+          setError("Invalid credentials.");
+        } else {
+          setError(
+            "A network error occurred. Did you enter the correct server URL?",
+          );
+        }
+      }
     } finally {
       setLoading(false);
     }
@@ -121,6 +134,8 @@ const Login: React.FC = () => {
               maxLength={500}
             />
           </View>
+
+          <Text className="text-red-600 mb-2">{error}</Text>
 
           <Button onPress={handleLogin} loading={loading}>
             Log in

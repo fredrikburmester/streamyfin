@@ -8,7 +8,12 @@ import { Text } from "./common/Text";
 import { Ionicons } from "@expo/vector-icons";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Video, { OnProgressData, VideoRef } from "react-native-video";
+import Video, {
+  OnProgressData,
+  SelectedTrack,
+  SelectedTrackType,
+  VideoRef,
+} from "react-native-video";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import { atom, useAtom } from "jotai";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
@@ -262,6 +267,9 @@ export const CurrentlyPlayingBar: React.FC = () => {
                       </View>
                     )
                   }
+                  subtitleStyle={{
+                    fontSize: 20,
+                  }}
                 />
               )}
             </TouchableOpacity>

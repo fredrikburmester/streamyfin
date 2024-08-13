@@ -27,20 +27,24 @@ const BITRATES: Bitrate[] = [
   },
 ];
 
-type Props = {
+interface Props extends React.ComponentProps<typeof View> {
   onChange: (value: Bitrate) => void;
   selected: Bitrate;
-};
+}
 
-export const BitrateSelector: React.FC<Props> = ({ onChange, selected }) => {
+export const BitrateSelector: React.FC<Props> = ({
+  onChange,
+  selected,
+  ...props
+}) => {
   return (
-    <View className="flex flex-row items-center justify-between">
+    <View className="flex flex-row items-center justify-between" {...props}>
       <DropdownMenu.Root>
         <DropdownMenu.Trigger>
           <View className="flex flex-col mb-2">
             <Text className="opacity-50 mb-1 text-xs">Bitrate</Text>
             <View className="flex flex-row">
-              <TouchableOpacity className="bg-neutral-900 rounded-2xl border-neutral-900 border px-3 py-2 flex flex-row items-center justify-between">
+              <TouchableOpacity className="bg-neutral-900 h-12 rounded-2xl border-neutral-900 border px-3 py-2 flex flex-row items-center justify-between">
                 <Text>
                   {BITRATES.find((b) => b.value === selected.value)?.key}
                 </Text>
