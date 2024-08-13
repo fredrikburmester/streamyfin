@@ -26,7 +26,11 @@ import { PlayButton } from "@/components/PlayButton";
 import { Bitrate, BitrateSelector } from "@/components/BitrateSelector";
 import { getMediaInfoApi } from "@jellyfin/sdk/lib/utils/api";
 import { getStreamUrl } from "@/utils/jellyfin/media/getStreamUrl";
-import { useCastDevice, useRemoteMediaClient } from "react-native-google-cast";
+import CastContext, {
+  PlayServicesState,
+  useCastDevice,
+  useRemoteMediaClient,
+} from "react-native-google-cast";
 import { chromecastProfile } from "@/utils/profiles/chromecast";
 import ios12 from "@/utils/profiles/ios12";
 import { currentlyPlayingItemAtom } from "@/components/CurrentlyPlayingBar";
@@ -114,21 +118,27 @@ const page: React.FC = () => {
   const [cp, setCp] = useAtom(currentlyPlayingItemAtom);
   const client = useRemoteMediaClient();
 
-  const onPressPlay = useCallback(() => {
+  const onPressPlay = useCallback(async () => {
     if (!playbackUrl || !item) return;
 
     if (chromecastReady && client) {
-      client.loadMedia({
-        mediaInfo: {
-          contentUrl: playbackUrl,
-          contentType: "video/mp4",
-          metadata: {
-            type: item.Type === "Episode" ? "tvShow" : "movie",
-            title: item.Name || "",
-            subtitle: item.Overview || "",
-          },
-        },
-        startTime: 0,
+      await CastContext.getPlayServicesState().then((state) => {
+        if (state && state !== PlayServicesState.SUCCESS)
+          CastContext.showPlayServicesErrorDialog(state);
+        else {
+          client.loadMedia({
+            mediaInfo: {
+              contentUrl: playbackUrl,
+              contentType: "video/mp4",
+              metadata: {
+                type: item.Type === "Episode" ? "tvShow" : "movie",
+                title: item.Name || "",
+                subtitle: item.Overview || "",
+              },
+            },
+            startTime: 0,
+          });
+        }
       });
     } else {
       setCp({
