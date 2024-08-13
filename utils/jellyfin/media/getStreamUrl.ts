@@ -58,8 +58,28 @@ export const getStreamUrl = async ({
   }
 
   if (mediaSource.SupportsDirectPlay) {
-    console.log("Using direct stream!");
-    return `${api.basePath}/Videos/${itemId}/stream.mp4?playSessionId=${sessionData.PlaySessionId}&mediaSourceId=${itemId}&static=true`;
+    if (item.MediaType === "Video") {
+      console.log("Using direct stream for video!");
+      return `${api.basePath}/Videos/${itemId}/stream.mp4?playSessionId=${sessionData.PlaySessionId}&mediaSourceId=${itemId}&static=true`;
+    } else if (item.MediaType === "Audio") {
+      console.log("Using direct stream for audio!");
+      const searchParams = new URLSearchParams({
+        UserId: userId,
+        DeviceId: api.deviceInfo.id,
+        MaxStreamingBitrate: "140000000",
+        Container:
+          "opus,webm|opus,mp3,aac,m4a|aac,m4b|aac,flac,webma,webm|webma,wav,ogg",
+        TranscodingContainer: "mp4",
+        TranscodingProtocol: "hls",
+        AudioCodec: "aac",
+        api_key: api.accessToken,
+        PlaySessionId: sessionData.PlaySessionId,
+        StartTimeTicks: "0",
+        EnableRedirection: "true",
+        EnableRemoteMedia: "false",
+      });
+      return `${api.basePath}/Audio/${itemId}/universal?${searchParams.toString()}`;
+    }
   }
 
   console.log("Using transcoded stream!");
