@@ -1,5 +1,6 @@
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import React, { useEffect } from "react";
+import { View } from "react-native";
 import {
   CastButton,
   useCastDevice,
@@ -30,5 +31,9 @@ export const Chromecast: React.FC<Props> = () => {
     })();
   }, [client, devices, castDevice, sessionManager, discoveryManager]);
 
-  return <CastButton style={{ tintColor: "white", height: 48, width: 48 }} />;
+  return (
+    <View className="rounded h-12 aspect-square flex items-center justify-center">
+      <CastButton style={{ tintColor: "white", height: 48, width: 48 }} />
+    </View>
+  );
 };

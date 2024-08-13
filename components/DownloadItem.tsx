@@ -64,12 +64,16 @@ export const DownloadItem: React.FC<DownloadProps> = ({
   }, [process]);
 
   if (isLoading) {
-    return <ActivityIndicator size={"small"} color={"white"} />;
+    return (
+      <View className="rounded h-12 aspect-square flex items-center justify-center">
+        <ActivityIndicator size={"small"} color={"white"} />
+      </View>
+    );
   }
 
   if (playbackInfo?.MediaSources?.[0].SupportsDirectPlay === false) {
     return (
-      <View style={{ opacity: 0.5 }}>
+      <View className="rounded h-12 aspect-square flex items-center justify-center opacity-50">
         <Ionicons name="cloud-download-outline" size={24} color="white" />
       </View>
     );
@@ -77,21 +81,22 @@ export const DownloadItem: React.FC<DownloadProps> = ({
 
   if (process && process.item.Id !== item.Id!) {
     return (
-      <TouchableOpacity onPress={() => {}} style={{ opacity: 0.5 }}>
-        <Ionicons name="cloud-download-outline" size={24} color="white" />
+      <TouchableOpacity onPress={() => {}}>
+        <View className="rounded h-12 aspect-square flex items-center justify-center opacity-50">
+          <Ionicons name="cloud-download-outline" size={24} color="white" />
+        </View>
       </TouchableOpacity>
     );
   }
 
-  return (
-    <View>
-      {process ? (
-        <TouchableOpacity
-          onPress={() => {
-            router.push("/downloads");
-          }}
-          className="flex flex-row items-center"
-        >
+  if (process) {
+    return (
+      <TouchableOpacity
+        onPress={() => {
+          router.push("/downloads");
+        }}
+      >
+        <View className="rounded h-12 aspect-square flex items-center justify-center">
           {process.progress === 0 ? (
             <ActivityIndicator size={"small"} color={"white"} />
           ) : (
@@ -118,24 +123,32 @@ export const DownloadItem: React.FC<DownloadProps> = ({
               <Text>{process.speed.toFixed(2)}x</Text>
             </View>
           ) : null}
-        </TouchableOpacity>
-      ) : downloaded ? (
-        <TouchableOpacity
-          onPress={() => {
-            router.push("/downloads");
-          }}
-        >
+        </View>
+      </TouchableOpacity>
+    );
+  } else if (downloaded) {
+    return (
+      <TouchableOpacity
+        onPress={() => {
+          router.push("/downloads");
+        }}
+      >
+        <View className="rounded h-12 aspect-square flex items-center justify-center">
           <Ionicons name="cloud-download" size={26} color="#9333ea" />
-        </TouchableOpacity>
-      ) : (
-        <TouchableOpacity
-          onPress={() => {
-            startRemuxing();
-          }}
-        >
+        </View>
+      </TouchableOpacity>
+    );
+  } else {
+    return (
+      <TouchableOpacity
+        onPress={() => {
+          startRemuxing();
+        }}
+      >
+        <View className="rounded h-12 aspect-square flex items-center justify-center">
           <Ionicons name="cloud-download-outline" size={26} color="white" />
-        </TouchableOpacity>
-      )}
-    </View>
-  );
+        </View>
+      </TouchableOpacity>
+    );
+  }
 };

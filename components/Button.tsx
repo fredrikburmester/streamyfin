@@ -7,7 +7,7 @@ interface ButtonProps extends React.ComponentProps<typeof TouchableOpacity> {
   className?: string;
   textClassName?: string;
   disabled?: boolean;
-  children?: string;
+  children?: string | ReactNode;
   loading?: boolean;
   color?: "purple" | "red" | "black";
   iconRight?: ReactNode;

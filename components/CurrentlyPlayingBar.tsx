@@ -7,23 +7,13 @@ import {
 import { Text } from "./common/Text";
 import { Ionicons } from "@expo/vector-icons";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Video, {
-  OnProgressData,
-  SelectedTrack,
-  SelectedTrackType,
-  VideoRef,
-} from "react-native-video";
+import Video, { OnProgressData, VideoRef } from "react-native-video";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import { atom, useAtom } from "jotai";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCastDevice, useRemoteMediaClient } from "react-native-google-cast";
 import { getUserItemData } from "@/utils/jellyfin/user-library/getUserItemData";
 import { getMediaInfoApi } from "@jellyfin/sdk/lib/utils/api";
-import { getStreamUrl } from "@/utils/jellyfin/media/getStreamUrl";
-import { chromecastProfile } from "@/utils/profiles/chromecast";
-import ios12 from "@/utils/profiles/ios12";
 import { reportPlaybackProgress } from "@/utils/jellyfin/playstate/reportPlaybackProgress";
 import { reportPlaybackStopped } from "@/utils/jellyfin/playstate/reportPlaybackStopped";
 import Animated, {
@@ -35,7 +25,6 @@ import { useRouter, useSegments } from "expo-router";
 import { BlurView } from "expo-blur";
 import { writeToLog } from "@/utils/log";
 import { getBackdropUrl } from "@/utils/jellyfin/image/getBackdropUrl";
-import { Image } from "expo-image";
 
 export const currentlyPlayingItemAtom = atom<{
   item: BaseItemDto;
@@ -43,21 +32,16 @@ export const currentlyPlayingItemAtom = atom<{
 } | null>(null);
 
 export const CurrentlyPlayingBar: React.FC = () => {
-  const insets = useSafeAreaInsets();
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
   const [cp, setCp] = useAtom(currentlyPlayingItemAtom);
 
-  const castDevice = useCastDevice();
-  const client = useRemoteMediaClient();
   const queryClient = useQueryClient();
   const segments = useSegments();
 
   const videoRef = useRef<VideoRef | null>(null);
   const [paused, setPaused] = useState(true);
   const [progress, setProgress] = useState(0);
-
-  const [pip, setPip] = useState(false);
 
   const aBottom = useSharedValue(0);
   const aPadding = useSharedValue(0);
@@ -239,9 +223,6 @@ export const CurrentlyPlayingBar: React.FC = () => {
                   ignoreSilentSwitch="ignore"
                   controls={false}
                   pictureInPicture={true}
-                  onPictureInPictureStatusChanged={(e) => {
-                    setPip(e.isActive);
-                  }}
                   poster={
                     backdropUrl && item?.Type === "Audio"
                       ? backdropUrl

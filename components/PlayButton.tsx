@@ -1,21 +1,19 @@
-import { useState } from "react";
 import { Button } from "./Button";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
-import { currentlyPlayingItemAtom } from "./CurrentlyPlayingBar";
-import { useAtom } from "jotai";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { runtimeTicksToMinutes } from "@/utils/time";
 
-type Props = {
+interface Props extends React.ComponentProps<typeof Button> {
   item: BaseItemDto;
   onPress: () => void;
   chromecastReady: boolean;
-};
+}
 
 export const PlayButton: React.FC<Props> = ({
   item,
   onPress,
   chromecastReady,
+  ...props
 }) => {
   return (
     <Button
@@ -27,6 +25,7 @@ export const PlayButton: React.FC<Props> = ({
           <Ionicons name="play-circle" size={24} color="white" />
         )
       }
+      {...props}
     >
       {runtimeTicksToMinutes(item?.RunTimeTicks)}
     </Button>

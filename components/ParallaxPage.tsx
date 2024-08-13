@@ -89,7 +89,9 @@ export const ParallaxScrollView: React.FC<Props> = ({
         >
           {headerImage}
         </Animated.View>
-        <View className="flex-1 overflow-hidden bg-black">{children}</View>
+        <View className="flex-1 overflow-hidden bg-black pb-24">
+          {children}
+        </View>
       </Animated.ScrollView>
     </View>
   );
