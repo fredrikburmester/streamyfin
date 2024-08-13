@@ -56,7 +56,6 @@ export const CurrentlyPlayingBar: React.FC = () => {
   const videoRef = useRef<VideoRef | null>(null);
   const [paused, setPaused] = useState(true);
   const [progress, setProgress] = useState(0);
-  const [pip, setPip] = useState(false);
 
   const aBottom = useSharedValue(0);
   const aPadding = useSharedValue(0);
@@ -233,8 +232,7 @@ export const CurrentlyPlayingBar: React.FC = () => {
                   allowsExternalPlayback
                   style={{ width: "100%", height: "100%" }}
                   playWhenInactive={true}
-                  playInBackground={!pip}
-                  pictureInPicture={pip}
+                  playInBackground={true}
                   showNotificationControls={true}
                   ignoreSilentSwitch="ignore"
                   controls={false}
@@ -256,8 +254,14 @@ export const CurrentlyPlayingBar: React.FC = () => {
                   onBuffer={(e) =>
                     e.isBuffering ? console.log("Buffering...") : null
                   }
-                  onFullscreenPlayerDidDismiss={() => {
-                    play();
+                  onPlaybackStateChanged={(e) => {
+                    if (e.isPlaying) {
+                      setPaused(false);
+                    } else if (e.isSeeking) {
+                      return;
+                    } else {
+                      setPaused(true);
+                    }
                   }}
                   onError={(e) => {
                     console.log(e);
