@@ -12,10 +12,11 @@ Welcome to Streamyfin, a simple and user-friendly Jellyfin client built with Exp
 
 ## 🌟 Features
 
-- 🔗 Connect to your Jellyfin instance: Easily link your Jellyfin server and access your media library.
-- 📱 Native video player: Playback with the platform native video player. With support for subtitles, playback speed control, and more.
-- 📥 Download media (Experimental): Save your media locally and watch it offline.
-- 📡 Chromecast media (Experimental): Cast your media to any Chromecast-enabled device.
+- 📱 **Native video player**: Playback with the platform native video player. With support for subtitles, playback speed control, and more.
+- 📺 **Picture in Picture** (iPhone only): Watch movies in PiP mode on your iPhone.
+- 🔊 **Background audio**: Stream music in the background, even when locking the phone.
+- 📥 **Download media** (Experimental): Save your media locally and watch it offline.
+- 📡 **Chromecast** (Experimental): Cast your media to any Chromecast-enabled device.
 
 ## 🧪 Experimental Features
 
