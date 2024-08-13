@@ -88,7 +88,7 @@ export const DownloadItem: React.FC<DownloadProps> = ({
       {process ? (
         <TouchableOpacity
           onPress={() => {
-            cancelRemuxing();
+            router.push("/downloads");
           }}
           className="flex flex-row items-center"
         >
@@ -122,17 +122,14 @@ export const DownloadItem: React.FC<DownloadProps> = ({
       ) : downloaded ? (
         <TouchableOpacity
           onPress={() => {
-            router.push(
-              `/(auth)/player/offline/page?url=${item.Id}.mp4&itemId=${item.Id}`,
-            );
+            router.push("/downloads");
           }}
         >
-          <Ionicons name="cloud-download" size={26} color="#16a34a" />
+          <Ionicons name="cloud-download" size={26} color="#9333ea" />
         </TouchableOpacity>
       ) : (
         <TouchableOpacity
           onPress={() => {
-            // downloadFile();
             startRemuxing();
           }}
         >
