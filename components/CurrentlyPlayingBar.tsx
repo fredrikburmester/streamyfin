@@ -57,6 +57,8 @@ export const CurrentlyPlayingBar: React.FC = () => {
   const [paused, setPaused] = useState(true);
   const [progress, setProgress] = useState(0);
 
+  const [pip, setPip] = useState(false);
+
   const aBottom = useSharedValue(0);
   const aPadding = useSharedValue(0);
   const aHeight = useSharedValue(100);
@@ -236,6 +238,10 @@ export const CurrentlyPlayingBar: React.FC = () => {
                   showNotificationControls={true}
                   ignoreSilentSwitch="ignore"
                   controls={false}
+                  pictureInPicture={true}
+                  onPictureInPictureStatusChanged={(e) => {
+                    setPip(e.isActive);
+                  }}
                   poster={
                     backdropUrl && item?.Type === "Audio"
                       ? backdropUrl
