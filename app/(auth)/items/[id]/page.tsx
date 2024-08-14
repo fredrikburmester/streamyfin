@@ -26,7 +26,10 @@ import CastContext, {
 } from "react-native-google-cast";
 import { chromecastProfile } from "@/utils/profiles/chromecast";
 import ios12 from "@/utils/profiles/ios12";
-import { currentlyPlayingItemAtom } from "@/components/CurrentlyPlayingBar";
+import {
+  currentlyPlayingItemAtom,
+  triggerPlayAtom,
+} from "@/components/CurrentlyPlayingBar";
 import { AudioTrackSelector } from "@/components/AudioTrackSelector";
 import { SubtitleTrackSelector } from "@/components/SubtitleTrackSelector";
 import { NextEpisodeButton } from "@/components/series/NextEpisodeButton";
@@ -130,6 +133,7 @@ const page: React.FC = () => {
 
   const [, setCp] = useAtom(currentlyPlayingItemAtom);
   const client = useRemoteMediaClient();
+  const [, setPlayTrigger] = useAtom(triggerPlayAtom);
 
   const onPressPlay = useCallback(
     async (type: "device" | "cast" = "device") => {
@@ -159,6 +163,9 @@ const page: React.FC = () => {
           item,
           playbackUrl,
         });
+
+        // Use this trigger to initiate playback in another component (CurrentlyPlayingBar)
+        setPlayTrigger((prev) => prev + 1);
       }
     },
     [playbackUrl, item],

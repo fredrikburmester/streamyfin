@@ -6,7 +6,15 @@ import {
 } from "react-native";
 import { Text } from "./common/Text";
 import { Ionicons } from "@expo/vector-icons";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Ref,
+  RefObject,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import Video, { OnProgressData, VideoRef } from "react-native-video";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import { atom, useAtom } from "jotai";
@@ -34,6 +42,8 @@ export const currentlyPlayingItemAtom = atom<{
   playbackUrl: string;
 } | null>(null);
 
+export const triggerPlayAtom = atom(0);
+
 export const CurrentlyPlayingBar: React.FC = () => {
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
@@ -41,7 +51,7 @@ export const CurrentlyPlayingBar: React.FC = () => {
 
   const queryClient = useQueryClient();
   const segments = useSegments();
-  const [settings, updateSettings] = useSettings();
+  const [settings] = useSettings();
 
   const videoRef = useRef<VideoRef | null>(null);
   const [paused, setPaused] = useState(true);
@@ -191,11 +201,28 @@ export const CurrentlyPlayingBar: React.FC = () => {
     [item],
   );
 
+  /**
+   * These two useEffects are used to start playing the
+   * video when the playbackUrl is available.
+   *
+   * The trigger playback is triggered from the button component.
+   */
   useEffect(() => {
     if (cp?.playbackUrl) {
       play();
+      if (settings?.openFullScreenVideoPlayerByDefault) {
+        videoRef.current?.presentFullscreenPlayer();
+      }
     }
   }, [cp?.playbackUrl]);
+
+  const [triggerPlay] = useAtom(triggerPlayAtom);
+  useEffect(() => {
+    play();
+    if (settings?.openFullScreenVideoPlayerByDefault) {
+      videoRef.current?.presentFullscreenPlayer();
+    }
+  }, [triggerPlay]);
 
   if (!cp || !api) return null;
 
