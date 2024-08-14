@@ -109,6 +109,7 @@ const page: React.FC = () => {
       maxBitrate,
       castDevice,
       selectedAudioStream,
+      selectedSubtitleStream,
     ],
     queryFn: async () => {
       if (!api || !user?.Id || !sessionData) return null;
