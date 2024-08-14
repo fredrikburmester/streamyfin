@@ -26,6 +26,8 @@ import { BlurView } from "expo-blur";
 import { writeToLog } from "@/utils/log";
 import { getBackdropUrl } from "@/utils/jellyfin/image/getBackdropUrl";
 import { getAuthHeaders } from "@/utils/jellyfin/jellyfin";
+import { useSettings } from "@/utils/atoms/settings";
+import * as ScreenOrientation from "expo-screen-orientation";
 
 export const currentlyPlayingItemAtom = atom<{
   item: BaseItemDto;
@@ -39,10 +41,12 @@ export const CurrentlyPlayingBar: React.FC = () => {
 
   const queryClient = useQueryClient();
   const segments = useSegments();
+  const [settings, updateSettings] = useSettings();
 
   const videoRef = useRef<VideoRef | null>(null);
   const [paused, setPaused] = useState(true);
   const [progress, setProgress] = useState(0);
+  const [fullScreen, setFullScreen] = useState(false);
 
   const aBottom = useSharedValue(0);
   const aPadding = useSharedValue(0);
@@ -89,6 +93,14 @@ export const CurrentlyPlayingBar: React.FC = () => {
       aPaddingBottom.value = Platform.OS === "ios" ? 40 : 12;
     }
   }, [segments]);
+
+  // TODO: Fix this
+  // useEffect(() => {
+  //   if (settings?.forceLandscapeInVideoPlayer === true && fullScreen)
+  //     ScreenOrientation.lockAsync(
+  //       ScreenOrientation.OrientationLock.LANDSCAPE_LEFT,
+  //     );
+  // }, [settings, fullScreen]);
 
   const { data: item } = useQuery({
     queryKey: ["item", cp?.item.Id],
@@ -247,6 +259,12 @@ export const CurrentlyPlayingBar: React.FC = () => {
                   onBuffer={(e) =>
                     e.isBuffering ? console.log("Buffering...") : null
                   }
+                  onFullscreenPlayerDidDismiss={() => {
+                    setFullScreen(false);
+                  }}
+                  onFullscreenPlayerDidPresent={() => {
+                    setFullScreen(true);
+                  }}
                   onPlaybackStateChanged={(e) => {
                     if (e.isPlaying) {
                       setPaused(false);
