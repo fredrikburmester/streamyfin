@@ -15,6 +15,15 @@ export const SettingToggles: React.FC = () => {
           onValueChange={(value) => updateSettings({ autoRotate: value })}
         />
       </View>
+      <View className="flex flex-row items-center justify-between bg-neutral-900 p-4">
+        <Text>Start videos in fullscreen</Text>
+        <Switch
+          value={settings?.openFullScreenVideoPlayerByDefault}
+          onValueChange={(value) =>
+            updateSettings({ openFullScreenVideoPlayerByDefault: value })
+          }
+        />
+      </View>
     </View>
   );
 };

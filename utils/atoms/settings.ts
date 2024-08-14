@@ -5,6 +5,7 @@ import { useEffect } from "react";
 type Settings = {
   autoRotate?: boolean;
   forceLandscapeInVideoPlayer?: boolean;
+  openFullScreenVideoPlayerByDefault?: boolean;
 };
 
 /**
