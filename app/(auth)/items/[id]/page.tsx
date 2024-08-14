@@ -7,15 +7,10 @@ import { SimilarItems } from "@/components/SimilarItems";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import { useQuery } from "@tanstack/react-query";
 import { Image } from "expo-image";
-import { router, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { useAtom } from "jotai";
 import { useCallback, useMemo, useState } from "react";
-import {
-  ActivityIndicator,
-  ScrollView,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator, ScrollView, View } from "react-native";
 import { ParallaxScrollView } from "../../../../components/ParallaxPage";
 import { getUserItemData } from "@/utils/jellyfin/user-library/getUserItemData";
 import { getBackdropUrl } from "@/utils/jellyfin/image/getBackdropUrl";
@@ -35,8 +30,6 @@ import { currentlyPlayingItemAtom } from "@/components/CurrentlyPlayingBar";
 import { AudioTrackSelector } from "@/components/AudioTrackSelector";
 import { SubtitleTrackSelector } from "@/components/SubtitleTrackSelector";
 import { NextEpisodeButton } from "@/components/series/NextEpisodeButton";
-import { Badge } from "@/components/Badge";
-import { FontAwesome, Ionicons } from "@expo/vector-icons";
 import { Ratings } from "@/components/Ratings";
 import { SeriesTitleHeader } from "@/components/series/SeriesTitleHeader";
 import { MoviesTitleHeader } from "@/components/movies/MoviesTitleHeader";
