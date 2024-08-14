@@ -10,11 +10,11 @@ import {
 import GoogleCast from "react-native-google-cast";
 
 type Props = {
-  item?: BaseItemDto | null;
-  startTimeTicks?: number | null;
+  width?: number;
+  height?: number;
 };
 
-export const Chromecast: React.FC<Props> = () => {
+export const Chromecast: React.FC<Props> = ({ width = 48, height = 48 }) => {
   const client = useRemoteMediaClient();
   const castDevice = useCastDevice();
   const devices = useDevices();
@@ -32,8 +32,8 @@ export const Chromecast: React.FC<Props> = () => {
   }, [client, devices, castDevice, sessionManager, discoveryManager]);
 
   return (
-    <View className="rounded h-12 aspect-square flex items-center justify-center">
-      <CastButton style={{ tintColor: "white", height: 48, width: 48 }} />
+    <View className="rounded h-10 aspect-square flex items-center justify-center">
+      <CastButton style={{ tintColor: "white", height, width }} />
     </View>
   );
 };
