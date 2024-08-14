@@ -27,7 +27,7 @@
     "@tanstack/react-query": "^5.51.16",
     "@types/uuid": "^10.0.0",
     "axios": "^1.7.3",
-    "expo": "~51.0.26",
+    "expo": "~51.0.27",
     "expo-blur": "~13.0.2",
     "expo-build-properties": "~0.12.5",
     "expo-constants": "~16.0.2",
