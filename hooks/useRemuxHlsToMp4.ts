@@ -23,7 +23,7 @@ export const useRemuxHlsToMp4 = (url: string, item: BaseItemDto) => {
   }
 
   const output = `${FileSystem.documentDirectory}${item.Id}.mp4`;
-  const command = `-y -thread_queue_size 512 -protocol_whitelist file,http,https,tcp,tls,crypto -multiple_requests 1 -tcp_nodelay 1 -i ${url} -c copy -bufsize 50M -max_muxing_queue_size 4096 ${output}`;
+  const command = `-y -thread_queue_size 512 -protocol_whitelist file,http,https,tcp,tls,crypto -multiple_requests 1 -tcp_nodelay 1 -fflags +genpts -i ${url} -c copy -bufsize 50M -max_muxing_queue_size 4096 ${output}`;
 
   const startRemuxing = useCallback(async () => {
     writeToLog(
