@@ -11,16 +11,28 @@ import { getUserItemData } from "@/utils/jellyfin/user-library/getUserItemData";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import { getSearchApi } from "@jellyfin/sdk/lib/utils/api";
 import { useQuery } from "@tanstack/react-query";
-import { router } from "expo-router";
+import { router, useNavigation } from "expo-router";
 import { useAtom } from "jotai";
-import React, { useState } from "react";
-import { ScrollView, TouchableOpacity, View } from "react-native";
+import React, { useLayoutEffect, useState } from "react";
+import { Platform, ScrollView, TouchableOpacity, View } from "react-native";
 
 export default function search() {
   const [search, setSearch] = useState<string>("");
 
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
+
+  const navigation = useNavigation();
+  useLayoutEffect(() => {
+    if (Platform.OS === "ios")
+      navigation.setOptions({
+        headerSearchBarOptions: {
+          placeholder: "Search...",
+          onChangeText: (e: any) => setSearch(e.nativeEvent.text),
+          hideWhenScrolling: false,
+        },
+      });
+  }, [navigation]);
 
   const { data: movies } = useQuery({
     queryKey: ["search-movies", search],
@@ -67,19 +79,23 @@ export default function search() {
   });
 
   return (
-    <ScrollView keyboardDismissMode="on-drag">
+    <ScrollView
+      keyboardDismissMode="on-drag"
+      contentInsetAdjustmentBehavior="automatic"
+    >
       <View className="flex flex-col pt-2 pb-20">
-        <View className="mb-4 px-4">
-          <Input
-            autoCorrect={false}
-            returnKeyType="done"
-            keyboardType="web-search"
-            placeholder="Search here..."
-            value={search}
-            onChangeText={(text) => setSearch(text)}
-          />
-        </View>
-
+        {Platform.OS === "android" && (
+          <View className="mb-4 px-4">
+            <Input
+              autoCorrect={false}
+              returnKeyType="done"
+              keyboardType="web-search"
+              placeholder="Search here..."
+              value={search}
+              onChangeText={(text) => setSearch(text)}
+            />
+          </View>
+        )}
         <Text className="font-bold text-2xl px-4 mb-2">Movies</Text>
         <SearchItemWrapper
           ids={movies?.map((m) => m.Id!)}

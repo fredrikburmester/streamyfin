@@ -25,9 +25,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          headerShown: true,
-          headerStyle: { backgroundColor: "black" },
-          headerShadowVisible: false,
+          headerShown: false,
           title: "Home",
           tabBarIcon: ({ color, focused }) => (
             <TabBarIcon
@@ -35,39 +33,12 @@ export default function TabLayout() {
               color={color}
             />
           ),
-          headerLeft: () => (
-            <TouchableOpacity
-              style={{ marginHorizontal: 17 }}
-              onPress={() => {
-                router.push("/(auth)/downloads");
-              }}
-            >
-              <Feather name="download" color={"white"} size={22} />
-            </TouchableOpacity>
-          ),
-          headerRight: () => (
-            <View className="flex flex-row items-center space-x-2">
-              <Chromecast />
-              <TouchableOpacity
-                style={{ marginRight: 17 }}
-                onPress={() => {
-                  router.push("/(auth)/settings");
-                }}
-              >
-                <View className="h-10 aspect-square flex items-center justify-center rounded">
-                  <Feather name="settings" color={"white"} size={22} />
-                </View>
-              </TouchableOpacity>
-            </View>
-          ),
         }}
       />
       <Tabs.Screen
         name="search"
         options={{
-          headerStyle: { backgroundColor: "black" },
-          headerShown: true,
-          headerShadowVisible: false,
+          headerShown: false,
           title: "Search",
           tabBarIcon: ({ color, focused }) => (
             <TabBarIcon name={focused ? "search" : "search"} color={color} />

@@ -237,6 +237,7 @@ export default function index() {
   return (
     <ScrollView
       nestedScrollEnabled
+      contentInsetAdjustmentBehavior="automatic"
       refreshControl={
         <RefreshControl refreshing={loading} onRefresh={refetch} />
       }
