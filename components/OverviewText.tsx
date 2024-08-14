@@ -7,7 +7,7 @@ interface Props extends ViewProps {
   text?: string | null;
 }
 
-const LIMIT = 150;
+const LIMIT = 140;
 
 export const OverviewText: React.FC<Props> = ({ text, ...props }) => {
   const [limit, setLimit] = useState(LIMIT);
