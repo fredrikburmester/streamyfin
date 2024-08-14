@@ -14,6 +14,10 @@ const BITRATES: Bitrate[] = [
     value: undefined,
   },
   {
+    key: "8 Mb/s",
+    value: 8000000,
+  },
+  {
     key: "4 Mb/s",
     value: 4000000,
   },
@@ -24,6 +28,10 @@ const BITRATES: Bitrate[] = [
   {
     key: "500 Kb/s",
     value: 500000,
+  },
+  {
+    key: "250 Kb/s",
+    value: 250000,
   },
 ];
 
