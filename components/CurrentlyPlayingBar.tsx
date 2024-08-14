@@ -229,6 +229,10 @@ export const CurrentlyPlayingBar: React.FC = () => {
                       ? backdropUrl
                       : undefined
                   }
+                  debug={{
+                    enable: true,
+                    thread: true,
+                  }}
                   paused={paused}
                   onProgress={(e) => onProgress(e)}
                   subtitleStyle={{
@@ -249,9 +253,10 @@ export const CurrentlyPlayingBar: React.FC = () => {
                     } else if (e.isSeeking) {
                       return;
                     } else {
-                      setPaused(true);
+                      pause();
                     }
                   }}
+                  progressUpdateInterval={1000}
                   onError={(e) => {
                     console.log(e);
                     writeToLog(
