@@ -65,7 +65,7 @@ export const DownloadItem: React.FC<DownloadProps> = ({
 
   if (isLoading) {
     return (
-      <View className="rounded h-12 aspect-square flex items-center justify-center">
+      <View className="rounded h-10 aspect-square flex items-center justify-center">
         <ActivityIndicator size={"small"} color={"white"} />
       </View>
     );
@@ -73,7 +73,7 @@ export const DownloadItem: React.FC<DownloadProps> = ({
 
   if (playbackInfo?.MediaSources?.[0].SupportsDirectPlay === false) {
     return (
-      <View className="rounded h-12 aspect-square flex items-center justify-center opacity-50">
+      <View className="rounded h-10 aspect-square flex items-center justify-center opacity-50">
         <Ionicons name="cloud-download-outline" size={24} color="white" />
       </View>
     );
@@ -82,7 +82,7 @@ export const DownloadItem: React.FC<DownloadProps> = ({
   if (process && process.item.Id !== item.Id!) {
     return (
       <TouchableOpacity onPress={() => {}}>
-        <View className="rounded h-12 aspect-square flex items-center justify-center opacity-50">
+        <View className="rounded h-10 aspect-square flex items-center justify-center opacity-50">
           <Ionicons name="cloud-download-outline" size={24} color="white" />
         </View>
       </TouchableOpacity>
@@ -96,7 +96,7 @@ export const DownloadItem: React.FC<DownloadProps> = ({
           router.push("/downloads");
         }}
       >
-        <View className="rounded h-12 aspect-square flex items-center justify-center">
+        <View className="rounded h-10 aspect-square flex items-center justify-center">
           {process.progress === 0 ? (
             <ActivityIndicator size={"small"} color={"white"} />
           ) : (
@@ -120,7 +120,7 @@ export const DownloadItem: React.FC<DownloadProps> = ({
           router.push("/downloads");
         }}
       >
-        <View className="rounded h-12 aspect-square flex items-center justify-center">
+        <View className="rounded h-10 aspect-square flex items-center justify-center">
           <Ionicons name="cloud-download" size={26} color="#9333ea" />
         </View>
       </TouchableOpacity>
@@ -132,7 +132,7 @@ export const DownloadItem: React.FC<DownloadProps> = ({
           startRemuxing();
         }}
       >
-        <View className="rounded h-12 aspect-square flex items-center justify-center">
+        <View className="rounded h-10 aspect-square flex items-center justify-center">
           <Ionicons name="cloud-download-outline" size={26} color="white" />
         </View>
       </TouchableOpacity>
