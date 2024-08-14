@@ -28,11 +28,17 @@ Downloading works by using ffmpeg to convert a HLS stream into a video file on t
 
 ## Get it now
 
-<a href="https://apps.apple.com/se/app/streamyfin/id6593660679?l=en-GB">
-  <img height=75 alt="Get Streamyfin on App Store" src="./assets/Download_on_the_App_Store_Badge.png"/>
-</a>
+<div style="display:flex;">
+  <a href="https://apps.apple.com/se/app/streamyfin/id6593660679?l=en-GB">
+    <img height=50 alt="Get Streamyfin on App Store" src="./assets/Download_on_the_App_Store_Badge.png"/>
+  </a>
 
-### TestFlight
+  <a href="https://play.google.com/store/apps/details?id=com.fredrikburmester.streamyfin">
+    <img height=75 alt="Get the beta on Google Play" src="./assets/en_badge_web_generic.png"/>
+  </a>
+</div>
+
+### Beta testing
 
 Get the latest updates by using the TestFlight version of the app.
 
@@ -40,11 +46,7 @@ Get the latest updates by using the TestFlight version of the app.
   <img height=75 alt="Get the beta on TestFlight" src="./assets/Get_the_beta_on_Testflight.svg"/>
 </a>
 
-### Play Store Open Beta
-
-<a href="https://play.google.com/store/apps/details?id=com.fredrikburmester.streamyfin">
-  <img height=75 alt="Get the beta on Google Play" src="./assets/en_badge_web_generic.png"/>
-</a>
+Or download the APKs here on GitHub for Android.
 
 ## 🚀 Getting Started
 
