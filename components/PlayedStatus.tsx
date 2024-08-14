@@ -48,7 +48,7 @@ export const PlayedStatus: React.FC<{ item: BaseItemDto }> = ({ item }) => {
           }}
         >
           <View className="rounded h-12 aspect-square flex items-center justify-center">
-            <Ionicons name="checkmark-circle" size={26} color="white" />
+            <Ionicons name="checkmark-circle" size={30} color="white" />
           </View>
         </TouchableOpacity>
       ) : (
@@ -64,7 +64,7 @@ export const PlayedStatus: React.FC<{ item: BaseItemDto }> = ({ item }) => {
           }}
         >
           <View className="rounded h-12 aspect-square flex items-center justify-center">
-            <Ionicons name="checkmark-circle-outline" size={26} color="white" />
+            <Ionicons name="checkmark-circle-outline" size={30} color="white" />
           </View>
         </TouchableOpacity>
       )}
