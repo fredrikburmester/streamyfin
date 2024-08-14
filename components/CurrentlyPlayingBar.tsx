@@ -25,6 +25,7 @@ import { useRouter, useSegments } from "expo-router";
 import { BlurView } from "expo-blur";
 import { writeToLog } from "@/utils/log";
 import { getBackdropUrl } from "@/utils/jellyfin/image/getBackdropUrl";
+import { getAuthHeaders } from "@/utils/jellyfin/jellyfin";
 
 export const currentlyPlayingItemAtom = atom<{
   item: BaseItemDto;
@@ -184,7 +185,7 @@ export const CurrentlyPlayingBar: React.FC = () => {
     }
   }, [cp?.playbackUrl]);
 
-  if (!cp) return null;
+  if (!cp || !api) return null;
 
   return (
     <Animated.View
@@ -237,6 +238,7 @@ export const CurrentlyPlayingBar: React.FC = () => {
                     uri: cp.playbackUrl,
                     isNetwork: true,
                     startPosition,
+                    headers: getAuthHeaders(api),
                   }}
                   onBuffer={(e) =>
                     e.isBuffering ? console.log("Buffering...") : null
