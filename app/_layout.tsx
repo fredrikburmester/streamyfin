@@ -11,6 +11,9 @@ import * as ScreenOrientation from "expo-screen-orientation";
 import { StatusBar } from "expo-status-bar";
 import { CurrentlyPlayingBar } from "@/components/CurrentlyPlayingBar";
 import { ActionSheetProvider } from "@expo/react-native-action-sheet";
+import { useJobProcessor } from "@/utils/atoms/queue";
+import { JobQueueProvider } from "@/providers/JobQueueProvider";
+import { useKeepAwake } from "expo-keep-awake";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -20,6 +23,8 @@ export const unstable_settings = {
 };
 
 export default function RootLayout() {
+  useKeepAwake();
+
   const [loaded] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
@@ -75,69 +80,71 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClientRef.current}>
       <JotaiProvider>
-        <ActionSheetProvider>
-          <JellyfinProvider>
-            <StatusBar style="light" backgroundColor="#000" />
-            <ThemeProvider value={DarkTheme}>
-              <Stack>
-                <Stack.Screen
-                  name="(auth)/(tabs)"
-                  options={{
-                    headerShown: false,
-                    title: "Home",
-                  }}
-                />
-                <Stack.Screen
-                  name="(auth)/settings"
-                  options={{
-                    headerShown: true,
-                    title: "Settings",
-                    headerStyle: { backgroundColor: "black" },
-                    headerShadowVisible: false,
-                  }}
-                />
-                <Stack.Screen
-                  name="(auth)/downloads"
-                  options={{
-                    headerShown: true,
-                    title: "Downloads",
-                    headerStyle: { backgroundColor: "black" },
-                    headerShadowVisible: false,
-                  }}
-                />
-                <Stack.Screen
-                  name="(auth)/items/[id]/page"
-                  options={{
-                    title: "",
-                    headerShown: false,
-                  }}
-                />
-                <Stack.Screen
-                  name="(auth)/collections/[collection]/page"
-                  options={{
-                    title: "",
-                    headerShown: true,
-                    headerStyle: { backgroundColor: "black" },
-                    headerShadowVisible: false,
-                  }}
-                />
-                <Stack.Screen
-                  name="(auth)/series/[id]/page"
-                  options={{
-                    title: "",
-                    headerShown: false,
-                  }}
-                />
-                <Stack.Screen
-                  name="login"
-                  options={{ headerShown: false, title: "Login" }}
-                />
-                <Stack.Screen name="+not-found" />
-              </Stack>
-              <CurrentlyPlayingBar />
-            </ThemeProvider>
-          </JellyfinProvider>
-        </ActionSheetProvider>
+        <JobQueueProvider>
+          <ActionSheetProvider>
+            <JellyfinProvider>
+              <StatusBar style="light" backgroundColor="#000" />
+              <ThemeProvider value={DarkTheme}>
+                <Stack>
+                  <Stack.Screen
+                    name="(auth)/(tabs)"
+                    options={{
+                      headerShown: false,
+                      title: "Home",
+                    }}
+                  />
+                  <Stack.Screen
+                    name="(auth)/settings"
+                    options={{
+                      headerShown: true,
+                      title: "Settings",
+                      headerStyle: { backgroundColor: "black" },
+                      headerShadowVisible: false,
+                    }}
+                  />
+                  <Stack.Screen
+                    name="(auth)/downloads"
+                    options={{
+                      headerShown: true,
+                      title: "Downloads",
+                      headerStyle: { backgroundColor: "black" },
+                      headerShadowVisible: false,
+                    }}
+                  />
+                  <Stack.Screen
+                    name="(auth)/items/[id]/page"
+                    options={{
+                      title: "",
+                      headerShown: false,
+                    }}
+                  />
+                  <Stack.Screen
+                    name="(auth)/collections/[collection]/page"
+                    options={{
+                      title: "",
+                      headerShown: true,
+                      headerStyle: { backgroundColor: "black" },
+                      headerShadowVisible: false,
+                    }}
+                  />
+                  <Stack.Screen
+                    name="(auth)/series/[id]/page"
+                    options={{
+                      title: "",
+                      headerShown: false,
+                    }}
+                  />
+                  <Stack.Screen
+                    name="login"
+                    options={{ headerShown: false, title: "Login" }}
+                  />
+                  <Stack.Screen name="+not-found" />
+                </Stack>
+                <CurrentlyPlayingBar />
+              </ThemeProvider>
+            </JellyfinProvider>
+          </ActionSheetProvider>
+        </JobQueueProvider>
       </JotaiProvider>
     </QueryClientProvider>
   );

@@ -23,7 +23,7 @@ export const useRemuxHlsToMp4 = (url: string, item: BaseItemDto) => {
   }
 
   const output = `${FileSystem.documentDirectory}${item.Id}.mp4`;
-  const command = `-y -thread_queue_size 512 -protocol_whitelist file,http,https,tcp,tls,crypto -multiple_requests 1 -tcp_nodelay 1 -fflags +genpts -i ${url} -c copy -bufsize 50M -max_muxing_queue_size 4096 ${output}`;
+  const command = `-y -loglevel quiet -thread_queue_size 512 -protocol_whitelist file,http,https,tcp,tls,crypto -multiple_requests 1 -tcp_nodelay 1 -fflags +genpts -i ${url} -c copy -bufsize 50M -max_muxing_queue_size 4096 ${output}`;
 
   const startRemuxing = useCallback(async () => {
     writeToLog(
@@ -54,28 +54,38 @@ export const useRemuxHlsToMp4 = (url: string, item: BaseItemDto) => {
         );
       });
 
-      await FFmpegKit.executeAsync(command, async (session) => {
-        const returnCode = await session.getReturnCode();
+      // Await the execution of the FFmpeg command and ensure that the callback is awaited properly.
+      await new Promise<void>((resolve, reject) => {
+        FFmpegKit.executeAsync(command, async (session) => {
+          try {
+            const returnCode = await session.getReturnCode();
 
-        if (returnCode.isValueSuccess()) {
-          await updateDownloadedFiles(item);
-          writeToLog(
-            "INFO",
-            `useRemuxHlsToMp4 ~ remuxing completed successfully for item: ${item.Name}`,
-          );
-        } else if (returnCode.isValueError()) {
-          writeToLog(
-            "ERROR",
-            `useRemuxHlsToMp4 ~ remuxing failed for item: ${item.Name}`,
-          );
-        } else if (returnCode.isValueCancel()) {
-          writeToLog(
-            "INFO",
-            `useRemuxHlsToMp4 ~ remuxing was canceled for item: ${item.Name}`,
-          );
-        }
+            if (returnCode.isValueSuccess()) {
+              await updateDownloadedFiles(item);
+              writeToLog(
+                "INFO",
+                `useRemuxHlsToMp4 ~ remuxing completed successfully for item: ${item.Name}`,
+              );
+              resolve();
+            } else if (returnCode.isValueError()) {
+              writeToLog(
+                "ERROR",
+                `useRemuxHlsToMp4 ~ remuxing failed for item: ${item.Name}`,
+              );
+              reject(new Error("Remuxing failed")); // Reject the promise on error
+            } else if (returnCode.isValueCancel()) {
+              writeToLog(
+                "INFO",
+                `useRemuxHlsToMp4 ~ remuxing was canceled for item: ${item.Name}`,
+              );
+              resolve();
+            }
 
-        setProgress(null);
+            setProgress(null);
+          } catch (error) {
+            reject(error);
+          }
+        });
       });
     } catch (error) {
       console.error("Failed to remux:", error);
@@ -84,6 +94,7 @@ export const useRemuxHlsToMp4 = (url: string, item: BaseItemDto) => {
         `useRemuxHlsToMp4 ~ remuxing failed for item: ${item.Name}`,
       );
       setProgress(null);
+      throw error; // Re-throw the error to propagate it to the caller
     }
   }, [output, item, command, setProgress]);
 
