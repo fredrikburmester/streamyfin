@@ -38,18 +38,8 @@ const Login: React.FC = () => {
         await login(credentials.username, credentials.password);
       }
     } catch (error) {
-      const e = error as AxiosError | z.ZodError;
-      if (e instanceof z.ZodError) {
-        setError("An error occured.");
-      } else {
-        if (e.response?.status === 401) {
-          setError("Invalid credentials.");
-        } else {
-          setError(
-            "A network error occurred. Did you enter the correct server URL?",
-          );
-        }
-      }
+      const e = error as AxiosError;
+      setError(e.message);
     } finally {
       setLoading(false);
     }
