@@ -100,6 +100,8 @@ Key points of the MPL-2.0:
 
 ## 🌐 Connect with Us
 
+Join our Discord: [https://discord.gg/zyGKHJZvv4](https://discord.gg/zyGKHJZvv4)
+
 If you have questions or need support, feel free to reach out:
 
 - GitHub Issues: Report bugs or request features here.
