@@ -4,11 +4,11 @@ import { ListItem } from "@/components/ListItem";
 import { apiAtom, useJellyfin, userAtom } from "@/providers/JellyfinProvider";
 import { clearLogs, readFromLog } from "@/utils/log";
 import { useQuery } from "@tanstack/react-query";
-import * as FileSystem from "expo-file-system";
 import { useAtom } from "jotai";
 import { ScrollView, View } from "react-native";
 import * as Haptics from "expo-haptics";
 import { useFiles } from "@/hooks/useFiles";
+import { SettingToggles } from "@/components/settings/SettingToggles";
 
 export default function settings() {
   const { logout } = useJellyfin();
@@ -28,10 +28,12 @@ export default function settings() {
       <View className="p-4 flex flex-col gap-y-4 pb-12">
         <Text className="font-bold text-2xl">Information</Text>
 
-        <View className="rounded-xl mb-4 overflow-hidden border-neutral-800 divide-y-2 divide-neutral-900">
+        <View className="flex flex-col rounded-xl mb-4 overflow-hidden border-neutral-800 divide-y-2 divide-solid divide-neutral-800 ">
           <ListItem title="User" subTitle={user?.Name} />
           <ListItem title="Server" subTitle={api?.basePath} />
         </View>
+
+        <SettingToggles />
 
         <View className="flex flex-col space-y-2">
           <Button color="black" onPress={logout}>
