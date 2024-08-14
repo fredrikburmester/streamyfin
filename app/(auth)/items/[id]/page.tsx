@@ -1,17 +1,15 @@
-import { Chromecast } from "@/components/Chromecast";
 import { Text } from "@/components/common/Text";
 import { DownloadItem } from "@/components/DownloadItem";
 import { PlayedStatus } from "@/components/PlayedStatus";
 import { CastAndCrew } from "@/components/series/CastAndCrew";
 import { CurrentSeries } from "@/components/series/CurrentSeries";
 import { SimilarItems } from "@/components/SimilarItems";
-import { VideoPlayer } from "@/components/VideoPlayer";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import { useQuery } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import { useAtom } from "jotai";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   ScrollView,
@@ -36,10 +34,13 @@ import ios12 from "@/utils/profiles/ios12";
 import { currentlyPlayingItemAtom } from "@/components/CurrentlyPlayingBar";
 import { AudioTrackSelector } from "@/components/AudioTrackSelector";
 import { SubtitleTrackSelector } from "@/components/SubtitleTrackSelector";
-import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
-import { Button } from "@/components/Button";
-import { Ionicons } from "@expo/vector-icons";
 import { NextEpisodeButton } from "@/components/series/NextEpisodeButton";
+import { Badge } from "@/components/Badge";
+import { FontAwesome, Ionicons } from "@expo/vector-icons";
+import { Ratings } from "@/components/Ratings";
+import { SeriesTitleHeader } from "@/components/series/SeriesTitleHeader";
+import { MoviesTitleHeader } from "@/components/movies/MoviesTitleHeader";
+import { OverviewText } from "@/components/OverviewText";
 
 const page: React.FC = () => {
   const local = useLocalSearchParams();
@@ -134,7 +135,7 @@ const page: React.FC = () => {
     staleTime: 0,
   });
 
-  const [cp, setCp] = useAtom(currentlyPlayingItemAtom);
+  const [, setCp] = useAtom(currentlyPlayingItemAtom);
   const client = useRemoteMediaClient();
 
   const onPressPlay = useCallback(
@@ -212,50 +213,14 @@ const page: React.FC = () => {
       <View className="flex flex-col px-4 pt-4">
         <View className="flex flex-col">
           {item.Type === "Episode" ? (
-            <>
-              <TouchableOpacity
-                onPress={() =>
-                  router.push(`/(auth)/series/${item.SeriesId}/page`)
-                }
-              >
-                <Text className="text-center opacity-50">
-                  {item?.SeriesName}
-                </Text>
-              </TouchableOpacity>
-              <View className="flex flex-row items-center self-center px-4">
-                <Text className="text-center font-bold text-2xl mr-2">
-                  {item?.Name}
-                </Text>
-              </View>
-              <View>
-                <View className="flex flex-row items-center self-center">
-                  <TouchableOpacity onPress={() => {}}>
-                    <Text className="text-center opacity-50">
-                      {item?.SeasonName}
-                    </Text>
-                  </TouchableOpacity>
-                  <Text className="text-center opacity-50 mx-2">{"—"}</Text>
-                  <Text className="text-center opacity-50">
-                    {`Episode ${item.IndexNumber}`}
-                  </Text>
-                </View>
-              </View>
-              <Text className="text-center opacity-50">
-                {item.ProductionYear}
-              </Text>
-            </>
+            <SeriesTitleHeader item={item} />
           ) : (
             <>
-              <View className="flex flex-row items-center self-center px-4">
-                <Text className="text-center font-bold text-2xl mr-2">
-                  {item?.Name}
-                </Text>
-              </View>
-              <Text className="text-center opacity-50">
-                {item?.ProductionYear}
-              </Text>
+              <MoviesTitleHeader item={item} />
             </>
           )}
+          <Text className="text-center opacity-50">{item?.ProductionYear}</Text>
+          <Ratings item={item} />
         </View>
 
         <View className="flex flex-row justify-between items-center w-full my-4">
@@ -266,7 +231,8 @@ const page: React.FC = () => {
           )}
           <PlayedStatus item={item} />
         </View>
-        <Text>{item.Overview}</Text>
+
+        <OverviewText text={item.Overview} />
       </View>
       <View className="flex flex-col p-4 w-full">
         <View className="flex flex-row items-center space-x-2 w-full">
