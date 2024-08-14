@@ -137,35 +137,38 @@ const page: React.FC = () => {
   const [cp, setCp] = useAtom(currentlyPlayingItemAtom);
   const client = useRemoteMediaClient();
 
-  const onPressPlay = useCallback(async () => {
-    if (!playbackUrl || !item) return;
+  const onPressPlay = useCallback(
+    async (type: "device" | "cast" = "device") => {
+      if (!playbackUrl || !item) return;
 
-    if (chromecastReady && client) {
-      await CastContext.getPlayServicesState().then((state) => {
-        if (state && state !== PlayServicesState.SUCCESS)
-          CastContext.showPlayServicesErrorDialog(state);
-        else {
-          client.loadMedia({
-            mediaInfo: {
-              contentUrl: playbackUrl,
-              contentType: "video/mp4",
-              metadata: {
-                type: item.Type === "Episode" ? "tvShow" : "movie",
-                title: item.Name || "",
-                subtitle: item.Overview || "",
+      if (type === "cast" && client) {
+        await CastContext.getPlayServicesState().then((state) => {
+          if (state && state !== PlayServicesState.SUCCESS)
+            CastContext.showPlayServicesErrorDialog(state);
+          else {
+            client.loadMedia({
+              mediaInfo: {
+                contentUrl: playbackUrl,
+                contentType: "video/mp4",
+                metadata: {
+                  type: item.Type === "Episode" ? "tvShow" : "movie",
+                  title: item.Name || "",
+                  subtitle: item.Overview || "",
+                },
               },
-            },
-            startTime: 0,
-          });
-        }
-      });
-    } else {
-      setCp({
-        item,
-        playbackUrl,
-      });
-    }
-  }, [playbackUrl, item]);
+              startTime: 0,
+            });
+          }
+        });
+      } else {
+        setCp({
+          item,
+          playbackUrl,
+        });
+      }
+    },
+    [playbackUrl, item],
+  );
 
   if (l1)
     return (
@@ -262,7 +265,6 @@ const page: React.FC = () => {
             <View className="h-12 aspect-square flex items-center justify-center"></View>
           )}
           <PlayedStatus item={item} />
-          <Chromecast />
         </View>
         <Text>{item.Overview}</Text>
       </View>
@@ -287,7 +289,7 @@ const page: React.FC = () => {
           <NextEpisodeButton item={item} type="previous" className="mr-2" />
           <PlayButton
             item={item}
-            chromecastReady={false}
+            chromecastReady={chromecastReady}
             onPress={onPressPlay}
             className="grow"
           />
