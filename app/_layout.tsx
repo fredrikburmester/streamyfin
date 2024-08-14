@@ -14,6 +14,7 @@ import { ActionSheetProvider } from "@expo/react-native-action-sheet";
 import { useJobProcessor } from "@/utils/atoms/queue";
 import { JobQueueProvider } from "@/providers/JobQueueProvider";
 import { useKeepAwake } from "expo-keep-awake";
+import { useSettings } from "@/utils/atoms/settings";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -23,11 +24,31 @@ export const unstable_settings = {
 };
 
 export default function RootLayout() {
-  useKeepAwake();
-
   const [loaded] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
+
+  useEffect(() => {
+    if (loaded) {
+      SplashScreen.hideAsync();
+    }
+  }, [loaded]);
+
+  if (!loaded) {
+    return null;
+  }
+
+  return (
+    <JotaiProvider>
+      <Layout />
+    </JotaiProvider>
+  );
+}
+
+function Layout() {
+  const [settings, updateSettings] = useSettings();
+
+  useKeepAwake();
 
   const queryClientRef = useRef<QueryClient>(
     new QueryClient({
@@ -44,108 +65,81 @@ export default function RootLayout() {
   );
 
   useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
-    }
-  }, [loaded]);
-
-  const [orientation, setOrientation] = useState(
-    ScreenOrientation.Orientation.PORTRAIT_UP,
-  );
-
-  useEffect(() => {
-    ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.DEFAULT);
-
-    ScreenOrientation.getOrientationAsync().then((info) => {
-      setOrientation(info);
-    });
-
-    // subscribe to future changes
-    const subscription = ScreenOrientation.addOrientationChangeListener(
-      (evt) => {
-        setOrientation(evt.orientationInfo.orientation);
-      },
-    );
-
-    // return a clean up function to unsubscribe from notifications
-    return () => {
-      ScreenOrientation.removeOrientationChangeListener(subscription);
-    };
-  }, []);
-
-  if (!loaded) {
-    return null;
-  }
+    if (settings?.autoRotate === true)
+      ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.DEFAULT);
+    else
+      ScreenOrientation.lockAsync(
+        ScreenOrientation.OrientationLock.PORTRAIT_UP,
+      );
+  }, [settings]);
 
   return (
     <QueryClientProvider client={queryClientRef.current}>
-      <JotaiProvider>
-        <JobQueueProvider>
-          <ActionSheetProvider>
-            <JellyfinProvider>
-              <StatusBar style="light" backgroundColor="#000" />
-              <ThemeProvider value={DarkTheme}>
-                <Stack>
-                  <Stack.Screen
-                    name="(auth)/(tabs)"
-                    options={{
-                      headerShown: false,
-                      title: "Home",
-                    }}
-                  />
-                  <Stack.Screen
-                    name="(auth)/settings"
-                    options={{
-                      headerShown: true,
-                      title: "Settings",
-                      headerStyle: { backgroundColor: "black" },
-                      headerShadowVisible: false,
-                    }}
-                  />
-                  <Stack.Screen
-                    name="(auth)/downloads"
-                    options={{
-                      headerShown: true,
-                      title: "Downloads",
-                      headerStyle: { backgroundColor: "black" },
-                      headerShadowVisible: false,
-                    }}
-                  />
-                  <Stack.Screen
-                    name="(auth)/items/[id]/page"
-                    options={{
-                      title: "",
-                      headerShown: false,
-                    }}
-                  />
-                  <Stack.Screen
-                    name="(auth)/collections/[collection]/page"
-                    options={{
-                      title: "",
-                      headerShown: true,
-                      headerStyle: { backgroundColor: "black" },
-                      headerShadowVisible: false,
-                    }}
-                  />
-                  <Stack.Screen
-                    name="(auth)/series/[id]/page"
-                    options={{
-                      title: "",
-                      headerShown: false,
-                    }}
-                  />
-                  <Stack.Screen
-                    name="login"
-                    options={{ headerShown: false, title: "Login" }}
-                  />
-                  <Stack.Screen name="+not-found" />
-                </Stack>
-                <CurrentlyPlayingBar />
-              </ThemeProvider>
-            </JellyfinProvider>
-          </ActionSheetProvider>
-        </JobQueueProvider>
-      </JotaiProvider>
+      <JobQueueProvider>
+        <ActionSheetProvider>
+          <JellyfinProvider>
+            <StatusBar style="light" backgroundColor="#000" />
+            <ThemeProvider value={DarkTheme}>
+              <Stack>
+                <Stack.Screen
+                  name="(auth)/(tabs)"
+                  options={{
+                    headerShown: false,
+                    title: "Home",
+                  }}
+                />
+                <Stack.Screen
+                  name="(auth)/settings"
+                  options={{
+                    headerShown: true,
+                    title: "Settings",
+                    headerStyle: { backgroundColor: "black" },
+                    headerShadowVisible: false,
+                  }}
+                />
+                <Stack.Screen
+                  name="(auth)/downloads"
+                  options={{
+                    headerShown: true,
+                    title: "Downloads",
+                    headerStyle: { backgroundColor: "black" },
+                    headerShadowVisible: false,
+                  }}
+                />
+                <Stack.Screen
+                  name="(auth)/items/[id]/page"
+                  options={{
+                    title: "",
+                    headerShown: false,
+                  }}
+                />
+                <Stack.Screen
+                  name="(auth)/collections/[collection]/page"
+                  options={{
+                    title: "",
+                    headerShown: true,
+                    headerStyle: { backgroundColor: "black" },
+                    headerShadowVisible: false,
+                  }}
+                />
+                <Stack.Screen
+                  name="(auth)/series/[id]/page"
+                  options={{
+                    title: "",
+                    headerShown: false,
+                  }}
+                />
+                <Stack.Screen
+                  name="login"
+                  options={{ headerShown: false, title: "Login" }}
+                />
+                <Stack.Screen name="+not-found" />
+              </Stack>
+              <CurrentlyPlayingBar />
+            </ThemeProvider>
+          </JellyfinProvider>
+        </ActionSheetProvider>
+      </JobQueueProvider>
     </QueryClientProvider>
   );
 }
