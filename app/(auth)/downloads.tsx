@@ -17,9 +17,11 @@ import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { FFmpegKit } from "ffmpeg-kit-react-native";
 import * as FileSystem from "expo-file-system";
+import { queueAtom } from "@/utils/atoms/queue";
 
 const downloads: React.FC = () => {
   const [process, setProcess] = useAtom(runningProcesses);
+  const [queue, setQueue] = useAtom(queueAtom);
 
   const { data: downloadedFiles, isLoading } = useQuery({
     queryKey: ["downloaded_files", process?.item.Id],
@@ -67,50 +69,84 @@ const downloads: React.FC = () => {
   return (
     <ScrollView>
       <View className="px-4 py-4">
-        <View className="mb-4">
-          <Text className="text-2xl font-bold mb-2">Active download</Text>
-          {process?.item ? (
-            <TouchableOpacity
-              onPress={() =>
-                router.push(`/(auth)/items/${process.item.Id}/page`)
-              }
-              className="relative bg-neutral-900 border border-neutral-800 p-4 rounded-2xl overflow-hidden flex flex-row items-center justify-between"
-            >
-              <View>
-                <Text className="font-semibold">{process.item.Name}</Text>
-                <Text className="text-xs opacity-50">{process.item.Type}</Text>
-                <View className="flex flex-row items-center space-x-2 mt-1 text-purple-600">
-                  <Text className="text-xs">
-                    {process.progress.toFixed(0)}%
-                  </Text>
-                  <Text className="text-xs">{process.speed?.toFixed(2)}x</Text>
+        <View className="mb-4 flex flex-col space-y-4">
+          <View>
+            <Text className="text-2xl font-bold mb-2">Queue</Text>
+            <View className="flex flex-col space-y-2">
+              {queue.map((q) => (
+                <TouchableOpacity
+                  onPress={() => router.push(`/(auth)/items/${q.item.Id}/page`)}
+                  className="relative bg-neutral-900 border border-neutral-800 p-4 rounded-2xl overflow-hidden flex flex-row items-center justify-between"
+                >
                   <View>
-                    <Text className="text-xs">ETA {eta}</Text>
+                    <Text className="font-semibold">{q.item.Name}</Text>
+                    <Text className="text-xs opacity-50">{q.item.Type}</Text>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => {
+                      setQueue((prev) => prev.filter((i) => i.id !== q.id));
+                    }}
+                  >
+                    <Ionicons name="close" size={24} color="red" />
+                  </TouchableOpacity>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {queue.length === 0 && (
+              <Text className="opacity-50">No items in queue</Text>
+            )}
+          </View>
+
+          <View>
+            <Text className="text-2xl font-bold mb-2">Active download</Text>
+            {process?.item ? (
+              <TouchableOpacity
+                onPress={() =>
+                  router.push(`/(auth)/items/${process.item.Id}/page`)
+                }
+                className="relative bg-neutral-900 border border-neutral-800 p-4 rounded-2xl overflow-hidden flex flex-row items-center justify-between"
+              >
+                <View>
+                  <Text className="font-semibold">{process.item.Name}</Text>
+                  <Text className="text-xs opacity-50">
+                    {process.item.Type}
+                  </Text>
+                  <View className="flex flex-row items-center space-x-2 mt-1 text-purple-600">
+                    <Text className="text-xs">
+                      {process.progress.toFixed(0)}%
+                    </Text>
+                    <Text className="text-xs">
+                      {process.speed?.toFixed(2)}x
+                    </Text>
+                    <View>
+                      <Text className="text-xs">ETA {eta}</Text>
+                    </View>
                   </View>
                 </View>
-              </View>
-              <TouchableOpacity
-                onPress={() => {
-                  FFmpegKit.cancel();
-                  setProcess(null);
-                }}
-              >
-                <Ionicons name="close" size={24} color="red" />
-              </TouchableOpacity>
-              <View
-                className={`
+                <TouchableOpacity
+                  onPress={() => {
+                    FFmpegKit.cancel();
+                    setProcess(null);
+                  }}
+                >
+                  <Ionicons name="close" size={24} color="red" />
+                </TouchableOpacity>
+                <View
+                  className={`
                   absolute bottom-0 left-0 h-1 bg-purple-600
                 `}
-                style={{
-                  width: process.progress
-                    ? `${Math.max(5, process.progress)}%`
-                    : "5%",
-                }}
-              ></View>
-            </TouchableOpacity>
-          ) : (
-            <Text className="opacity-50">No active downloads</Text>
-          )}
+                  style={{
+                    width: process.progress
+                      ? `${Math.max(5, process.progress)}%`
+                      : "5%",
+                  }}
+                ></View>
+              </TouchableOpacity>
+            ) : (
+              <Text className="opacity-50">No active downloads</Text>
+            )}
+          </View>
         </View>
         {movies.length > 0 && (
           <View className="mb-4">
