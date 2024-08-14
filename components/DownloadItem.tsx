@@ -100,29 +100,16 @@ export const DownloadItem: React.FC<DownloadProps> = ({
           {process.progress === 0 ? (
             <ActivityIndicator size={"small"} color={"white"} />
           ) : (
-            <View className="relative">
-              <View className="-rotate-45">
-                <ProgressCircle
-                  size={28}
-                  fill={process.progress}
-                  width={4}
-                  tintColor="#3498db"
-                  backgroundColor="#bdc3c7"
-                />
-              </View>
-              <View className="absolute top-0 left-0 font-bold w-full h-full flex flex-col items-center justify-center">
-                <Text className="text-[7px]">
-                  {process.progress.toFixed(0)}%
-                </Text>
-              </View>
+            <View className="-rotate-45">
+              <ProgressCircle
+                size={24}
+                fill={process.progress}
+                width={4}
+                tintColor="#9334E9"
+                backgroundColor="#bdc3c7"
+              />
             </View>
           )}
-
-          {process?.speed && process.speed > 0 ? (
-            <View className="ml-2">
-              <Text>{process.speed.toFixed(2)}x</Text>
-            </View>
-          ) : null}
         </View>
       </TouchableOpacity>
     );
