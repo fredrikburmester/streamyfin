@@ -56,7 +56,7 @@ export const JellyfinProvider: React.FC<{ children: ReactNode }> = ({
       setJellyfin(
         () =>
           new Jellyfin({
-            clientInfo: { name: "Streamyfin", version: "0.4.1" },
+            clientInfo: { name: "Streamyfin", version: "0.4.2" },
             deviceInfo: { name: Platform.OS === "ios" ? "iOS" : "Android", id },
           }),
       );
