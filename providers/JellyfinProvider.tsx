@@ -198,7 +198,7 @@ function useProtectedRoute(user: UserDto | null, loading = false) {
     if (!user?.Id && inAuthGroup) {
       router.replace("/login");
     } else if (user?.Id && !inAuthGroup) {
-      router.replace("/");
+      router.replace("/home");
     }
   }, [user, segments, loading]);
 }
