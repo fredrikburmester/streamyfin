@@ -4,7 +4,7 @@ export default function SearchLayout() {
   return (
     <Stack>
       <Stack.Screen
-        name="search"
+        name="index"
         options={{
           headerShown: true,
           headerLargeTitle: true,

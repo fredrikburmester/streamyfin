@@ -8,10 +8,11 @@ import Poster from "@/components/Poster";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import { getPrimaryImageUrl } from "@/utils/jellyfin/image/getPrimaryImageUrl";
 import { getUserItemData } from "@/utils/jellyfin/user-library/getUserItemData";
+import { Ionicons } from "@expo/vector-icons";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import { getSearchApi } from "@jellyfin/sdk/lib/utils/api";
 import { useQuery } from "@tanstack/react-query";
-import { router, useNavigation } from "expo-router";
+import { router, Stack, useNavigation } from "expo-router";
 import { useAtom } from "jotai";
 import React, { useLayoutEffect, useState } from "react";
 import { Platform, ScrollView, TouchableOpacity, View } from "react-native";
@@ -30,6 +31,7 @@ export default function search() {
           placeholder: "Search...",
           onChangeText: (e: any) => setSearch(e.nativeEvent.text),
           hideWhenScrolling: false,
+          autoFocus: true,
         },
       });
   }, [navigation]);
@@ -79,92 +81,94 @@ export default function search() {
   });
 
   return (
-    <ScrollView
-      keyboardDismissMode="on-drag"
-      contentInsetAdjustmentBehavior="automatic"
-    >
-      <View className="flex flex-col pt-2 pb-20">
-        {Platform.OS === "android" && (
-          <View className="mb-4 px-4">
-            <Input
-              autoCorrect={false}
-              returnKeyType="done"
-              keyboardType="web-search"
-              placeholder="Search here..."
-              value={search}
-              onChangeText={(text) => setSearch(text)}
-            />
-          </View>
-        )}
-        <Text className="font-bold text-2xl px-4 mb-2">Movies</Text>
-        <SearchItemWrapper
-          ids={movies?.map((m) => m.Id!)}
-          renderItem={(data) => (
-            <HorizontalScroll<BaseItemDto>
-              data={data}
-              renderItem={(item) => (
-                <TouchableOpacity
-                  key={item.Id}
-                  className="flex flex-col w-32"
-                  onPress={() => router.push(`/items/${item.Id}/page`)}
-                >
-                  <MoviePoster item={item} key={item.Id} />
-                  <Text className="mt-2">{item.Name}</Text>
-                  <Text className="opacity-50 text-xs">
-                    {item.ProductionYear}
-                  </Text>
-                </TouchableOpacity>
-              )}
-            />
+    <>
+      <ScrollView
+        keyboardDismissMode="on-drag"
+        contentInsetAdjustmentBehavior="automatic"
+      >
+        <View className="flex flex-col pt-2 pb-20">
+          {Platform.OS === "android" && (
+            <View className="mb-4 px-4">
+              <Input
+                autoCorrect={false}
+                returnKeyType="done"
+                keyboardType="web-search"
+                placeholder="Search here..."
+                value={search}
+                onChangeText={(text) => setSearch(text)}
+              />
+            </View>
           )}
-        />
-        <Text className="font-bold text-2xl px-4 my-2">Series</Text>
-        <SearchItemWrapper
-          ids={series?.map((m) => m.Id!)}
-          renderItem={(data) => (
-            <HorizontalScroll<BaseItemDto>
-              data={data}
-              renderItem={(item) => (
-                <TouchableOpacity
-                  key={item.Id}
-                  onPress={() => router.push(`/series/${item.Id}/page`)}
-                  className="flex flex-col w-32"
-                >
-                  <Poster
-                    item={item}
+          <Text className="font-bold text-2xl px-4 mb-2">Movies</Text>
+          <SearchItemWrapper
+            ids={movies?.map((m) => m.Id!)}
+            renderItem={(data) => (
+              <HorizontalScroll<BaseItemDto>
+                data={data}
+                renderItem={(item) => (
+                  <TouchableOpacity
                     key={item.Id}
-                    url={getPrimaryImageUrl({ api, item })}
-                  />
-                  <Text className="mt-2">{item.Name}</Text>
-                  <Text className="opacity-50 text-xs">
-                    {item.ProductionYear}
-                  </Text>
-                </TouchableOpacity>
-              )}
-            />
-          )}
-        />
-        <Text className="font-bold text-2xl px-4 my-2">Episodes</Text>
-        <SearchItemWrapper
-          ids={episodes?.map((m) => m.Id!)}
-          renderItem={(data) => (
-            <HorizontalScroll<BaseItemDto>
-              data={data}
-              renderItem={(item) => (
-                <TouchableOpacity
-                  key={item.Id}
-                  onPress={() => router.push(`/items/${item.Id}/page`)}
-                  className="flex flex-col w-48"
-                >
-                  <ContinueWatchingPoster item={item} />
-                  <ItemCardText item={item} />
-                </TouchableOpacity>
-              )}
-            />
-          )}
-        />
-      </View>
-    </ScrollView>
+                    className="flex flex-col w-32"
+                    onPress={() => router.push(`/items/${item.Id}/page`)}
+                  >
+                    <MoviePoster item={item} key={item.Id} />
+                    <Text className="mt-2">{item.Name}</Text>
+                    <Text className="opacity-50 text-xs">
+                      {item.ProductionYear}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              />
+            )}
+          />
+          <Text className="font-bold text-2xl px-4 my-2">Series</Text>
+          <SearchItemWrapper
+            ids={series?.map((m) => m.Id!)}
+            renderItem={(data) => (
+              <HorizontalScroll<BaseItemDto>
+                data={data}
+                renderItem={(item) => (
+                  <TouchableOpacity
+                    key={item.Id}
+                    onPress={() => router.push(`/series/${item.Id}/page`)}
+                    className="flex flex-col w-32"
+                  >
+                    <Poster
+                      item={item}
+                      key={item.Id}
+                      url={getPrimaryImageUrl({ api, item })}
+                    />
+                    <Text className="mt-2">{item.Name}</Text>
+                    <Text className="opacity-50 text-xs">
+                      {item.ProductionYear}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              />
+            )}
+          />
+          <Text className="font-bold text-2xl px-4 my-2">Episodes</Text>
+          <SearchItemWrapper
+            ids={episodes?.map((m) => m.Id!)}
+            renderItem={(data) => (
+              <HorizontalScroll<BaseItemDto>
+                data={data}
+                renderItem={(item) => (
+                  <TouchableOpacity
+                    key={item.Id}
+                    onPress={() => router.push(`/items/${item.Id}/page`)}
+                    className="flex flex-col w-48"
+                  >
+                    <ContinueWatchingPoster item={item} />
+                    <ItemCardText item={item} />
+                  </TouchableOpacity>
+                )}
+              />
+            )}
+          />
+        </View>
+      </ScrollView>
+    </>
   );
 }
 

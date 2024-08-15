@@ -20,7 +20,7 @@ import { useSettings } from "@/utils/atoms/settings";
 SplashScreen.preventAutoHideAsync();
 
 export const unstable_settings = {
-  initialRouteName: "(auth)/(tabs)/",
+  initialRouteName: "/index",
 };
 
 export default function RootLayout() {
@@ -80,12 +80,12 @@ function Layout() {
           <JellyfinProvider>
             <StatusBar style="light" backgroundColor="#000" />
             <ThemeProvider value={DarkTheme}>
-              <Stack>
+              <Stack initialRouteName="/home">
                 <Stack.Screen
                   name="(auth)/(tabs)"
                   options={{
                     headerShown: false,
-                    title: "Home",
+                    title: "",
                   }}
                 />
                 <Stack.Screen
