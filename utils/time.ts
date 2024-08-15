@@ -6,7 +6,7 @@
  * @returns A string formatted as "Xh Ym" where X is hours and Y is minutes.
  */
 export const runtimeTicksToMinutes = (
-  ticks: number | null | undefined
+  ticks: number | null | undefined,
 ): string => {
   if (!ticks) return "0h 0m";
 
@@ -17,4 +17,20 @@ export const runtimeTicksToMinutes = (
   const minutes = Math.floor((ticks % ticksPerHour) / ticksPerMinute);
 
   return `${hours}h ${minutes}m`;
+};
+
+export const runtimeTicksToSeconds = (
+  ticks: number | null | undefined,
+): string => {
+  if (!ticks) return "0h 0m";
+
+  const ticksPerMinute = 600000000;
+  const ticksPerHour = 36000000000;
+
+  const hours = Math.floor(ticks / ticksPerHour);
+  const minutes = Math.floor((ticks % ticksPerHour) / ticksPerMinute);
+  const seconds = Math.floor((ticks % ticksPerMinute) / 10000000);
+
+  if (hours > 0) return `${hours}h ${minutes}m ${seconds}s`;
+  else return `${minutes}m ${seconds}s`;
 };
