@@ -6,6 +6,7 @@ type Settings = {
   autoRotate?: boolean;
   forceLandscapeInVideoPlayer?: boolean;
   openFullScreenVideoPlayerByDefault?: boolean;
+  usePopularPlugin?: boolean;
 };
 
 /**
@@ -25,6 +26,7 @@ const loadSettings = async (): Promise<Settings> => {
         autoRotate: true,
         forceLandscapeInVideoPlayer: false,
         openFullScreenVideoPlayerByDefault: false,
+        usePopularPlugin: false,
       };
 };
 
