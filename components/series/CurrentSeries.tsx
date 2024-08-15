@@ -20,7 +20,7 @@ export const CurrentSeries = ({ item }: { item: BaseItemDto }) => {
         renderItem={(item, index) => (
           <TouchableOpacity
             key={item.Id}
-            onPress={() => router.push(`/series/${item.SeriesId}/page`)}
+            onPress={() => router.push(`/series/${item.SeriesId}`)}
             className="flex flex-col space-y-2 w-32"
           >
             <Poster

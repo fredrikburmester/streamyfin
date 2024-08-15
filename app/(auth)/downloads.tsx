@@ -75,7 +75,7 @@ const downloads: React.FC = () => {
             <View className="flex flex-col space-y-2">
               {queue.map((q) => (
                 <TouchableOpacity
-                  onPress={() => router.push(`/(auth)/items/${q.item.Id}/page`)}
+                  onPress={() => router.push(`/(auth)/items/${q.item.Id}`)}
                   className="relative bg-neutral-900 border border-neutral-800 p-4 rounded-2xl overflow-hidden flex flex-row items-center justify-between"
                 >
                   <View>
@@ -102,9 +102,7 @@ const downloads: React.FC = () => {
             <Text className="text-2xl font-bold mb-2">Active download</Text>
             {process?.item ? (
               <TouchableOpacity
-                onPress={() =>
-                  router.push(`/(auth)/items/${process.item.Id}/page`)
-                }
+                onPress={() => router.push(`/(auth)/items/${process.item.Id}`)}
                 className="relative bg-neutral-900 border border-neutral-800 p-4 rounded-2xl overflow-hidden flex flex-row items-center justify-between"
               >
                 <View>

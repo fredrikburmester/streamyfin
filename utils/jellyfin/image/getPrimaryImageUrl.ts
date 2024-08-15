@@ -31,18 +31,21 @@ export const getPrimaryImageUrl = ({
     return `${api?.basePath}/Items/${item?.Id}/Images/Primary`;
   }
 
-  const backdropTag = item.BackdropImageTags?.[0];
   const primaryTag = item.ImageTags?.["Primary"];
+  const backdropTag = item.BackdropImageTags?.[0];
+  const parentBackdropTag = item.ParentBackdropImageTags?.[0];
 
   const params = new URLSearchParams({
     fillWidth: width ? String(width) : "500",
-    quality: quality ? String(quality) : "90",
+    quality: quality ? String(quality) : "80",
   });
 
   if (primaryTag) {
     params.set("tag", primaryTag);
   } else if (backdropTag) {
     params.set("tag", backdropTag);
+  } else if (parentBackdropTag) {
+    params.set("tag", parentBackdropTag);
   }
 
   return `${api?.basePath}/Items/${

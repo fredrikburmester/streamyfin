@@ -90,8 +90,6 @@ export default function index() {
         })
       ).data;
 
-      console.log("Collections", JSON.stringify(data.Items));
-
       const order = ["boxsets", "tvshows", "movies"];
 
       const cs = data.Items?.sort((a, b) => {
