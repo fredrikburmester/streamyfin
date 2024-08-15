@@ -6,6 +6,8 @@ import { Colors } from "@/constants/Colors";
 import { Platform, TouchableOpacity, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { Chromecast } from "@/components/Chromecast";
+import { BlurView } from "expo-blur";
+import { StyleSheet } from "react-native";
 
 export default function TabLayout() {
   useEffect(() => {
@@ -21,6 +23,27 @@ export default function TabLayout() {
       screenOptions={{
         tabBarActiveTintColor: Colors.tabIconSelected,
         headerShown: false,
+        tabBarStyle: {
+          position: "absolute",
+          borderTopLeftRadius: 0,
+          borderTopRightRadius: 0,
+          borderTopWidth: 0,
+          paddingTop: 8,
+        },
+        tabBarBackground: () =>
+          Platform.OS === "ios" ? (
+            <BlurView
+              experimentalBlurMethod="dimezisBlurView"
+              intensity={95}
+              style={{
+                ...StyleSheet.absoluteFillObject,
+                overflow: "hidden",
+                borderTopLeftRadius: 0,
+                borderTopRightRadius: 0,
+                backgroundColor: "black",
+              }}
+            />
+          ) : undefined,
       }}
     >
       <Tabs.Screen redirect name="index" />

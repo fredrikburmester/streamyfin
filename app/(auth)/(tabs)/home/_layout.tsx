@@ -14,7 +14,9 @@ export default function IndexLayout() {
           headerShown: true,
           headerLargeTitle: true,
           headerTitle: "Home",
-          headerStyle: { backgroundColor: "black" },
+          headerBlurEffect: "prominent",
+          headerTransparent: Platform.OS === "ios" ? true : false,
+          headerShadowVisible: false,
           headerLeft: () => (
             <TouchableOpacity
               style={{

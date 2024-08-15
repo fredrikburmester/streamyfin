@@ -1,4 +1,5 @@
 import { Stack } from "expo-router";
+import { Platform } from "react-native";
 
 export default function SearchLayout() {
   return (
@@ -9,7 +10,9 @@ export default function SearchLayout() {
           headerShown: true,
           headerLargeTitle: true,
           headerTitle: "Search",
-          headerStyle: { backgroundColor: "black" },
+          headerBlurEffect: "prominent",
+          headerTransparent: Platform.OS === "ios" ? true : false,
+          headerShadowVisible: false,
         }}
       />
     </Stack>
