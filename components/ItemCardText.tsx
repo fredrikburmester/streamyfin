@@ -2,6 +2,7 @@ import React from "react";
 import { View } from "react-native";
 import { Text } from "./common/Text";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
+import { tc } from "@/utils/textTools";
 
 type ItemCardProps = {
   item: BaseItemDto;
@@ -20,14 +21,13 @@ function seasonNameToIndex(seasonName: string | null | undefined) {
 
 export const ItemCardText: React.FC<ItemCardProps> = ({ item }) => {
   return (
-    <View className="mt-2 flex flex-col grow-0">
+    <View className="mt-2 flex flex-col h-12">
       {item.Type === "Episode" ? (
         <>
-          <Text className="">{item.SeriesName}</Text>
-          <Text
-            style={{ flexWrap: "wrap" }}
-            className="flex text-xs opacity-50 break-all"
-          >
+          <Text numberOfLines={2} className="">
+            {item.SeriesName}
+          </Text>
+          <Text numberOfLines={1} className="text-xs opacity-50">
             {`S${seasonNameToIndex(
               item?.SeasonName,
             )}:E${item.IndexNumber?.toString()}`}{" "}
