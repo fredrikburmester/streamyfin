@@ -11,6 +11,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
+import { Text } from "./Text";
 
 interface HorizontalScrollProps<T> extends ScrollViewProps {
   data?: T[] | null;
@@ -19,18 +20,33 @@ interface HorizontalScrollProps<T> extends ScrollViewProps {
   contentContainerStyle?: ViewStyle;
   loadingContainerStyle?: ViewStyle;
   height?: number;
+  loading?: boolean;
 }
 
 export function HorizontalScroll<T>({
-  data,
+  data = [],
   renderItem,
   containerStyle,
   contentContainerStyle,
   loadingContainerStyle,
+  loading = false,
   height = 164,
   ...props
 }: HorizontalScrollProps<T>): React.ReactElement {
-  if (!data) {
+  const animatedOpacity = useSharedValue(0);
+  const animatedStyle1 = useAnimatedStyle(() => {
+    return {
+      opacity: withTiming(animatedOpacity.value, { duration: 250 }),
+    };
+  });
+
+  useEffect(() => {
+    if (data) {
+      animatedOpacity.value = 1;
+    }
+  }, [data]);
+
+  if (data === undefined || data === null || loading) {
     return (
       <View
         style={[
@@ -38,7 +54,6 @@ export function HorizontalScroll<T>({
             flex: 1,
             justifyContent: "center",
             alignItems: "center",
-            height,
           },
           loadingContainerStyle,
         ]}
@@ -47,18 +62,6 @@ export function HorizontalScroll<T>({
       </View>
     );
   }
-
-  const opacity = useSharedValue(0);
-
-  const animatedStyle = useAnimatedStyle(() => {
-    return {
-      opacity: withTiming(opacity.value, { duration: 250 }),
-    };
-  });
-
-  useEffect(() => {
-    if (data && data.length > 0) opacity.value = 1;
-  }, [data]);
 
   return (
     <ScrollView
@@ -72,13 +75,18 @@ export function HorizontalScroll<T>({
         className={`
         flex flex-row px-4
       `}
-        style={[animatedStyle]}
+        style={[animatedStyle1]}
       >
-        {data?.map((item, index) => (
+        {data.map((item, index) => (
           <View className="mr-2" key={index}>
             <React.Fragment>{renderItem(item, index)}</React.Fragment>
           </View>
         ))}
+        {data.length === 0 && (
+          <View className="flex-1 justify-center items-center">
+            <Text className="text-center text-gray-500">No data available</Text>
+          </View>
+        )}
       </Animated.View>
     </ScrollView>
   );

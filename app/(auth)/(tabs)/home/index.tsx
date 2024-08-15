@@ -31,6 +31,8 @@ import NetInfo, { NetInfoState } from "@react-native-community/netinfo";
 import { Button } from "@/components/Button";
 import { Ionicons } from "@expo/vector-icons";
 import MoviePoster from "@/components/MoviePoster";
+import { ScrollingCollectionList } from "@/components/home/ScrollingCollectionList";
+import { useSettings } from "@/utils/atoms/settings";
 
 export default function index() {
   const router = useRouter();
@@ -40,6 +42,7 @@ export default function index() {
   const [user] = useAtom(userAtom);
 
   const [loading, setLoading] = useState(false);
+  const [settings, _] = useSettings();
 
   const { data, isLoading, isError } = useQuery<BaseItemDto[]>({
     queryKey: ["resumeItems", user?.Id],
@@ -55,7 +58,7 @@ export default function index() {
     staleTime: 60,
   });
 
-  const { data: _nextUpData } = useQuery({
+  const { data: _nextUpData, isLoading: isLoadingNextUp } = useQuery({
     queryKey: ["nextUp-all", user?.Id],
     queryFn: async () =>
       (api &&
@@ -74,7 +77,7 @@ export default function index() {
     return _nextUpData?.filter((i) => !data?.find((d) => d.Id === i.Id));
   }, [_nextUpData]);
 
-  const { data: collections } = useQuery({
+  const { data: collections, isLoading: isLoadingCollections } = useQuery({
     queryKey: ["collections", user?.Id],
     queryFn: async () => {
       if (!api || !user?.Id) {
@@ -86,6 +89,8 @@ export default function index() {
           userId: user.Id,
         })
       ).data;
+
+      console.log("Collections", JSON.stringify(data.Items));
 
       const order = ["boxsets", "tvshows", "movies"];
 
@@ -113,7 +118,10 @@ export default function index() {
     return collections?.find((c) => c.CollectionType === "tvshows")?.Id;
   }, [collections]);
 
-  const { data: recentlyAddedInMovies } = useQuery<BaseItemDto[]>({
+  const {
+    data: recentlyAddedInMovies,
+    isLoading: isLoadingRecentlyAddedMovies,
+  } = useQuery<BaseItemDto[]>({
     queryKey: ["recentlyAddedInMovies", user?.Id, movieCollectionId],
     queryFn: async () =>
       (api &&
@@ -132,7 +140,10 @@ export default function index() {
     staleTime: 60,
   });
 
-  const { data: recentlyAddedInTVShows } = useQuery<BaseItemDto[]>({
+  const {
+    data: recentlyAddedInTVShows,
+    isLoading: isLoadingRecentlyAddedTVShows,
+  } = useQuery<BaseItemDto[]>({
     queryKey: ["recentlyAddedInTVShows", user?.Id, tvShowCollectionId],
     queryFn: async () =>
       (api &&
@@ -151,7 +162,9 @@ export default function index() {
     staleTime: 60,
   });
 
-  const { data: suggestions } = useQuery<BaseItemDto[]>({
+  const { data: suggestions, isLoading: isLoadingSuggestions } = useQuery<
+    BaseItemDto[]
+  >({
     queryKey: ["suggestions", user?.Id],
     queryFn: async () =>
       (api &&
@@ -164,6 +177,46 @@ export default function index() {
         ).data.Items) ||
       [],
     enabled: !!api && !!user?.Id,
+    staleTime: 60,
+  });
+
+  const { data: mediaListCollection } = useQuery<string | null>({
+    queryKey: ["mediaListCollection", user?.Id],
+    queryFn: async () => {
+      if (!api || !user?.Id) return null;
+
+      const response = await getItemsApi(api).getItems({
+        userId: user.Id,
+        tags: ["medialist", "promoted"],
+        recursive: true,
+        fields: ["Tags"],
+        includeItemTypes: ["BoxSet"],
+      });
+
+      return response.data.Items?.[0].Id || null;
+    },
+    enabled: !!api && !!user?.Id && settings?.usePopularPlugin === true,
+    staleTime: 60,
+  });
+
+  const { data: popularItems, isLoading: isLoadingPopular } = useQuery<
+    BaseItemDto[]
+  >({
+    queryKey: ["popular", user?.Id],
+    queryFn: async () => {
+      if (!api || !user?.Id || !mediaListCollection) return [];
+
+      const response = await getItemsApi(api).getItems({
+        userId: user.Id,
+        parentId: mediaListCollection,
+        limit: 10,
+      });
+
+      console.log("Popular", response.data.Items?.length);
+
+      return response.data.Items || [];
+    },
+    enabled: !!api && !!user?.Id && !!mediaListCollection,
     staleTime: 60,
   });
 
@@ -243,123 +296,52 @@ export default function index() {
       }
     >
       <View className="flex flex-col pt-4 pb-24 gap-y-4">
-        <View>
-          <Text className="px-4 text-2xl font-bold mb-2">
-            Continue Watching
-          </Text>
-          <HorizontalScroll<BaseItemDto>
-            data={data}
-            renderItem={(item, index) => (
-              <TouchableOpacity
-                key={index}
-                onPress={() => router.push(`/items/${item.Id}/page`)}
-                className="flex flex-col w-48"
-              >
-                <View>
-                  <ContinueWatchingPoster item={item} />
-                  <ItemCardText item={item} />
-                </View>
-              </TouchableOpacity>
-            )}
-          />
-        </View>
+        <ScrollingCollectionList
+          title="Continue Watching"
+          data={data}
+          loading={isLoading}
+          orientation="horizontal"
+        />
 
-        <View>
-          <Text className="px-4 text-2xl font-bold mb-2">Next Up</Text>
-          <HorizontalScroll<BaseItemDto>
-            data={nextUpData}
-            renderItem={(item, index) => (
-              <TouchableOpacity
-                key={index}
-                onPress={() => router.push(`/items/${item.Id}/page`)}
-                className="flex flex-col w-48"
-              >
-                <View>
-                  <ContinueWatchingPoster item={item} />
-                  <ItemCardText item={item} />
-                </View>
-              </TouchableOpacity>
-            )}
-          />
-        </View>
+        <ScrollingCollectionList
+          title="Popular"
+          data={popularItems}
+          loading={isLoadingPopular}
+          disabled={!mediaListCollection}
+        />
 
-        <View>
-          <Text className="px-4 text-2xl font-bold mb-2">
-            Recently Added in Movies
-          </Text>
-          <HorizontalScroll<BaseItemDto>
-            data={recentlyAddedInMovies}
-            renderItem={(item, index) => (
-              <TouchableOpacity
-                key={index}
-                onPress={() => router.push(`/items/${item.Id}/page`)}
-                className="flex flex-col w-32"
-              >
-                <View>
-                  <MoviePoster item={item} />
-                  <ItemCardText item={item} />
-                </View>
-              </TouchableOpacity>
-            )}
-          />
-        </View>
+        <ScrollingCollectionList
+          title="Next Up"
+          data={nextUpData}
+          loading={isLoadingNextUp}
+          orientation="horizontal"
+        />
 
-        <View>
-          <Text className="px-4 text-2xl font-bold mb-2">
-            Recently Added in TV-Shows
-          </Text>
-          <HorizontalScroll<BaseItemDto>
-            data={recentlyAddedInTVShows}
-            renderItem={(item, index) => (
-              <TouchableOpacity
-                key={index}
-                onPress={() => router.push(`/series/${item.Id}/page`)}
-                className="flex flex-col w-32"
-              >
-                <View>
-                  <MoviePoster item={item} />
-                  <ItemCardText item={item} />
-                </View>
-              </TouchableOpacity>
-            )}
-          />
-        </View>
+        <ScrollingCollectionList
+          title="Recently Added in Movies"
+          data={recentlyAddedInMovies}
+          loading={isLoadingRecentlyAddedMovies}
+        />
 
-        <View>
-          <Text className="px-4 text-2xl font-bold mb-2">Collections</Text>
-          <HorizontalScroll<BaseItemDto>
-            data={collections}
-            renderItem={(item, index) => (
-              <TouchableOpacity
-                key={index}
-                onPress={() => router.push(`/collections/${item.Id}/page`)}
-                className="flex flex-col w-48"
-              >
-                <View>
-                  <ContinueWatchingPoster item={item} />
-                  <ItemCardText item={item} />
-                </View>
-              </TouchableOpacity>
-            )}
-          />
-        </View>
+        <ScrollingCollectionList
+          title="Recently Added in TV-Shows"
+          data={recentlyAddedInTVShows}
+          loading={isLoadingRecentlyAddedTVShows}
+        />
 
-        <View>
-          <Text className="px-4 text-2xl font-bold mb-2">Suggestions</Text>
-          <HorizontalScroll<BaseItemDto>
-            data={suggestions}
-            renderItem={(item, index) => (
-              <TouchableOpacity
-                key={index}
-                onPress={() => router.push(`/items/${item.Id}/page`)}
-                className="flex flex-col w-48"
-              >
-                <ContinueWatchingPoster item={item} />
-                <ItemCardText item={item} />
-              </TouchableOpacity>
-            )}
-          />
-        </View>
+        <ScrollingCollectionList
+          title="Collections"
+          data={collections}
+          loading={isLoadingCollections}
+          orientation="horizontal"
+        />
+
+        <ScrollingCollectionList
+          title="Suggestions"
+          data={suggestions}
+          loading={isLoadingSuggestions}
+          orientation="horizontal"
+        />
       </View>
     </ScrollView>
   );
