@@ -17,13 +17,15 @@ export default function TabLayout() {
 
   return (
     <Tabs
+      initialRouteName="home"
       screenOptions={{
         tabBarActiveTintColor: Colors.tabIconSelected,
         headerShown: false,
       }}
     >
+      <Tabs.Screen redirect name="index" />
       <Tabs.Screen
-        name="index"
+        name="home"
         options={{
           headerShown: false,
           title: "Home",
