@@ -21,7 +21,11 @@ const loadSettings = async (): Promise<Settings> => {
   const jsonValue = await AsyncStorage.getItem("settings");
   return jsonValue != null
     ? JSON.parse(jsonValue)
-    : { theme: "light", notificationsEnabled: true, language: "en" };
+    : {
+        autoRotate: true,
+        forceLandscapeInVideoPlayer: false,
+        openFullScreenVideoPlayerByDefault: false,
+      };
 };
 
 // Utility function to save settings to AsyncStorage
