@@ -59,6 +59,7 @@ export const getStreamUrl = async ({
   if (!mediaSource) {
     throw new Error("No media source");
   }
+
   if (!sessionData.PlaySessionId) {
     throw new Error("no PlaySessionId");
   }

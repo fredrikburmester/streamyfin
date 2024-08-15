@@ -150,7 +150,7 @@ export const CurrentlyPlayingBar: React.FC = () => {
         sessionId: sessionData.PlaySessionId,
       });
     },
-    [sessionData?.PlaySessionId, item, api, paused],
+    [sessionData?.PlaySessionId, item, api, paused]
   );
 
   const play = () => {
@@ -187,7 +187,7 @@ export const CurrentlyPlayingBar: React.FC = () => {
       item?.UserData?.PlaybackPositionTicks
         ? Math.round(item.UserData.PlaybackPositionTicks / 10000)
         : 0,
-    [item],
+    [item]
   );
 
   const backdropUrl = useMemo(
@@ -198,7 +198,7 @@ export const CurrentlyPlayingBar: React.FC = () => {
         quality: 70,
         width: 200,
       }),
-    [item],
+    [item]
   );
 
   /**
@@ -234,7 +234,9 @@ export const CurrentlyPlayingBar: React.FC = () => {
       <BlurView
         intensity={Platform.OS === "android" ? 60 : 100}
         experimentalBlurMethod={Platform.OS === "android" ? "none" : undefined}
-        className={`h-full w-full rounded-xl overflow-hidden ${Platform.OS === "android" && "bg-black"}`}
+        className={`h-full w-full rounded-xl overflow-hidden ${
+          Platform.OS === "android" && "bg-black"
+        }`}
       >
         <Animated.View
           style={[
@@ -306,7 +308,7 @@ export const CurrentlyPlayingBar: React.FC = () => {
                     console.log(e);
                     writeToLog(
                       "ERROR",
-                      "Video playback error: " + JSON.stringify(e),
+                      "Video playback error: " + JSON.stringify(e)
                     );
                   }}
                   renderLoader={
@@ -322,26 +324,40 @@ export const CurrentlyPlayingBar: React.FC = () => {
             <View className="shrink text-xs">
               <TouchableOpacity
                 onPress={() => {
-                  router.push(`/(auth)/items/${item?.Id}/page`);
+                  console.log(JSON.stringify(item));
+                  if (item?.Type === "Audio")
+                    router.push(`/albums/${item?.AlbumId}`);
+                  else router.push(`/items/${item?.Id}`);
                 }}
               >
                 <Text>{item?.Name}</Text>
               </TouchableOpacity>
-              {item?.SeriesName ? (
+              {item?.Type === "Episode" && (
                 <TouchableOpacity
                   onPress={() => {
-                    router.push(`/(auth)/series/${item.SeriesId}/page`);
+                    router.push(`/(auth)/series/${item.SeriesId}`);
                   }}
                   className="text-xs opacity-50"
                 >
                   <Text>{item.SeriesName}</Text>
                 </TouchableOpacity>
-              ) : (
+              )}
+              {item?.Type === "Movie" && (
                 <View>
                   <Text className="text-xs opacity-50">
                     {item?.ProductionYear}
                   </Text>
                 </View>
+              )}
+              {item?.Type === "Audio" && (
+                <TouchableOpacity
+                  onPress={() => {
+                    console.log(JSON.stringify(item));
+                    router.push(`/albums/${item?.AlbumId}`);
+                  }}
+                >
+                  <Text className="text-xs opacity-50">{item?.Album}</Text>
+                </TouchableOpacity>
               )}
             </View>
           </View>

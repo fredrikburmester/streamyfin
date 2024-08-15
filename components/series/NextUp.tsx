@@ -49,7 +49,7 @@ export const NextUp: React.FC<{ seriesId: string }> = ({ seriesId }) => {
         renderItem={(item, index) => (
           <TouchableOpacity
             onPress={() => {
-              router.push(`/(auth)/items/${item.Id}/page`);
+              router.push(`/(auth)/items/${item.Id}`);
             }}
             key={item.Id}
             className="flex flex-col w-32"

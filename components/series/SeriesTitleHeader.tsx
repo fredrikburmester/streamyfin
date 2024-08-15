@@ -12,7 +12,7 @@ export const SeriesTitleHeader: React.FC<Props> = ({ item, ...props }) => {
   return (
     <>
       <TouchableOpacity
-        onPress={() => router.push(`/(auth)/series/${item.SeriesId}/page`)}
+        onPress={() => router.push(`/(auth)/series/${item.SeriesId}`)}
       >
         <Text className="text-center opacity-50">{item?.SeriesName}</Text>
       </TouchableOpacity>

@@ -109,7 +109,7 @@ export default function search() {
                   <TouchableOpacity
                     key={item.Id}
                     className="flex flex-col w-32"
-                    onPress={() => router.push(`/items/${item.Id}/page`)}
+                    onPress={() => router.push(`/items/${item.Id}`)}
                   >
                     <MoviePoster item={item} key={item.Id} />
                     <Text className="mt-2">{item.Name}</Text>
@@ -130,7 +130,7 @@ export default function search() {
                 renderItem={(item) => (
                   <TouchableOpacity
                     key={item.Id}
-                    onPress={() => router.push(`/series/${item.Id}/page`)}
+                    onPress={() => router.push(`/series/${item.Id}`)}
                     className="flex flex-col w-32"
                   >
                     <Poster
@@ -156,7 +156,7 @@ export default function search() {
                 renderItem={(item) => (
                   <TouchableOpacity
                     key={item.Id}
-                    onPress={() => router.push(`/items/${item.Id}/page`)}
+                    onPress={() => router.push(`/items/${item.Id}`)}
                     className="flex flex-col w-48"
                   >
                     <ContinueWatchingPoster item={item} />

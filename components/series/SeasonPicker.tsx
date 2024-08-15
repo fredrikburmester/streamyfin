@@ -118,7 +118,7 @@ export const SeasonPicker: React.FC<Props> = ({ item }) => {
               <TouchableOpacity
                 key={item.Id}
                 onPress={() => {
-                  router.push(`/(auth)/items/${item.Id}/page`);
+                  router.push(`/(auth)/items/${item.Id}`);
                 }}
                 className="flex flex-col w-48"
               >

@@ -38,11 +38,12 @@ export const ScrollingCollectionList: React.FC<Props> = ({
           <TouchableOpacity
             key={index}
             onPress={() => {
-              if (item.Type === "Series")
-                router.push(`/series/${item.Id}/page`);
+              if (item.Type === "Series") router.push(`/series/${item.Id}`);
+              else if (item.CollectionType === "music")
+                router.push(`/artists/page?collectionId=${item.Id}`);
               else if (item.Type === "CollectionFolder")
-                router.push(`/collections/${item.Id}/page`);
-              else router.push(`/items/${item.Id}/page`);
+                router.push(`/collections/${item.Id}`);
+              else router.push(`/items/${item.Id}`);
             }}
             className={`flex flex-col
               ${orientation === "vertical" ? "w-32" : "w-48"}

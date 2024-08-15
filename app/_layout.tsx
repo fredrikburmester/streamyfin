@@ -107,14 +107,14 @@ function Layout() {
                   }}
                 />
                 <Stack.Screen
-                  name="(auth)/items/[id]/page"
+                  name="(auth)/items/[id]"
                   options={{
                     title: "",
                     headerShown: false,
                   }}
                 />
                 <Stack.Screen
-                  name="(auth)/collections/[collection]/page"
+                  name="(auth)/collections/[collectionId]"
                   options={{
                     title: "",
                     headerShown: true,
@@ -123,7 +123,41 @@ function Layout() {
                   }}
                 />
                 <Stack.Screen
-                  name="(auth)/series/[id]/page"
+                  name="(auth)/artists/page"
+                  options={{
+                    title: "",
+                    headerShown: true,
+                    headerStyle: { backgroundColor: "black" },
+                    headerShadowVisible: false,
+                  }}
+                />
+                <Stack.Screen
+                  name="(auth)/artists/[artistId]/page"
+                  options={{
+                    title: "",
+                    headerShown: true,
+                    headerStyle: { backgroundColor: "black" },
+                    headerShadowVisible: false,
+                  }}
+                />
+                <Stack.Screen
+                  name="(auth)/albums/[albumId]"
+                  options={{
+                    title: "",
+                    headerShown: true,
+                    headerStyle: { backgroundColor: "black" },
+                    headerShadowVisible: false,
+                  }}
+                />
+                <Stack.Screen
+                  name="(auth)/songs/[songId]"
+                  options={{
+                    title: "",
+                    headerShown: false,
+                  }}
+                />
+                <Stack.Screen
+                  name="(auth)/series/[id]"
                   options={{
                     title: "",
                     headerShown: false,

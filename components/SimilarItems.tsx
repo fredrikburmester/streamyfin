@@ -42,7 +42,7 @@ export const SimilarItems: React.FC<SimilarItemsProps> = ({ itemId }) => {
 
   const movies = useMemo(
     () => similarItems?.filter((i) => i.Type === "Movie") || [],
-    [similarItems]
+    [similarItems],
   );
 
   return (
@@ -58,7 +58,7 @@ export const SimilarItems: React.FC<SimilarItemsProps> = ({ itemId }) => {
             {movies.map((item) => (
               <TouchableOpacity
                 key={item.Id}
-                onPress={() => router.push(`/items/${item.Id}/page`)}
+                onPress={() => router.push(`/items/${item.Id}`)}
                 className="flex flex-col w-32"
               >
                 <MoviePoster item={item} />
