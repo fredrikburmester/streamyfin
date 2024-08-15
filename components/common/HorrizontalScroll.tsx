@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   ScrollView,
   View,
@@ -6,6 +6,11 @@ import {
   ActivityIndicator,
   ScrollViewProps,
 } from "react-native";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
 
 interface HorizontalScrollProps<T> extends ScrollViewProps {
   data?: T[] | null;
@@ -13,6 +18,7 @@ interface HorizontalScrollProps<T> extends ScrollViewProps {
   containerStyle?: ViewStyle;
   contentContainerStyle?: ViewStyle;
   loadingContainerStyle?: ViewStyle;
+  height?: number;
 }
 
 export function HorizontalScroll<T>({
@@ -21,13 +27,19 @@ export function HorizontalScroll<T>({
   containerStyle,
   contentContainerStyle,
   loadingContainerStyle,
+  height = 164,
   ...props
 }: HorizontalScrollProps<T>): React.ReactElement {
   if (!data) {
     return (
       <View
         style={[
-          { flex: 1, justifyContent: "center", alignItems: "center" },
+          {
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+            height,
+          },
           loadingContainerStyle,
         ]}
       >
@@ -35,6 +47,18 @@ export function HorizontalScroll<T>({
       </View>
     );
   }
+
+  const opacity = useSharedValue(0);
+
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      opacity: withTiming(opacity.value, { duration: 250 }),
+    };
+  });
+
+  useEffect(() => {
+    if (data && data.length > 0) opacity.value = 1;
+  }, [data]);
 
   return (
     <ScrollView
@@ -44,13 +68,18 @@ export function HorizontalScroll<T>({
       showsHorizontalScrollIndicator={false}
       {...props}
     >
-      <View className="flex flex-row px-4">
-        {data.map((item, index) => (
+      <Animated.View
+        className={`
+        flex flex-row px-4
+      `}
+        style={[animatedStyle]}
+      >
+        {data?.map((item, index) => (
           <View className="mr-2" key={index}>
             <React.Fragment>{renderItem(item, index)}</React.Fragment>
           </View>
         ))}
-      </View>
+      </Animated.View>
     </ScrollView>
   );
 }
