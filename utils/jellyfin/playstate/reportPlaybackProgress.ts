@@ -3,10 +3,10 @@ import { AxiosError } from "axios";
 import { getAuthHeaders } from "../jellyfin";
 
 interface ReportPlaybackProgressParams {
-  api: Api | null | undefined;
-  sessionId: string | null | undefined;
-  itemId: string | null | undefined;
-  positionTicks: number | null | undefined;
+  api: Api;
+  sessionId: string;
+  itemId: string;
+  positionTicks: number;
 }
 
 /**
@@ -21,10 +21,12 @@ export const reportPlaybackProgress = async ({
   itemId,
   positionTicks,
 }: ReportPlaybackProgressParams): Promise<void> => {
-  if (!api || !sessionId || !itemId || positionTicks == null) {
-    throw new Error("Missing required parameters for reportPlaybackProgress");
-  }
-
+  console.info(
+    "Reporting playback progress:",
+    sessionId,
+    itemId,
+    positionTicks,
+  );
   try {
     await api.axiosInstance.post(
       `${api.basePath}/Sessions/Playing/Progress`,
