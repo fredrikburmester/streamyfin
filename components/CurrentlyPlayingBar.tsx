@@ -16,6 +16,7 @@ import { atom, useAtom } from "jotai";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Platform,
   TouchableOpacity,
   View,
@@ -33,14 +34,12 @@ export const currentlyPlayingItemAtom = atom<{
   playbackUrl: string;
 } | null>(null);
 
-export const triggerPlayAtom = atom(0);
-
 export const playingAtom = atom(false);
+export const fullScreenAtom = atom(false);
 
 export const CurrentlyPlayingBar: React.FC = () => {
   const queryClient = useQueryClient();
   const segments = useSegments();
-  const [settings] = useSettings();
 
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
@@ -48,10 +47,10 @@ export const CurrentlyPlayingBar: React.FC = () => {
   const [currentlyPlaying, setCurrentlyPlaying] = useAtom(
     currentlyPlayingItemAtom,
   );
+  const [fullScreen, setFullScreen] = useAtom(fullScreenAtom);
 
   const videoRef = useRef<VideoRef | null>(null);
   const [progress, setProgress] = useState(0);
-  const [fullScreen, setFullScreen] = useState(false);
 
   const aBottom = useSharedValue(0);
   const aPadding = useSharedValue(0);
@@ -148,11 +147,13 @@ export const CurrentlyPlayingBar: React.FC = () => {
   );
 
   useEffect(() => {
+    if (!item || !api) return;
+
     if (playing) {
       videoRef.current?.resume();
     } else {
       videoRef.current?.pause();
-      if (progress > 0 && sessionData?.PlaySessionId && api)
+      if (progress > 0 && sessionData?.PlaySessionId)
         reportPlaybackStopped({
           api,
           itemId: item?.Id,
@@ -170,6 +171,15 @@ export const CurrentlyPlayingBar: React.FC = () => {
       });
     }
   }, [playing, progress, item, sessionData]);
+
+  useEffect(() => {
+    console.log("Full screen changed", fullScreen);
+    if (fullScreen === true) {
+      videoRef.current?.presentFullscreenPlayer();
+    } else {
+      videoRef.current?.dismissFullscreenPlayer();
+    }
+  }, [fullScreen]);
 
   const startPosition = useMemo(
     () =>
@@ -276,6 +286,9 @@ export const CurrentlyPlayingBar: React.FC = () => {
                       "ERROR",
                       "Video playback error: " + JSON.stringify(e),
                     );
+                    Alert.alert("Error", "Cannot play this video file.");
+                    setPlaying(false);
+                    setCurrentlyPlaying(null);
                   }}
                   renderLoader={
                     item?.Type !== "Audio" && (

@@ -19,10 +19,7 @@ import CastContext, {
   useCastDevice,
   useRemoteMediaClient,
 } from "react-native-google-cast";
-import {
-  currentlyPlayingItemAtom,
-  triggerPlayAtom,
-} from "../CurrentlyPlayingBar";
+import { currentlyPlayingItemAtom, playingAtom } from "../CurrentlyPlayingBar";
 import { useActionSheet } from "@expo/react-native-action-sheet";
 import ios from "@/utils/profiles/ios";
 
@@ -46,7 +43,7 @@ export const SongsListItem: React.FC<Props> = ({
   const [user] = useAtom(userAtom);
   const castDevice = useCastDevice();
   const [, setCp] = useAtom(currentlyPlayingItemAtom);
-  const [, setPlayTrigger] = useAtom(triggerPlayAtom);
+  const [, setPlaying] = useAtom(playingAtom);
 
   const client = useRemoteMediaClient();
   const { showActionSheetWithOptions } = useActionSheet();
@@ -74,7 +71,7 @@ export const SongsListItem: React.FC<Props> = ({
             play("device");
             break;
           case cancelButtonIndex:
-            console.log("calcel");
+            break;
         }
       },
     );
@@ -125,9 +122,7 @@ export const SongsListItem: React.FC<Props> = ({
         item,
         playbackUrl: url,
       });
-
-      // Use this trigger to initiate playback in another component (CurrentlyPlayingBar)
-      setPlayTrigger((prev) => prev + 1);
+      setPlaying(true);
     }
   };
 

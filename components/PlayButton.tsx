@@ -42,7 +42,7 @@ export const PlayButton: React.FC<Props> = ({
             onPress("device");
             break;
           case cancelButtonIndex:
-            console.log("calcel");
+            break;
         }
       },
     );

@@ -210,8 +210,6 @@ export default function index() {
         limit: 10,
       });
 
-      console.log("Popular", response.data.Items?.length);
-
       return response.data.Items || [];
     },
     enabled: !!api && !!user?.Id && !!mediaListCollection,

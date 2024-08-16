@@ -23,7 +23,7 @@ import CastContext, {
 import { chromecastProfile } from "@/utils/profiles/chromecast";
 import {
   currentlyPlayingItemAtom,
-  triggerPlayAtom,
+  playingAtom,
 } from "@/components/CurrentlyPlayingBar";
 import { AudioTrackSelector } from "@/components/AudioTrackSelector";
 import { SubtitleTrackSelector } from "@/components/SubtitleTrackSelector";
@@ -39,6 +39,8 @@ const page: React.FC = () => {
 
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
+
+  const [, setPlaying] = useAtom(playingAtom);
 
   const castDevice = useCastDevice();
   const navigation = useNavigation();
@@ -139,7 +141,6 @@ const page: React.FC = () => {
 
   const [, setCp] = useAtom(currentlyPlayingItemAtom);
   const client = useRemoteMediaClient();
-  const [, setPlayTrigger] = useAtom(triggerPlayAtom);
 
   const onPressPlay = useCallback(
     async (type: "device" | "cast" = "device") => {
@@ -169,9 +170,7 @@ const page: React.FC = () => {
           item,
           playbackUrl,
         });
-
-        // Use this trigger to initiate playback in another component (CurrentlyPlayingBar)
-        setPlayTrigger((prev) => prev + 1);
+        setPlaying(true);
       }
     },
     [playbackUrl, item],
