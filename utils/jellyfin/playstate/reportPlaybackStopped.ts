@@ -24,14 +24,20 @@ export const reportPlaybackStopped = async ({
   itemId,
   positionTicks,
 }: PlaybackStoppedParams): Promise<void> => {
-  // Validate input parameters
-  if (!api || !sessionId || !itemId || !positionTicks) {
-    console.error("Missing required parameters", {
-      api,
-      sessionId,
-      itemId,
-      positionTicks,
-    });
+  if (!positionTicks || positionTicks === 0) return;
+
+  if (!api) {
+    console.error("Missing api");
+    return;
+  }
+
+  if (!sessionId) {
+    console.error("Missing sessionId", sessionId);
+    return;
+  }
+
+  if (!itemId) {
+    console.error("Missing itemId");
     return;
   }
 
