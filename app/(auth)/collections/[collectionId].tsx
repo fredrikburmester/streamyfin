@@ -180,11 +180,12 @@ const page: React.FC = () => {
                 }}
               >
                 <View className="flex flex-col gap-y-2">
-                  {collection?.CollectionType === "movies" && (
+                  {collection?.CollectionType === "movies" ? (
                     <MoviePoster item={item} />
-                  )}
-                  {collection?.CollectionType === "music" && (
+                  ) : collection?.CollectionType === "music" ? (
                     <ArtistPoster item={item} />
+                  ) : (
+                    <MoviePoster item={item} />
                   )}
                   <Text>{item.Name}</Text>
                   <Text className="opacity-50 text-xs">
