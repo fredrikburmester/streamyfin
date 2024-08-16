@@ -15,7 +15,6 @@ import { useJobProcessor } from "@/utils/atoms/queue";
 import { JobQueueProvider } from "@/providers/JobQueueProvider";
 import { useKeepAwake } from "expo-keep-awake";
 import { useSettings } from "@/utils/atoms/settings";
-import { StreamProvider } from "@/providers/StreamProvider";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -79,101 +78,99 @@ function Layout() {
       <JobQueueProvider>
         <ActionSheetProvider>
           <JellyfinProvider>
-            <StreamProvider>
-              <StatusBar style="light" backgroundColor="#000" />
-              <ThemeProvider value={DarkTheme}>
-                <Stack initialRouteName="/home">
-                  <Stack.Screen
-                    name="(auth)/(tabs)"
-                    options={{
-                      headerShown: false,
-                      title: "",
-                    }}
-                  />
-                  <Stack.Screen
-                    name="(auth)/settings"
-                    options={{
-                      headerShown: true,
-                      title: "Settings",
-                      headerStyle: { backgroundColor: "black" },
-                      headerShadowVisible: false,
-                    }}
-                  />
-                  <Stack.Screen
-                    name="(auth)/downloads"
-                    options={{
-                      headerShown: true,
-                      title: "Downloads",
-                      headerStyle: { backgroundColor: "black" },
-                      headerShadowVisible: false,
-                    }}
-                  />
-                  <Stack.Screen
-                    name="(auth)/items/[id]"
-                    options={{
-                      title: "",
-                      headerShown: false,
-                    }}
-                  />
-                  <Stack.Screen
-                    name="(auth)/collections/[collectionId]"
-                    options={{
-                      title: "",
-                      headerShown: true,
-                      headerStyle: { backgroundColor: "black" },
-                      headerShadowVisible: false,
-                    }}
-                  />
-                  <Stack.Screen
-                    name="(auth)/artists/page"
-                    options={{
-                      title: "",
-                      headerShown: true,
-                      headerStyle: { backgroundColor: "black" },
-                      headerShadowVisible: false,
-                    }}
-                  />
-                  <Stack.Screen
-                    name="(auth)/artists/[artistId]/page"
-                    options={{
-                      title: "",
-                      headerShown: true,
-                      headerStyle: { backgroundColor: "black" },
-                      headerShadowVisible: false,
-                    }}
-                  />
-                  <Stack.Screen
-                    name="(auth)/albums/[albumId]"
-                    options={{
-                      title: "",
-                      headerShown: true,
-                      headerStyle: { backgroundColor: "black" },
-                      headerShadowVisible: false,
-                    }}
-                  />
-                  <Stack.Screen
-                    name="(auth)/songs/[songId]"
-                    options={{
-                      title: "",
-                      headerShown: false,
-                    }}
-                  />
-                  <Stack.Screen
-                    name="(auth)/series/[id]"
-                    options={{
-                      title: "",
-                      headerShown: false,
-                    }}
-                  />
-                  <Stack.Screen
-                    name="login"
-                    options={{ headerShown: false, title: "Login" }}
-                  />
-                  <Stack.Screen name="+not-found" />
-                </Stack>
-                <CurrentlyPlayingBar />
-              </ThemeProvider>
-            </StreamProvider>
+            <StatusBar style="light" backgroundColor="#000" />
+            <ThemeProvider value={DarkTheme}>
+              <Stack initialRouteName="/home">
+                <Stack.Screen
+                  name="(auth)/(tabs)"
+                  options={{
+                    headerShown: false,
+                    title: "",
+                  }}
+                />
+                <Stack.Screen
+                  name="(auth)/settings"
+                  options={{
+                    headerShown: true,
+                    title: "Settings",
+                    headerStyle: { backgroundColor: "black" },
+                    headerShadowVisible: false,
+                  }}
+                />
+                <Stack.Screen
+                  name="(auth)/downloads"
+                  options={{
+                    headerShown: true,
+                    title: "Downloads",
+                    headerStyle: { backgroundColor: "black" },
+                    headerShadowVisible: false,
+                  }}
+                />
+                <Stack.Screen
+                  name="(auth)/items/[id]"
+                  options={{
+                    title: "",
+                    headerShown: false,
+                  }}
+                />
+                <Stack.Screen
+                  name="(auth)/collections/[collectionId]"
+                  options={{
+                    title: "",
+                    headerShown: true,
+                    headerStyle: { backgroundColor: "black" },
+                    headerShadowVisible: false,
+                  }}
+                />
+                <Stack.Screen
+                  name="(auth)/artists/page"
+                  options={{
+                    title: "",
+                    headerShown: true,
+                    headerStyle: { backgroundColor: "black" },
+                    headerShadowVisible: false,
+                  }}
+                />
+                <Stack.Screen
+                  name="(auth)/artists/[artistId]/page"
+                  options={{
+                    title: "",
+                    headerShown: true,
+                    headerStyle: { backgroundColor: "black" },
+                    headerShadowVisible: false,
+                  }}
+                />
+                <Stack.Screen
+                  name="(auth)/albums/[albumId]"
+                  options={{
+                    title: "",
+                    headerShown: true,
+                    headerStyle: { backgroundColor: "black" },
+                    headerShadowVisible: false,
+                  }}
+                />
+                <Stack.Screen
+                  name="(auth)/songs/[songId]"
+                  options={{
+                    title: "",
+                    headerShown: false,
+                  }}
+                />
+                <Stack.Screen
+                  name="(auth)/series/[id]"
+                  options={{
+                    title: "",
+                    headerShown: false,
+                  }}
+                />
+                <Stack.Screen
+                  name="login"
+                  options={{ headerShown: false, title: "Login" }}
+                />
+                <Stack.Screen name="+not-found" />
+              </Stack>
+              <CurrentlyPlayingBar />
+            </ThemeProvider>
           </JellyfinProvider>
         </ActionSheetProvider>
       </JobQueueProvider>

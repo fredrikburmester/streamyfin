@@ -28,6 +28,7 @@ import { chromecastProfile } from "@/utils/profiles/chromecast";
 import ios12 from "@/utils/profiles/ios12";
 import {
   currentlyPlayingItemAtom,
+  playingAtom,
   triggerPlayAtom,
 } from "@/components/CurrentlyPlayingBar";
 import { AudioTrackSelector } from "@/components/AudioTrackSelector";
@@ -47,6 +48,10 @@ const page: React.FC = () => {
 
   const castDevice = useCastDevice();
 
+  const [, setCurrentlyPlying] = useAtom(currentlyPlayingItemAtom);
+  const [, setPlaying] = useAtom(playingAtom);
+
+  const client = useRemoteMediaClient();
   const chromecastReady = useMemo(() => !!castDevice?.deviceId, [castDevice]);
   const [selectedAudioStream, setSelectedAudioStream] = useState<number>(-1);
   const [selectedSubtitleStream, setSelectedSubtitleStream] =
@@ -67,22 +72,6 @@ const page: React.FC = () => {
     enabled: !!id && !!api,
     staleTime: 60,
   });
-
-  const backdropUrl = useMemo(
-    () =>
-      getBackdropUrl({
-        api,
-        item,
-        quality: 90,
-        width: 1000,
-      }),
-    [item],
-  );
-
-  const logoUrl = useMemo(
-    () => (item?.Type === "Movie" ? getLogoImageUrlById({ api, item }) : null),
-    [item],
-  );
 
   const { data: sessionData } = useQuery({
     queryKey: ["sessionData", item?.Id],
@@ -131,10 +120,6 @@ const page: React.FC = () => {
     staleTime: 0,
   });
 
-  const [, setCp] = useAtom(currentlyPlayingItemAtom);
-  const client = useRemoteMediaClient();
-  const [, setPlayTrigger] = useAtom(triggerPlayAtom);
-
   const onPressPlay = useCallback(
     async (type: "device" | "cast" = "device") => {
       if (!playbackUrl || !item) return;
@@ -159,16 +144,31 @@ const page: React.FC = () => {
           }
         });
       } else {
-        setCp({
+        setCurrentlyPlying({
           item,
           playbackUrl,
         });
 
-        // Use this trigger to initiate playback in another component (CurrentlyPlayingBar)
-        setPlayTrigger((prev) => prev + 1);
+        setPlaying(true);
       }
     },
     [playbackUrl, item],
+  );
+
+  const backdropUrl = useMemo(
+    () =>
+      getBackdropUrl({
+        api,
+        item,
+        quality: 90,
+        width: 1000,
+      }),
+    [item],
+  );
+
+  const logoUrl = useMemo(
+    () => (item?.Type === "Movie" ? getLogoImageUrlById({ api, item }) : null),
+    [item],
   );
 
   if (l1)

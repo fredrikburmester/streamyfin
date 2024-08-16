@@ -4,6 +4,8 @@ import { Feather, Ionicons } from "@expo/vector-icons";
 import { runtimeTicksToMinutes } from "@/utils/time";
 import { useActionSheet } from "@expo/react-native-action-sheet";
 import { View } from "react-native";
+import { useAtom } from "jotai";
+import { playingAtom } from "./CurrentlyPlayingBar";
 
 interface Props extends React.ComponentProps<typeof Button> {
   item: BaseItemDto;
