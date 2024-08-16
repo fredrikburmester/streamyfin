@@ -19,12 +19,12 @@ import CastContext, {
   useCastDevice,
   useRemoteMediaClient,
 } from "react-native-google-cast";
-import ios12 from "@/utils/profiles/ios12";
 import {
   currentlyPlayingItemAtom,
   triggerPlayAtom,
 } from "../CurrentlyPlayingBar";
 import { useActionSheet } from "@expo/react-native-action-sheet";
+import ios from "@/utils/profiles/ios";
 
 interface Props extends TouchableOpacityProps {
   collectionId: string;
@@ -96,7 +96,7 @@ export const SongsListItem: React.FC<Props> = ({
       item,
       startTimeTicks: item?.UserData?.PlaybackPositionTicks || 0,
       sessionData,
-      deviceProfile: castDevice?.deviceId ? chromecastProfile : ios12,
+      deviceProfile: castDevice?.deviceId ? chromecastProfile : ios,
     });
 
     if (!url || !item) return;
