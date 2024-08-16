@@ -7,6 +7,8 @@ type Settings = {
   forceLandscapeInVideoPlayer?: boolean;
   openFullScreenVideoPlayerByDefault?: boolean;
   usePopularPlugin?: boolean;
+  deviceProfile?: "Expo" | "Native" | "Old";
+  forceDirectPlay?: boolean;
 };
 
 /**
@@ -27,6 +29,8 @@ const loadSettings = async (): Promise<Settings> => {
         forceLandscapeInVideoPlayer: false,
         openFullScreenVideoPlayerByDefault: false,
         usePopularPlugin: false,
+        deviceProfile: "Expo",
+        forceDirectPlay: false,
       };
 };
 
