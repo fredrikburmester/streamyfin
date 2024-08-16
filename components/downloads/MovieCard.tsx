@@ -1,97 +1,99 @@
+import React, { useCallback } from "react";
 import { TouchableOpacity, View } from "react-native";
-import { Text } from "../common/Text";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
-import { runtimeTicksToMinutes } from "@/utils/time";
 import * as ContextMenu from "zeego/context-menu";
-import { useFiles } from "@/hooks/useFiles";
 import * as FileSystem from "expo-file-system";
-import { useCallback } from "react";
 import * as Haptics from "expo-haptics";
 import { useAtom } from "jotai";
-import { currentlyPlayingItemAtom } from "../CurrentlyPlayingBar";
-import { useQuery } from "@tanstack/react-query";
 
-export const MovieCard: React.FC<{ item: BaseItemDto }> = ({ item }) => {
+import { Text } from "../common/Text";
+import { useFiles } from "@/hooks/useFiles";
+import { runtimeTicksToMinutes } from "@/utils/time";
+import {
+  currentlyPlayingItemAtom,
+  fullScreenAtom,
+  playingAtom,
+} from "../CurrentlyPlayingBar";
+import { useSettings } from "@/utils/atoms/settings";
+
+interface MovieCardProps {
+  item: BaseItemDto;
+}
+
+/**
+ * MovieCard component displays a movie with context menu options.
+ * @param {MovieCardProps} props - The component props.
+ * @returns {React.ReactElement} The rendered MovieCard component.
+ */
+export const MovieCard: React.FC<MovieCardProps> = ({ item }) => {
   const { deleteFile } = useFiles();
-  const [_, setCp] = useAtom(currentlyPlayingItemAtom);
+  const [, setCurrentlyPlaying] = useAtom(currentlyPlayingItemAtom);
+  const [, setPlaying] = useAtom(playingAtom);
+  const [, setFullscreen] = useAtom(fullScreenAtom);
+  const [settings] = useSettings();
 
-  // const fetchFileSize = async () => {
-  //   const filePath = `${FileSystem.documentDirectory}/${item.Id}.mp4`;
-  //   const info = await FileSystem.getInfoAsync(filePath);
-  //   return info.exists ? info.size : null;
-  // };
-
-  // const { data: fileSize } = useQuery({
-  //   queryKey: ["fileSize", item?.Id],
-  //   queryFn: fetchFileSize,
-  // });
-
-  const openFile = useCallback(() => {
-    setCp({
+  /**
+   * Handles opening the file for playback.
+   */
+  const handleOpenFile = useCallback(() => {
+    console.log("Open movie file", item.Name);
+    setCurrentlyPlaying({
       item,
       playbackUrl: `${FileSystem.documentDirectory}/${item.Id}.mp4`,
     });
-  }, [item]);
+    setPlaying(true);
+    if (settings?.openFullScreenVideoPlayerByDefault === true) {
+      setFullscreen(true);
+    }
+  }, [item, setCurrentlyPlaying, setPlaying, settings]);
 
-  const options = [
+  /**
+   * Handles deleting the file with haptic feedback.
+   */
+  const handleDeleteFile = useCallback(() => {
+    if (item.Id) {
+      deleteFile(item.Id);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
+  }, [deleteFile, item.Id]);
+
+  const contextMenuOptions = [
     {
       label: "Delete",
-      onSelect: (id: string) => {
-        deleteFile(id);
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      },
+      onSelect: handleDeleteFile,
       destructive: true,
     },
   ];
 
   return (
-    <>
-      <ContextMenu.Root>
-        <ContextMenu.Trigger>
-          <TouchableOpacity
-            onPress={openFile}
-            className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4"
-          >
-            <Text className=" font-bold">{item.Name}</Text>
-            <View className="flex flex-col">
-              <Text className=" text-xs opacity-50">{item.ProductionYear}</Text>
-              <Text className=" text-xs opacity-50">
-                {runtimeTicksToMinutes(item.RunTimeTicks)}
-              </Text>
-              {/* <Text className=" text-xs opacity-50">
-                Size:{" "}
-                {fileSize
-                  ? `${(fileSize / 1000000).toFixed(0)} MB`
-                  : "Calculating..."}{" "}
-                  </Text>*/}
-            </View>
-          </TouchableOpacity>
-        </ContextMenu.Trigger>
-        <ContextMenu.Content
-          alignOffset={0}
-          avoidCollisions={false}
-          collisionPadding={0}
-          loop={false}
+    <ContextMenu.Root>
+      <ContextMenu.Trigger>
+        <TouchableOpacity
+          onPress={handleOpenFile}
+          className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4"
         >
-          {options.map((i) => (
-            <ContextMenu.Item
-              onSelect={() => {
-                i.onSelect(item.Id!);
-              }}
-              key={i.label}
-              destructive={i.destructive}
-            >
-              <ContextMenu.ItemTitle
-                style={{
-                  color: "red",
-                }}
-              >
-                {i.label}
-              </ContextMenu.ItemTitle>
-            </ContextMenu.Item>
-          ))}
-        </ContextMenu.Content>
-      </ContextMenu.Root>
-    </>
+          <Text className="font-bold">{item.Name}</Text>
+          <View className="flex flex-col">
+            <Text className="text-xs opacity-50">{item.ProductionYear}</Text>
+            <Text className="text-xs opacity-50">
+              {runtimeTicksToMinutes(item.RunTimeTicks)}
+            </Text>
+          </View>
+        </TouchableOpacity>
+      </ContextMenu.Trigger>
+      <ContextMenu.Content>
+        {contextMenuOptions.map((option) => (
+          <ContextMenu.Item
+            key={option.label}
+            onSelect={option.onSelect}
+            destructive={option.destructive}
+          >
+            <ContextMenu.ItemTitle style={{ color: "red" }}>
+              {option.label}
+            </ContextMenu.ItemTitle>
+          </ContextMenu.Item>
+        ))}
+      </ContextMenu.Content>
+    </ContextMenu.Root>
   );
 };

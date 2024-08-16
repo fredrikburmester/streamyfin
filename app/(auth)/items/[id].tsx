@@ -2,6 +2,7 @@ import { AudioTrackSelector } from "@/components/AudioTrackSelector";
 import { Bitrate, BitrateSelector } from "@/components/BitrateSelector";
 import {
   currentlyPlayingItemAtom,
+  fullScreenAtom,
   playingAtom,
 } from "@/components/CurrentlyPlayingBar";
 import { DownloadItem } from "@/components/DownloadItem";
@@ -37,6 +38,10 @@ import CastContext, {
   useRemoteMediaClient,
 } from "react-native-google-cast";
 import { ParallaxScrollView } from "../../../components/ParallaxPage";
+import { useSettings } from "@/utils/atoms/settings";
+import ios from "@/utils/profiles/ios";
+import native from "@/utils/profiles/native";
+import old from "@/utils/profiles/old";
 
 const page: React.FC = () => {
   const local = useLocalSearchParams();
@@ -45,10 +50,13 @@ const page: React.FC = () => {
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
 
+  const [settings] = useSettings();
+
   const castDevice = useCastDevice();
 
   const [, setCurrentlyPlying] = useAtom(currentlyPlayingItemAtom);
   const [, setPlaying] = useAtom(playingAtom);
+  const [, setFullscreen] = useAtom(fullScreenAtom);
 
   const client = useRemoteMediaClient();
   const chromecastReady = useMemo(() => !!castDevice?.deviceId, [castDevice]);
@@ -95,9 +103,20 @@ const page: React.FC = () => {
       castDevice,
       selectedAudioStream,
       selectedSubtitleStream,
+      settings,
     ],
     queryFn: async () => {
       if (!api || !user?.Id || !sessionData) return null;
+
+      let deviceProfile: any = ios;
+
+      if (castDevice?.deviceId) {
+        deviceProfile = chromecastProfile;
+      } else if (settings?.deviceProfile === "Native") {
+        deviceProfile = native;
+      } else if (settings?.deviceProfile === "Old") {
+        deviceProfile = old;
+      }
 
       const url = await getStreamUrl({
         api,
@@ -106,16 +125,17 @@ const page: React.FC = () => {
         startTimeTicks: item?.UserData?.PlaybackPositionTicks || 0,
         maxStreamingBitrate: maxBitrate.value,
         sessionData,
-        deviceProfile: castDevice?.deviceId ? chromecastProfile : ios12,
+        deviceProfile,
         audioStreamIndex: selectedAudioStream,
         subtitleStreamIndex: selectedSubtitleStream,
+        forceDirectPlay: settings?.forceDirectPlay,
       });
 
       console.log("Transcode URL: ", url);
 
       return url;
     },
-    enabled: !!sessionData,
+    enabled: !!sessionData && !!api && !!user?.Id && !!item?.Id,
     staleTime: 0,
   });
 
@@ -147,11 +167,13 @@ const page: React.FC = () => {
           item,
           playbackUrl,
         });
-
         setPlaying(true);
+        if (settings?.openFullScreenVideoPlayerByDefault === true) {
+          setFullscreen(true);
+        }
       }
     },
-    [playbackUrl, item],
+    [playbackUrl, item, settings],
   );
 
   const backdropUrl = useMemo(

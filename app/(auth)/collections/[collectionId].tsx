@@ -60,8 +60,6 @@ const page: React.FC = () => {
       const sortBy: ItemSortBy[] = [];
       const includeItemTypes: BaseItemKind[] = [];
 
-      console.log("Collection", { collection });
-
       switch (collection?.CollectionType) {
         case "movies":
           sortBy.push("SortName", "ProductionYear");

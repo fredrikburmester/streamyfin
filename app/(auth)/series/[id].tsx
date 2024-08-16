@@ -20,12 +20,6 @@ const page: React.FC = () => {
     seasonIndex: string;
   };
 
-  useEffect(() => {
-    if (seriesId) {
-      console.log("seasonIndex", seasonIndex);
-    }
-  }, [seriesId]);
-
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
 
