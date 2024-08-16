@@ -11,7 +11,7 @@ const MediaTypes = {
 };
 
 export const chromecastProfile: DeviceProfile = {
-  Name: "Chromecast",
+  Name: "Chromecast Video Profile",
   Id: "chromecast-001",
   MaxStreamingBitrate: 4000000, // 4 Mbps
   MaxStaticBitrate: 4000000, // 4 Mbps
