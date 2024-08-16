@@ -44,17 +44,21 @@ export const currentlyPlayingItemAtom = atom<{
 
 export const triggerPlayAtom = atom(0);
 
-export const CurrentlyPlayingBar: React.FC = () => {
-  const [api] = useAtom(apiAtom);
-  const [user] = useAtom(userAtom);
-  const [cp, setCp] = useAtom(currentlyPlayingItemAtom);
+export const playingAtom = atom(false);
 
+export const CurrentlyPlayingBar: React.FC = () => {
   const queryClient = useQueryClient();
   const segments = useSegments();
   const [settings] = useSettings();
 
+  const [api] = useAtom(apiAtom);
+  const [user] = useAtom(userAtom);
+  const [playing, setPlaying] = useAtom(playingAtom);
+  const [currentlyPlaying, setCurrentlyPlaying] = useAtom(
+    currentlyPlayingItemAtom,
+  );
+
   const videoRef = useRef<VideoRef | null>(null);
-  const [paused, setPaused] = useState(true);
   const [progress, setProgress] = useState(0);
   const [fullScreen, setFullScreen] = useState(false);
 
@@ -113,81 +117,83 @@ export const CurrentlyPlayingBar: React.FC = () => {
   // }, [settings, fullScreen]);
 
   const { data: item } = useQuery({
-    queryKey: ["item", cp?.item.Id],
+    queryKey: ["item", currentlyPlaying?.item.Id],
     queryFn: async () =>
       await getUserItemData({
         api,
         userId: user?.Id,
-        itemId: cp?.item.Id,
+        itemId: currentlyPlaying?.item.Id,
       }),
-    enabled: !!cp?.item.Id && !!api,
+    enabled: !!currentlyPlaying?.item.Id && !!api,
     staleTime: 60,
   });
 
   const { data: sessionData } = useQuery({
-    queryKey: ["sessionData", cp?.item.Id],
+    queryKey: ["sessionData", currentlyPlaying?.item.Id],
     queryFn: async () => {
-      if (!cp?.item.Id) return null;
+      if (!currentlyPlaying?.item.Id) return null;
       const playbackData = await getMediaInfoApi(api!).getPlaybackInfo({
-        itemId: cp?.item.Id,
+        itemId: currentlyPlaying?.item.Id,
         userId: user?.Id,
       });
       return playbackData.data;
     },
-    enabled: !!cp?.item.Id && !!api && !!user?.Id,
+    enabled: !!currentlyPlaying?.item.Id && !!api && !!user?.Id,
     staleTime: 0,
   });
 
   const onProgress = useCallback(
     ({ currentTime }: OnProgressData) => {
-      if (!currentTime || !sessionData?.PlaySessionId || paused) return;
+      if (
+        !currentTime ||
+        !sessionData?.PlaySessionId ||
+        !playing ||
+        !api ||
+        !currentlyPlaying?.item.Id
+      )
+        return;
       const newProgress = currentTime * 10000000;
       setProgress(newProgress);
       reportPlaybackProgress({
         api,
-        itemId: cp?.item.Id,
+        itemId: currentlyPlaying?.item.Id,
         positionTicks: newProgress,
         sessionId: sessionData.PlaySessionId,
       });
     },
-    [sessionData?.PlaySessionId, item, api, paused]
+    [sessionData?.PlaySessionId, api, playing, currentlyPlaying?.item.Id],
   );
 
-  const play = () => {
-    if (videoRef.current) {
-      videoRef.current.resume();
-      setPaused(false);
-    }
-  };
+  useEffect(() => {
+    if (playing) {
+      videoRef.current?.resume();
+    } else {
+      videoRef.current?.pause();
+      if (progress > 0 && sessionData?.PlaySessionId && api)
+        reportPlaybackStopped({
+          api,
+          itemId: item?.Id,
+          positionTicks: progress,
+          sessionId: sessionData?.PlaySessionId,
+        });
 
-  const pause = useCallback(() => {
-    videoRef.current?.pause();
-    setPaused(true);
-
-    if (progress > 0)
-      reportPlaybackStopped({
-        api,
-        itemId: item?.Id,
-        positionTicks: progress,
-        sessionId: sessionData?.PlaySessionId,
+      queryClient.invalidateQueries({
+        queryKey: ["nextUp", item?.SeriesId],
+        refetchType: "all",
       });
-
-    queryClient.invalidateQueries({
-      queryKey: ["nextUp", item?.SeriesId],
-      refetchType: "all",
-    });
-    queryClient.invalidateQueries({
-      queryKey: ["episodes"],
-      refetchType: "all",
-    });
-  }, [api, item, progress, sessionData, queryClient]);
+      queryClient.invalidateQueries({
+        queryKey: ["episodes"],
+        refetchType: "all",
+      });
+    }
+  }, [playing, progress, item, sessionData]);
 
   const startPosition = useMemo(
     () =>
       item?.UserData?.PlaybackPositionTicks
         ? Math.round(item.UserData.PlaybackPositionTicks / 10000)
         : 0,
-    [item]
+    [item],
   );
 
   const backdropUrl = useMemo(
@@ -198,7 +204,7 @@ export const CurrentlyPlayingBar: React.FC = () => {
         quality: 70,
         width: 200,
       }),
-    [item]
+    [item],
   );
 
   /**
@@ -207,24 +213,24 @@ export const CurrentlyPlayingBar: React.FC = () => {
    *
    * The trigger playback is triggered from the button component.
    */
-  useEffect(() => {
-    if (cp?.playbackUrl) {
-      play();
-      if (settings?.openFullScreenVideoPlayerByDefault) {
-        videoRef.current?.presentFullscreenPlayer();
-      }
-    }
-  }, [cp?.playbackUrl]);
+  // useEffect(() => {
+  //   if (currentlyPlaying?.playbackUrl) {
+  //     play();
+  //     if (settings?.openFullScreenVideoPlayerByDefault) {
+  //       videoRef.current?.presentFullscreenPlayer();
+  //     }
+  //   }
+  // }, [currentlyPlaying?.playbackUrl]);
 
-  const [triggerPlay] = useAtom(triggerPlayAtom);
-  useEffect(() => {
-    play();
-    if (settings?.openFullScreenVideoPlayerByDefault) {
-      videoRef.current?.presentFullscreenPlayer();
-    }
-  }, [triggerPlay]);
+  // const [triggerPlay] = useAtom(triggerPlayAtom);
+  // useEffect(() => {
+  //   setPlaying(true)
+  //   if (settings?.openFullScreenVideoPlayerByDefault) {
+  //     videoRef.current?.presentFullscreenPlayer();
+  //   }
+  // }, [triggerPlay]);
 
-  if (!cp || !api) return null;
+  if (!currentlyPlaying || !api) return null;
 
   return (
     <Animated.View
@@ -254,7 +260,7 @@ export const CurrentlyPlayingBar: React.FC = () => {
                 ${item?.Type === "Audio" ? "aspect-square" : "aspect-video"}
                 `}
             >
-              {cp.playbackUrl && (
+              {currentlyPlaying.playbackUrl && (
                 <Video
                   ref={videoRef}
                   allowsExternalPlayback
@@ -274,13 +280,13 @@ export const CurrentlyPlayingBar: React.FC = () => {
                     enable: true,
                     thread: true,
                   }}
-                  paused={paused}
+                  paused={!playing}
                   onProgress={(e) => onProgress(e)}
                   subtitleStyle={{
                     fontSize: 16,
                   }}
                   source={{
-                    uri: cp.playbackUrl,
+                    uri: currentlyPlaying.playbackUrl,
                     isNetwork: true,
                     startPosition,
                     headers: getAuthHeaders(api),
@@ -296,11 +302,11 @@ export const CurrentlyPlayingBar: React.FC = () => {
                   }}
                   onPlaybackStateChanged={(e) => {
                     if (e.isPlaying) {
-                      setPaused(false);
+                      setPlaying(true);
                     } else if (e.isSeeking) {
                       return;
                     } else {
-                      pause();
+                      setPlaying(false);
                     }
                   }}
                   progressUpdateInterval={1000}
@@ -308,7 +314,7 @@ export const CurrentlyPlayingBar: React.FC = () => {
                     console.log(e);
                     writeToLog(
                       "ERROR",
-                      "Video playback error: " + JSON.stringify(e)
+                      "Video playback error: " + JSON.stringify(e),
                     );
                   }}
                   renderLoader={
@@ -364,20 +370,20 @@ export const CurrentlyPlayingBar: React.FC = () => {
           <View className="flex flex-row items-center space-x-2">
             <TouchableOpacity
               onPress={() => {
-                if (paused) play();
-                else pause();
+                if (playing) setPlaying(false);
+                else setPlaying(true);
               }}
               className="aspect-square rounded flex flex-col items-center justify-center p-2"
             >
-              {paused ? (
-                <Ionicons name="play" size={24} color="white" />
-              ) : (
+              {playing ? (
                 <Ionicons name="pause" size={24} color="white" />
+              ) : (
+                <Ionicons name="play" size={24} color="white" />
               )}
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => {
-                setCp(null);
+                setCurrentlyPlaying(null);
               }}
               className="aspect-square rounded flex flex-col items-center justify-center p-2"
             >
