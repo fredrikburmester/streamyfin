@@ -75,8 +75,6 @@ export const NextEpisodeButton: React.FC<Props> = ({
         startIndex: type === "next" ? item.IndexNumber : item.IndexNumber - 2,
       });
 
-      console.log("NextEpisode ~", type, response.data);
-
       return (response.data.Items?.[0] as BaseItemDto) || null;
     },
     enabled: Boolean(api && user?.Id && item?.Id && item.SeasonId),
