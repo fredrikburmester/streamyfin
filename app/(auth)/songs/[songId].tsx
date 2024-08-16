@@ -21,7 +21,6 @@ import CastContext, {
   useRemoteMediaClient,
 } from "react-native-google-cast";
 import { chromecastProfile } from "@/utils/profiles/chromecast";
-import ios12 from "@/utils/profiles/ios12";
 import {
   currentlyPlayingItemAtom,
   triggerPlayAtom,
@@ -32,6 +31,7 @@ import { NextEpisodeButton } from "@/components/series/NextEpisodeButton";
 import { MoviesTitleHeader } from "@/components/movies/MoviesTitleHeader";
 import { ParallaxScrollView } from "@/components/ParallaxPage";
 import { Chromecast } from "@/components/Chromecast";
+import ios from "@/utils/profiles/ios";
 
 const page: React.FC = () => {
   const local = useLocalSearchParams();
@@ -71,7 +71,7 @@ const page: React.FC = () => {
         itemId: id,
       }),
     enabled: !!id && !!api,
-    staleTime: 60,
+    staleTime: 60 * 1000,
   });
 
   const backdropUrl = useMemo(
@@ -124,7 +124,7 @@ const page: React.FC = () => {
         startTimeTicks: item?.UserData?.PlaybackPositionTicks || 0,
         maxStreamingBitrate: maxBitrate.value,
         sessionData,
-        deviceProfile: castDevice?.deviceId ? chromecastProfile : ios12,
+        deviceProfile: castDevice?.deviceId ? chromecastProfile : ios,
         audioStreamIndex: selectedAudioStream,
         subtitleStreamIndex: selectedSubtitleStream,
       });
