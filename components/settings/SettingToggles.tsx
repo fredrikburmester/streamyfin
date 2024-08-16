@@ -1,7 +1,7 @@
 import { Linking, Switch, TouchableOpacity, View } from "react-native";
 import { Text } from "../common/Text";
-import { useAtom } from "jotai";
 import { useSettings } from "@/utils/atoms/settings";
+import * as DropdownMenu from "zeego/dropdown-menu";
 
 export const SettingToggles: React.FC = () => {
   const [settings, updateSettings] = useSettings();
@@ -54,6 +54,75 @@ export const SettingToggles: React.FC = () => {
           value={settings?.usePopularPlugin}
           onValueChange={(value) => updateSettings({ usePopularPlugin: value })}
         />
+      </View>
+      <View className="flex flex-row space-x-2 items-center justify-between bg-neutral-900 p-4">
+        <View className="flex flex-col shrink">
+          <Text className="font-semibold">Force direct play</Text>
+          <Text className="text-xs opacity-50 shrink">
+            This will always request direct play. This is good if you want to
+            try to stream movies you think the device supports.
+          </Text>
+        </View>
+        <Switch
+          value={settings?.forceDirectPlay}
+          onValueChange={(value) => updateSettings({ forceDirectPlay: value })}
+        />
+      </View>
+      <View
+        className={`
+        flex flex-row items-center space-x-2 justify-between bg-neutral-900 p-4
+        ${settings?.forceDirectPlay ? "opacity-50 select-none" : ""}
+      `}
+      >
+        <View className="flex flex-col shrink">
+          <Text className="font-semibold">Device profile</Text>
+          <Text className="text-xs opacity-50">
+            A profile used for deciding what audio and video codecs the device
+            supports.
+          </Text>
+        </View>
+        <DropdownMenu.Root>
+          <DropdownMenu.Trigger>
+            <TouchableOpacity className="bg-neutral-800 rounded-lg border-neutral-900 border px-3 py-2 flex flex-row items-center justify-between">
+              <Text>{settings?.deviceProfile}</Text>
+            </TouchableOpacity>
+          </DropdownMenu.Trigger>
+          <DropdownMenu.Content
+            loop={true}
+            side="bottom"
+            align="start"
+            alignOffset={0}
+            avoidCollisions={true}
+            collisionPadding={8}
+            sideOffset={8}
+          >
+            <DropdownMenu.Label>Profiles</DropdownMenu.Label>
+            <DropdownMenu.Item
+              key="1"
+              onSelect={() => {
+                updateSettings({ deviceProfile: "Expo" });
+              }}
+            >
+              <DropdownMenu.ItemTitle>Expo</DropdownMenu.ItemTitle>
+            </DropdownMenu.Item>
+            <DropdownMenu.Item
+              key="2"
+              onSelect={() => {
+                updateSettings({ deviceProfile: "Native" });
+              }}
+            >
+              <DropdownMenu.ItemTitle>Native</DropdownMenu.ItemTitle>
+            </DropdownMenu.Item>
+            <DropdownMenu.Item
+              key="3"
+              onSelect={() => {
+                updateSettings({ deviceProfile: "Old" });
+              }}
+            >
+              <DropdownMenu.ItemTitle>Old</DropdownMenu.ItemTitle>
+            </DropdownMenu.Item>
+          </DropdownMenu.Content>
+        </DropdownMenu.Root>
       </View>
     </View>
   );
