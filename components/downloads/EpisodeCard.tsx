@@ -1,97 +1,85 @@
-import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
+import React, { useCallback } from "react";
 import { TouchableOpacity } from "react-native";
+import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import * as ContextMenu from "zeego/context-menu";
-import { Text } from "../common/Text";
-import { useFiles } from "@/hooks/useFiles";
 import * as Haptics from "expo-haptics";
-import { useCallback } from "react";
 import * as FileSystem from "expo-file-system";
 import { useAtom } from "jotai";
+
+import { Text } from "../common/Text";
+import { useFiles } from "@/hooks/useFiles";
 import { currentlyPlayingItemAtom } from "../CurrentlyPlayingBar";
 
-export const EpisodeCard: React.FC<{ item: BaseItemDto }> = ({ item }) => {
+interface EpisodeCardProps {
+  item: BaseItemDto;
+}
+
+/**
+ * EpisodeCard component displays an episode with context menu options.
+ * @param {EpisodeCardProps} props - The component props.
+ * @returns {React.ReactElement} The rendered EpisodeCard component.
+ */
+export const EpisodeCard: React.FC<EpisodeCardProps> = ({ item }) => {
   const { deleteFile } = useFiles();
-  const [_, setCp] = useAtom(currentlyPlayingItemAtom);
+  const [, setCurrentlyPlaying] = useAtom(currentlyPlayingItemAtom);
 
-  // const fetchFileSize = async () => {
-  //   try {
-  //     const filePath = `${FileSystem.documentDirectory}/${item.Id}.mp4`;
-  //     const info = await FileSystem.getInfoAsync(filePath);
-  //     return info.exists ? info.size : null;
-  //   } catch (e) {
-  //     console.log(e);
-  //     return null;
-  //   }
-  // };
-
-  // const { data: fileSize } = useQuery({
-  //   queryKey: ["fileSize", item?.Id],
-  //   queryFn: fetchFileSize,
-  // });
-
-  const openFile = useCallback(() => {
-    setCp({
+  /**
+   * Handles opening the file for playback.
+   */
+  const handleOpenFile = useCallback(() => {
+    setCurrentlyPlaying({
       item,
       playbackUrl: `${FileSystem.documentDirectory}/${item.Id}.mp4`,
     });
-  }, [item]);
+  }, [item, setCurrentlyPlaying]);
 
-  const options = [
+  /**
+   * Handles deleting the file with haptic feedback.
+   */
+  const handleDeleteFile = useCallback(() => {
+    if (item.Id) {
+      deleteFile(item.Id);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
+  }, [deleteFile, item.Id]);
+
+  const contextMenuOptions = [
     {
       label: "Delete",
-      onSelect: (id: string) => {
-        deleteFile(id);
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      },
+      onSelect: handleDeleteFile,
       destructive: true,
     },
   ];
 
   return (
-    <>
-      <ContextMenu.Root>
-        <ContextMenu.Trigger>
-          <TouchableOpacity
-            onPress={openFile}
-            className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4"
-          >
-            <Text className=" font-bold">{item.Name}</Text>
-            <Text className=" text-xs opacity-50">
-              Episode {item.IndexNumber}
-            </Text>
-            {/* <Text className=" text-xs opacity-50">
-              Size:{" "}
-              {fileSize
-                ? `${(fileSize / 1000000).toFixed(0)} MB`
-                : "Calculating..."}{" "}
-                </Text> */}
-          </TouchableOpacity>
-        </ContextMenu.Trigger>
-        <ContextMenu.Content
-          alignOffset={0}
-          avoidCollisions
-          collisionPadding={10}
-          loop={false}
+    <ContextMenu.Root>
+      <ContextMenu.Trigger>
+        <TouchableOpacity
+          onPress={handleOpenFile}
+          className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4"
         >
-          {options.map((i) => (
-            <ContextMenu.Item
-              onSelect={() => {
-                i.onSelect(item.Id!);
-              }}
-              key={i.label}
-              destructive={i.destructive}
-            >
-              <ContextMenu.ItemTitle
-                style={{
-                  color: "red",
-                }}
-              >
-                {i.label}
-              </ContextMenu.ItemTitle>
-            </ContextMenu.Item>
-          ))}
-        </ContextMenu.Content>
-      </ContextMenu.Root>
-    </>
+          <Text className="font-bold">{item.Name}</Text>
+          <Text className="text-xs opacity-50">Episode {item.IndexNumber}</Text>
+        </TouchableOpacity>
+      </ContextMenu.Trigger>
+      <ContextMenu.Content
+        alignOffset={0}
+        avoidCollisions
+        collisionPadding={10}
+        loop={false}
+      >
+        {contextMenuOptions.map((option) => (
+          <ContextMenu.Item
+            key={option.label}
+            onSelect={option.onSelect}
+            destructive={option.destructive}
+          >
+            <ContextMenu.ItemTitle style={{ color: "red" }}>
+              {option.label}
+            </ContextMenu.ItemTitle>
+          </ContextMenu.Item>
+        ))}
+      </ContextMenu.Content>
+    </ContextMenu.Root>
   );
 };
