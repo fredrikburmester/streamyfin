@@ -55,7 +55,7 @@ export default function index() {
         ).data.Items) ||
       [],
     enabled: !!api && !!user?.Id,
-    staleTime: 60,
+    staleTime: 60 * 1000,
   });
 
   const { data: _nextUpData, isLoading: isLoadingNextUp } = useQuery({
@@ -135,7 +135,7 @@ export default function index() {
         ).data) ||
       [],
     enabled: !!api && !!user?.Id && !!movieCollectionId,
-    staleTime: 60,
+    staleTime: 60 * 1000,
   });
 
   const {
@@ -157,7 +157,7 @@ export default function index() {
         ).data) ||
       [],
     enabled: !!api && !!user?.Id && !!tvShowCollectionId,
-    staleTime: 60,
+    staleTime: 60 * 1000,
   });
 
   const { data: suggestions, isLoading: isLoadingSuggestions } = useQuery<
@@ -175,7 +175,7 @@ export default function index() {
         ).data.Items) ||
       [],
     enabled: !!api && !!user?.Id,
-    staleTime: 60,
+    staleTime: 60 * 1000,
   });
 
   const { data: mediaListCollection } = useQuery<string | null>({
@@ -194,7 +194,7 @@ export default function index() {
       return response.data.Items?.[0].Id || null;
     },
     enabled: !!api && !!user?.Id && settings?.usePopularPlugin === true,
-    staleTime: 60,
+    staleTime: 60 * 1000,
   });
 
   const { data: popularItems, isLoading: isLoadingPopular } = useQuery<
@@ -215,7 +215,7 @@ export default function index() {
       return response.data.Items || [];
     },
     enabled: !!api && !!user?.Id && !!mediaListCollection,
-    staleTime: 60,
+    staleTime: 60 * 1000,
   });
 
   const refetch = useCallback(async () => {

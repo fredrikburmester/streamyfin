@@ -38,7 +38,7 @@ const page: React.FC = () => {
         itemId: seriesId,
       }),
     enabled: !!seriesId && !!api,
-    staleTime: 60,
+    staleTime: 60 * 1000,
   });
 
   const backdropUrl = useMemo(
