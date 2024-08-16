@@ -1,41 +1,32 @@
+import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
+import { useSettings } from "@/utils/atoms/settings";
+import { getBackdropUrl } from "@/utils/jellyfin/image/getBackdropUrl";
+import { getAuthHeaders } from "@/utils/jellyfin/jellyfin";
+import { reportPlaybackProgress } from "@/utils/jellyfin/playstate/reportPlaybackProgress";
+import { reportPlaybackStopped } from "@/utils/jellyfin/playstate/reportPlaybackStopped";
+import { getUserItemData } from "@/utils/jellyfin/user-library/getUserItemData";
+import { writeToLog } from "@/utils/log";
+import { Ionicons } from "@expo/vector-icons";
+import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
+import { getMediaInfoApi } from "@jellyfin/sdk/lib/utils/api";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { BlurView } from "expo-blur";
+import { useRouter, useSegments } from "expo-router";
+import { atom, useAtom } from "jotai";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Platform,
   TouchableOpacity,
   View,
 } from "react-native";
-import { Text } from "./common/Text";
-import { Ionicons } from "@expo/vector-icons";
-import {
-  Ref,
-  RefObject,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import Video, { OnProgressData, VideoRef } from "react-native-video";
-import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
-import { atom, useAtom } from "jotai";
-import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { getUserItemData } from "@/utils/jellyfin/user-library/getUserItemData";
-import { getMediaInfoApi } from "@jellyfin/sdk/lib/utils/api";
-import { reportPlaybackProgress } from "@/utils/jellyfin/playstate/reportPlaybackProgress";
-import { reportPlaybackStopped } from "@/utils/jellyfin/playstate/reportPlaybackStopped";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
-import { useRouter, useSegments } from "expo-router";
-import { BlurView } from "expo-blur";
-import { writeToLog } from "@/utils/log";
-import { getBackdropUrl } from "@/utils/jellyfin/image/getBackdropUrl";
-import { getAuthHeaders } from "@/utils/jellyfin/jellyfin";
-import { useSettings } from "@/utils/atoms/settings";
-import * as ScreenOrientation from "expo-screen-orientation";
+import Video, { OnProgressData, VideoRef } from "react-native-video";
+import { Text } from "./common/Text";
 
 export const currentlyPlayingItemAtom = atom<{
   item: BaseItemDto;
@@ -107,14 +98,6 @@ export const CurrentlyPlayingBar: React.FC = () => {
       aPaddingBottom.value = Platform.OS === "ios" ? 40 : 12;
     }
   }, [segments]);
-
-  // TODO: Fix this
-  // useEffect(() => {
-  //   if (settings?.forceLandscapeInVideoPlayer === true && fullScreen)
-  //     ScreenOrientation.lockAsync(
-  //       ScreenOrientation.OrientationLock.LANDSCAPE_LEFT,
-  //     );
-  // }, [settings, fullScreen]);
 
   const { data: item } = useQuery({
     queryKey: ["item", currentlyPlaying?.item.Id],
@@ -206,29 +189,6 @@ export const CurrentlyPlayingBar: React.FC = () => {
       }),
     [item],
   );
-
-  /**
-   * These two useEffects are used to start playing the
-   * video when the playbackUrl is available.
-   *
-   * The trigger playback is triggered from the button component.
-   */
-  // useEffect(() => {
-  //   if (currentlyPlaying?.playbackUrl) {
-  //     play();
-  //     if (settings?.openFullScreenVideoPlayerByDefault) {
-  //       videoRef.current?.presentFullscreenPlayer();
-  //     }
-  //   }
-  // }, [currentlyPlaying?.playbackUrl]);
-
-  // const [triggerPlay] = useAtom(triggerPlayAtom);
-  // useEffect(() => {
-  //   setPlaying(true)
-  //   if (settings?.openFullScreenVideoPlayerByDefault) {
-  //     videoRef.current?.presentFullscreenPlayer();
-  //   }
-  // }, [triggerPlay]);
 
   if (!currentlyPlaying || !api) return null;
 

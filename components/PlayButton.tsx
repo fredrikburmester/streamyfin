@@ -1,11 +1,9 @@
-import { Button } from "./Button";
-import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
-import { Feather, Ionicons } from "@expo/vector-icons";
 import { runtimeTicksToMinutes } from "@/utils/time";
 import { useActionSheet } from "@expo/react-native-action-sheet";
+import { Feather, Ionicons } from "@expo/vector-icons";
+import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import { View } from "react-native";
-import { useAtom } from "jotai";
-import { playingAtom } from "./CurrentlyPlayingBar";
+import { Button } from "./Button";
 
 interface Props extends React.ComponentProps<typeof Button> {
   item: BaseItemDto;
