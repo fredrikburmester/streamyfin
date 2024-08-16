@@ -1,4 +1,4 @@
-import ios12 from "@/utils/profiles/ios12";
+import ios from "@/utils/profiles/ios";
 import { Api } from "@jellyfin/sdk";
 import {
   BaseItemDto,
@@ -13,9 +13,10 @@ export const getStreamUrl = async ({
   startTimeTicks = 0,
   maxStreamingBitrate,
   sessionData,
-  deviceProfile = ios12,
+  deviceProfile = ios,
   audioStreamIndex = 0,
   subtitleStreamIndex = 0,
+  forceDirectPlay = false,
 }: {
   api: Api | null | undefined;
   item: BaseItemDto | null | undefined;
@@ -26,6 +27,7 @@ export const getStreamUrl = async ({
   deviceProfile: any;
   audioStreamIndex?: number;
   subtitleStreamIndex?: number;
+  forceDirectPlay?: boolean;
 }) => {
   if (!api || !userId || !item?.Id) {
     return null;
@@ -64,7 +66,7 @@ export const getStreamUrl = async ({
     throw new Error("no PlaySessionId");
   }
 
-  if (mediaSource.SupportsDirectPlay) {
+  if (mediaSource.SupportsDirectPlay || forceDirectPlay === true) {
     if (item.MediaType === "Video") {
       console.log("Using direct stream for video!");
       return `${api.basePath}/Videos/${itemId}/stream.mp4?playSessionId=${sessionData.PlaySessionId}&mediaSourceId=${itemId}&static=true`;
@@ -89,6 +91,10 @@ export const getStreamUrl = async ({
     }
   }
 
-  console.log("Using transcoded stream!");
-  return `${api.basePath}${mediaSource.TranscodingUrl}`;
+  if (mediaSource.TranscodingUrl) {
+    console.log("Using transcoded stream!");
+    return `${api.basePath}${mediaSource.TranscodingUrl}`;
+  } else {
+    throw new Error("No transcoding url");
+  }
 };
