@@ -37,11 +37,7 @@ export const SubtitleTrackSelector: React.FC<Props> = ({
     if (index !== undefined && index !== null) {
       onChange(index);
     } else {
-      // Get first subtitle stream
-      const firstSubtitle = subtitleStreams.find((x) => x.Index !== undefined);
-      if (firstSubtitle?.Index !== undefined) {
-        onChange(firstSubtitle.Index);
-      }
+      onChange(-1);
     }
   }, []);
 
@@ -56,7 +52,9 @@ export const SubtitleTrackSelector: React.FC<Props> = ({
             <View className="flex flex-row">
               <TouchableOpacity className="bg-neutral-900 max-w-32 h-12 rounded-2xl border-neutral-900 border px-3 py-2 flex flex-row items-center justify-between">
                 <Text className="">
-                  {tc(selectedSubtitleSteam?.DisplayTitle, 13)}
+                  {selectedSubtitleSteam
+                    ? tc(selectedSubtitleSteam?.DisplayTitle, 13)
+                    : "None"}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -72,6 +70,14 @@ export const SubtitleTrackSelector: React.FC<Props> = ({
           sideOffset={8}
         >
           <DropdownMenu.Label>Subtitles</DropdownMenu.Label>
+          <DropdownMenu.Item
+            key={"-1"}
+            onSelect={() => {
+              onChange(-1);
+            }}
+          >
+            <DropdownMenu.ItemTitle>None</DropdownMenu.ItemTitle>
+          </DropdownMenu.Item>
           {subtitleStreams?.map((subtitle, idx: number) => (
             <DropdownMenu.Item
               key={idx.toString()}

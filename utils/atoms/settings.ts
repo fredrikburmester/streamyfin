@@ -9,6 +9,7 @@ type Settings = {
   usePopularPlugin?: boolean;
   deviceProfile?: "Expo" | "Native" | "Old";
   forceDirectPlay?: boolean;
+  mediaListCollectionIds?: string[];
 };
 
 /**
@@ -31,6 +32,7 @@ const loadSettings = async (): Promise<Settings> => {
         usePopularPlugin: false,
         deviceProfile: "Expo",
         forceDirectPlay: false,
+        mediaListCollectionIds: [],
       };
 };
 

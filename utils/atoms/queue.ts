@@ -46,7 +46,6 @@ export const useJobProcessor = () => {
   const [isProcessing, setProcessing] = useAtom(isProcessingAtom);
 
   useEffect(() => {
-    console.info("Queue changed", queue, isProcessing);
     if (queue.length > 0 && !isProcessing) {
       console.info("Processing queue", queue);
       queueActions.processJob(queue, setQueue, setProcessing);

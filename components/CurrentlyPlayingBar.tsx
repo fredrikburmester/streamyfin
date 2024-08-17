@@ -173,7 +173,6 @@ export const CurrentlyPlayingBar: React.FC = () => {
   }, [playing, progress, item, sessionData]);
 
   useEffect(() => {
-    console.log("Full screen changed", fullScreen);
     if (fullScreen === true) {
       videoRef.current?.presentFullscreenPlayer();
     } else {

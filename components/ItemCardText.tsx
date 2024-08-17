@@ -36,7 +36,7 @@ export const ItemCardText: React.FC<ItemCardProps> = ({ item }) => {
         </>
       ) : (
         <>
-          <Text>{item.Name}</Text>
+          <Text numberOfLines={2}>{item.Name}</Text>
           <Text className="text-xs opacity-50">{item.ProductionYear}</Text>
         </>
       )}

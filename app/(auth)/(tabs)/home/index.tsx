@@ -33,6 +33,8 @@ import { Ionicons } from "@expo/vector-icons";
 import MoviePoster from "@/components/MoviePoster";
 import { ScrollingCollectionList } from "@/components/home/ScrollingCollectionList";
 import { useSettings } from "@/utils/atoms/settings";
+import { LargeMovieCarousel } from "@/components/home/LargeMovieCarousel";
+import { MediaListSection } from "@/components/medialists/MediaListSection";
 
 export default function index() {
   const router = useRouter();
@@ -102,7 +104,7 @@ export default function index() {
         return -1;
       });
 
-      return data.Items || [];
+      return cs || [];
     },
     enabled: !!api && !!user?.Id,
     staleTime: 0,
@@ -178,44 +180,6 @@ export default function index() {
     staleTime: 60 * 1000,
   });
 
-  const { data: mediaListCollection } = useQuery<string | null>({
-    queryKey: ["mediaListCollection", user?.Id],
-    queryFn: async () => {
-      if (!api || !user?.Id) return null;
-
-      const response = await getItemsApi(api).getItems({
-        userId: user.Id,
-        tags: ["medialist", "promoted"],
-        recursive: true,
-        fields: ["Tags"],
-        includeItemTypes: ["BoxSet"],
-      });
-
-      return response.data.Items?.[0].Id || null;
-    },
-    enabled: !!api && !!user?.Id && settings?.usePopularPlugin === true,
-    staleTime: 60 * 1000,
-  });
-
-  const { data: popularItems, isLoading: isLoadingPopular } = useQuery<
-    BaseItemDto[]
-  >({
-    queryKey: ["popular", user?.Id],
-    queryFn: async () => {
-      if (!api || !user?.Id || !mediaListCollection) return [];
-
-      const response = await getItemsApi(api).getItems({
-        userId: user.Id,
-        parentId: mediaListCollection,
-        limit: 10,
-      });
-
-      return response.data.Items || [];
-    },
-    enabled: !!api && !!user?.Id && !!mediaListCollection,
-    staleTime: 60 * 1000,
-  });
-
   const refetch = useCallback(async () => {
     setLoading(true);
     await queryClient.refetchQueries({ queryKey: ["resumeItems", user?.Id] });
@@ -242,6 +206,36 @@ export default function index() {
       unsubscribe();
     };
   }, []);
+
+  const { data: mediaListCollections } = useQuery({
+    queryKey: [
+      "mediaListCollections-home",
+      user?.Id,
+      settings?.mediaListCollectionIds,
+    ],
+    queryFn: async () => {
+      if (!api || !user?.Id) return [];
+
+      const response = await getItemsApi(api).getItems({
+        userId: user.Id,
+        tags: ["medialist", "promoted"],
+        recursive: true,
+        fields: ["Tags"],
+        includeItemTypes: ["BoxSet"],
+      });
+
+      const ids =
+        response.data.Items?.filter(
+          (c) =>
+            c.Name !== "cf_carousel" &&
+            settings?.mediaListCollectionIds?.includes(c.Id!),
+        ) ?? [];
+
+      return ids;
+    },
+    enabled: !!api && !!user?.Id && settings?.usePopularPlugin === true,
+    staleTime: 0,
+  });
 
   if (isConnected === false) {
     return (
@@ -292,6 +286,8 @@ export default function index() {
       }
     >
       <View className="flex flex-col pt-4 pb-24 gap-y-4">
+        <LargeMovieCarousel />
+
         <ScrollingCollectionList
           title="Continue Watching"
           data={data}
@@ -300,18 +296,15 @@ export default function index() {
         />
 
         <ScrollingCollectionList
-          title="Popular"
-          data={popularItems}
-          loading={isLoadingPopular}
-          disabled={!mediaListCollection}
-        />
-
-        <ScrollingCollectionList
           title="Next Up"
           data={nextUpData}
           loading={isLoadingNextUp}
           orientation="horizontal"
         />
+
+        {mediaListCollections?.map((ml) => (
+          <MediaListSection key={ml.Id} collection={ml} />
+        ))}
 
         <ScrollingCollectionList
           title="Recently Added in Movies"

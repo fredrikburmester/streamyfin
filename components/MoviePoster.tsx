@@ -53,6 +53,7 @@ const MoviePoster: React.FC<MoviePosterProps> = ({
         contentFit="cover"
         style={{
           aspectRatio: "10/15",
+          width: "100%",
         }}
       />
       <WatchedIndicator item={item} />
