@@ -1,11 +1,11 @@
-import { TouchableOpacity, View, ViewProps } from "react-native";
 import { Text } from "@/components/common/Text";
+import MoviePoster from "@/components/posters/MoviePoster";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
-import { router } from "expo-router";
+import { View, ViewProps } from "react-native";
 import ContinueWatchingPoster from "../ContinueWatchingPoster";
 import { ItemCardText } from "../ItemCardText";
 import { HorizontalScroll } from "../common/HorrizontalScroll";
-import MoviePoster from "../MoviePoster";
+import { TouchableItemRouter } from "../common/TouchableItemRouter";
 
 interface Props extends ViewProps {
   title: string;
@@ -29,22 +29,17 @@ export const ScrollingCollectionList: React.FC<Props> = ({
 
   return (
     <View {...props}>
-      <Text className="px-4 text-2xl font-bold mb-2">{title}</Text>
+      <Text className="px-4 text-2xl font-bold mb-2 text-neutral-100">
+        {title}
+      </Text>
       <HorizontalScroll<BaseItemDto>
         data={data}
         height={orientation === "vertical" ? 247 : 164}
         loading={loading}
         renderItem={(item, index) => (
-          <TouchableOpacity
+          <TouchableItemRouter
             key={index}
-            onPress={() => {
-              if (item.Type === "Series") router.push(`/series/${item.Id}`);
-              else if (item.CollectionType === "music")
-                router.push(`/artists/page?collectionId=${item.Id}`);
-              else if (item.Type === "CollectionFolder")
-                router.push(`/collections/${item.Id}`);
-              else router.push(`/items/${item.Id}`);
-            }}
+            item={item}
             className={`flex flex-col
               ${orientation === "vertical" ? "w-32" : "w-48"}
             `}
@@ -57,7 +52,7 @@ export const ScrollingCollectionList: React.FC<Props> = ({
               )}
               <ItemCardText item={item} />
             </View>
-          </TouchableOpacity>
+          </TouchableItemRouter>
         )}
       />
     </View>

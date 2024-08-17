@@ -1,20 +1,19 @@
+import MoviePoster from "@/components/posters/MoviePoster";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import { getLibraryApi } from "@jellyfin/sdk/lib/utils/api";
 import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { useAtom } from "jotai";
+import { useMemo } from "react";
 import {
   ActivityIndicator,
   ScrollView,
   TouchableOpacity,
   View,
 } from "react-native";
-import ContinueWatchingPoster from "./ContinueWatchingPoster";
 import { ItemCardText } from "./ItemCardText";
 import { Text } from "./common/Text";
-import MoviePoster from "./MoviePoster";
-import { useMemo } from "react";
 
 type SimilarItemsProps = {
   itemId: string;
@@ -42,7 +41,7 @@ export const SimilarItems: React.FC<SimilarItemsProps> = ({ itemId }) => {
 
   const movies = useMemo(
     () => similarItems?.filter((i) => i.Type === "Movie") || [],
-    [similarItems],
+    [similarItems]
   );
 
   return (

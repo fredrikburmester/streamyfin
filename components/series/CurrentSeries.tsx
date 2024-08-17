@@ -4,7 +4,7 @@ import { router } from "expo-router";
 import { useAtom } from "jotai";
 import React from "react";
 import { TouchableOpacity, View } from "react-native";
-import Poster from "../Poster";
+import Poster from "../posters/Poster";
 import { HorizontalScroll } from "../common/HorrizontalScroll";
 import { Text } from "../common/Text";
 import { getPrimaryImageUrlById } from "@/utils/jellyfin/image/getPrimaryImageUrlById";

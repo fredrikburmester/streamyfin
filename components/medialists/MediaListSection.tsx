@@ -28,7 +28,7 @@ export const MediaListSection: React.FC<Props> = ({ collection, ...props }) => {
   const { data: popularItems, isLoading: isLoadingPopular } = useQuery<
     BaseItemDto[]
   >({
-    queryKey: ["popular", user?.Id],
+    queryKey: [collection.Id, user?.Id],
     queryFn: async () => {
       if (!api || !user?.Id || !collection.Id) return [];
 

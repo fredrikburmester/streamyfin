@@ -1,4 +1,4 @@
-import ArtistPoster from "@/components/ArtistPoster";
+import ArtistPoster from "@/components/posters/ArtistPoster";
 import { Text } from "@/components/common/Text";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";

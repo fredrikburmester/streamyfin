@@ -1,63 +1,32 @@
-import * as DropdownMenu from "zeego/dropdown-menu";
-import ArtistPoster from "@/components/ArtistPoster";
 import { ColumnItem } from "@/components/common/ColumnItem";
-import { Text } from "@/components/common/Text";
+import { TouchableItemRouter } from "@/components/common/TouchableItemRouter";
+import { FilterButton } from "@/components/filters/FilterButton";
+import { ResetFiltersButton } from "@/components/filters/ResetFiltersButton";
+import { SortButton } from "@/components/filters/SortButton";
 import { ItemCardText } from "@/components/ItemCardText";
-import { Loading } from "@/components/Loading";
-import MoviePoster from "@/components/MoviePoster";
+import MoviePoster from "@/components/posters/MoviePoster";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
-import { Ionicons } from "@expo/vector-icons";
 import {
-  BaseItemDto,
+  genreFilterAtom,
+  sortByAtom,
+  sortOrderAtom,
+  tagsFilterAtom,
+  yearFilterAtom,
+} from "@/utils/atoms/filters";
+import {
   BaseItemDtoQueryResult,
   BaseItemKind,
-  ItemSortBy,
-  NameGuidPair,
 } from "@jellyfin/sdk/lib/generated-client/models";
 import { getFilterApi, getItemsApi } from "@jellyfin/sdk/lib/utils/api";
 import { FlashList } from "@shopify/flash-list";
-import {
-  QueryFilters,
-  useInfiniteQuery,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
-import {
-  Stack,
-  router,
-  useLocalSearchParams,
-  useNavigation,
-} from "expo-router";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { useLocalSearchParams } from "expo-router";
 import { useAtom } from "jotai";
-import React, {
-  SetStateAction,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
-import {
-  ActivityIndicator,
-  Platform,
-  RefreshControl,
-  ScrollView,
-  TouchableOpacity,
-  View,
-  ViewProps,
-} from "react-native";
-import {
-  genreFilterAtom,
-  yearFilterAtom,
-  sortByAtom,
-  tagsFilterAtom,
-} from "@/utils/atoms/filters";
-import { ResetFiltersButton } from "@/components/filters/ResetFiltersButton";
-import { FilterButton } from "@/components/filters/FilterButton";
-import { TouchableItemRouter } from "@/components/common/TouchableItemRouter";
+import React, { useCallback, useMemo } from "react";
+import { ActivityIndicator, ScrollView, View } from "react-native";
 
 const page: React.FC = () => {
   const searchParams = useLocalSearchParams();
-  const navigation = useNavigation();
   const { collectionId } = searchParams as { collectionId: string };
 
   const [api] = useAtom(apiAtom);
@@ -66,7 +35,8 @@ const page: React.FC = () => {
   const [selectedGenres, setSelectedGenres] = useAtom(genreFilterAtom);
   const [selectedYears, setSelectedYears] = useAtom(yearFilterAtom);
   const [selectedTags, setSelectedTags] = useAtom(tagsFilterAtom);
-  const [sortBy, setSortBy] = useAtom(sortByAtom);
+  const [sortBy] = useAtom(sortByAtom);
+  const [sortOrder] = useAtom(sortOrderAtom);
 
   const { data: collection } = useQuery({
     queryKey: ["collection", collectionId],
@@ -91,20 +61,7 @@ const page: React.FC = () => {
     }): Promise<BaseItemDtoQueryResult | null> => {
       if (!api || !collection) return null;
 
-      const sortBy: ItemSortBy[] = [];
       const includeItemTypes: BaseItemKind[] = [];
-
-      switch (collection?.CollectionType) {
-        case "movies":
-          sortBy.push("SortName", "ProductionYear");
-          break;
-        case "boxsets":
-          sortBy.push("IsFolder", "SortName");
-          break;
-        default:
-          sortBy.push("SortName");
-          break;
-      }
 
       switch (collection?.CollectionType) {
         case "movies":
@@ -128,8 +85,8 @@ const page: React.FC = () => {
         parentId: collectionId,
         limit: 50,
         startIndex: pageParam,
-        sortBy,
-        sortOrder: ["Ascending"],
+        sortBy: [sortBy.key, "SortName", "ProductionYear"],
+        sortOrder: [sortOrder.key],
         includeItemTypes,
         enableImageTypes: ["Primary", "Backdrop", "Banner", "Thumb"],
         recursive: true,
@@ -150,7 +107,9 @@ const page: React.FC = () => {
       selectedGenres,
       selectedYears,
       selectedTags,
-    ],
+      sortBy,
+      sortOrder,
+    ]
   );
 
   const {
@@ -171,6 +130,7 @@ const page: React.FC = () => {
       selectedYears,
       selectedTags,
       sortBy,
+      sortOrder,
     ],
     queryFn: fetchItems,
     getNextPageParam: (lastPage, pages) => {
@@ -225,67 +185,70 @@ const page: React.FC = () => {
         estimatedItemSize={200}
         ListHeaderComponent={
           <View className="mb-4">
-            <View className="flex flex-row space-x-1">
-              <ResetFiltersButton />
-              <FilterButton
-                collectionId={collectionId}
-                queryKey="genreFilter"
-                queryFn={async () => {
-                  if (!api) return null;
-                  const response = await getFilterApi(
-                    api,
-                  ).getQueryFiltersLegacy({
-                    userId: user?.Id,
-                    includeItemTypes: type ? [type] : [],
-                    parentId: collectionId,
-                  });
-                  return response.data.Genres || [];
-                }}
-                set={setSelectedGenres}
-                values={selectedGenres}
-                title="Genres"
-              />
-              <FilterButton
-                collectionId={collectionId}
-                queryKey="tagsFilter"
-                queryFn={async () => {
-                  if (!api) return null;
-                  const response = await getFilterApi(
-                    api,
-                  ).getQueryFiltersLegacy({
-                    userId: user?.Id,
-                    includeItemTypes: type ? [type] : [],
-                    parentId: collectionId,
-                  });
-                  return response.data.Tags || [];
-                }}
-                set={setSelectedTags}
-                values={selectedTags}
-                title="Tags"
-              />
-              <FilterButton
-                collectionId={collectionId}
-                queryKey="yearFilter"
-                queryFn={async () => {
-                  if (!api) return null;
-                  const response = await getFilterApi(
-                    api,
-                  ).getQueryFiltersLegacy({
-                    userId: user?.Id,
-                    includeItemTypes: type ? [type] : [],
-                    parentId: collectionId,
-                  });
-                  return (
-                    response.data.Years?.sort((a, b) => b - a).map((y) =>
-                      y.toString(),
-                    ) || []
-                  );
-                }}
-                set={setSelectedYears}
-                values={selectedYears}
-                title="Years"
-              />
-            </View>
+            <ScrollView horizontal>
+              <View className="flex flex-row space-x-1">
+                <ResetFiltersButton />
+                <FilterButton
+                  collectionId={collectionId}
+                  queryKey="genreFilter"
+                  queryFn={async () => {
+                    if (!api) return null;
+                    const response = await getFilterApi(
+                      api
+                    ).getQueryFiltersLegacy({
+                      userId: user?.Id,
+                      includeItemTypes: type ? [type] : [],
+                      parentId: collectionId,
+                    });
+                    return response.data.Genres || [];
+                  }}
+                  set={setSelectedGenres}
+                  values={selectedGenres}
+                  title="Genres"
+                />
+                <FilterButton
+                  collectionId={collectionId}
+                  queryKey="tagsFilter"
+                  queryFn={async () => {
+                    if (!api) return null;
+                    const response = await getFilterApi(
+                      api
+                    ).getQueryFiltersLegacy({
+                      userId: user?.Id,
+                      includeItemTypes: type ? [type] : [],
+                      parentId: collectionId,
+                    });
+                    return response.data.Tags || [];
+                  }}
+                  set={setSelectedTags}
+                  values={selectedTags}
+                  title="Tags"
+                />
+                <FilterButton
+                  collectionId={collectionId}
+                  queryKey="yearFilter"
+                  queryFn={async () => {
+                    if (!api) return null;
+                    const response = await getFilterApi(
+                      api
+                    ).getQueryFiltersLegacy({
+                      userId: user?.Id,
+                      includeItemTypes: type ? [type] : [],
+                      parentId: collectionId,
+                    });
+                    return (
+                      response.data.Years?.sort((a, b) => b - a).map((y) =>
+                        y.toString()
+                      ) || []
+                    );
+                  }}
+                  set={setSelectedYears}
+                  values={selectedYears}
+                  title="Years"
+                />
+                <SortButton title="Sort by" />
+              </View>
+            </ScrollView>
             {!type && isFetching && (
               <ActivityIndicator
                 style={{

@@ -1,26 +1,14 @@
-import ArtistPoster from "@/components/ArtistPoster";
 import { Text } from "@/components/common/Text";
-import { Loading } from "@/components/Loading";
-import MoviePoster from "@/components/MoviePoster";
+import ArtistPoster from "@/components/posters/ArtistPoster";
+import MoviePoster from "@/components/posters/MoviePoster";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
-import { Ionicons } from "@expo/vector-icons";
-import {
-  BaseItemDto,
-  BaseItemKind,
-  ItemSortBy,
-} from "@jellyfin/sdk/lib/generated-client/models";
+import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import { getArtistsApi, getItemsApi } from "@jellyfin/sdk/lib/utils/api";
 import { useQuery } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
 import { useAtom } from "jotai";
-import { useEffect, useMemo, useState } from "react";
-import {
-  ActivityIndicator,
-  FlatList,
-  ScrollView,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { useMemo, useState } from "react";
+import { FlatList, TouchableOpacity, View } from "react-native";
 
 export default function page() {
   const searchParams = useLocalSearchParams();

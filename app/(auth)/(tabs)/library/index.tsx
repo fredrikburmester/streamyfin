@@ -1,6 +1,6 @@
 import { Text } from "@/components/common/Text";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
-import { getItemsApi } from "@jellyfin/sdk/lib/utils/api";
+import { getItemsApi, getUserViewsApi } from "@jellyfin/sdk/lib/utils/api";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useAtom } from "jotai";
@@ -31,20 +31,17 @@ export default function index() {
   const [settings, _] = useSettings();
 
   const { data, isLoading: isLoading } = useQuery({
-    queryKey: ["collections", user?.Id],
+    queryKey: ["user-views", user?.Id],
     queryFn: async () => {
       if (!api || !user?.Id) {
-        return [];
+        return null;
       }
 
-      const data = (
-        await getItemsApi(api).getItems({
-          userId: user.Id,
-          sortBy: ["SortName", "DateCreated"],
-        })
-      ).data;
+      const response = await getUserViewsApi(api).getUserViews({
+        userId: user.Id,
+      });
 
-      return data.Items || [];
+      return response.data.Items || null;
     },
     enabled: !!api && !!user?.Id,
     staleTime: 60 * 1000,
@@ -89,7 +86,7 @@ const CollectionCard: React.FC<Props> = ({ collection }) => {
         api,
         item: collection,
       }),
-    [collection],
+    [collection]
   );
 
   if (!url) return null;
@@ -100,7 +97,7 @@ const CollectionCard: React.FC<Props> = ({ collection }) => {
         router.push(`/library/collections/${collection.Id}`);
       }}
     >
-      <View className="flex items-center justify-center rounded-xl w-full aspect-video relative border border-neutral-900">
+      <View className="flex justify-center rounded-xl w-full relative border border-neutral-900 h-20 ">
         <Image
           source={{ uri: url }}
           style={{
@@ -112,7 +109,9 @@ const CollectionCard: React.FC<Props> = ({ collection }) => {
             left: 0,
           }}
         />
-        <Text className="font-bold text-2xl">{collection.Name}</Text>
+        <Text className="font-bold text-xl text-start px-4">
+          {collection.Name}
+        </Text>
       </View>
     </TouchableOpacity>
   );
