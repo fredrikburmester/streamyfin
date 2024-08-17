@@ -21,7 +21,6 @@ const AlbumCover: React.FC<ArtistPosterProps> = ({ item, id }) => {
       api,
       item,
     });
-    console.log("Image A", u);
     return u;
   }, [item]);
 
@@ -32,7 +31,6 @@ const AlbumCover: React.FC<ArtistPosterProps> = ({ item, id }) => {
       quality: 85,
       width: 300,
     });
-    console.log("Image B", u);
     return u;
   }, [item]);
 

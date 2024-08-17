@@ -41,7 +41,7 @@ export const sortOrderOptions: {
 export const genreFilterAtom = atom<string[]>([]);
 export const tagsFilterAtom = atom<string[]>([]);
 export const yearFilterAtom = atom<string[]>([]);
-export const sortByAtom = atom<(typeof sortOptions)[number]>(sortOptions[0]);
-export const sortOrderAtom = atom<(typeof sortOrderOptions)[number]>(
+export const sortByAtom = atom<[typeof sortOptions][number]>([sortOptions[0]]);
+export const sortOrderAtom = atom<[typeof sortOrderOptions][number]>([
   sortOrderOptions[0],
-);
+]);
