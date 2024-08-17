@@ -70,6 +70,19 @@ export default function TabLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="library"
+        options={{
+          headerShown: false,
+          title: "Library",
+          tabBarIcon: ({ color, focused }) => (
+            <TabBarIcon
+              name={focused ? "apps" : "apps-outline"}
+              color={color}
+            />
+          ),
+        }}
+      />
     </Tabs>
   );
 }
