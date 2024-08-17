@@ -11,9 +11,11 @@ import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 export const getLogoImageUrlById = ({
   api,
   item,
+  height = 130,
 }: {
   api?: Api | null;
   item?: BaseItemDto | null;
+  height?: number;
 }) => {
   if (!api || !item) {
     return null;
@@ -27,7 +29,7 @@ export const getLogoImageUrlById = ({
 
   params.append("tag", imageTags);
   params.append("quality", "90");
-  params.append("fillHeight", "130");
+  params.append("fillHeight", height.toString());
 
   return `${api.basePath}/Items/${item.Id}/Images/Logo?${params.toString()}`;
 };
