@@ -33,6 +33,8 @@ export const FilterButton: React.FC<Props> = ({
     staleTime: 0,
   });
 
+  if (filters?.length === 0) return null;
+
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger>

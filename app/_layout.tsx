@@ -62,7 +62,7 @@ function Layout() {
           retryOnMount: true,
         },
       },
-    }),
+    })
   );
 
   useEffect(() => {
@@ -70,7 +70,7 @@ function Layout() {
       ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.DEFAULT);
     else
       ScreenOrientation.lockAsync(
-        ScreenOrientation.OrientationLock.PORTRAIT_UP,
+        ScreenOrientation.OrientationLock.PORTRAIT_UP
       );
   }, [settings]);
 

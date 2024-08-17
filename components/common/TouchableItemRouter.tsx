@@ -8,6 +8,7 @@ import { Text } from "@/components/common/Text";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import { PropsWithChildren } from "react";
 import { useRouter } from "expo-router";
+import * as Haptics from "expo-haptics";
 
 interface Props extends TouchableOpacityProps {
   item: BaseItemDto;
@@ -22,11 +23,18 @@ export const TouchableItemRouter: React.FC<PropsWithChildren<Props>> = ({
   return (
     <TouchableOpacity
       onPress={() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
         if (item.Type === "Series") router.push(`/series/${item.Id}`);
         if (item.Type === "Episode") router.push(`/items/${item.Id}`);
         if (item.Type === "MusicAlbum") router.push(`/albums/${item.Id}`);
-        if (item.Type === "Movie") router.push(`/songs/${item.Id}`);
+        if (item.Type === "Audio") router.push(`/albums/${item.AlbumId}`);
+        if (item.Type === "MusicArtist")
+          router.push(`/artists/${item.Id}/page`);
+
+        // Movies and all other cases
         if (item.Type === "BoxSet") router.push(`/collections/${item.Id}`);
+        router.push(`/items/${item.Id}`);
       }}
       {...props}
     >

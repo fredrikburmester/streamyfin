@@ -3,7 +3,7 @@ import React from "react";
 import { TouchableOpacity, View } from "react-native";
 import { HorizontalScroll } from "../common/HorrizontalScroll";
 import { Text } from "../common/Text";
-import Poster from "../Poster";
+import Poster from "../posters/Poster";
 import ContinueWatchingPoster from "../ContinueWatchingPoster";
 import { ItemCardText } from "../ItemCardText";
 import { router } from "expo-router";

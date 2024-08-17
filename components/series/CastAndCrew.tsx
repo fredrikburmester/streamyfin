@@ -6,7 +6,7 @@ import React from "react";
 import { Linking, TouchableOpacity, View } from "react-native";
 import { HorizontalScroll } from "../common/HorrizontalScroll";
 import { Text } from "../common/Text";
-import Poster from "../Poster";
+import Poster from "../posters/Poster";
 import { useAtom } from "jotai";
 import { apiAtom } from "@/providers/JellyfinProvider";
 import { getPrimaryImageUrl } from "@/utils/jellyfin/image/getPrimaryImageUrl";

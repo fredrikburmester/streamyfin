@@ -6,7 +6,7 @@ import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import { useQueryClient } from "@tanstack/react-query";
 import * as Haptics from "expo-haptics";
 import { useAtom } from "jotai";
-import React, { useCallback } from "react";
+import React from "react";
 import { TouchableOpacity, View } from "react-native";
 
 export const PlayedStatus: React.FC<{ item: BaseItemDto }> = ({ item }) => {
@@ -15,15 +15,15 @@ export const PlayedStatus: React.FC<{ item: BaseItemDto }> = ({ item }) => {
 
   const queryClient = useQueryClient();
 
-  const invalidateQueries = useCallback(() => {
+  const invalidateQueries = () => {
     queryClient.invalidateQueries({
-      queryKey: ["item", item.Id],
+      queryKey: ["item"],
     });
     queryClient.invalidateQueries({
-      queryKey: ["resumeItems", user?.Id],
+      queryKey: ["resumeItems"],
     });
     queryClient.invalidateQueries({
-      queryKey: ["nextUp", item.SeriesId],
+      queryKey: ["nextUp"],
     });
     queryClient.invalidateQueries({
       queryKey: ["episodes"],
@@ -31,7 +31,10 @@ export const PlayedStatus: React.FC<{ item: BaseItemDto }> = ({ item }) => {
     queryClient.invalidateQueries({
       queryKey: ["seasons"],
     });
-  }, [api, item.Id, queryClient, user?.Id]);
+    queryClient.invalidateQueries({
+      queryKey: ["nextUp-all"],
+    });
+  };
 
   return (
     <View>

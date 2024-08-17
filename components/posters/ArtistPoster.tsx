@@ -1,11 +1,10 @@
 import { apiAtom } from "@/providers/JellyfinProvider";
+import { getPrimaryImageUrl } from "@/utils/jellyfin/image/getPrimaryImageUrl";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import { Image } from "expo-image";
 import { useAtom } from "jotai";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { View } from "react-native";
-import { WatchedIndicator } from "./WatchedIndicator";
-import { getPrimaryImageUrl } from "@/utils/jellyfin/image/getPrimaryImageUrl";
 
 type ArtistPosterProps = {
   item: BaseItemDto;
@@ -24,7 +23,7 @@ const ArtistPoster: React.FC<ArtistPosterProps> = ({
         api,
         item,
       }),
-    [item],
+    [item]
   );
 
   if (!url)

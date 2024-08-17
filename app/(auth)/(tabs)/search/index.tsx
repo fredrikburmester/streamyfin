@@ -1,10 +1,13 @@
 import { HorizontalScroll } from "@/components/common/HorrizontalScroll";
 import { Input } from "@/components/common/Input";
 import { Text } from "@/components/common/Text";
+import { TouchableItemRouter } from "@/components/common/TouchableItemRouter";
 import ContinueWatchingPoster from "@/components/ContinueWatchingPoster";
 import { ItemCardText } from "@/components/ItemCardText";
-import MoviePoster from "@/components/MoviePoster";
-import Poster from "@/components/Poster";
+import AlbumCover from "@/components/posters/AlbumCover";
+import MoviePoster from "@/components/posters/MoviePoster";
+import Poster from "@/components/posters/Poster";
+import SeriesPoster from "@/components/posters/SeriesPoster";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import { getPrimaryImageUrl } from "@/utils/jellyfin/image/getPrimaryImageUrl";
 import { getUserItemData } from "@/utils/jellyfin/user-library/getUserItemData";
@@ -14,11 +17,30 @@ import { getSearchApi } from "@jellyfin/sdk/lib/utils/api";
 import { useQuery } from "@tanstack/react-query";
 import { router, Stack, useNavigation } from "expo-router";
 import { useAtom } from "jotai";
-import React, { useLayoutEffect, useState } from "react";
-import { Platform, ScrollView, TouchableOpacity, View } from "react-native";
+import React, { useLayoutEffect, useMemo, useState } from "react";
+import {
+  ActivityIndicator,
+  Platform,
+  ScrollView,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import _ from "lodash";
+import { useDebounce } from "use-debounce";
+
+const exampleSearches = [
+  "Lord of the rings",
+  "Avengers",
+  "Game of Thrones",
+  "Breaking Bad",
+  "Stranger Things",
+  "The Mandalorian",
+];
 
 export default function search() {
   const [search, setSearch] = useState<string>("");
+
+  const [debouncedSearch] = useDebounce(search, 500);
 
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
@@ -36,13 +58,13 @@ export default function search() {
       });
   }, [navigation]);
 
-  const { data: movies } = useQuery({
-    queryKey: ["search-movies", search],
+  const { data: movies, isLoading: l1 } = useQuery({
+    queryKey: ["search-movies", debouncedSearch],
     queryFn: async () => {
-      if (!api || !user || search.length === 0) return [];
+      if (!api || !user || debouncedSearch.length === 0) return [];
 
       const searchApi = await getSearchApi(api).getSearchHints({
-        searchTerm: search,
+        searchTerm: debouncedSearch,
         limit: 10,
         includeItemTypes: ["Movie"],
       });
@@ -51,13 +73,13 @@ export default function search() {
     },
   });
 
-  const { data: series } = useQuery({
-    queryKey: ["search-series", search],
+  const { data: series, isLoading: l2 } = useQuery({
+    queryKey: ["search-series", debouncedSearch],
     queryFn: async () => {
-      if (!api || !user || search.length === 0) return [];
+      if (!api || !user || debouncedSearch.length === 0) return [];
 
       const searchApi = await getSearchApi(api).getSearchHints({
-        searchTerm: search,
+        searchTerm: debouncedSearch,
         limit: 10,
         includeItemTypes: ["Series"],
       });
@@ -65,13 +87,14 @@ export default function search() {
       return searchApi.data.SearchHints;
     },
   });
-  const { data: episodes } = useQuery({
-    queryKey: ["search-episodes", search],
+
+  const { data: episodes, isLoading: l3 } = useQuery({
+    queryKey: ["search-episodes", debouncedSearch],
     queryFn: async () => {
-      if (!api || !user || search.length === 0) return [];
+      if (!api || !user || debouncedSearch.length === 0) return [];
 
       const searchApi = await getSearchApi(api).getSearchHints({
-        searchTerm: search,
+        searchTerm: debouncedSearch,
         limit: 10,
         includeItemTypes: ["Episode"],
       });
@@ -80,13 +103,73 @@ export default function search() {
     },
   });
 
+  const { data: artists, isLoading: l4 } = useQuery({
+    queryKey: ["search-artists", debouncedSearch],
+    queryFn: async () => {
+      if (!api || !user || debouncedSearch.length === 0) return [];
+
+      const searchApi = await getSearchApi(api).getSearchHints({
+        searchTerm: debouncedSearch,
+        limit: 10,
+        includeItemTypes: ["MusicArtist"],
+      });
+
+      return searchApi.data.SearchHints;
+    },
+  });
+
+  const { data: albums, isLoading: l5 } = useQuery({
+    queryKey: ["search-albums", debouncedSearch],
+    queryFn: async () => {
+      if (!api || !user || debouncedSearch.length === 0) return [];
+
+      const searchApi = await getSearchApi(api).getSearchHints({
+        searchTerm: debouncedSearch,
+        limit: 10,
+        includeItemTypes: ["MusicAlbum"],
+      });
+
+      return searchApi.data.SearchHints;
+    },
+  });
+
+  const { data: songs, isLoading: l6 } = useQuery({
+    queryKey: ["search-songs", debouncedSearch],
+    queryFn: async () => {
+      if (!api || !user || debouncedSearch.length === 0) return [];
+
+      const searchApi = await getSearchApi(api).getSearchHints({
+        searchTerm: debouncedSearch,
+        limit: 10,
+        includeItemTypes: ["Audio"],
+      });
+
+      return searchApi.data.SearchHints;
+    },
+  });
+
+  const noResults = useMemo(() => {
+    return !(
+      artists?.length ||
+      albums?.length ||
+      songs?.length ||
+      movies?.length ||
+      episodes?.length ||
+      series?.length
+    );
+  }, [artists, episodes, albums, songs, movies, series]);
+
+  const loading = useMemo(() => {
+    return l1 || l2 || l3 || l4 || l5 || l6;
+  }, [l1, l2, l3, l4, l5, l6]);
+
   return (
     <>
       <ScrollView
         keyboardDismissMode="on-drag"
         contentInsetAdjustmentBehavior="automatic"
       >
-        <View className="flex flex-col pt-2 pb-20">
+        <View className="flex flex-col pt-4 pb-32">
           {Platform.OS === "android" && (
             <View className="mb-4 px-4">
               <Input
@@ -99,8 +182,8 @@ export default function search() {
               />
             </View>
           )}
-          <Text className="font-bold text-2xl px-4 mb-2">Movies</Text>
           <SearchItemWrapper
+            header="Movies"
             ids={movies?.map((m) => m.Id!)}
             renderItem={(data) => (
               <HorizontalScroll<BaseItemDto>
@@ -112,7 +195,9 @@ export default function search() {
                     onPress={() => router.push(`/items/${item.Id}`)}
                   >
                     <MoviePoster item={item} key={item.Id} />
-                    <Text className="mt-2">{item.Name}</Text>
+                    <Text numberOfLines={2} className="mt-2">
+                      {item.Name}
+                    </Text>
                     <Text className="opacity-50 text-xs">
                       {item.ProductionYear}
                     </Text>
@@ -121,9 +206,9 @@ export default function search() {
               />
             )}
           />
-          <Text className="font-bold text-2xl px-4 my-2">Series</Text>
           <SearchItemWrapper
             ids={series?.map((m) => m.Id!)}
+            header="Series"
             renderItem={(data) => (
               <HorizontalScroll<BaseItemDto>
                 data={data}
@@ -133,12 +218,10 @@ export default function search() {
                     onPress={() => router.push(`/series/${item.Id}`)}
                     className="flex flex-col w-32"
                   >
-                    <Poster
-                      item={item}
-                      key={item.Id}
-                      url={getPrimaryImageUrl({ api, item })}
-                    />
-                    <Text className="mt-2">{item.Name}</Text>
+                    <SeriesPoster item={item} key={item.Id} />
+                    <Text numberOfLines={2} className="mt-2">
+                      {item.Name}
+                    </Text>
                     <Text className="opacity-50 text-xs">
                       {item.ProductionYear}
                     </Text>
@@ -147,9 +230,9 @@ export default function search() {
               />
             )}
           />
-          <Text className="font-bold text-2xl px-4 my-2">Episodes</Text>
           <SearchItemWrapper
             ids={episodes?.map((m) => m.Id!)}
+            header="Episodes"
             renderItem={(data) => (
               <HorizontalScroll<BaseItemDto>
                 data={data}
@@ -166,6 +249,89 @@ export default function search() {
               />
             )}
           />
+          <SearchItemWrapper
+            ids={artists?.map((m) => m.Id!)}
+            header="Artists"
+            renderItem={(data) => (
+              <HorizontalScroll<BaseItemDto>
+                data={data}
+                renderItem={(item) => (
+                  <TouchableItemRouter
+                    item={item}
+                    key={item.Id}
+                    className="flex flex-col w-32"
+                  >
+                    <AlbumCover id={item.Id} />
+                    <ItemCardText item={item} />
+                  </TouchableItemRouter>
+                )}
+              />
+            )}
+          />
+          <SearchItemWrapper
+            ids={albums?.map((m) => m.Id!)}
+            header="Albums"
+            renderItem={(data) => (
+              <HorizontalScroll<BaseItemDto>
+                data={data}
+                renderItem={(item) => (
+                  <TouchableItemRouter
+                    item={item}
+                    key={item.Id}
+                    className="flex flex-col w-32"
+                  >
+                    <AlbumCover id={item.Id} />
+                    <ItemCardText item={item} />
+                  </TouchableItemRouter>
+                )}
+              />
+            )}
+          />
+          <SearchItemWrapper
+            ids={songs?.map((m) => m.Id!)}
+            header="Songs"
+            renderItem={(data) => (
+              <HorizontalScroll<BaseItemDto>
+                data={data}
+                renderItem={(item) => (
+                  <TouchableItemRouter
+                    item={item}
+                    key={item.Id}
+                    className="flex flex-col w-32"
+                  >
+                    <AlbumCover id={item.AlbumId} />
+                    <ItemCardText item={item} />
+                  </TouchableItemRouter>
+                )}
+              />
+            )}
+          />
+          {loading ? (
+            <View className="mt-4 flex justify-center items-center">
+              <ActivityIndicator size="small" color="white" />
+            </View>
+          ) : noResults && debouncedSearch.length > 0 ? (
+            <View>
+              <Text className="text-center text-lg font-bold mt-4">
+                No results found for
+              </Text>
+              <Text className="text-xs text-purple-600 text-center">
+                "{debouncedSearch}"
+              </Text>
+            </View>
+          ) : debouncedSearch.length === 0 ? (
+            <View className="mt-4 flex flex-col items-center space-y-2">
+              {exampleSearches.map((e) => (
+                <TouchableOpacity
+                  onPress={() => setSearch(e)}
+                  key={e}
+                  className="mb-2"
+                >
+                  <Text className="text-purple-600">{e}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          ) : null}
         </View>
       </ScrollView>
     </>
@@ -175,9 +341,10 @@ export default function search() {
 type Props = {
   ids?: string[] | null;
   renderItem: (data: BaseItemDto[]) => React.ReactNode;
+  header?: string;
 };
 
-const SearchItemWrapper: React.FC<Props> = ({ ids, renderItem }) => {
+const SearchItemWrapper: React.FC<Props> = ({ ids, renderItem, header }) => {
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
 
@@ -193,21 +360,26 @@ const SearchItemWrapper: React.FC<Props> = ({ ids, renderItem }) => {
           api,
           userId: user.Id,
           itemId: id,
-        }),
+        })
       );
 
       const results = await Promise.all(itemPromises);
 
       // Filter out null items
       return results.filter(
-        (item) => item !== null,
+        (item) => item !== null
       ) as unknown as BaseItemDto[];
     },
     enabled: !!ids && ids.length > 0 && !!api && !!user?.Id,
     staleTime: Infinity,
   });
 
-  if (!data) return <Text className="opacity-50 text-xs px-4">No results</Text>;
+  if (!data) return null;
 
-  return renderItem(data);
+  return (
+    <>
+      <Text className="font-bold text-2xl px-4 my-2">{header}</Text>
+      {renderItem(data)}
+    </>
+  );
 };

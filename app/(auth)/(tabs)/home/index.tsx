@@ -1,21 +1,20 @@
-import { HorizontalScroll } from "@/components/common/HorrizontalScroll";
+import { Button } from "@/components/Button";
 import { Text } from "@/components/common/Text";
-import ContinueWatchingPoster from "@/components/ContinueWatchingPoster";
-import { ItemCardText } from "@/components/ItemCardText";
+import { LargeMovieCarousel } from "@/components/home/LargeMovieCarousel";
+import { ScrollingCollectionList } from "@/components/home/ScrollingCollectionList";
+import { MediaListSection } from "@/components/medialists/MediaListSection";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
+import { useSettings } from "@/utils/atoms/settings";
+import { Ionicons } from "@expo/vector-icons";
+import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import {
-  BaseItemDto,
-  ItemFields,
-  ItemFilter,
-} from "@jellyfin/sdk/lib/generated-client/models";
-import {
-  getChannelsApi,
   getItemsApi,
   getSuggestionsApi,
   getTvShowsApi,
-  getUserApi,
   getUserLibraryApi,
+  getUserViewsApi,
 } from "@jellyfin/sdk/lib/utils/api";
+import NetInfo from "@react-native-community/netinfo";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useAtom } from "jotai";
@@ -24,17 +23,8 @@ import {
   ActivityIndicator,
   RefreshControl,
   ScrollView,
-  TouchableOpacity,
   View,
 } from "react-native";
-import NetInfo, { NetInfoState } from "@react-native-community/netinfo";
-import { Button } from "@/components/Button";
-import { Ionicons } from "@expo/vector-icons";
-import MoviePoster from "@/components/MoviePoster";
-import { ScrollingCollectionList } from "@/components/home/ScrollingCollectionList";
-import { useSettings } from "@/utils/atoms/settings";
-import { LargeMovieCarousel } from "@/components/home/LargeMovieCarousel";
-import { MediaListSection } from "@/components/medialists/MediaListSection";
 
 export default function index() {
   const router = useRouter();
@@ -45,6 +35,24 @@ export default function index() {
 
   const [loading, setLoading] = useState(false);
   const [settings, _] = useSettings();
+
+  const [isConnected, setIsConnected] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const unsubscribe = NetInfo.addEventListener((state) => {
+      if (state.isConnected == false || state.isInternetReachable === false)
+        setIsConnected(false);
+      else setIsConnected(true);
+    });
+
+    NetInfo.fetch().then((state) => {
+      setIsConnected(state.isConnected);
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
 
   const { data, isLoading, isError } = useQuery<BaseItemDto[]>({
     queryKey: ["resumeItems", user?.Id],
@@ -79,35 +87,21 @@ export default function index() {
     return _nextUpData?.filter((i) => !data?.find((d) => d.Id === i.Id));
   }, [_nextUpData]);
 
-  const { data: collections, isLoading: isLoadingCollections } = useQuery({
-    queryKey: ["collections", user?.Id],
+  const { data: collections } = useQuery({
+    queryKey: ["collectinos", user?.Id],
     queryFn: async () => {
       if (!api || !user?.Id) {
-        return [];
+        return null;
       }
 
-      const data = (
-        await getItemsApi(api).getItems({
-          userId: user.Id,
-        })
-      ).data;
-
-      const order = ["boxsets", "tvshows", "movies"];
-
-      const cs = data.Items?.sort((a, b) => {
-        if (
-          order.indexOf(a.CollectionType!) < order.indexOf(b.CollectionType!)
-        ) {
-          return 1;
-        }
-
-        return -1;
+      const response = await getUserViewsApi(api).getUserViews({
+        userId: user.Id,
       });
 
-      return cs || [];
+      return response.data.Items || null;
     },
     enabled: !!api && !!user?.Id,
-    staleTime: 0,
+    staleTime: 60 * 1000,
   });
 
   const movieCollectionId = useMemo(() => {
@@ -180,33 +174,6 @@ export default function index() {
     staleTime: 60 * 1000,
   });
 
-  const refetch = useCallback(async () => {
-    setLoading(true);
-    await queryClient.refetchQueries({ queryKey: ["resumeItems", user?.Id] });
-    await queryClient.refetchQueries({ queryKey: ["items", user?.Id] });
-    await queryClient.refetchQueries({ queryKey: ["suggestions", user?.Id] });
-    await queryClient.refetchQueries({ queryKey: ["recentlyAddedInMovies"] });
-    setLoading(false);
-  }, [queryClient, user?.Id]);
-
-  const [isConnected, setIsConnected] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    const unsubscribe = NetInfo.addEventListener((state) => {
-      if (state.isConnected == false || state.isInternetReachable === false)
-        setIsConnected(false);
-      else setIsConnected(true);
-    });
-
-    NetInfo.fetch().then((state) => {
-      setIsConnected(state.isConnected);
-    });
-
-    return () => {
-      unsubscribe();
-    };
-  }, []);
-
   const { data: mediaListCollections } = useQuery({
     queryKey: [
       "mediaListCollections-home",
@@ -228,7 +195,7 @@ export default function index() {
         response.data.Items?.filter(
           (c) =>
             c.Name !== "cf_carousel" &&
-            settings?.mediaListCollectionIds?.includes(c.Id!),
+            settings?.mediaListCollectionIds?.includes(c.Id!)
         ) ?? [];
 
       return ids;
@@ -236,6 +203,19 @@ export default function index() {
     enabled: !!api && !!user?.Id && settings?.usePopularPlugin === true,
     staleTime: 0,
   });
+
+  const refetch = useCallback(async () => {
+    setLoading(true);
+    await queryClient.refetchQueries({ queryKey: ["resumeItems"] });
+    await queryClient.refetchQueries({ queryKey: ["nextUp-all"] });
+    await queryClient.refetchQueries({ queryKey: ["recentlyAddedInMovies"] });
+    await queryClient.refetchQueries({ queryKey: ["recentlyAddedInTVShows"] });
+    await queryClient.refetchQueries({ queryKey: ["suggestions"] });
+    await queryClient.refetchQueries({
+      queryKey: ["mediaListCollections-home"],
+    });
+    setLoading(false);
+  }, [queryClient, user?.Id]);
 
   if (isConnected === false) {
     return (
@@ -316,13 +296,6 @@ export default function index() {
           title="Recently Added in TV-Shows"
           data={recentlyAddedInTVShows}
           loading={isLoadingRecentlyAddedTVShows}
-        />
-
-        <ScrollingCollectionList
-          title="Collections"
-          data={collections}
-          loading={isLoadingCollections}
-          orientation="horizontal"
         />
 
         <ScrollingCollectionList

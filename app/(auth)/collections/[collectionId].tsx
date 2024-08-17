@@ -1,7 +1,6 @@
-import ArtistPoster from "@/components/ArtistPoster";
 import { Text } from "@/components/common/Text";
-import { Loading } from "@/components/Loading";
-import MoviePoster from "@/components/MoviePoster";
+import ArtistPoster from "@/components/posters/ArtistPoster";
+import MoviePoster from "@/components/posters/MoviePoster";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -13,7 +12,7 @@ import { getItemsApi } from "@jellyfin/sdk/lib/utils/api";
 import { useQuery } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
 import { useAtom } from "jotai";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
   ScrollView,

@@ -19,12 +19,15 @@ import { CurrentSeries } from "@/components/series/CurrentSeries";
 import { NextEpisodeButton } from "@/components/series/NextEpisodeButton";
 import { SeriesTitleHeader } from "@/components/series/SeriesTitleHeader";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
+import { useSettings } from "@/utils/atoms/settings";
 import { getBackdropUrl } from "@/utils/jellyfin/image/getBackdropUrl";
 import { getLogoImageUrlById } from "@/utils/jellyfin/image/getLogoImageUrlById";
 import { getStreamUrl } from "@/utils/jellyfin/media/getStreamUrl";
 import { getUserItemData } from "@/utils/jellyfin/user-library/getUserItemData";
 import { chromecastProfile } from "@/utils/profiles/chromecast";
-import ios12 from "@/utils/profiles/ios12";
+import ios from "@/utils/profiles/ios";
+import native from "@/utils/profiles/native";
+import old from "@/utils/profiles/old";
 import { getMediaInfoApi } from "@jellyfin/sdk/lib/utils/api";
 import { useQuery } from "@tanstack/react-query";
 import { Image } from "expo-image";
@@ -38,10 +41,6 @@ import CastContext, {
   useRemoteMediaClient,
 } from "react-native-google-cast";
 import { ParallaxScrollView } from "../../../components/ParallaxPage";
-import { useSettings } from "@/utils/atoms/settings";
-import ios from "@/utils/profiles/ios";
-import native from "@/utils/profiles/native";
-import old from "@/utils/profiles/old";
 
 const page: React.FC = () => {
   const local = useLocalSearchParams();
@@ -173,7 +172,7 @@ const page: React.FC = () => {
         }
       }
     },
-    [playbackUrl, item, settings],
+    [playbackUrl, item, settings]
   );
 
   const backdropUrl = useMemo(
@@ -184,12 +183,12 @@ const page: React.FC = () => {
         quality: 90,
         width: 1000,
       }),
-    [item],
+    [item]
   );
 
   const logoUrl = useMemo(
     () => (item?.Type === "Movie" ? getLogoImageUrlById({ api, item }) : null),
-    [item],
+    [item]
   );
 
   if (l1)
@@ -244,7 +243,7 @@ const page: React.FC = () => {
           <Ratings item={item} />
         </View>
 
-        <View className="flex flex-row justify-between items-center w-full my-4">
+        <View className="flex flex-row justify-between items-center mb-2">
           {playbackUrl ? (
             <DownloadItem item={item} playbackUrl={playbackUrl} />
           ) : (
@@ -283,29 +282,6 @@ const page: React.FC = () => {
           <NextEpisodeButton item={item} className="ml-2" />
         </View>
       </View>
-      <ScrollView horizontal className="flex px-4 mb-4">
-        <View className="flex flex-row space-x-2 ">
-          <View className="flex flex-col">
-            <Text className="text-sm opacity-70">Video</Text>
-            <Text className="text-sm opacity-70">Audio</Text>
-            <Text className="text-sm opacity-70">Subtitles</Text>
-          </View>
-          <View className="flex flex-col">
-            <Text className="text-sm opacity-70">
-              {item.MediaStreams?.find((i) => i.Type === "Video")?.DisplayTitle}
-            </Text>
-            <Text className="text-sm opacity-70">
-              {item.MediaStreams?.find((i) => i.Type === "Audio")?.DisplayTitle}
-            </Text>
-            <Text className="text-sm opacity-70">
-              {
-                item.MediaStreams?.find((i) => i.Type === "Subtitle")
-                  ?.DisplayTitle
-              }
-            </Text>
-          </View>
-        </View>
-      </ScrollView>
 
       <CastAndCrew item={item} />
 

@@ -1,4 +1,4 @@
-import { View, ViewProps } from "react-native";
+import { ActivityIndicator, View, ViewProps } from "react-native";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import { getItemsApi } from "@jellyfin/sdk/lib/utils/api";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -42,7 +42,7 @@ export const LargeMovieCarousel: React.FC<Props> = ({ ...props }) => {
     });
   };
 
-  const { data: mediaListCollection } = useQuery<string | null>({
+  const { data: mediaListCollection, isLoading: l1 } = useQuery<string | null>({
     queryKey: ["mediaListCollection", user?.Id],
     queryFn: async () => {
       if (!api || !user?.Id) return null;
@@ -62,9 +62,7 @@ export const LargeMovieCarousel: React.FC<Props> = ({ ...props }) => {
     staleTime: 0,
   });
 
-  const { data: popularItems, isLoading: isLoadingPopular } = useQuery<
-    BaseItemDto[]
-  >({
+  const { data: popularItems, isLoading: l2 } = useQuery<BaseItemDto[]>({
     queryKey: ["popular", user?.Id],
     queryFn: async () => {
       if (!api || !user?.Id || !mediaListCollection) return [];
@@ -82,6 +80,13 @@ export const LargeMovieCarousel: React.FC<Props> = ({ ...props }) => {
   });
 
   const width = Dimensions.get("screen").width;
+
+  if (l1 || l2)
+    return (
+      <View className="h-[242px] flex items-center justify-center">
+        <ActivityIndicator size={"small"} color="#fff" />
+      </View>
+    );
 
   if (!popularItems) return null;
 
