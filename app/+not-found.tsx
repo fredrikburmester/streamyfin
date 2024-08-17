@@ -8,10 +8,6 @@ import { useEffect } from "react";
 export default function NotFoundScreen() {
   const pathname = usePathname();
 
-  useEffect(() => {
-    console.log(`Navigated to ${pathname}`);
-  }, [pathname]);
-
   return (
     <>
       <Stack.Screen options={{ title: "Oops!" }} />

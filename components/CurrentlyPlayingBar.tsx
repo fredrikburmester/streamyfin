@@ -45,7 +45,7 @@ export const CurrentlyPlayingBar: React.FC = () => {
   const [user] = useAtom(userAtom);
   const [playing, setPlaying] = useAtom(playingAtom);
   const [currentlyPlaying, setCurrentlyPlaying] = useAtom(
-    currentlyPlayingItemAtom,
+    currentlyPlayingItemAtom
   );
   const [fullScreen, setFullScreen] = useAtom(fullScreenAtom);
 
@@ -143,7 +143,7 @@ export const CurrentlyPlayingBar: React.FC = () => {
         sessionId: sessionData.PlaySessionId,
       });
     },
-    [sessionData?.PlaySessionId, api, playing, currentlyPlaying?.item.Id],
+    [sessionData?.PlaySessionId, api, playing, currentlyPlaying?.item.Id]
   );
 
   useEffect(() => {
@@ -185,7 +185,7 @@ export const CurrentlyPlayingBar: React.FC = () => {
       item?.UserData?.PlaybackPositionTicks
         ? Math.round(item.UserData.PlaybackPositionTicks / 10000)
         : 0,
-    [item],
+    [item]
   );
 
   const backdropUrl = useMemo(
@@ -196,7 +196,7 @@ export const CurrentlyPlayingBar: React.FC = () => {
         quality: 70,
         width: 200,
       }),
-    [item],
+    [item]
   );
 
   if (!currentlyPlaying || !api) return null;
@@ -283,7 +283,7 @@ export const CurrentlyPlayingBar: React.FC = () => {
                     console.log(e);
                     writeToLog(
                       "ERROR",
-                      "Video playback error: " + JSON.stringify(e),
+                      "Video playback error: " + JSON.stringify(e)
                     );
                     Alert.alert("Error", "Cannot play this video file.");
                     setPlaying(false);
@@ -302,7 +302,6 @@ export const CurrentlyPlayingBar: React.FC = () => {
             <View className="shrink text-xs">
               <TouchableOpacity
                 onPress={() => {
-                  console.log(JSON.stringify(item));
                   if (item?.Type === "Audio")
                     router.push(`/albums/${item?.AlbumId}`);
                   else router.push(`/items/${item?.Id}`);
@@ -330,7 +329,6 @@ export const CurrentlyPlayingBar: React.FC = () => {
               {item?.Type === "Audio" && (
                 <TouchableOpacity
                   onPress={() => {
-                    console.log(JSON.stringify(item));
                     router.push(`/albums/${item?.AlbumId}`);
                   }}
                 >

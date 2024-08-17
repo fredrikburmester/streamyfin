@@ -2,14 +2,15 @@ import { ColumnItem } from "@/components/common/ColumnItem";
 import { TouchableItemRouter } from "@/components/common/TouchableItemRouter";
 import { FilterButton } from "@/components/filters/FilterButton";
 import { ResetFiltersButton } from "@/components/filters/ResetFiltersButton";
-import { SortButton } from "@/components/filters/SortButton";
 import { ItemCardText } from "@/components/ItemCardText";
 import MoviePoster from "@/components/posters/MoviePoster";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import {
   genreFilterAtom,
   sortByAtom,
+  sortOptions,
   sortOrderAtom,
+  sortOrderOptions,
   tagsFilterAtom,
   yearFilterAtom,
 } from "@/utils/atoms/filters";
@@ -35,8 +36,8 @@ const page: React.FC = () => {
   const [selectedGenres, setSelectedGenres] = useAtom(genreFilterAtom);
   const [selectedYears, setSelectedYears] = useAtom(yearFilterAtom);
   const [selectedTags, setSelectedTags] = useAtom(tagsFilterAtom);
-  const [sortBy] = useAtom(sortByAtom);
-  const [sortOrder] = useAtom(sortOrderAtom);
+  const [sortBy, setSortBy] = useAtom(sortByAtom);
+  const [sortOrder, setSortOrder] = useAtom(sortOrderAtom);
 
   const { data: collection } = useQuery({
     queryKey: ["collection", collectionId],
@@ -85,8 +86,8 @@ const page: React.FC = () => {
         parentId: collectionId,
         limit: 50,
         startIndex: pageParam,
-        sortBy: [sortBy.key, "SortName", "ProductionYear"],
-        sortOrder: [sortOrder.key],
+        sortBy: [sortBy[0].key, "SortName", "ProductionYear"],
+        sortOrder: [sortOrder[0].key],
         includeItemTypes,
         enableImageTypes: ["Primary", "Backdrop", "Banner", "Thumb"],
         recursive: true,
@@ -112,17 +113,7 @@ const page: React.FC = () => {
     ]
   );
 
-  const {
-    status,
-    data,
-    error,
-    isFetching,
-    isFetchingNextPage,
-    isFetchingPreviousPage,
-    fetchNextPage,
-    fetchPreviousPage,
-    hasPreviousPage,
-  } = useInfiniteQuery({
+  const { data, isFetching, fetchNextPage } = useInfiniteQuery({
     queryKey: [
       "library-items",
       collection,
@@ -205,6 +196,10 @@ const page: React.FC = () => {
                   set={setSelectedGenres}
                   values={selectedGenres}
                   title="Genres"
+                  renderItemLabel={(item) => item.toString()}
+                  searchFilter={(item, search) =>
+                    item.toLowerCase().includes(search.toLowerCase())
+                  }
                 />
                 <FilterButton
                   collectionId={collectionId}
@@ -223,6 +218,10 @@ const page: React.FC = () => {
                   set={setSelectedTags}
                   values={selectedTags}
                   title="Tags"
+                  renderItemLabel={(item) => item.toString()}
+                  searchFilter={(item, search) =>
+                    item.toLowerCase().includes(search.toLowerCase())
+                  }
                 />
                 <FilterButton
                   collectionId={collectionId}
@@ -245,8 +244,43 @@ const page: React.FC = () => {
                   set={setSelectedYears}
                   values={selectedYears}
                   title="Years"
+                  renderItemLabel={(item) => item.toString()}
+                  searchFilter={(item, search) =>
+                    item.toLowerCase().includes(search.toLowerCase())
+                  }
                 />
-                <SortButton title="Sort by" />
+                <FilterButton
+                  collectionId={collectionId}
+                  queryKey="sortByFilter"
+                  queryFn={async () => {
+                    return sortOptions;
+                  }}
+                  set={setSortBy}
+                  values={sortBy}
+                  title="Sort by"
+                  renderItemLabel={(item) => item.value}
+                  searchFilter={(item, search) =>
+                    item.value.toLowerCase().includes(search.toLowerCase()) ||
+                    item.value.toLowerCase().includes(search.toLowerCase())
+                  }
+                  showSearch={false}
+                />
+                <FilterButton
+                  showSearch={false}
+                  collectionId={collectionId}
+                  queryKey="orderByFilter"
+                  queryFn={async () => {
+                    return sortOrderOptions;
+                  }}
+                  set={setSortOrder}
+                  values={sortOrder}
+                  title="Order by"
+                  renderItemLabel={(item) => item.value}
+                  searchFilter={(item, search) =>
+                    item.value.toLowerCase().includes(search.toLowerCase()) ||
+                    item.value.toLowerCase().includes(search.toLowerCase())
+                  }
+                />
               </View>
             </ScrollView>
             {!type && isFetching && (

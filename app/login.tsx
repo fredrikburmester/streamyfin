@@ -6,7 +6,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { AxiosError } from "axios";
 import { useAtom } from "jotai";
 import React, { useMemo, useState } from "react";
-import { KeyboardAvoidingView, Platform, View } from "react-native";
+import {
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  SafeAreaView,
+  View,
+} from "react-native";
 
 import { z } from "zod";
 
@@ -46,102 +52,134 @@ const Login: React.FC = () => {
   };
 
   const handleConnect = (url: string) => {
+    if (!url.startsWith("http")) {
+      Alert.alert("Error", "URL needs to start with http or https.");
+      return;
+    }
     setServer({ address: url.trim() });
   };
 
   if (api?.basePath) {
     return (
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={{ flex: 1 }}
-      >
-        <View className="flex flex-col px-4 justify-center h-full gap-y-2">
-          <View>
-            <Text className="text-3xl font-bold">Streamyfin</Text>
-            <Text className="opacity-50 mb-2">Server: {api.basePath}</Text>
+      <SafeAreaView style={{ flex: 1 }}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={{ flex: 1, height: "100%" }}
+        >
+          <View className="flex flex-col justify-between px-4 h-full gap-y-2">
+            <View></View>
+            <View>
+              <View className="mb-4">
+                <Text className="text-3xl font-bold mb-2">Streamyfin</Text>
+                <Text className="text-neutral-500 mb-2">
+                  Server: {api.basePath}
+                </Text>
+                <Button
+                  color="black"
+                  onPress={() => {
+                    removeServer();
+                    setServerURL("");
+                  }}
+                  justify="between"
+                  iconLeft={
+                    <Ionicons
+                      name="arrow-back-outline"
+                      size={18}
+                      color={"white"}
+                    />
+                  }
+                >
+                  Change server
+                </Button>
+              </View>
+
+              <View className="flex flex-col space-y-2">
+                <Text className="text-2xl font-bold">Log in</Text>
+                <Text className="text-neutral-500">
+                  Log in to any user account
+                </Text>
+                <Input
+                  placeholder="Username"
+                  onChangeText={(text) =>
+                    setCredentials({ ...credentials, username: text })
+                  }
+                  value={credentials.username}
+                  autoFocus
+                  secureTextEntry={false}
+                  keyboardType="default"
+                  returnKeyType="done"
+                  autoCapitalize="none"
+                  textContentType="username"
+                  clearButtonMode="while-editing"
+                  maxLength={500}
+                />
+
+                <Input
+                  className="mb-2"
+                  placeholder="Password"
+                  onChangeText={(text) =>
+                    setCredentials({ ...credentials, password: text })
+                  }
+                  value={credentials.password}
+                  secureTextEntry
+                  keyboardType="default"
+                  returnKeyType="done"
+                  autoCapitalize="none"
+                  textContentType="password"
+                  clearButtonMode="while-editing"
+                  maxLength={500}
+                />
+              </View>
+
+              <Text className="text-red-600 mb-2">{error}</Text>
+            </View>
+
             <Button
-              color="black"
-              onPress={() => {
-                removeServer();
-                setServerURL("");
-              }}
-              justify="between"
-              iconLeft={
-                <Ionicons name="arrow-back-outline" size={18} color={"white"} />
-              }
+              onPress={handleLogin}
+              loading={loading}
+              className="mt-auto mb-2"
             >
-              Change server
+              Log in
             </Button>
           </View>
-          <View className="flex flex-col space-y-2">
-            <Text className="text-2xl font-bold">Log in</Text>
-            <Input
-              placeholder="Username"
-              onChangeText={(text) =>
-                setCredentials({ ...credentials, username: text })
-              }
-              value={credentials.username}
-              autoFocus
-              secureTextEntry={false}
-              keyboardType="default"
-              returnKeyType="done"
-              autoCapitalize="none"
-              textContentType="username"
-              clearButtonMode="while-editing"
-              maxLength={500}
-            />
-
-            <Input
-              className="mb-2"
-              placeholder="Password"
-              onChangeText={(text) =>
-                setCredentials({ ...credentials, password: text })
-              }
-              value={credentials.password}
-              secureTextEntry
-              keyboardType="default"
-              returnKeyType="done"
-              autoCapitalize="none"
-              textContentType="password"
-              clearButtonMode="while-editing"
-              maxLength={500}
-            />
-          </View>
-
-          <Text className="text-red-600 mb-2">{error}</Text>
-
-          <Button onPress={handleLogin} loading={loading}>
-            Log in
-          </Button>
-        </View>
-      </KeyboardAvoidingView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
     );
   }
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={{ flex: 1 }}
-    >
-      <View className="flex flex-col px-4 justify-center h-full">
-        <View className="flex flex-col gap-y-2">
-          <Text className="text-3xl font-bold">Streamyfin</Text>
-          <Text className="opacity-50">Enter a server adress</Text>
-          <Input
-            className="mb-2"
-            placeholder="http(s)://..."
-            onChangeText={setServerURL}
-            value={serverURL}
-            keyboardType="url"
-            returnKeyType="done"
-            autoCapitalize="none"
-            textContentType="URL"
-            maxLength={500}
-          />
-          <Button onPress={() => handleConnect(serverURL)}>Connect</Button>
+    <SafeAreaView style={{ flex: 1 }}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+      >
+        <View className="flex flex-col px-4 justify-between h-full">
+          <View></View>
+          <View className="flex flex-col gap-y-2">
+            <Text className="text-3xl font-bold">Streamyfin</Text>
+            <Text className="text-neutral-500">
+              Connect to your Jellyfin server
+            </Text>
+            <Input
+              placeholder="Server URL"
+              onChangeText={setServerURL}
+              value={serverURL}
+              keyboardType="url"
+              returnKeyType="done"
+              autoCapitalize="none"
+              textContentType="URL"
+              maxLength={500}
+            />
+            <Text className="opacity-30">
+              Server URL requires http or https
+            </Text>
+          </View>
+          <Button onPress={() => handleConnect(serverURL)} className="mb-2">
+            Connect
+          </Button>
         </View>
-      </View>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 
