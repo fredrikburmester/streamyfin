@@ -1,10 +1,49 @@
-import { Linking, Switch, TouchableOpacity, View } from "react-native";
+import {
+  ActivityIndicator,
+  Linking,
+  Switch,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { Text } from "../common/Text";
 import { useSettings } from "@/utils/atoms/settings";
 import * as DropdownMenu from "zeego/dropdown-menu";
+import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
+import { getItemsApi } from "@jellyfin/sdk/lib/utils/api";
+import { useQuery } from "@tanstack/react-query";
+import { useAtom } from "jotai";
+import { useState } from "react";
 
 export const SettingToggles: React.FC = () => {
   const [settings, updateSettings] = useSettings();
+
+  const [api] = useAtom(apiAtom);
+  const [user] = useAtom(userAtom);
+
+  const {
+    data: mediaListCollections,
+    isLoading: isLoadingMediaListCollections,
+  } = useQuery({
+    queryKey: ["mediaListCollections", user?.Id],
+    queryFn: async () => {
+      if (!api || !user?.Id) return [];
+
+      const response = await getItemsApi(api).getItems({
+        userId: user.Id,
+        tags: ["medialist", "promoted"],
+        recursive: true,
+        fields: ["Tags"],
+        includeItemTypes: ["BoxSet"],
+      });
+
+      const ids =
+        response.data.Items?.filter((c) => c.Name !== "sf_carousel") ?? [];
+
+      return ids;
+    },
+    enabled: !!api && !!user?.Id && settings?.usePopularPlugin === true,
+    staleTime: 0,
+  });
 
   return (
     <View className="flex flex-col rounded-xl mb-4 overflow-hidden border-neutral-800 divide-y-2 divide-solid divide-neutral-800 ">
@@ -36,25 +75,76 @@ export const SettingToggles: React.FC = () => {
           }
         />
       </View>
-      <View className="flex flex-row items-center justify-between bg-neutral-900 p-4">
-        <View className="flex flex-col">
-          <Text className="font-semibold">Use popular lists plugin</Text>
-          <Text className="text-xs opacity-50">Made by: lostb1t</Text>
-          <TouchableOpacity
-            onPress={() => {
-              Linking.openURL(
-                "https://github.com/lostb1t/jellyfin-plugin-media-lists",
-              );
-            }}
-          >
-            <Text className="text-xs text-purple-600">More info</Text>
-          </TouchableOpacity>
+      <View className="flex flex-col">
+        <View className="flex flex-row items-center justify-between bg-neutral-900 p-4">
+          <View className="flex flex-col">
+            <Text className="font-semibold">Use popular lists plugin</Text>
+            <Text className="text-xs opacity-50">Made by: lostb1t</Text>
+            <TouchableOpacity
+              onPress={() => {
+                Linking.openURL(
+                  "https://github.com/lostb1t/jellyfin-plugin-media-lists",
+                );
+              }}
+            >
+              <Text className="text-xs text-purple-600">More info</Text>
+            </TouchableOpacity>
+          </View>
+          <Switch
+            value={settings?.usePopularPlugin}
+            onValueChange={(value) =>
+              updateSettings({ usePopularPlugin: value })
+            }
+          />
         </View>
-        <Switch
-          value={settings?.usePopularPlugin}
-          onValueChange={(value) => updateSettings({ usePopularPlugin: value })}
-        />
+        {settings?.usePopularPlugin && (
+          <View className="flex flex-col py-2 bg-neutral-900">
+            {mediaListCollections?.map((mlc) => (
+              <View
+                key={mlc.Id}
+                className="flex flex-row items-center justify-between bg-neutral-900 px-4 py-2"
+              >
+                <View className="flex flex-col">
+                  <Text className="font-semibold">{mlc.Name}</Text>
+                </View>
+                <Switch
+                  value={settings?.mediaListCollectionIds?.includes(mlc.Id!)}
+                  onValueChange={(value) => {
+                    if (!settings.mediaListCollectionIds) {
+                      updateSettings({
+                        mediaListCollectionIds: [mlc.Id!],
+                      });
+                      return;
+                    }
+
+                    updateSettings({
+                      mediaListCollectionIds:
+                        settings?.mediaListCollectionIds.includes(mlc.Id!)
+                          ? settings?.mediaListCollectionIds.filter(
+                              (id) => id !== mlc.Id,
+                            )
+                          : [...settings?.mediaListCollectionIds, mlc.Id!],
+                    });
+                  }}
+                />
+              </View>
+            ))}
+            {isLoadingMediaListCollections && (
+              <View className="flex flex-row items-center justify-center bg-neutral-900 p-4">
+                <ActivityIndicator size="small" color="#fff" />
+              </View>
+            )}
+            {mediaListCollections?.length === 0 && (
+              <View className="flex flex-row items-center justify-between bg-neutral-900 p-4">
+                <Text className="text-xs opacity-50">
+                  No collections found. Add some in Jellyfin.
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
       </View>
+
       <View className="flex flex-row space-x-2 items-center justify-between bg-neutral-900 p-4">
         <View className="flex flex-col shrink">
           <Text className="font-semibold">Force direct play</Text>
