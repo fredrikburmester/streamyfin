@@ -35,11 +35,6 @@ import { useLocalSearchParams } from "expo-router";
 import { useAtom } from "jotai";
 import { useCallback, useMemo, useState } from "react";
 import { View } from "react-native";
-import CastContext, {
-  PlayServicesState,
-  useCastDevice,
-  useRemoteMediaClient,
-} from "react-native-google-cast";
 import { ParallaxScrollView } from "../../../components/ParallaxPage";
 
 const page: React.FC = () => {
@@ -51,14 +46,10 @@ const page: React.FC = () => {
 
   const [settings] = useSettings();
 
-  const castDevice = useCastDevice();
-
   const [, setCurrentlyPlying] = useAtom(currentlyPlayingItemAtom);
   const [, setPlaying] = useAtom(playingAtom);
   const [, setFullscreen] = useAtom(fullScreenAtom);
 
-  const client = useRemoteMediaClient();
-  const chromecastReady = useMemo(() => !!castDevice?.deviceId, [castDevice]);
   const [selectedAudioStream, setSelectedAudioStream] = useState<number>(-1);
   const [selectedSubtitleStream, setSelectedSubtitleStream] =
     useState<number>(0);
@@ -99,7 +90,6 @@ const page: React.FC = () => {
       "playbackUrl",
       item?.Id,
       maxBitrate,
-      castDevice,
       selectedAudioStream,
       selectedSubtitleStream,
       settings,
@@ -109,9 +99,7 @@ const page: React.FC = () => {
 
       let deviceProfile: any = ios;
 
-      if (castDevice?.deviceId) {
-        deviceProfile = chromecastProfile;
-      } else if (settings?.deviceProfile === "Native") {
+      if (settings?.deviceProfile === "Native") {
         deviceProfile = native;
       } else if (settings?.deviceProfile === "Old") {
         deviceProfile = old;
@@ -142,34 +130,13 @@ const page: React.FC = () => {
     async (type: "device" | "cast" = "device") => {
       if (!playbackUrl || !item) return;
 
-      if (type === "cast" && client) {
-        await CastContext.getPlayServicesState().then((state) => {
-          if (state && state !== PlayServicesState.SUCCESS)
-            CastContext.showPlayServicesErrorDialog(state);
-          else {
-            client.loadMedia({
-              mediaInfo: {
-                contentUrl: playbackUrl,
-                contentType: "video/mp4",
-                metadata: {
-                  type: item.Type === "Episode" ? "tvShow" : "movie",
-                  title: item.Name || "",
-                  subtitle: item.Overview || "",
-                },
-              },
-              startTime: 0,
-            });
-          }
-        });
-      } else {
-        setCurrentlyPlying({
-          item,
-          playbackUrl,
-        });
-        setPlaying(true);
-        if (settings?.openFullScreenVideoPlayerByDefault === true) {
-          setFullscreen(true);
-        }
+      setCurrentlyPlying({
+        item,
+        playbackUrl,
+      });
+      setPlaying(true);
+      if (settings?.openFullScreenVideoPlayerByDefault === true) {
+        setFullscreen(true);
       }
     },
     [playbackUrl, item, settings]
@@ -270,7 +237,7 @@ const page: React.FC = () => {
           <NextEpisodeButton item={item} type="previous" className="mr-2" />
           <PlayButton
             item={item}
-            chromecastReady={chromecastReady}
+            chromecastReady={false}
             onPress={onPressPlay}
             className="grow"
           />
