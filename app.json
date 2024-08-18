@@ -77,12 +77,7 @@
           },
           "android": {
             "minSdkVersion": 24,
-            "usesCleartextTraffic": true,
-            "packagingOptions": {
-              "jniLibs": {
-                "useLegacyPackaging": true
-              }
-            }
+            "usesCleartextTraffic": true
           }
         }
       ],
