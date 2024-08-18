@@ -56,7 +56,7 @@
     "nativewind": "^2.0.11",
     "react": "18.2.0",
     "react-dom": "18.2.0",
-    "react-native": "0.74.5",
+    "react-native": "npm:react-native-tvos",
     "react-native-circular-progress": "^1.4.0",
     "react-native-compressor": "^1.8.25",
     "react-native-gesture-handler": "~2.16.1",
@@ -88,6 +88,13 @@
     "jest-expo": "~51.0.3",
     "react-test-renderer": "18.2.0",
     "typescript": "~5.3.3"
+  },
+  "expo": {
+    "install": {
+      "exclude": [
+        "react-native"
+      ]
+    }
   },
   "private": true
 }
