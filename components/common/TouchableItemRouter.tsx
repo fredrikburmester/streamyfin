@@ -25,15 +25,33 @@ export const TouchableItemRouter: React.FC<PropsWithChildren<Props>> = ({
       onPress={() => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-        if (item.Type === "Series") router.push(`/series/${item.Id}`);
-        if (item.Type === "Episode") router.push(`/items/${item.Id}`);
-        if (item.Type === "MusicAlbum") router.push(`/albums/${item.Id}`);
-        if (item.Type === "Audio") router.push(`/albums/${item.AlbumId}`);
-        if (item.Type === "MusicArtist")
+        if (item.Type === "Series") {
+          router.push(`/series/${item.Id}`);
+          return;
+        }
+        if (item.Type === "Episode") {
+          router.push(`/items/${item.Id}`);
+          return;
+        }
+        if (item.Type === "MusicAlbum") {
+          router.push(`/albums/${item.Id}`);
+          return;
+        }
+        if (item.Type === "Audio") {
+          router.push(`/albums/${item.AlbumId}`);
+          return;
+        }
+        if (item.Type === "MusicArtist") {
           router.push(`/artists/${item.Id}/page`);
+          return;
+        }
 
         // Movies and all other cases
-        if (item.Type === "BoxSet") router.push(`/collections/${item.Id}`);
+        if (item.Type === "BoxSet") {
+          router.push(`/collections/${item.Id}`);
+          return;
+        }
+
         router.push(`/items/${item.Id}`);
       }}
       {...props}
