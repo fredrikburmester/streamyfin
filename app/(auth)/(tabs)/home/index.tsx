@@ -246,7 +246,7 @@ export default function index() {
       </View>
     );
 
-  if (true)
+  if (isLoading)
     return (
       <View className="justify-center items-center h-full">
         <Loader />
