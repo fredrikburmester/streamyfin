@@ -7,12 +7,10 @@ import { useQuery } from "@tanstack/react-query";
 import { useAtom } from "jotai";
 import { ScrollView, View } from "react-native";
 import * as Haptics from "expo-haptics";
-import { useFiles } from "@/hooks/useFiles";
 import { SettingToggles } from "@/components/settings/SettingToggles";
 
 export default function settings() {
   const { logout } = useJellyfin();
-  const { deleteAllFiles } = useFiles();
 
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
@@ -42,20 +40,9 @@ export default function settings() {
           <Button
             color="red"
             onPress={async () => {
-              await deleteAllFiles();
-              Haptics.notificationAsync(
-                Haptics.NotificationFeedbackType.Success,
-              );
-            }}
-          >
-            Delete all downloaded files
-          </Button>
-          <Button
-            color="red"
-            onPress={async () => {
               await clearLogs();
               Haptics.notificationAsync(
-                Haptics.NotificationFeedbackType.Success,
+                Haptics.NotificationFeedbackType.Success
               );
             }}
           >

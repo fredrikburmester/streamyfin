@@ -6,7 +6,6 @@ import {
   currentlyPlayingItemAtom,
   playingAtom,
 } from "@/components/CurrentlyPlayingBar";
-import { DownloadItem } from "@/components/DownloadItem";
 import { Loader } from "@/components/Loader";
 import { MoviesTitleHeader } from "@/components/movies/MoviesTitleHeader";
 import { ParallaxScrollView } from "@/components/ParallaxPage";
@@ -220,14 +219,6 @@ const page: React.FC = () => {
         <View className="flex flex-col">
           <MoviesTitleHeader item={item} />
           <Text className="text-center opacity-50">{item?.ProductionYear}</Text>
-        </View>
-
-        <View className="flex flex-row justify-between items-center w-full my-4">
-          {playbackUrl ? (
-            <DownloadItem item={item} playbackUrl={playbackUrl} />
-          ) : (
-            <View className="h-12 aspect-square flex items-center justify-center"></View>
-          )}
         </View>
       </View>
       <View className="flex flex-col p-4 w-full">

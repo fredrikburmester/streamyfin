@@ -102,15 +102,6 @@ function Layout() {
                       }}
                     />
                     <Stack.Screen
-                      name="(auth)/downloads"
-                      options={{
-                        headerShown: true,
-                        title: "Downloads",
-                        headerStyle: { backgroundColor: "black" },
-                        headerShadowVisible: false,
-                      }}
-                    />
-                    <Stack.Screen
                       name="(auth)/items/[id]"
                       options={{
                         title: "",

@@ -5,7 +5,6 @@ import {
   fullScreenAtom,
   playingAtom,
 } from "@/components/CurrentlyPlayingBar";
-import { DownloadItem } from "@/components/DownloadItem";
 import { Loader } from "@/components/Loader";
 import { OverviewText } from "@/components/OverviewText";
 import { PlayButton } from "@/components/PlayButton";
@@ -245,11 +244,6 @@ const page: React.FC = () => {
         </View>
 
         <View className="flex flex-row justify-between items-center mb-2">
-          {playbackUrl ? (
-            <DownloadItem item={item} playbackUrl={playbackUrl} />
-          ) : (
-            <View className="h-12 aspect-square flex items-center justify-center"></View>
-          )}
           <PlayedStatus item={item} />
         </View>
 

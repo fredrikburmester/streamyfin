@@ -49,13 +49,6 @@
       "@react-native-tvos/config-tv",
       "expo-router",
       "expo-font",
-      "@config-plugins/ffmpeg-kit-react-native",
-      [
-        "react-native-google-cast",
-        {
-          "useDefaultExpandedMediaControls": true
-        }
-      ],
       [
         "react-native-video",
         {
@@ -66,18 +59,6 @@
             "useExoplayerSmoothStreaming": false,
             "useExoplayerHls": true,
             "useExoplayerDash": false
-          }
-        }
-      ],
-      [
-        "expo-build-properties",
-        {
-          "ios": {
-            "deploymentTarget": "14.0"
-          },
-          "android": {
-            "minSdkVersion": 24,
-            "usesCleartextTraffic": true
           }
         }
       ],
