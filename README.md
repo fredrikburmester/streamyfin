@@ -26,6 +26,10 @@ Streamyfin includes some exciting experimental features like media downloading a
 
 Downloading works by using ffmpeg to convert a HLS stream into a video file on the device. This means that you can download and view any file you can stream! The file is converted by Jellyfin on the server in real time as it is downloaded. This means a **bit longer download times** but supports any file that your server can transcode.
 
+## Roadmap for V1
+
+Check out our [Roadmap](https://github.com/users/fredrikburmester/projects/5) to see what we're working on next. We are always open for feedback and suggestions, so please let us know if you have any ideas or feature requests.
+
 ## Get it now
 
 <div style="display:flex;">
@@ -108,7 +112,6 @@ If you have questions or need support, feel free to reach out:
 
 - GitHub Issues: Report bugs or request features here.
 - Email: [fredrik.burmester@gmail.com](mailto:fredrik.burmester@gmail.com)
--
 
 ## Support
 
