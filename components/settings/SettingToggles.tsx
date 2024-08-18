@@ -1,18 +1,12 @@
-import {
-  ActivityIndicator,
-  Linking,
-  Switch,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import { Text } from "../common/Text";
-import { useSettings } from "@/utils/atoms/settings";
-import * as DropdownMenu from "zeego/dropdown-menu";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
+import { useSettings } from "@/utils/atoms/settings";
 import { getItemsApi } from "@jellyfin/sdk/lib/utils/api";
 import { useQuery } from "@tanstack/react-query";
 import { useAtom } from "jotai";
-import { useState } from "react";
+import { Linking, Switch, TouchableOpacity, View } from "react-native";
+import * as DropdownMenu from "zeego/dropdown-menu";
+import { Text } from "../common/Text";
+import { Loader } from "../Loader";
 
 export const SettingToggles: React.FC = () => {
   const [settings, updateSettings] = useSettings();
@@ -83,7 +77,7 @@ export const SettingToggles: React.FC = () => {
             <TouchableOpacity
               onPress={() => {
                 Linking.openURL(
-                  "https://github.com/lostb1t/jellyfin-plugin-media-lists",
+                  "https://github.com/lostb1t/jellyfin-plugin-media-lists"
                 );
               }}
             >
@@ -121,7 +115,7 @@ export const SettingToggles: React.FC = () => {
                       mediaListCollectionIds:
                         settings?.mediaListCollectionIds.includes(mlc.Id!)
                           ? settings?.mediaListCollectionIds.filter(
-                              (id) => id !== mlc.Id,
+                              (id) => id !== mlc.Id
                             )
                           : [...settings?.mediaListCollectionIds, mlc.Id!],
                     });
@@ -131,7 +125,7 @@ export const SettingToggles: React.FC = () => {
             ))}
             {isLoadingMediaListCollections && (
               <View className="flex flex-row items-center justify-center bg-neutral-900 p-4">
-                <ActivityIndicator size="small" color="#fff" />
+                <Loader />
               </View>
             )}
             {mediaListCollections?.length === 0 && (

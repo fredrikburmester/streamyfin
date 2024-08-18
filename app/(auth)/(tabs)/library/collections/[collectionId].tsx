@@ -3,6 +3,7 @@ import { TouchableItemRouter } from "@/components/common/TouchableItemRouter";
 import { FilterButton } from "@/components/filters/FilterButton";
 import { ResetFiltersButton } from "@/components/filters/ResetFiltersButton";
 import { ItemCardText } from "@/components/ItemCardText";
+import { Loader } from "@/components/Loader";
 import MoviePoster from "@/components/posters/MoviePoster";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import {
@@ -24,7 +25,7 @@ import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useLocalSearchParams } from "expo-router";
 import { useAtom } from "jotai";
 import React, { useCallback, useMemo } from "react";
-import { ActivityIndicator, ScrollView, View } from "react-native";
+import { ScrollView, View } from "react-native";
 
 const page: React.FC = () => {
   const searchParams = useLocalSearchParams();
@@ -284,12 +285,10 @@ const page: React.FC = () => {
               </View>
             </ScrollView>
             {!type && isFetching && (
-              <ActivityIndicator
+              <Loader
                 style={{
                   marginTop: 300,
                 }}
-                size={"small"}
-                color={"white"}
               />
             )}
           </View>

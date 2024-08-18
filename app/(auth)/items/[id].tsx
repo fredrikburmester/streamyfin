@@ -6,6 +6,7 @@ import {
   playingAtom,
 } from "@/components/CurrentlyPlayingBar";
 import { DownloadItem } from "@/components/DownloadItem";
+import { Loader } from "@/components/Loader";
 import { OverviewText } from "@/components/OverviewText";
 import { PlayButton } from "@/components/PlayButton";
 import { PlayedStatus } from "@/components/PlayedStatus";
@@ -34,7 +35,7 @@ import { Image } from "expo-image";
 import { useLocalSearchParams } from "expo-router";
 import { useAtom } from "jotai";
 import { useCallback, useMemo, useState } from "react";
-import { ActivityIndicator, ScrollView, View } from "react-native";
+import { View } from "react-native";
 import CastContext, {
   PlayServicesState,
   useCastDevice,
@@ -194,7 +195,7 @@ const page: React.FC = () => {
   if (l1)
     return (
       <View className="justify-center items-center h-full">
-        <ActivityIndicator />
+        <Loader />
       </View>
     );
 

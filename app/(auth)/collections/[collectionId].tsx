@@ -1,4 +1,5 @@
 import { Text } from "@/components/common/Text";
+import { Loader } from "@/components/Loader";
 import ArtistPoster from "@/components/posters/ArtistPoster";
 import MoviePoster from "@/components/posters/MoviePoster";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
@@ -13,12 +14,7 @@ import { useQuery } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
 import { useAtom } from "jotai";
 import { useMemo, useState } from "react";
-import {
-  ActivityIndicator,
-  ScrollView,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ScrollView, TouchableOpacity, View } from "react-native";
 
 const page: React.FC = () => {
   const searchParams = useLocalSearchParams();
@@ -154,7 +150,7 @@ const page: React.FC = () => {
         </View>
         {isLoading ? (
           <View className="my-12">
-            <ActivityIndicator color={"white"} />
+            <Loader />
           </View>
         ) : (
           <View className="flex flex-row flex-wrap">

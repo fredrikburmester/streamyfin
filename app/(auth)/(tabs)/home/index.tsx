@@ -2,6 +2,7 @@ import { Button } from "@/components/Button";
 import { Text } from "@/components/common/Text";
 import { LargeMovieCarousel } from "@/components/home/LargeMovieCarousel";
 import { ScrollingCollectionList } from "@/components/home/ScrollingCollectionList";
+import { Loader } from "@/components/Loader";
 import { MediaListSection } from "@/components/medialists/MediaListSection";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import { useSettings } from "@/utils/atoms/settings";
@@ -19,12 +20,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useAtom } from "jotai";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  ActivityIndicator,
-  RefreshControl,
-  ScrollView,
-  View,
-} from "react-native";
+import { RefreshControl, ScrollView, View } from "react-native";
 
 export default function index() {
   const router = useRouter();
@@ -250,10 +246,10 @@ export default function index() {
       </View>
     );
 
-  if (isLoading)
+  if (true)
     return (
       <View className="justify-center items-center h-full">
-        <ActivityIndicator />
+        <Loader />
       </View>
     );
 

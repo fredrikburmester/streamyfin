@@ -1,34 +1,20 @@
 import { Text } from "@/components/common/Text";
+import { Loader } from "@/components/Loader";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
-import { getItemsApi, getUserViewsApi } from "@jellyfin/sdk/lib/utils/api";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { getPrimaryImageUrl } from "@/utils/jellyfin/image/getPrimaryImageUrl";
+import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
+import { getUserViewsApi } from "@jellyfin/sdk/lib/utils/api";
+import { FlashList } from "@shopify/flash-list";
+import { useQuery } from "@tanstack/react-query";
+import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { useAtom } from "jotai";
-import { useCallback, useMemo, useState } from "react";
-import {
-  ActivityIndicator,
-  RefreshControl,
-  ScrollView,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { useSettings } from "@/utils/atoms/settings";
-import { FlashList } from "@shopify/flash-list";
-import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
-import { getPrimaryImageUrl } from "@/utils/jellyfin/image/getPrimaryImageUrl";
-import { Image } from "expo-image";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useMemo } from "react";
+import { TouchableOpacity, View } from "react-native";
 
 export default function index() {
-  const router = useRouter();
-  const queryClient = useQueryClient();
-
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
-
-  const [loading, setLoading] = useState(false);
-  const [settings, _] = useSettings();
 
   const { data, isLoading: isLoading } = useQuery({
     queryKey: ["user-views", user?.Id],
@@ -50,7 +36,7 @@ export default function index() {
   if (isLoading)
     return (
       <View className="justify-center items-center h-full">
-        <ActivityIndicator />
+        <Loader />
       </View>
     );
 

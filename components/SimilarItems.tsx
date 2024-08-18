@@ -6,14 +6,10 @@ import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { useAtom } from "jotai";
 import { useMemo } from "react";
-import {
-  ActivityIndicator,
-  ScrollView,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import { ItemCardText } from "./ItemCardText";
+import { ScrollView, TouchableOpacity, View } from "react-native";
 import { Text } from "./common/Text";
+import { ItemCardText } from "./ItemCardText";
+import { Loader } from "./Loader";
 
 type SimilarItemsProps = {
   itemId: string;
@@ -49,7 +45,7 @@ export const SimilarItems: React.FC<SimilarItemsProps> = ({ itemId }) => {
       <Text className="px-4 text-2xl font-bold mb-2">Similar items</Text>
       {isLoading ? (
         <View className="my-12">
-          <ActivityIndicator />
+          <Loader />
         </View>
       ) : (
         <ScrollView horizontal>
