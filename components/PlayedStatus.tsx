@@ -4,7 +4,6 @@ import { markAsPlayed } from "@/utils/jellyfin/playstate/markAsPlayed";
 import { Ionicons } from "@expo/vector-icons";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import { useQueryClient } from "@tanstack/react-query";
-import * as Haptics from "expo-haptics";
 import { useAtom } from "jotai";
 import React from "react";
 import { TouchableOpacity, View } from "react-native";
@@ -41,7 +40,6 @@ export const PlayedStatus: React.FC<{ item: BaseItemDto }> = ({ item }) => {
       {item.UserData?.Played ? (
         <TouchableOpacity
           onPress={async () => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             await markAsNotPlayed({
               api: api,
               itemId: item?.Id,
@@ -57,7 +55,6 @@ export const PlayedStatus: React.FC<{ item: BaseItemDto }> = ({ item }) => {
       ) : (
         <TouchableOpacity
           onPress={async () => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             await markAsPlayed({
               api: api,
               item: item,

@@ -6,7 +6,6 @@ import { clearLogs, readFromLog } from "@/utils/log";
 import { useQuery } from "@tanstack/react-query";
 import { useAtom } from "jotai";
 import { ScrollView, View } from "react-native";
-import * as Haptics from "expo-haptics";
 import { SettingToggles } from "@/components/settings/SettingToggles";
 
 export default function settings() {
@@ -41,9 +40,6 @@ export default function settings() {
             color="red"
             onPress={async () => {
               await clearLogs();
-              Haptics.notificationAsync(
-                Haptics.NotificationFeedbackType.Success
-              );
             }}
           >
             Delete all logs
