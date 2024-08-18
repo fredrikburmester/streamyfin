@@ -4,28 +4,19 @@ import { Text } from "@/components/common/Text";
 import { TouchableItemRouter } from "@/components/common/TouchableItemRouter";
 import ContinueWatchingPoster from "@/components/ContinueWatchingPoster";
 import { ItemCardText } from "@/components/ItemCardText";
+import { Loader } from "@/components/Loader";
 import AlbumCover from "@/components/posters/AlbumCover";
 import MoviePoster from "@/components/posters/MoviePoster";
-import Poster from "@/components/posters/Poster";
 import SeriesPoster from "@/components/posters/SeriesPoster";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
-import { getPrimaryImageUrl } from "@/utils/jellyfin/image/getPrimaryImageUrl";
 import { getUserItemData } from "@/utils/jellyfin/user-library/getUserItemData";
-import { Ionicons } from "@expo/vector-icons";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import { getSearchApi } from "@jellyfin/sdk/lib/utils/api";
 import { useQuery } from "@tanstack/react-query";
-import { router, Stack, useNavigation } from "expo-router";
+import { router, useNavigation } from "expo-router";
 import { useAtom } from "jotai";
 import React, { useLayoutEffect, useMemo, useState } from "react";
-import {
-  ActivityIndicator,
-  Platform,
-  ScrollView,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import _ from "lodash";
+import { Platform, ScrollView, TouchableOpacity, View } from "react-native";
 import { useDebounce } from "use-debounce";
 
 const exampleSearches = [
@@ -308,7 +299,7 @@ export default function search() {
           />
           {loading ? (
             <View className="mt-4 flex justify-center items-center">
-              <ActivityIndicator size="small" color="white" />
+              <Loader />
             </View>
           ) : noResults && debouncedSearch.length > 0 ? (
             <View>

@@ -1,6 +1,7 @@
-import React, { PropsWithChildren, ReactNode, useMemo } from "react";
-import { TouchableOpacity, Text, ActivityIndicator, View } from "react-native";
 import * as Haptics from "expo-haptics";
+import React, { PropsWithChildren, ReactNode, useMemo } from "react";
+import { Text, TouchableOpacity, View } from "react-native";
+import { Loader } from "./Loader";
 
 interface ButtonProps extends React.ComponentProps<typeof TouchableOpacity> {
   onPress?: () => void;
@@ -57,7 +58,7 @@ export const Button: React.FC<PropsWithChildren<ButtonProps>> = ({
       {...props}
     >
       {loading ? (
-        <ActivityIndicator color={"white"} size={24} />
+        <Loader />
       ) : (
         <View
           className={`

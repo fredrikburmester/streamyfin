@@ -9,7 +9,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { useAtom } from "jotai";
-import { ActivityIndicator, TouchableOpacity, View } from "react-native";
+import { TouchableOpacity, View } from "react-native";
+import { Loader } from "./Loader";
 import ProgressCircle from "./ProgressCircle";
 
 type DownloadProps = {
@@ -39,7 +40,7 @@ export const DownloadItem: React.FC<DownloadProps> = ({
       if (!item.Id) return false;
 
       const data: BaseItemDto[] = JSON.parse(
-        (await AsyncStorage.getItem("downloaded_files")) || "[]",
+        (await AsyncStorage.getItem("downloaded_files")) || "[]"
       );
 
       return data.some((d) => d.Id === item.Id);
@@ -50,7 +51,7 @@ export const DownloadItem: React.FC<DownloadProps> = ({
   if (isLoading || isLoadingDownloaded) {
     return (
       <View className="rounded h-10 aspect-square flex items-center justify-center">
-        <ActivityIndicator size={"small"} color={"white"} />
+        <Loader />
       </View>
     );
   }
@@ -72,7 +73,7 @@ export const DownloadItem: React.FC<DownloadProps> = ({
       >
         <View className="rounded h-10 aspect-square flex items-center justify-center">
           {process.progress === 0 ? (
-            <ActivityIndicator size={"small"} color={"white"} />
+            <Loader />
           ) : (
             <View className="-rotate-45">
               <ProgressCircle

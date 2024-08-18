@@ -1,37 +1,38 @@
+import { AudioTrackSelector } from "@/components/AudioTrackSelector";
+import { Bitrate, BitrateSelector } from "@/components/BitrateSelector";
+import { Chromecast } from "@/components/Chromecast";
 import { Text } from "@/components/common/Text";
+import {
+  currentlyPlayingItemAtom,
+  playingAtom,
+} from "@/components/CurrentlyPlayingBar";
 import { DownloadItem } from "@/components/DownloadItem";
+import { Loader } from "@/components/Loader";
+import { MoviesTitleHeader } from "@/components/movies/MoviesTitleHeader";
+import { ParallaxScrollView } from "@/components/ParallaxPage";
+import { PlayButton } from "@/components/PlayButton";
+import { NextEpisodeButton } from "@/components/series/NextEpisodeButton";
 import { SimilarItems } from "@/components/SimilarItems";
+import { SubtitleTrackSelector } from "@/components/SubtitleTrackSelector";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
+import { getBackdropUrl } from "@/utils/jellyfin/image/getBackdropUrl";
+import { getLogoImageUrlById } from "@/utils/jellyfin/image/getLogoImageUrlById";
+import { getStreamUrl } from "@/utils/jellyfin/media/getStreamUrl";
+import { getUserItemData } from "@/utils/jellyfin/user-library/getUserItemData";
+import { chromecastProfile } from "@/utils/profiles/chromecast";
+import ios from "@/utils/profiles/ios";
+import { getMediaInfoApi } from "@jellyfin/sdk/lib/utils/api";
 import { useQuery } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import { useLocalSearchParams, useNavigation } from "expo-router";
 import { useAtom } from "jotai";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, ScrollView, View } from "react-native";
-import { getUserItemData } from "@/utils/jellyfin/user-library/getUserItemData";
-import { getBackdropUrl } from "@/utils/jellyfin/image/getBackdropUrl";
-import { getLogoImageUrlById } from "@/utils/jellyfin/image/getLogoImageUrlById";
-import { PlayButton } from "@/components/PlayButton";
-import { Bitrate, BitrateSelector } from "@/components/BitrateSelector";
-import { getMediaInfoApi } from "@jellyfin/sdk/lib/utils/api";
-import { getStreamUrl } from "@/utils/jellyfin/media/getStreamUrl";
+import { ScrollView, View } from "react-native";
 import CastContext, {
   PlayServicesState,
   useCastDevice,
   useRemoteMediaClient,
 } from "react-native-google-cast";
-import { chromecastProfile } from "@/utils/profiles/chromecast";
-import {
-  currentlyPlayingItemAtom,
-  playingAtom,
-} from "@/components/CurrentlyPlayingBar";
-import { AudioTrackSelector } from "@/components/AudioTrackSelector";
-import { SubtitleTrackSelector } from "@/components/SubtitleTrackSelector";
-import { NextEpisodeButton } from "@/components/series/NextEpisodeButton";
-import { MoviesTitleHeader } from "@/components/movies/MoviesTitleHeader";
-import { ParallaxScrollView } from "@/components/ParallaxPage";
-import { Chromecast } from "@/components/Chromecast";
-import ios from "@/utils/profiles/ios";
 
 const page: React.FC = () => {
   const local = useLocalSearchParams();
@@ -84,12 +85,12 @@ const page: React.FC = () => {
         quality: 90,
         width: 1000,
       }),
-    [item],
+    [item]
   );
 
   const logoUrl = useMemo(
     () => (item?.Type === "Movie" ? getLogoImageUrlById({ api, item }) : null),
-    [item],
+    [item]
   );
 
   const { data: sessionData } = useQuery({
@@ -173,13 +174,13 @@ const page: React.FC = () => {
         setPlaying(true);
       }
     },
-    [playbackUrl, item],
+    [playbackUrl, item]
   );
 
   if (l1)
     return (
       <View className="justify-center items-center h-full">
-        <ActivityIndicator />
+        <Loader />
       </View>
     );
 

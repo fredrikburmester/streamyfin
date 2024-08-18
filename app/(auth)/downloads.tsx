@@ -1,23 +1,18 @@
 import { Text } from "@/components/common/Text";
 import { MovieCard } from "@/components/downloads/MovieCard";
 import { SeriesCard } from "@/components/downloads/SeriesCard";
+import { Loader } from "@/components/Loader";
+import { runningProcesses } from "@/utils/atoms/downloads";
+import { queueAtom } from "@/utils/atoms/queue";
+import { Ionicons } from "@expo/vector-icons";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useMemo } from "react";
-import {
-  ActivityIndicator,
-  ScrollView,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import { useAtom } from "jotai";
-import { runningProcesses } from "@/utils/atoms/downloads";
 import { router } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
 import { FFmpegKit } from "ffmpeg-kit-react-native";
-import * as FileSystem from "expo-file-system";
-import { queueAtom } from "@/utils/atoms/queue";
+import { useAtom } from "jotai";
+import { useMemo } from "react";
+import { ScrollView, TouchableOpacity, View } from "react-native";
 
 const downloads: React.FC = () => {
   const [process, setProcess] = useAtom(runningProcesses);
@@ -27,14 +22,14 @@ const downloads: React.FC = () => {
     queryKey: ["downloaded_files", process?.item.Id],
     queryFn: async () =>
       JSON.parse(
-        (await AsyncStorage.getItem("downloaded_files")) || "[]",
+        (await AsyncStorage.getItem("downloaded_files")) || "[]"
       ) as BaseItemDto[],
     staleTime: 0,
   });
 
   const movies = useMemo(
     () => downloadedFiles?.filter((f) => f.Type === "Movie") || [],
-    [downloadedFiles],
+    [downloadedFiles]
   );
 
   const groupedBySeries = useMemo(() => {
@@ -61,7 +56,7 @@ const downloads: React.FC = () => {
   if (isLoading) {
     return (
       <View className="h-full flex flex-col items-center justify-center -mt-6">
-        <ActivityIndicator size="small" color="white" />
+        <Loader />
       </View>
     );
   }

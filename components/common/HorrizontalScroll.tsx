@@ -1,16 +1,11 @@
 import React, { useEffect } from "react";
-import {
-  ScrollView,
-  View,
-  ViewStyle,
-  ActivityIndicator,
-  ScrollViewProps,
-} from "react-native";
+import { ScrollView, ScrollViewProps, View, ViewStyle } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
+import { Loader } from "../Loader";
 import { Text } from "./Text";
 
 interface HorizontalScrollProps<T> extends ScrollViewProps {
@@ -58,7 +53,7 @@ export function HorizontalScroll<T>({
           loadingContainerStyle,
         ]}
       >
-        <ActivityIndicator size="small" />
+        <Loader />
       </View>
     );
   }

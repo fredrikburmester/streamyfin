@@ -1,5 +1,4 @@
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
-import { useSettings } from "@/utils/atoms/settings";
 import { getBackdropUrl } from "@/utils/jellyfin/image/getBackdropUrl";
 import { getAuthHeaders } from "@/utils/jellyfin/jellyfin";
 import { reportPlaybackProgress } from "@/utils/jellyfin/playstate/reportPlaybackProgress";
@@ -14,13 +13,7 @@ import { BlurView } from "expo-blur";
 import { useRouter, useSegments } from "expo-router";
 import { atom, useAtom } from "jotai";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  Platform,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Alert, Platform, TouchableOpacity, View } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -28,6 +21,7 @@ import Animated, {
 } from "react-native-reanimated";
 import Video, { OnProgressData, VideoRef } from "react-native-video";
 import { Text } from "./common/Text";
+import { Loader } from "./Loader";
 
 export const currentlyPlayingItemAtom = atom<{
   item: BaseItemDto;
@@ -292,7 +286,7 @@ export const CurrentlyPlayingBar: React.FC = () => {
                   renderLoader={
                     item?.Type !== "Audio" && (
                       <View className="flex flex-col items-center justify-center h-full">
-                        <ActivityIndicator size={"small"} color={"white"} />
+                        <Loader />
                       </View>
                     )
                   }

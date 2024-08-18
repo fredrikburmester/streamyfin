@@ -1,22 +1,22 @@
-import { ActivityIndicator, View, ViewProps } from "react-native";
+import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
+import { useSettings } from "@/utils/atoms/settings";
+import { getBackdropUrl } from "@/utils/jellyfin/image/getBackdropUrl";
+import { getLogoImageUrlById } from "@/utils/jellyfin/image/getLogoImageUrlById";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import { getItemsApi } from "@jellyfin/sdk/lib/utils/api";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
+import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { useAtom } from "jotai";
-import { useSettings } from "@/utils/atoms/settings";
-import { Dimensions } from "react-native";
+import React, { useMemo } from "react";
+import { Dimensions, View, ViewProps } from "react-native";
 import { useSharedValue } from "react-native-reanimated";
 import Carousel, {
   ICarouselInstance,
   Pagination,
 } from "react-native-reanimated-carousel";
-import React, { useMemo } from "react";
-import { Image } from "expo-image";
-import { getLogoImageUrlById } from "@/utils/jellyfin/image/getLogoImageUrlById";
-import { getBackdropUrl } from "@/utils/jellyfin/image/getBackdropUrl";
 import { TouchableItemRouter } from "../common/TouchableItemRouter";
+import { Loader } from "../Loader";
 
 interface Props extends ViewProps {}
 
@@ -84,7 +84,7 @@ export const LargeMovieCarousel: React.FC<Props> = ({ ...props }) => {
   if (l1 || l2)
     return (
       <View className="h-[242px] flex items-center justify-center">
-        <ActivityIndicator size={"small"} color="#fff" />
+        <Loader />
       </View>
     );
 
