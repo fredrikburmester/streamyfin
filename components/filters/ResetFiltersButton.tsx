@@ -5,9 +5,11 @@ import {
 } from "@/utils/atoms/filters";
 import { Ionicons } from "@expo/vector-icons";
 import { useAtom } from "jotai";
-import { TouchableOpacity } from "react-native";
+import { TouchableOpacity, TouchableOpacityProps } from "react-native";
 
-export const ResetFiltersButton: React.FC = ({ ...props }) => {
+interface Props extends TouchableOpacityProps {}
+
+export const ResetFiltersButton: React.FC<Props> = ({ ...props }) => {
   const [selectedGenres, setSelectedGenres] = useAtom(genreFilterAtom);
   const [selectedTags, setSelectedTags] = useAtom(tagsFilterAtom);
   const [selectedYears, setSelectedYears] = useAtom(yearFilterAtom);
