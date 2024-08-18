@@ -108,7 +108,6 @@ If you have questions or need support, feel free to reach out:
 
 - GitHub Issues: Report bugs or request features here.
 - Email: [fredrik.burmester@gmail.com](mailto:fredrik.burmester@gmail.com)
--
 
 ## Support
 

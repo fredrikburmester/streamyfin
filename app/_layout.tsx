@@ -8,7 +8,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useFonts } from "expo-font";
 import { useKeepAwake } from "expo-keep-awake";
 import { Stack } from "expo-router";
-import * as ScreenOrientation from "expo-screen-orientation";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { Provider as JotaiProvider } from "jotai";
@@ -63,15 +62,6 @@ function Layout() {
       },
     })
   );
-
-  useEffect(() => {
-    if (settings?.autoRotate === true)
-      ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.DEFAULT);
-    else
-      ScreenOrientation.lockAsync(
-        ScreenOrientation.OrientationLock.PORTRAIT_UP
-      );
-  }, [settings]);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

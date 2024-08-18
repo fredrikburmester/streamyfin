@@ -24,7 +24,6 @@ import { getBackdropUrl } from "@/utils/jellyfin/image/getBackdropUrl";
 import { getLogoImageUrlById } from "@/utils/jellyfin/image/getLogoImageUrlById";
 import { getStreamUrl } from "@/utils/jellyfin/media/getStreamUrl";
 import { getUserItemData } from "@/utils/jellyfin/user-library/getUserItemData";
-import { chromecastProfile } from "@/utils/profiles/chromecast";
 import ios from "@/utils/profiles/ios";
 import native from "@/utils/profiles/native";
 import old from "@/utils/profiles/old";

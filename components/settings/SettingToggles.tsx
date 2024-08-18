@@ -4,7 +4,6 @@ import { getItemsApi } from "@jellyfin/sdk/lib/utils/api";
 import { useQuery } from "@tanstack/react-query";
 import { useAtom } from "jotai";
 import { Linking, Switch, TouchableOpacity, View } from "react-native";
-import * as DropdownMenu from "zeego/dropdown-menu";
 import { Text } from "../common/Text";
 import { Loader } from "../Loader";
 
@@ -165,48 +164,6 @@ export const SettingToggles: React.FC = () => {
             supports.
           </Text>
         </View>
-        <DropdownMenu.Root>
-          <DropdownMenu.Trigger>
-            <TouchableOpacity className="bg-neutral-800 rounded-lg border-neutral-900 border px-3 py-2 flex flex-row items-center justify-between">
-              <Text>{settings?.deviceProfile}</Text>
-            </TouchableOpacity>
-          </DropdownMenu.Trigger>
-          <DropdownMenu.Content
-            loop={true}
-            side="bottom"
-            align="start"
-            alignOffset={0}
-            avoidCollisions={true}
-            collisionPadding={8}
-            sideOffset={8}
-          >
-            <DropdownMenu.Label>Profiles</DropdownMenu.Label>
-            <DropdownMenu.Item
-              key="1"
-              onSelect={() => {
-                updateSettings({ deviceProfile: "Expo" });
-              }}
-            >
-              <DropdownMenu.ItemTitle>Expo</DropdownMenu.ItemTitle>
-            </DropdownMenu.Item>
-            <DropdownMenu.Item
-              key="2"
-              onSelect={() => {
-                updateSettings({ deviceProfile: "Native" });
-              }}
-            >
-              <DropdownMenu.ItemTitle>Native</DropdownMenu.ItemTitle>
-            </DropdownMenu.Item>
-            <DropdownMenu.Item
-              key="3"
-              onSelect={() => {
-                updateSettings({ deviceProfile: "Old" });
-              }}
-            >
-              <DropdownMenu.ItemTitle>Old</DropdownMenu.ItemTitle>
-            </DropdownMenu.Item>
-          </DropdownMenu.Content>
-        </DropdownMenu.Root>
       </View>
     </View>
   );

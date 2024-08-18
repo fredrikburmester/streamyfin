@@ -1,4 +1,3 @@
-import { Chromecast } from "@/components/Chromecast";
 import { Text } from "@/components/common/Text";
 import { SongsList } from "@/components/music/SongsList";
 import ArtistPoster from "@/components/posters/ArtistPoster";
@@ -23,16 +22,6 @@ export default function page() {
   const [user] = useAtom(userAtom);
 
   const navigation = useNavigation();
-
-  useEffect(() => {
-    navigation.setOptions({
-      headerRight: () => (
-        <View className="">
-          <Chromecast />
-        </View>
-      ),
-    });
-  });
 
   const { data: album } = useQuery({
     queryKey: ["album", albumId, artistId],

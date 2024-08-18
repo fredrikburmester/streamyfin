@@ -42,8 +42,6 @@
     "expo-linking": "~6.3.1",
     "expo-navigation-bar": "~3.0.7",
     "expo-router": "~3.5.23",
-    "expo-screen-orientation": "~7.0.5",
-    "expo-sensors": "~13.0.9",
     "expo-splash-screen": "~0.27.5",
     "expo-status-bar": "~1.12.1",
     "expo-system-ui": "~3.0.7",
@@ -59,8 +57,6 @@
     "react-native-compressor": "^1.8.25",
     "react-native-gesture-handler": "~2.16.1",
     "react-native-get-random-values": "^1.11.0",
-    "react-native-google-cast": "^4.8.2",
-    "react-native-ios-context-menu": "^2.5.1",
     "react-native-ios-utilities": "^4.5.0",
     "react-native-reanimated": "~3.10.1",
     "react-native-reanimated-carousel": "4.0.0-alpha.12",
@@ -74,7 +70,6 @@
     "tailwindcss": "3.3.2",
     "use-debounce": "^10.0.3",
     "uuid": "^10.0.0",
-    "zeego": "^1.10.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {

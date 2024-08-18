@@ -9,7 +9,6 @@ import Animated, {
   useScrollViewOffset,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Chromecast } from "./Chromecast";
 
 const HEADER_HEIGHT = 400;
 
@@ -33,14 +32,14 @@ export const ParallaxScrollView: React.FC<Props> = ({
           translateY: interpolate(
             scrollOffset.value,
             [-HEADER_HEIGHT, 0, HEADER_HEIGHT],
-            [-HEADER_HEIGHT / 2, 0, HEADER_HEIGHT * 0.75],
+            [-HEADER_HEIGHT / 2, 0, HEADER_HEIGHT * 0.75]
           ),
         },
         {
           scale: interpolate(
             scrollOffset.value,
             [-HEADER_HEIGHT, 0, HEADER_HEIGHT],
-            [2, 1, 1],
+            [2, 1, 1]
           ),
         },
       ],
@@ -72,15 +71,6 @@ export const ParallaxScrollView: React.FC<Props> = ({
             color="#077DF2"
           />
         </TouchableOpacity>
-
-        <View
-          className="absolute right-4 z-50 bg-black rounded-full p-0.5"
-          style={{
-            top: inset.top + 17,
-          }}
-        >
-          <Chromecast width={22} height={22} />
-        </View>
 
         {logo && (
           <View className="absolute top-[250px] h-[130px] left-0 w-full z-40 px-4 flex justify-center items-center">

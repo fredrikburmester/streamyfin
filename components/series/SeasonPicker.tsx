@@ -5,7 +5,6 @@ import { useRouter } from "expo-router";
 import { atom, useAtom } from "jotai";
 import { useMemo } from "react";
 import { TouchableOpacity, View } from "react-native";
-import * as DropdownMenu from "zeego/dropdown-menu";
 import ContinueWatchingPoster from "../ContinueWatchingPoster";
 import { ItemCardText } from "../ItemCardText";
 import { HorizontalScroll } from "../common/HorrizontalScroll";
@@ -40,7 +39,7 @@ export const SeasonPicker: React.FC<Props> = ({ item }) => {
           headers: {
             Authorization: `MediaBrowser DeviceId="${api.deviceInfo.id}", Token="${api.accessToken}"`,
           },
-        },
+        }
       );
 
       return response.data.Items;
@@ -51,7 +50,7 @@ export const SeasonPicker: React.FC<Props> = ({ item }) => {
   const selectedSeasonId: string | null = useMemo(
     () =>
       seasons?.find((season: any) => season.IndexNumber === seasonIndex)?.Id,
-    [seasons, seasonIndex],
+    [seasons, seasonIndex]
   );
 
   const { data: episodes } = useQuery({
@@ -70,7 +69,7 @@ export const SeasonPicker: React.FC<Props> = ({ item }) => {
           headers: {
             Authorization: `MediaBrowser DeviceId="${api.deviceInfo.id}", Token="${api.accessToken}"`,
           },
-        },
+        }
       );
 
       return response.data.Items as BaseItemDto[];
@@ -80,36 +79,6 @@ export const SeasonPicker: React.FC<Props> = ({ item }) => {
 
   return (
     <View className="mb-2">
-      <DropdownMenu.Root>
-        <DropdownMenu.Trigger>
-          <View className="flex flex-row px-4">
-            <TouchableOpacity className="bg-neutral-900 rounded-2xl border-neutral-900 border px-3 py-2 flex flex-row items-center justify-between">
-              <Text>Season {seasonIndex}</Text>
-            </TouchableOpacity>
-          </View>
-        </DropdownMenu.Trigger>
-        <DropdownMenu.Content
-          loop={true}
-          side="bottom"
-          align="start"
-          alignOffset={0}
-          avoidCollisions={true}
-          collisionPadding={8}
-          sideOffset={8}
-        >
-          <DropdownMenu.Label>Seasons</DropdownMenu.Label>
-          {seasons?.map((season: any) => (
-            <DropdownMenu.Item
-              key={season.Name}
-              onSelect={() => {
-                setSeasonIndex(season.IndexNumber);
-              }}
-            >
-              <DropdownMenu.ItemTitle>{season.Name}</DropdownMenu.ItemTitle>
-            </DropdownMenu.Item>
-          ))}
-        </DropdownMenu.Content>
-      </DropdownMenu.Root>
       {episodes && (
         <View className="mt-4">
           <HorizontalScroll<BaseItemDto>

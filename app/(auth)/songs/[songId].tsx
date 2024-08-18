@@ -1,6 +1,5 @@
 import { AudioTrackSelector } from "@/components/AudioTrackSelector";
 import { Bitrate, BitrateSelector } from "@/components/BitrateSelector";
-import { Chromecast } from "@/components/Chromecast";
 import { Text } from "@/components/common/Text";
 import {
   currentlyPlayingItemAtom,
@@ -18,20 +17,14 @@ import { getBackdropUrl } from "@/utils/jellyfin/image/getBackdropUrl";
 import { getLogoImageUrlById } from "@/utils/jellyfin/image/getLogoImageUrlById";
 import { getStreamUrl } from "@/utils/jellyfin/media/getStreamUrl";
 import { getUserItemData } from "@/utils/jellyfin/user-library/getUserItemData";
-import { chromecastProfile } from "@/utils/profiles/chromecast";
 import ios from "@/utils/profiles/ios";
 import { getMediaInfoApi } from "@jellyfin/sdk/lib/utils/api";
 import { useQuery } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import { useLocalSearchParams, useNavigation } from "expo-router";
 import { useAtom } from "jotai";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { ScrollView, View } from "react-native";
-import CastContext, {
-  PlayServicesState,
-  useCastDevice,
-  useRemoteMediaClient,
-} from "react-native-google-cast";
 
 const page: React.FC = () => {
   const local = useLocalSearchParams();
@@ -42,20 +35,8 @@ const page: React.FC = () => {
 
   const [, setPlaying] = useAtom(playingAtom);
 
-  const castDevice = useCastDevice();
   const navigation = useNavigation();
 
-  useEffect(() => {
-    navigation.setOptions({
-      headerRight: () => (
-        <View className="">
-          <Chromecast />
-        </View>
-      ),
-    });
-  });
-
-  const chromecastReady = useMemo(() => !!castDevice?.deviceId, [castDevice]);
   const [selectedAudioStream, setSelectedAudioStream] = useState<number>(-1);
   const [selectedSubtitleStream, setSelectedSubtitleStream] =
     useState<number>(0);
@@ -112,7 +93,6 @@ const page: React.FC = () => {
       "playbackUrl",
       item?.Id,
       maxBitrate,
-      castDevice,
       selectedAudioStream,
       selectedSubtitleStream,
     ],
@@ -126,7 +106,7 @@ const page: React.FC = () => {
         startTimeTicks: item?.UserData?.PlaybackPositionTicks || 0,
         maxStreamingBitrate: maxBitrate.value,
         sessionData,
-        deviceProfile: castDevice?.deviceId ? chromecastProfile : ios,
+        deviceProfile: ios,
         audioStreamIndex: selectedAudioStream,
         subtitleStreamIndex: selectedSubtitleStream,
       });
@@ -140,38 +120,16 @@ const page: React.FC = () => {
   });
 
   const [, setCp] = useAtom(currentlyPlayingItemAtom);
-  const client = useRemoteMediaClient();
 
   const onPressPlay = useCallback(
     async (type: "device" | "cast" = "device") => {
       if (!playbackUrl || !item) return;
 
-      if (type === "cast" && client) {
-        await CastContext.getPlayServicesState().then((state) => {
-          if (state && state !== PlayServicesState.SUCCESS)
-            CastContext.showPlayServicesErrorDialog(state);
-          else {
-            client.loadMedia({
-              mediaInfo: {
-                contentUrl: playbackUrl,
-                contentType: "video/mp4",
-                metadata: {
-                  type: item.Type === "Episode" ? "tvShow" : "movie",
-                  title: item.Name || "",
-                  subtitle: item.Overview || "",
-                },
-              },
-              startTime: 0,
-            });
-          }
-        });
-      } else {
-        setCp({
-          item,
-          playbackUrl,
-        });
-        setPlaying(true);
-      }
+      setCp({
+        item,
+        playbackUrl,
+      });
+      setPlaying(true);
     },
     [playbackUrl, item]
   );
@@ -242,7 +200,7 @@ const page: React.FC = () => {
           <NextEpisodeButton item={item} type="previous" className="mr-2" />
           <PlayButton
             item={item}
-            chromecastReady={chromecastReady}
+            chromecastReady={false}
             onPress={onPressPlay}
             className="grow"
           />

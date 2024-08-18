@@ -61,30 +61,6 @@
             "useExoplayerDash": false
           }
         }
-      ],
-      [
-        "expo-screen-orientation",
-        {
-          "initialOrientation": "DEFAULT"
-        }
-      ],
-      [
-        "expo-sensors",
-        {
-          "motionPermission": "Allow Streamyfin to access your device motion for landscape video watching."
-        }
-      ],
-      [
-        "expo-build-properties",
-        {
-          "android": {
-            "compileSdkVersion": 33,
-            "targetSdkVersion": 33,
-            "minSdkVersion": 23,
-            "buildToolsVersion": "33.0.0",
-            "kotlinVersion": "1.6.20"
-          }
-        }
       ]
     ],
     "experiments": {

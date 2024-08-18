@@ -12,13 +12,7 @@ import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import { getStreamUrl } from "@/utils/jellyfin/media/getStreamUrl";
 import { useAtom } from "jotai";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
-import { chromecastProfile } from "@/utils/profiles/chromecast";
 import { getMediaInfoApi } from "@jellyfin/sdk/lib/utils/api";
-import CastContext, {
-  PlayServicesState,
-  useCastDevice,
-  useRemoteMediaClient,
-} from "react-native-google-cast";
 import { currentlyPlayingItemAtom, playingAtom } from "../CurrentlyPlayingBar";
 import { useActionSheet } from "@expo/react-native-action-sheet";
 import ios from "@/utils/profiles/ios";
@@ -41,40 +35,14 @@ export const SongsListItem: React.FC<Props> = ({
 }) => {
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
-  const castDevice = useCastDevice();
   const [, setCp] = useAtom(currentlyPlayingItemAtom);
   const [, setPlaying] = useAtom(playingAtom);
 
-  const client = useRemoteMediaClient();
   const { showActionSheetWithOptions } = useActionSheet();
 
   const openSelect = () => {
-    if (!castDevice?.deviceId) {
-      play("device");
-      return;
-    }
-
-    const options = ["Chromecast", "Device", "Cancel"];
-    const cancelButtonIndex = 2;
-
-    showActionSheetWithOptions(
-      {
-        options,
-        cancelButtonIndex,
-      },
-      (selectedIndex: number | undefined) => {
-        switch (selectedIndex) {
-          case 0:
-            play("cast");
-            break;
-          case 1:
-            play("device");
-            break;
-          case cancelButtonIndex:
-            break;
-        }
-      },
-    );
+    play("device");
+    return;
   };
 
   const play = async (type: "device" | "cast") => {
@@ -93,37 +61,16 @@ export const SongsListItem: React.FC<Props> = ({
       item,
       startTimeTicks: item?.UserData?.PlaybackPositionTicks || 0,
       sessionData,
-      deviceProfile: castDevice?.deviceId ? chromecastProfile : ios,
+      deviceProfile: ios,
     });
 
     if (!url || !item) return;
 
-    if (type === "cast" && client) {
-      await CastContext.getPlayServicesState().then((state) => {
-        if (state && state !== PlayServicesState.SUCCESS)
-          CastContext.showPlayServicesErrorDialog(state);
-        else {
-          client.loadMedia({
-            mediaInfo: {
-              contentUrl: url,
-              contentType: "video/mp4",
-              metadata: {
-                type: item.Type === "Episode" ? "tvShow" : "movie",
-                title: item.Name || "",
-                subtitle: item.Overview || "",
-              },
-            },
-            startTime: 0,
-          });
-        }
-      });
-    } else {
-      setCp({
-        item,
-        playbackUrl: url,
-      });
-      setPlaying(true);
-    }
+    setCp({
+      item,
+      playbackUrl: url,
+    });
+    setPlaying(true);
   };
 
   return (
