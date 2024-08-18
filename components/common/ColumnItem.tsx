@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { StyleSheet, View, ViewProps } from "react-native";
 
 const getItemStyle = (index: number, numColumns: number) => {
@@ -9,6 +10,7 @@ const getItemStyle = (index: number, numColumns: number) => {
   })();
 
   return {
+    padding: 20,
     alignItems,
     width: "100%",
   } as const;
@@ -19,16 +21,22 @@ type ColumnItemProps = ViewProps & {
   index: number;
   numColumns: number;
 };
+
 export const ColumnItem = ({
   children,
   index,
   numColumns,
   ...rest
-}: ColumnItemProps) => (
-  <View
-    style={StyleSheet.flatten([getItemStyle(index, numColumns), rest.style])}
-    {...rest}
-  >
-    {children}
-  </View>
-);
+}: ColumnItemProps) => {
+  return (
+    <View className="flex flex-col mb-2 p-4" style={{ width: "33.3%" }}>
+      <View
+        className={`
+        `}
+        {...rest}
+      >
+        {children}
+      </View>
+    </View>
+  );
+};
