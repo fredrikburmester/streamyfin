@@ -45,8 +45,6 @@ export default function RootLayout() {
 }
 
 function Layout() {
-  const [settings, updateSettings] = useSettings();
-
   useKeepAwake();
 
   const queryClientRef = useRef<QueryClient>(

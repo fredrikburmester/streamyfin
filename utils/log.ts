@@ -1,4 +1,4 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { atom } from "jotai";
 import { atomWithStorage, createJSONStorage } from "jotai/utils";
 
 type LogLevel = "INFO" | "WARN" | "ERROR";
@@ -10,8 +10,7 @@ interface LogEntry {
   data?: any;
 }
 
-const asyncStorage = createJSONStorage(() => AsyncStorage);
-const logsAtom = atomWithStorage("logs", [], asyncStorage);
+const logsAtom = atom([]);
 
 export const writeToLog = async (
   level: LogLevel,
@@ -25,23 +24,16 @@ export const writeToLog = async (
     data: data,
   };
 
-  const currentLogs = await AsyncStorage.getItem("logs");
-  const logs: LogEntry[] = currentLogs ? JSON.parse(currentLogs) : [];
+  const logs: LogEntry[] = [];
   logs.push(newEntry);
 
   const maxLogs = 100;
-  const recentLogs = logs.slice(Math.max(logs.length - maxLogs, 0));
-
-  await AsyncStorage.setItem("logs", JSON.stringify(recentLogs));
 };
 
 export const readFromLog = async (): Promise<LogEntry[]> => {
-  const logs = await AsyncStorage.getItem("logs");
-  return logs ? JSON.parse(logs) : [];
+  return [];
 };
 
-export const clearLogs = async () => {
-  await AsyncStorage.removeItem("logs");
-};
+export const clearLogs = async () => {};
 
 export default logsAtom;

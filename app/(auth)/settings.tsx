@@ -6,7 +6,6 @@ import { clearLogs, readFromLog } from "@/utils/log";
 import { useQuery } from "@tanstack/react-query";
 import { useAtom } from "jotai";
 import { ScrollView, View } from "react-native";
-import { SettingToggles } from "@/components/settings/SettingToggles";
 
 export default function settings() {
   const { logout } = useJellyfin();
@@ -29,8 +28,6 @@ export default function settings() {
           <ListItem title="User" subTitle={user?.Name} />
           <ListItem title="Server" subTitle={api?.basePath} />
         </View>
-
-        <SettingToggles />
 
         <View className="flex flex-col space-y-2">
           <Button color="black" onPress={logout}>

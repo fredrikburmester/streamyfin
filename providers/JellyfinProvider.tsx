@@ -1,8 +1,6 @@
 import { Api, Jellyfin } from "@jellyfin/sdk";
 import { UserDto } from "@jellyfin/sdk/lib/generated-client/models";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { isLoaded } from "expo-font";
+import { useMutation } from "@tanstack/react-query";
 import { router, useSegments } from "expo-router";
 import { atom, useAtom } from "jotai";
 import React, {
@@ -31,15 +29,14 @@ interface JellyfinContextValue {
 }
 
 const JellyfinContext = createContext<JellyfinContextValue | undefined>(
-  undefined,
+  undefined
 );
 
 const getOrSetDeviceId = async () => {
-  let deviceId = await AsyncStorage.getItem("deviceId");
+  let deviceId = null;
 
   if (!deviceId) {
     deviceId = uuid.v4() as string;
-    await AsyncStorage.setItem("deviceId", deviceId);
   }
 
   return deviceId;
@@ -58,7 +55,7 @@ export const JellyfinProvider: React.FC<{ children: ReactNode }> = ({
           new Jellyfin({
             clientInfo: { name: "Streamyfin", version: "0.6.1" },
             deviceInfo: { name: Platform.OS === "ios" ? "iOS" : "Android", id },
-          }),
+          })
       );
     })();
   }, []);
@@ -67,8 +64,9 @@ export const JellyfinProvider: React.FC<{ children: ReactNode }> = ({
   const [user, setUser] = useAtom(userAtom);
 
   const discoverServers = async (url: string): Promise<Server[]> => {
-    const servers =
-      await jellyfin?.discovery.getRecommendedServerCandidates(url);
+    const servers = await jellyfin?.discovery.getRecommendedServerCandidates(
+      url
+    );
     return servers?.map((server) => ({ address: server.address })) || [];
   };
 
@@ -79,7 +77,6 @@ export const JellyfinProvider: React.FC<{ children: ReactNode }> = ({
       if (!apiInstance?.basePath) throw new Error("Failed to connect");
 
       setApi(apiInstance);
-      await AsyncStorage.setItem("serverUrl", server.address);
     },
     onError: (error) => {
       console.error("Failed to set server:", error);
@@ -88,7 +85,6 @@ export const JellyfinProvider: React.FC<{ children: ReactNode }> = ({
 
   const removeServerMutation = useMutation({
     mutationFn: async () => {
-      await AsyncStorage.removeItem("serverUrl");
       setApi(null);
     },
     onError: (error) => {
@@ -110,9 +106,7 @@ export const JellyfinProvider: React.FC<{ children: ReactNode }> = ({
 
       if (auth.data.AccessToken && auth.data.User) {
         setUser(auth.data.User);
-        await AsyncStorage.setItem("user", JSON.stringify(auth.data.User));
         setApi(jellyfin.createApi(api?.basePath, auth.data?.AccessToken));
-        await AsyncStorage.setItem("token", auth.data?.AccessToken);
       } else {
         throw new Error("Invalid username or password");
       }
@@ -124,42 +118,11 @@ export const JellyfinProvider: React.FC<{ children: ReactNode }> = ({
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      await AsyncStorage.removeItem("token");
       setUser(null);
     },
     onError: (error) => {
       console.error("Logout failed:", error);
     },
-  });
-
-  const { isLoading, isFetching } = useQuery({
-    queryKey: [
-      "initializeJellyfin",
-      user?.Id,
-      api?.basePath,
-      jellyfin?.clientInfo,
-    ],
-    queryFn: async () => {
-      try {
-        const token = await AsyncStorage.getItem("token");
-        const serverUrl = await AsyncStorage.getItem("serverUrl");
-        const user = JSON.parse(
-          (await AsyncStorage.getItem("user")) as string,
-        ) as UserDto;
-
-        if (serverUrl && token && user.Id && jellyfin) {
-          const apiInstance = jellyfin.createApi(serverUrl, token);
-          setApi(apiInstance);
-          setUser(user);
-        }
-
-        return true;
-      } catch (e) {
-        console.error(e);
-      }
-    },
-    staleTime: 0,
-    enabled: !user?.Id || !api || !jellyfin,
   });
 
   const contextValue: JellyfinContextValue = {
@@ -171,7 +134,7 @@ export const JellyfinProvider: React.FC<{ children: ReactNode }> = ({
     logout: () => logoutMutation.mutateAsync(),
   };
 
-  useProtectedRoute(user, isLoading || isFetching);
+  useProtectedRoute(user);
 
   return (
     <JellyfinContext.Provider value={contextValue}>

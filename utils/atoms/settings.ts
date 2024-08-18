@@ -1,6 +1,4 @@
 import { atom, useAtom } from "jotai";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useEffect } from "react";
 
 type Settings = {
   autoRotate?: boolean;
@@ -12,55 +10,27 @@ type Settings = {
   mediaListCollectionIds?: string[];
 };
 
-/**
- *
- * The settings atom is a Jotai atom that stores the user's settings.
- * It is initialized with a default value of null, which indicates that the settings have not been loaded yet.
- * The settings are loaded from AsyncStorage when the atom is read for the first time.
- *
- */
-
-// Utility function to load settings from AsyncStorage
-const loadSettings = async (): Promise<Settings> => {
-  const jsonValue = await AsyncStorage.getItem("settings");
-  return jsonValue != null
-    ? JSON.parse(jsonValue)
-    : {
-        autoRotate: true,
-        forceLandscapeInVideoPlayer: false,
-        openFullScreenVideoPlayerByDefault: false,
-        usePopularPlugin: false,
-        deviceProfile: "Expo",
-        forceDirectPlay: false,
-        mediaListCollectionIds: [],
-      };
+// Default settings
+const defaultSettings: Settings = {
+  autoRotate: true,
+  forceLandscapeInVideoPlayer: false,
+  openFullScreenVideoPlayerByDefault: true,
+  usePopularPlugin: false,
+  deviceProfile: "Expo",
+  forceDirectPlay: false,
+  mediaListCollectionIds: [],
 };
 
-// Utility function to save settings to AsyncStorage
-const saveSettings = async (settings: Settings) => {
-  const jsonValue = JSON.stringify(settings);
-  await AsyncStorage.setItem("settings", jsonValue);
-};
+// Create an atom to store the settings in memory, initialized with default settings
+const settingsAtom = atom<Settings>(defaultSettings);
 
-// Create an atom to store the settings in memory
-const settingsAtom = atom<Settings | null>(null);
-
-// A hook to manage settings, loading them on initial mount and providing a way to update them
+// A hook to manage settings, providing a way to update them
 export const useSettings = () => {
   const [settings, setSettings] = useAtom(settingsAtom);
 
-  useEffect(() => {
-    if (settings === null) {
-      loadSettings().then(setSettings);
-    }
-  }, [settings, setSettings]);
-
-  const updateSettings = async (update: Partial<Settings>) => {
-    if (settings) {
-      const newSettings = { ...settings, ...update };
-      setSettings(newSettings);
-      await saveSettings(newSettings);
-    }
+  const updateSettings = (update: Partial<Settings>) => {
+    const newSettings = { ...settings, ...update };
+    setSettings(newSettings);
   };
 
   return [settings, updateSettings] as const;

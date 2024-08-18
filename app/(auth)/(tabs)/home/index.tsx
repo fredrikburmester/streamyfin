@@ -5,7 +5,6 @@ import { ScrollingCollectionList } from "@/components/home/ScrollingCollectionLi
 import { Loader } from "@/components/Loader";
 import { MediaListSection } from "@/components/medialists/MediaListSection";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
-import { useSettings } from "@/utils/atoms/settings";
 import { Ionicons } from "@expo/vector-icons";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import {
@@ -30,7 +29,6 @@ export default function index() {
   const [user] = useAtom(userAtom);
 
   const [loading, setLoading] = useState(false);
-  const [settings, _] = useSettings();
 
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
 
@@ -171,11 +169,7 @@ export default function index() {
   });
 
   const { data: mediaListCollections } = useQuery({
-    queryKey: [
-      "mediaListCollections-home",
-      user?.Id,
-      settings?.mediaListCollectionIds,
-    ],
+    queryKey: ["mediaListCollections-home", user?.Id],
     queryFn: async () => {
       if (!api || !user?.Id) return [];
 
@@ -187,16 +181,9 @@ export default function index() {
         includeItemTypes: ["BoxSet"],
       });
 
-      const ids =
-        response.data.Items?.filter(
-          (c) =>
-            c.Name !== "cf_carousel" &&
-            settings?.mediaListCollectionIds?.includes(c.Id!)
-        ) ?? [];
-
-      return ids;
+      return [];
     },
-    enabled: !!api && !!user?.Id && settings?.usePopularPlugin === true,
+    enabled: !!api && !!user?.Id && false,
     staleTime: 0,
   });
 
@@ -262,10 +249,6 @@ export default function index() {
           loading={isLoadingNextUp}
           orientation="horizontal"
         />
-
-        {mediaListCollections?.map((ml) => (
-          <MediaListSection key={ml.Id} collection={ml} />
-        ))}
 
         <ScrollingCollectionList
           title="Recently Added in Movies"

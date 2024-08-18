@@ -20,7 +20,6 @@
     "@gorhom/bottom-sheet": "^4",
     "@jellyfin/sdk": "^0.10.0",
     "@kesha-antonov/react-native-background-downloader": "^3.2.0",
-    "@react-native-async-storage/async-storage": "1.23.1",
     "@react-native-community/netinfo": "11.3.1",
     "@react-native-menu/menu": "^1.1.2",
     "@react-native-tvos/config-tv": "^0.0.10",
