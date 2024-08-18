@@ -1,6 +1,6 @@
 import { Text } from "@/components/common/Text";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
-import { Ionicons } from "@expo/vector-icons";
+import { FontAwesome, Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { useAtom } from "jotai";
 import { useState } from "react";
@@ -9,14 +9,15 @@ import { FilterSheet } from "./FilterSheet";
 
 interface FilterButtonProps<T> extends ViewProps {
   collectionId: string;
-  queryFn: (params: any) => Promise<any>;
+  showSearch?: boolean;
   queryKey: string;
-  set: (value: T[]) => void;
   values: T[];
   title: string;
+  set: (value: T[]) => void;
+  queryFn: (params: any) => Promise<any>;
   searchFilter: (item: T, query: string) => boolean;
   renderItemLabel: (item: T) => React.ReactNode;
-  showSearch?: boolean;
+  icon?: "filter" | "sort";
 }
 
 export const FilterButton = <T,>({
@@ -29,6 +30,7 @@ export const FilterButton = <T,>({
   renderItemLabel,
   searchFilter,
   showSearch = true,
+  icon = "filter",
   ...props
 }: FilterButtonProps<T>) => {
   const [open, setOpen] = useState(false);
@@ -46,18 +48,37 @@ export const FilterButton = <T,>({
       <TouchableOpacity onPress={() => setOpen(true)}>
         <View
           className={`
-            px-3 py-2 rounded-full flex flex-row items-center space-x-2
-            ${values.length > 0 ? "bg-purple-600" : "bg-neutral-900"}
+            px-3 py-1.5 rounded-full flex flex-row items-center space-x-1
+            ${
+              values.length > 0
+                ? "bg-purple-600  border border-purple-700"
+                : "bg-neutral-900 border border-neutral-900"
+            }
             `}
           {...props}
         >
-          <Text>{title}</Text>
-          <Ionicons
-            name="filter"
-            size={16}
-            color="white"
-            style={{ opacity: 0.5 }}
-          />
+          <Text
+            className={`
+             ${values.length > 0 ? "text-purple-100" : "text-neutral-100"}
+            text-xs font-semibold`}
+          >
+            {title}
+          </Text>
+          {icon === "filter" ? (
+            <Ionicons
+              name="filter"
+              size={14}
+              color="white"
+              style={{ opacity: 0.5 }}
+            />
+          ) : (
+            <FontAwesome
+              name="sort"
+              size={14}
+              color="white"
+              style={{ opacity: 0.5 }}
+            />
+          )}
         </View>
       </TouchableOpacity>
       <FilterSheet<T>
