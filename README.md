@@ -26,6 +26,18 @@ Streamyfin includes some exciting experimental features like media downloading a
 
 Downloading works by using ffmpeg to convert a HLS stream into a video file on the device. This means that you can download and view any file you can stream! The file is converted by Jellyfin on the server in real time as it is downloaded. This means a **bit longer download times** but supports any file that your server can transcode.
 
+### Collection rows
+
+Jellyfin collections can be shown as rows or carousel on the home screen.
+The following tags can be added to an collection to provide this functionality. 
+
+Avaiable tags:
+- sf_promoted: Wil make the collection an row on home
+- sf_carousel: Wil make the collection an carousel on home.
+
+A plugin exists to create collections based on external sources like mdblist. This makes managing collections like trending, most watched etc an automatic process.
+See [Collection Import Plugin](https://github.com/lostb1t/jellyfin-plugin-collection-import) for more info.
+
 ## Roadmap for V1
 
 Check out our [Roadmap](https://github.com/users/fredrikburmester/projects/5) to see what we're working on next. We are always open for feedback and suggestions, so please let us know if you have any ideas or feature requests.
