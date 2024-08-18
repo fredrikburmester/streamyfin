@@ -29,6 +29,8 @@ export default function TabLayout() {
           borderTopRightRadius: 0,
           borderTopWidth: 0,
           paddingTop: 8,
+          paddingBottom: Platform.OS === "android" ? 8 : 26,
+          height: Platform.OS === "android" ? 58 : 74,
         },
         tabBarBackground: () =>
           Platform.OS === "ios" ? (
