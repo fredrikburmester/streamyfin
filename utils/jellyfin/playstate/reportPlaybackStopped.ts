@@ -41,12 +41,15 @@ export const reportPlaybackStopped = async ({
     return;
   }
 
+  console.log("reportPlaybackStopped ~", { sessionId, itemId });
+
   try {
     const url = `${api.basePath}/PlayingItems/${itemId}`;
     const params = {
       playSessionId: sessionId,
       positionTicks: Math.round(positionTicks),
-      mediaSourceId: itemId,
+      MediaSourceId: itemId,
+      IsPaused: true,
     };
     const headers = getAuthHeaders(api);
 
@@ -58,7 +61,7 @@ export const reportPlaybackStopped = async ({
       console.error(
         "Failed to report playback progress",
         error.message,
-        error.response?.data,
+        error.response?.data
       );
     } else {
       console.error("Failed to report playback progress", error);
