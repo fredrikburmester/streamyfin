@@ -118,8 +118,15 @@ export const CurrentlyPlayingBar: React.FC = () => {
 
   const onProgress = useCallback(
     ({ currentTime }: OnProgressData) => {
-      if (!sessionData?.PlaySessionId || !api || !currentlyPlaying?.item.Id)
+      if (
+        !sessionData?.PlaySessionId ||
+        !api ||
+        !currentlyPlaying?.item.Id ||
+        !user?.Id ||
+        !currentTime
+      ) {
         return;
+      }
       const newProgress = currentTime * 10000000;
       setProgress(newProgress);
 
