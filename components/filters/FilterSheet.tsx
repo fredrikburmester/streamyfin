@@ -155,7 +155,7 @@ export const FilterSheet = <T,>({
                       setOpen(false);
                     }, 250);
                   }}
-                  key={index}
+                  key={`${index}`}
                   className=" bg-neutral-800 px-4 py-3 flex flex-row items-center justify-between"
                 >
                   <Text>{renderItemLabel(item)}</Text>
