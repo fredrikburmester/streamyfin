@@ -8,12 +8,12 @@ import { useAtom } from "jotai";
 
 import { Text } from "../common/Text";
 import { useFiles } from "@/hooks/useFiles";
+import { useSettings } from "@/utils/atoms/settings";
 import {
   currentlyPlayingItemAtom,
   fullScreenAtom,
   playingAtom,
-} from "../CurrentlyPlayingBar";
-import { useSettings } from "@/utils/atoms/settings";
+} from "@/utils/atoms/playState";
 
 interface EpisodeCardProps {
   item: BaseItemDto;
