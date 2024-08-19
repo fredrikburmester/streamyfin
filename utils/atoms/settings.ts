@@ -10,6 +10,8 @@ type Settings = {
   deviceProfile?: "Expo" | "Native" | "Old";
   forceDirectPlay?: boolean;
   mediaListCollectionIds?: string[];
+  searchEngine: "Marlin" | "Jellyfin";
+  marlinServerUrl?: string;
 };
 
 /**
@@ -33,6 +35,8 @@ const loadSettings = async (): Promise<Settings> => {
         deviceProfile: "Expo",
         forceDirectPlay: false,
         mediaListCollectionIds: [],
+        searchEngine: "Jellyfin",
+        marlinServerUrl: "",
       };
 };
 

@@ -1,4 +1,10 @@
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
+import {
+  currentlyPlayingItemAtom,
+  fullScreenAtom,
+  playingAtom,
+  showCurrentlyPlayingBarAtom,
+} from "@/utils/atoms/playState";
 import { getBackdropUrl } from "@/utils/jellyfin/image/getBackdropUrl";
 import { getAuthHeaders } from "@/utils/jellyfin/jellyfin";
 import { reportPlaybackProgress } from "@/utils/jellyfin/playstate/reportPlaybackProgress";
@@ -6,12 +12,11 @@ import { reportPlaybackStopped } from "@/utils/jellyfin/playstate/reportPlayback
 import { getUserItemData } from "@/utils/jellyfin/user-library/getUserItemData";
 import { writeToLog } from "@/utils/log";
 import { Ionicons } from "@expo/vector-icons";
-import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import { getMediaInfoApi } from "@jellyfin/sdk/lib/utils/api";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { BlurView } from "expo-blur";
 import { useRouter, useSegments } from "expo-router";
-import { atom, useAtom } from "jotai";
+import { useAtom } from "jotai";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, Platform, TouchableOpacity, View } from "react-native";
 import Animated, {
@@ -23,17 +28,9 @@ import Video, { OnProgressData, VideoRef } from "react-native-video";
 import { Text } from "./common/Text";
 import { Loader } from "./Loader";
 
-export const currentlyPlayingItemAtom = atom<{
-  item: BaseItemDto;
-  playbackUrl: string;
-} | null>(null);
-
-export const playingAtom = atom(false);
-export const fullScreenAtom = atom(false);
-
 export const CurrentlyPlayingBar: React.FC = () => {
-  const queryClient = useQueryClient();
   const segments = useSegments();
+  const queryClient = useQueryClient();
 
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
@@ -42,6 +39,7 @@ export const CurrentlyPlayingBar: React.FC = () => {
     currentlyPlayingItemAtom
   );
   const [fullScreen, setFullScreen] = useAtom(fullScreenAtom);
+  const [show, setShow] = useAtom(showCurrentlyPlayingBarAtom);
 
   const videoRef = useRef<VideoRef | null>(null);
   const [progress, setProgress] = useState(0);
@@ -120,21 +118,26 @@ export const CurrentlyPlayingBar: React.FC = () => {
 
   const onProgress = useCallback(
     ({ currentTime }: OnProgressData) => {
-      if (
-        !currentTime ||
-        !sessionData?.PlaySessionId ||
-        !playing ||
-        !api ||
-        !currentlyPlaying?.item.Id
-      )
+      if (!sessionData?.PlaySessionId || !api || !currentlyPlaying?.item.Id)
         return;
       const newProgress = currentTime * 10000000;
       setProgress(newProgress);
+
       reportPlaybackProgress({
         api,
         itemId: currentlyPlaying?.item.Id,
         positionTicks: newProgress,
         sessionId: sessionData.PlaySessionId,
+        IsPaused: !playing,
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: ["nextUp", item?.SeriesId],
+        refetchType: "all",
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["episodes"],
+        refetchType: "all",
       });
     },
     [sessionData?.PlaySessionId, api, playing, currentlyPlaying?.item.Id]
@@ -147,13 +150,6 @@ export const CurrentlyPlayingBar: React.FC = () => {
       videoRef.current?.resume();
     } else {
       videoRef.current?.pause();
-      if (progress > 0 && sessionData?.PlaySessionId)
-        reportPlaybackStopped({
-          api,
-          itemId: item?.Id,
-          positionTicks: progress,
-          sessionId: sessionData?.PlaySessionId,
-        });
 
       queryClient.invalidateQueries({
         queryKey: ["nextUp", item?.SeriesId],
@@ -174,6 +170,17 @@ export const CurrentlyPlayingBar: React.FC = () => {
     }
   }, [fullScreen]);
 
+  useEffect(() => {
+    if (!show && currentlyPlaying && item && sessionData && api) {
+      reportPlaybackStopped({
+        api,
+        itemId: item?.Id,
+        sessionId: sessionData?.PlaySessionId,
+        positionTicks: progress,
+      });
+    }
+  }, [show]);
+
   const startPosition = useMemo(
     () =>
       item?.UserData?.PlaybackPositionTicks
@@ -193,7 +200,7 @@ export const CurrentlyPlayingBar: React.FC = () => {
     [item]
   );
 
-  if (!currentlyPlaying || !api) return null;
+  if (show === false || !api) return null;
 
   return (
     <Animated.View
@@ -223,7 +230,7 @@ export const CurrentlyPlayingBar: React.FC = () => {
                 ${item?.Type === "Audio" ? "aspect-square" : "aspect-video"}
                 `}
             >
-              {currentlyPlaying.playbackUrl && (
+              {currentlyPlaying?.playbackUrl && (
                 <Video
                   ref={videoRef}
                   allowsExternalPlayback
@@ -272,7 +279,7 @@ export const CurrentlyPlayingBar: React.FC = () => {
                       setPlaying(false);
                     }
                   }}
-                  progressUpdateInterval={1000}
+                  progressUpdateInterval={2000}
                   onError={(e) => {
                     console.log(e);
                     writeToLog(
@@ -347,7 +354,7 @@ export const CurrentlyPlayingBar: React.FC = () => {
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => {
-                setCurrentlyPlaying(null);
+                setShow(false);
               }}
               className="aspect-square rounded flex flex-col items-center justify-center p-2"
             >

@@ -1,10 +1,5 @@
 import { AudioTrackSelector } from "@/components/AudioTrackSelector";
 import { Bitrate, BitrateSelector } from "@/components/BitrateSelector";
-import {
-  currentlyPlayingItemAtom,
-  fullScreenAtom,
-  playingAtom,
-} from "@/components/CurrentlyPlayingBar";
 import { DownloadItem } from "@/components/DownloadItem";
 import { Loader } from "@/components/Loader";
 import { OverviewText } from "@/components/OverviewText";
@@ -42,6 +37,12 @@ import CastContext, {
   useRemoteMediaClient,
 } from "react-native-google-cast";
 import { ParallaxScrollView } from "../../../components/ParallaxPage";
+import {
+  currentlyPlayingItemAtom,
+  fullScreenAtom,
+  playingAtom,
+  showCurrentlyPlayingBarAtom,
+} from "@/utils/atoms/playState";
 
 const page: React.FC = () => {
   const local = useLocalSearchParams();
@@ -55,6 +56,7 @@ const page: React.FC = () => {
   const castDevice = useCastDevice();
 
   const [, setCurrentlyPlying] = useAtom(currentlyPlayingItemAtom);
+  const [, setShowCurrentlyPlayingBar] = useAtom(showCurrentlyPlayingBarAtom);
   const [, setPlaying] = useAtom(playingAtom);
   const [, setFullscreen] = useAtom(fullScreenAtom);
 
@@ -168,6 +170,8 @@ const page: React.FC = () => {
           playbackUrl,
         });
         setPlaying(true);
+        setShowCurrentlyPlayingBar(true);
+        
         if (settings?.openFullScreenVideoPlayerByDefault === true) {
           setFullscreen(true);
         }
