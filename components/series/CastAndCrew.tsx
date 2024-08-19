@@ -10,10 +10,12 @@ import Poster from "../posters/Poster";
 import { useAtom } from "jotai";
 import { apiAtom } from "@/providers/JellyfinProvider";
 import { getPrimaryImageUrl } from "@/utils/jellyfin/image/getPrimaryImageUrl";
-import { router } from "expo-router";
+import { router, usePathname } from "expo-router";
 
 export const CastAndCrew = ({ item }: { item: BaseItemDto }) => {
   const [api] = useAtom(apiAtom);
+
+  const pathname = usePathname();
 
   return (
     <View>
@@ -23,7 +25,7 @@ export const CastAndCrew = ({ item }: { item: BaseItemDto }) => {
         renderItem={(item, index) => (
           <TouchableOpacity
             onPress={() => {
-              // TODO: Navigate to person
+              router.push(`/search?q=${item.Name}&prev=${pathname}`);
             }}
             key={item.Id}
             className="flex flex-col w-32"

@@ -1,3 +1,4 @@
+import { Button } from "@/components/Button";
 import { HorizontalScroll } from "@/components/common/HorrizontalScroll";
 import { Input } from "@/components/common/Input";
 import { Text } from "@/components/common/Text";
@@ -11,6 +12,7 @@ import SeriesPoster from "@/components/posters/SeriesPoster";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import { useSettings } from "@/utils/atoms/settings";
 import { getUserItemData } from "@/utils/jellyfin/user-library/getUserItemData";
+import { Ionicons } from "@expo/vector-icons";
 import { Api } from "@jellyfin/sdk";
 import {
   BaseItemDto,
@@ -19,9 +21,21 @@ import {
 import { getItemsApi, getSearchApi } from "@jellyfin/sdk/lib/utils/api";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import { router, useNavigation } from "expo-router";
+import {
+  Href,
+  router,
+  useLocalSearchParams,
+  useNavigation,
+  usePathname,
+} from "expo-router";
 import { useAtom } from "jotai";
-import React, { useCallback, useLayoutEffect, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useState,
+} from "react";
 import { Platform, ScrollView, TouchableOpacity, View } from "react-native";
 import { useDebounce } from "use-debounce";
 
@@ -35,6 +49,10 @@ const exampleSearches = [
 ];
 
 export default function search() {
+  const params = useLocalSearchParams();
+
+  const { q, prev } = params as { q: string; prev: Href<string> };
+
   const [search, setSearch] = useState<string>("");
 
   const [debouncedSearch] = useDebounce(search, 500);
@@ -47,6 +65,10 @@ export default function search() {
   const searchEngine = useMemo(() => {
     return settings?.searchEngine || "Jellyfin";
   }, [settings]);
+
+  useEffect(() => {
+    if (q && q.length > 0) setSearch(q);
+  }, [q]);
 
   const searchFn = useCallback(
     async ({
@@ -95,7 +117,10 @@ export default function search() {
       navigation.setOptions({
         headerSearchBarOptions: {
           placeholder: "Search...",
-          onChangeText: (e: any) => setSearch(e.nativeEvent.text),
+          onChangeText: (e: any) => {
+            router.setParams({ q: "" });
+            setSearch(e.nativeEvent.text);
+          },
           hideWhenScrolling: false,
           autoFocus: true,
         },
@@ -194,6 +219,13 @@ export default function search() {
                 value={search}
                 onChangeText={(text) => setSearch(text)}
               />
+            </View>
+          )}
+          {!!q && (
+            <View className="px-4 flex flex-col space-y-2">
+              <Text className="text-neutral-500 ">
+                Results for <Text className="text-purple-600">{q}</Text>
+              </Text>
             </View>
           )}
           <SearchItemWrapper
