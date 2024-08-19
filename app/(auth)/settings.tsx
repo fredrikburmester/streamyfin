@@ -9,6 +9,7 @@ import { ScrollView, View } from "react-native";
 import * as Haptics from "expo-haptics";
 import { useFiles } from "@/hooks/useFiles";
 import { SettingToggles } from "@/components/settings/SettingToggles";
+import { WebSocketsTest } from "@/components/settings/WebsocketsText";
 
 export default function settings() {
   const { logout } = useJellyfin();
@@ -44,7 +45,7 @@ export default function settings() {
             onPress={async () => {
               await deleteAllFiles();
               Haptics.notificationAsync(
-                Haptics.NotificationFeedbackType.Success,
+                Haptics.NotificationFeedbackType.Success
               );
             }}
           >
@@ -55,7 +56,7 @@ export default function settings() {
             onPress={async () => {
               await clearLogs();
               Haptics.notificationAsync(
-                Haptics.NotificationFeedbackType.Success,
+                Haptics.NotificationFeedbackType.Success
               );
             }}
           >
