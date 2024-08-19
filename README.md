@@ -49,6 +49,8 @@ Check out our [Roadmap](https://github.com/users/fredrikburmester/projects/5) to
   <a href="https://play.google.com/store/apps/details?id=com.fredrikburmester.streamyfin"><img height=50 alt="Get the beta on Google Play" src="./assets/Google_Play_Store_badge_EN.svg"/></a>
 </div>
 
+Or download the APKs [here on GitHub](https://github.com/fredrikburmester/streamyfin/releases) for Android.
+
 ### Beta testing
 
 Get the latest updates by using the TestFlight version of the app.
@@ -56,8 +58,6 @@ Get the latest updates by using the TestFlight version of the app.
 <a href="https://testflight.apple.com/join/CWBaAAK2">
   <img height=75 alt="Get the beta on TestFlight" src="./assets/Get_the_beta_on_Testflight.svg"/>
 </a>
-
-Or download the APKs here on GitHub for Android.
 
 ## 🚀 Getting Started
 
