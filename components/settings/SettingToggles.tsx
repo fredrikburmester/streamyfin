@@ -1,18 +1,25 @@
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import { useSettings } from "@/utils/atoms/settings";
 import { getItemsApi } from "@jellyfin/sdk/lib/utils/api";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAtom } from "jotai";
 import { Linking, Switch, TouchableOpacity, View } from "react-native";
 import * as DropdownMenu from "zeego/dropdown-menu";
 import { Text } from "../common/Text";
 import { Loader } from "../Loader";
+import { Input } from "../common/Input";
+import { useState } from "react";
+import { Button } from "../Button";
 
 export const SettingToggles: React.FC = () => {
   const [settings, updateSettings] = useSettings();
 
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
+
+  const [marlinUrl, setMarlinUrl] = useState<string>("");
+
+  const queryClient = useQueryClient();
 
   const {
     data: mediaListCollections,
@@ -207,6 +214,90 @@ export const SettingToggles: React.FC = () => {
             </DropdownMenu.Item>
           </DropdownMenu.Content>
         </DropdownMenu.Root>
+      </View>
+      <View className="flex flex-col">
+        <View
+          className={`
+            flex flex-row items-center space-x-2 justify-between bg-neutral-900 p-4
+            ${settings?.forceDirectPlay ? "opacity-50 select-none" : ""}
+          `}
+        >
+          <View className="flex flex-col shrink">
+            <Text className="font-semibold">Search engine</Text>
+            <Text className="text-xs opacity-50">
+              Choose the search engine you want to use.
+            </Text>
+          </View>
+          <DropdownMenu.Root>
+            <DropdownMenu.Trigger>
+              <TouchableOpacity className="bg-neutral-800 rounded-lg border-neutral-900 border px-3 py-2 flex flex-row items-center justify-between">
+                <Text>{settings?.searchEngine}</Text>
+              </TouchableOpacity>
+            </DropdownMenu.Trigger>
+            <DropdownMenu.Content
+              loop={true}
+              side="bottom"
+              align="start"
+              alignOffset={0}
+              avoidCollisions={true}
+              collisionPadding={8}
+              sideOffset={8}
+            >
+              <DropdownMenu.Label>Profiles</DropdownMenu.Label>
+              <DropdownMenu.Item
+                key="1"
+                onSelect={() => {
+                  updateSettings({ searchEngine: "Jellyfin" });
+                  queryClient.invalidateQueries({ queryKey: ["search"] });
+                }}
+              >
+                <DropdownMenu.ItemTitle>Jellyfin</DropdownMenu.ItemTitle>
+              </DropdownMenu.Item>
+              <DropdownMenu.Item
+                key="2"
+                onSelect={() => {
+                  updateSettings({ searchEngine: "Marlin" });
+                  queryClient.invalidateQueries({ queryKey: ["search"] });
+                }}
+              >
+                <DropdownMenu.ItemTitle>Marlin</DropdownMenu.ItemTitle>
+              </DropdownMenu.Item>
+            </DropdownMenu.Content>
+          </DropdownMenu.Root>
+        </View>
+        {settings?.searchEngine === "Marlin" && (
+          <View className="flex flex-col bg-neutral-900 px-4 pb-4">
+            <>
+              <View className="flex flex-row items-center space-x-2">
+                <View className="grow">
+                  <Input
+                    placeholder="Marlin Server URL..."
+                    defaultValue={settings.marlinServerUrl}
+                    value={marlinUrl}
+                    keyboardType="url"
+                    returnKeyType="done"
+                    autoCapitalize="none"
+                    textContentType="URL"
+                    onChangeText={(text) => setMarlinUrl(text)}
+                  />
+                </View>
+                <Button
+                  color="purple"
+                  className="shrink w-16 h-12"
+                  onPress={() => {
+                    updateSettings({ marlinServerUrl: marlinUrl });
+                  }}
+                >
+                  Save
+                </Button>
+              </View>
+
+              <Text className="text-neutral-500 mt-2">
+                {settings?.marlinServerUrl}
+              </Text>
+            </>
+          </View>
+        )}
       </View>
     </View>
   );
