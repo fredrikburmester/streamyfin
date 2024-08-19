@@ -9,12 +9,13 @@ import { useAtom } from "jotai";
 import { Text } from "../common/Text";
 import { useFiles } from "@/hooks/useFiles";
 import { runtimeTicksToMinutes } from "@/utils/time";
+
+import { useSettings } from "@/utils/atoms/settings";
 import {
   currentlyPlayingItemAtom,
-  fullScreenAtom,
   playingAtom,
-} from "../CurrentlyPlayingBar";
-import { useSettings } from "@/utils/atoms/settings";
+  fullScreenAtom,
+} from "@/utils/atoms/playState";
 
 interface MovieCardProps {
   item: BaseItemDto;
@@ -81,7 +82,12 @@ export const MovieCard: React.FC<MovieCardProps> = ({ item }) => {
           </View>
         </TouchableOpacity>
       </ContextMenu.Trigger>
-      <ContextMenu.Content>
+      <ContextMenu.Content
+        loop={false}
+        alignOffset={0}
+        avoidCollisions={false}
+        collisionPadding={0}
+      >
         {contextMenuOptions.map((option) => (
           <ContextMenu.Item
             key={option.label}
