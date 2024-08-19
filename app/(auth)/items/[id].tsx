@@ -171,9 +171,11 @@ const page: React.FC = () => {
         });
         setPlaying(true);
         setShowCurrentlyPlayingBar(true);
-        
+
         if (settings?.openFullScreenVideoPlayerByDefault === true) {
-          setFullscreen(true);
+          setTimeout(() => {
+            setFullscreen(true);
+          }, 100);
         }
       }
     },
