@@ -44,14 +44,9 @@ Check out our [Roadmap](https://github.com/users/fredrikburmester/projects/5) to
 
 ## Get it now
 
-<div style="display:flex;">
-  <a href="https://apps.apple.com/se/app/streamyfin/id6593660679?l=en-GB">
-    <img height=50 alt="Get Streamyfin on App Store" src="./assets/Download_on_the_App_Store_Badge.png"/>
-  </a>
-
-  <a href="https://play.google.com/store/apps/details?id=com.fredrikburmester.streamyfin">
-    <img height=75 alt="Get the beta on Google Play" src="./assets/en_badge_web_generic.png"/>
-  </a>
+<div style="display: flex; gap: 5px;">
+  <a href="https://apps.apple.com/se/app/streamyfin/id6593660679?l=en-GB"><img height=50 alt="Get Streamyfin on App Store" src="./assets/Download_on_the_App_Store_Badge.png"/></a>
+  <a href="https://play.google.com/store/apps/details?id=com.fredrikburmester.streamyfin"><img height=50 alt="Get the beta on Google Play" src="./assets/Google_Play_Store_badge_EN.svg"/></a>
 </div>
 
 ### Beta testing
