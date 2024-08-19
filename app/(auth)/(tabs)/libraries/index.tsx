@@ -49,7 +49,7 @@ export default function index() {
         paddingBottom: 150,
       }}
       data={data}
-      renderItem={({ item }) => <CollectionCard collection={item} />}
+      renderItem={({ item }) => <LibraryItemCard library={item} />}
       keyExtractor={(item) => item.Id || ""}
       ItemSeparatorComponent={() => <View className="h-4" />}
       estimatedItemSize={200}
@@ -58,10 +58,10 @@ export default function index() {
 }
 
 interface Props {
-  collection: BaseItemDto;
+  library: BaseItemDto;
 }
 
-const CollectionCard: React.FC<Props> = ({ collection }) => {
+const LibraryItemCard: React.FC<Props> = ({ library }) => {
   const router = useRouter();
 
   const [api] = useAtom(apiAtom);
@@ -70,9 +70,9 @@ const CollectionCard: React.FC<Props> = ({ collection }) => {
     () =>
       getPrimaryImageUrl({
         api,
-        item: collection,
+        item: library,
       }),
-    [collection]
+    [library]
   );
 
   if (!url) return null;
@@ -80,7 +80,7 @@ const CollectionCard: React.FC<Props> = ({ collection }) => {
   return (
     <TouchableOpacity
       onPress={() => {
-        router.push(`/library/collections/${collection.Id}`);
+        router.push(`/libraries/${library.Id}`);
       }}
     >
       <View className="flex justify-center rounded-xl w-full relative border border-neutral-900 h-20 ">
@@ -96,7 +96,7 @@ const CollectionCard: React.FC<Props> = ({ collection }) => {
           }}
         />
         <Text className="font-bold text-xl text-start px-4">
-          {collection.Name}
+          {library.Name}
         </Text>
       </View>
     </TouchableOpacity>
