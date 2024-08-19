@@ -19,7 +19,11 @@ import {
   BaseItemDtoQueryResult,
   BaseItemKind,
 } from "@jellyfin/sdk/lib/generated-client/models";
-import { getFilterApi, getItemsApi } from "@jellyfin/sdk/lib/utils/api";
+import {
+  getFilterApi,
+  getItemsApi,
+  getUserLibraryApi,
+} from "@jellyfin/sdk/lib/utils/api";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { Stack, useLocalSearchParams, useNavigation } from "expo-router";
 import { useAtom } from "jotai";
@@ -40,7 +44,7 @@ const isCloseToBottom = ({
 
 const page: React.FC = () => {
   const searchParams = useLocalSearchParams();
-  const { collectionId } = searchParams as { collectionId: string };
+  const { libraryId } = searchParams as { libraryId: string };
 
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
@@ -52,18 +56,18 @@ const page: React.FC = () => {
   const [sortBy, setSortBy] = useAtom(sortByAtom);
   const [sortOrder, setSortOrder] = useAtom(sortOrderAtom);
 
-  const { data: collection } = useQuery({
-    queryKey: ["collection", collectionId],
+  const { data: library } = useQuery({
+    queryKey: ["library", libraryId],
     queryFn: async () => {
       if (!api) return null;
-      const response = await getItemsApi(api).getItems({
+      const response = await getUserLibraryApi(api).getItem({
+        itemId: libraryId,
         userId: user?.Id,
-        ids: [collectionId],
       });
-      const data = response.data.Items?.[0];
+      const data = response.data;
       return data;
     },
-    enabled: !!api && !!user?.Id && !!collectionId,
+    enabled: !!api && !!user?.Id && !!libraryId,
     staleTime: 0,
   });
 
@@ -73,11 +77,11 @@ const page: React.FC = () => {
     }: {
       pageParam: number;
     }): Promise<BaseItemDtoQueryResult | null> => {
-      if (!api || !collection) return null;
+      if (!api || !library) return null;
 
       const includeItemTypes: BaseItemKind[] = [];
 
-      switch (collection?.CollectionType) {
+      switch (library?.CollectionType) {
         case "movies":
           includeItemTypes.push("Movie");
           break;
@@ -96,7 +100,7 @@ const page: React.FC = () => {
 
       const response = await getItemsApi(api).getItems({
         userId: user?.Id,
-        parentId: collectionId,
+        parentId: libraryId,
         limit: 66,
         startIndex: pageParam,
         sortBy: [sortBy[0].key, "SortName", "ProductionYear"],
@@ -116,8 +120,8 @@ const page: React.FC = () => {
     [
       api,
       user?.Id,
-      collectionId,
-      collection?.CollectionType,
+      libraryId,
+      library,
       selectedGenres,
       selectedYears,
       selectedTags,
@@ -129,7 +133,7 @@ const page: React.FC = () => {
   const { data, isFetching, fetchNextPage } = useInfiniteQuery({
     queryKey: [
       "library-items",
-      collection,
+      library,
       selectedGenres,
       selectedYears,
       selectedTags,
@@ -158,7 +162,7 @@ const page: React.FC = () => {
       }
     },
     initialPageParam: 0,
-    enabled: !!api && !!user?.Id && !!collection,
+    enabled: !!api && !!user?.Id && !!library,
   });
 
   const type = useMemo(() => {
@@ -169,7 +173,7 @@ const page: React.FC = () => {
     return data?.pages.flatMap((p) => p?.Items) || [];
   }, [data]);
 
-  if (!collection || !collection.CollectionType) return null;
+  if (!library || !library.CollectionType) return null;
 
   return (
     <ScrollView
@@ -187,7 +191,7 @@ const page: React.FC = () => {
             <View className="flex flex-row space-x-1 px-3">
               <ResetFiltersButton />
               <FilterButton
-                collectionId={collectionId}
+                collectionId={libraryId}
                 queryKey="genreFilter"
                 queryFn={async () => {
                   if (!api) return null;
@@ -196,7 +200,7 @@ const page: React.FC = () => {
                   ).getQueryFiltersLegacy({
                     userId: user?.Id,
                     includeItemTypes: type ? [type] : [],
-                    parentId: collectionId,
+                    parentId: libraryId,
                   });
                   return response.data.Genres || [];
                 }}
@@ -209,7 +213,7 @@ const page: React.FC = () => {
                 }
               />
               <FilterButton
-                collectionId={collectionId}
+                collectionId={libraryId}
                 queryKey="tagsFilter"
                 queryFn={async () => {
                   if (!api) return null;
@@ -218,7 +222,7 @@ const page: React.FC = () => {
                   ).getQueryFiltersLegacy({
                     userId: user?.Id,
                     includeItemTypes: type ? [type] : [],
-                    parentId: collectionId,
+                    parentId: libraryId,
                   });
                   return response.data.Tags || [];
                 }}
@@ -231,7 +235,7 @@ const page: React.FC = () => {
                 }
               />
               <FilterButton
-                collectionId={collectionId}
+                collectionId={libraryId}
                 queryKey="yearFilter"
                 queryFn={async () => {
                   if (!api) return null;
@@ -240,7 +244,7 @@ const page: React.FC = () => {
                   ).getQueryFiltersLegacy({
                     userId: user?.Id,
                     includeItemTypes: type ? [type] : [],
-                    parentId: collectionId,
+                    parentId: libraryId,
                   });
                   return (
                     response.data.Years?.sort((a, b) => b - a).map((y) =>
@@ -258,7 +262,7 @@ const page: React.FC = () => {
               />
               <FilterButton
                 icon="sort"
-                collectionId={collectionId}
+                collectionId={libraryId}
                 queryKey="sortByFilter"
                 queryFn={async () => {
                   return sortOptions;
@@ -276,7 +280,7 @@ const page: React.FC = () => {
               <FilterButton
                 icon="sort"
                 showSearch={false}
-                collectionId={collectionId}
+                collectionId={libraryId}
                 queryKey="orderByFilter"
                 queryFn={async () => {
                   return sortOrderOptions;

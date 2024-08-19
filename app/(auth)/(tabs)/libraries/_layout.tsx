@@ -16,7 +16,7 @@ export default function IndexLayout() {
         }}
       />
       <Stack.Screen
-        name="collections/[collectionId]"
+        name="[libraryId]"
         options={{
           title: "",
           headerShown: true,
