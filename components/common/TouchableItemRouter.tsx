@@ -46,7 +46,6 @@ export const TouchableItemRouter: React.FC<PropsWithChildren<Props>> = ({
           return;
         }
 
-        // Movies and all other cases
         if (item.Type === "BoxSet") {
           router.push(`/collections/${item.Id}`);
           return;
