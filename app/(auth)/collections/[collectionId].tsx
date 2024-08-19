@@ -56,6 +56,21 @@ const page: React.FC = () => {
   const [sortBy, setSortBy] = useAtom(sortByAtom);
   const [sortOrder, setSortOrder] = useAtom(sortOrderAtom);
 
+  useEffect(() => {
+    setSortBy([
+      {
+        key: "ProductionYear",
+        value: "Production Year",
+      },
+    ]);
+    setSortOrder([
+      {
+        key: "Descending",
+        value: "Descending",
+      },
+    ]);
+  }, []);
+
   const { data: collection } = useQuery({
     queryKey: ["collection", collectionId],
     queryFn: async () => {
