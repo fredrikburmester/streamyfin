@@ -9,13 +9,19 @@ import AlbumCover from "@/components/posters/AlbumCover";
 import MoviePoster from "@/components/posters/MoviePoster";
 import SeriesPoster from "@/components/posters/SeriesPoster";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
+import { useSettings } from "@/utils/atoms/settings";
 import { getUserItemData } from "@/utils/jellyfin/user-library/getUserItemData";
-import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
-import { getSearchApi } from "@jellyfin/sdk/lib/utils/api";
+import { Api } from "@jellyfin/sdk";
+import {
+  BaseItemDto,
+  BaseItemKind,
+} from "@jellyfin/sdk/lib/generated-client/models";
+import { getItemsApi, getSearchApi } from "@jellyfin/sdk/lib/utils/api";
 import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
 import { router, useNavigation } from "expo-router";
 import { useAtom } from "jotai";
-import React, { useLayoutEffect, useMemo, useState } from "react";
+import React, { useCallback, useLayoutEffect, useMemo, useState } from "react";
 import { Platform, ScrollView, TouchableOpacity, View } from "react-native";
 import { useDebounce } from "use-debounce";
 
@@ -36,6 +42,53 @@ export default function search() {
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
 
+  const [settings] = useSettings();
+
+  const searchEngine = useMemo(() => {
+    return settings?.searchEngine || "Jellyfin";
+  }, [settings]);
+
+  const searchFn = useCallback(
+    async ({
+      types,
+      query,
+    }: {
+      types: BaseItemKind[];
+      query: string;
+    }): Promise<BaseItemDto[]> => {
+      if (!api) return [];
+
+      if (searchEngine === "Jellyfin") {
+        const searchApi = await getSearchApi(api).getSearchHints({
+          searchTerm: query,
+          limit: 10,
+          includeItemTypes: types,
+        });
+
+        return searchApi.data.SearchHints as BaseItemDto[];
+      } else {
+        const url = `${settings?.marlinServerUrl}/search?q=${encodeURIComponent(
+          query
+        )}&includeItemTypes=${types
+          .map((type) => encodeURIComponent(type))
+          .join("&includeItemTypes=")}`;
+
+        const response1 = await axios.get(url);
+        const ids = response1.data.ids;
+
+        if (!ids || !ids.length) return [];
+
+        const response2 = await getItemsApi(api).getItems({
+          ids,
+          enableImageTypes: ["Primary", "Backdrop", "Thumb"],
+        });
+
+        return response2.data.Items as BaseItemDto[];
+      }
+    },
+    [api, settings]
+  );
+
   const navigation = useNavigation();
   useLayoutEffect(() => {
     if (Platform.OS === "ios")
@@ -49,94 +102,64 @@ export default function search() {
       });
   }, [navigation]);
 
-  const { data: movies, isLoading: l1 } = useQuery({
-    queryKey: ["search-movies", debouncedSearch],
-    queryFn: async () => {
-      if (!api || !user || debouncedSearch.length === 0) return [];
-
-      const searchApi = await getSearchApi(api).getSearchHints({
-        searchTerm: debouncedSearch,
-        limit: 10,
-        includeItemTypes: ["Movie"],
-      });
-
-      return searchApi.data.SearchHints;
-    },
+  const { data: movies, isFetching: l1 } = useQuery({
+    queryKey: ["search", "movies", debouncedSearch],
+    queryFn: () =>
+      searchFn({
+        query: debouncedSearch,
+        types: ["Movie"],
+      }),
+    enabled: debouncedSearch.length > 0,
   });
 
-  const { data: series, isLoading: l2 } = useQuery({
-    queryKey: ["search-series", debouncedSearch],
-    queryFn: async () => {
-      if (!api || !user || debouncedSearch.length === 0) return [];
-
-      const searchApi = await getSearchApi(api).getSearchHints({
-        searchTerm: debouncedSearch,
-        limit: 10,
-        includeItemTypes: ["Series"],
-      });
-
-      return searchApi.data.SearchHints;
-    },
+  const { data: series, isFetching: l2 } = useQuery({
+    queryKey: ["search", "series", debouncedSearch],
+    queryFn: () =>
+      searchFn({
+        query: debouncedSearch,
+        types: ["Series"],
+      }),
+    enabled: debouncedSearch.length > 0,
   });
 
-  const { data: episodes, isLoading: l3 } = useQuery({
-    queryKey: ["search-episodes", debouncedSearch],
-    queryFn: async () => {
-      if (!api || !user || debouncedSearch.length === 0) return [];
-
-      const searchApi = await getSearchApi(api).getSearchHints({
-        searchTerm: debouncedSearch,
-        limit: 10,
-        includeItemTypes: ["Episode"],
-      });
-
-      return searchApi.data.SearchHints;
-    },
+  const { data: episodes, isFetching: l3 } = useQuery({
+    queryKey: ["search", "episodes", debouncedSearch],
+    queryFn: () =>
+      searchFn({
+        query: debouncedSearch,
+        types: ["Episode"],
+      }),
+    enabled: debouncedSearch.length > 0,
   });
 
-  const { data: artists, isLoading: l4 } = useQuery({
-    queryKey: ["search-artists", debouncedSearch],
-    queryFn: async () => {
-      if (!api || !user || debouncedSearch.length === 0) return [];
-
-      const searchApi = await getSearchApi(api).getSearchHints({
-        searchTerm: debouncedSearch,
-        limit: 10,
-        includeItemTypes: ["MusicArtist"],
-      });
-
-      return searchApi.data.SearchHints;
-    },
+  const { data: artists, isFetching: l4 } = useQuery({
+    queryKey: ["search", "artists", debouncedSearch],
+    queryFn: () =>
+      searchFn({
+        query: debouncedSearch,
+        types: ["MusicArtist"],
+      }),
+    enabled: debouncedSearch.length > 0,
   });
 
-  const { data: albums, isLoading: l5 } = useQuery({
-    queryKey: ["search-albums", debouncedSearch],
-    queryFn: async () => {
-      if (!api || !user || debouncedSearch.length === 0) return [];
-
-      const searchApi = await getSearchApi(api).getSearchHints({
-        searchTerm: debouncedSearch,
-        limit: 10,
-        includeItemTypes: ["MusicAlbum"],
-      });
-
-      return searchApi.data.SearchHints;
-    },
+  const { data: albums, isFetching: l5 } = useQuery({
+    queryKey: ["search", "albums", debouncedSearch],
+    queryFn: () =>
+      searchFn({
+        query: debouncedSearch,
+        types: ["MusicAlbum"],
+      }),
+    enabled: debouncedSearch.length > 0,
   });
 
-  const { data: songs, isLoading: l6 } = useQuery({
-    queryKey: ["search-songs", debouncedSearch],
-    queryFn: async () => {
-      if (!api || !user || debouncedSearch.length === 0) return [];
-
-      const searchApi = await getSearchApi(api).getSearchHints({
-        searchTerm: debouncedSearch,
-        limit: 10,
-        includeItemTypes: ["Audio"],
-      });
-
-      return searchApi.data.SearchHints;
-    },
+  const { data: songs, isFetching: l6 } = useQuery({
+    queryKey: ["search", "songs", debouncedSearch],
+    queryFn: () =>
+      searchFn({
+        query: debouncedSearch,
+        types: ["Audio"],
+      }),
+    enabled: debouncedSearch.length > 0,
   });
 
   const noResults = useMemo(() => {
