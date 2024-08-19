@@ -1,8 +1,6 @@
 import { Text } from "@/components/common/Text";
-import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import { FontAwesome, Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
-import { useAtom } from "jotai";
 import { useState } from "react";
 import { TouchableOpacity, View, ViewProps } from "react-native";
 import { FilterSheet } from "./FilterSheet";
@@ -59,7 +57,7 @@ export const FilterButton = <T,>({
         >
           <Text
             className={`
-             ${values.length > 0 ? "text-purple-100" : "text-neutral-100"}
+            ${values.length > 0 ? "text-purple-100" : "text-neutral-100"}
             text-xs font-semibold`}
           >
             {title}
