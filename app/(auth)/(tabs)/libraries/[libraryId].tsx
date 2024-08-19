@@ -309,7 +309,7 @@ const page: React.FC = () => {
             (item, index) =>
               item && (
                 <TouchableItemRouter
-                  key={`${item.Id}`}
+                  key={`${item.Id}-${index}`}
                   style={{
                     width: "32%",
                     marginBottom: 4,
