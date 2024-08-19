@@ -1,20 +1,46 @@
 import { Text } from "@/components/common/Text";
+import { TouchableItemRouter } from "@/components/common/TouchableItemRouter";
+import { FilterButton } from "@/components/filters/FilterButton";
+import { ResetFiltersButton } from "@/components/filters/ResetFiltersButton";
+import { ItemCardText } from "@/components/ItemCardText";
 import { Loader } from "@/components/Loader";
-import ArtistPoster from "@/components/posters/ArtistPoster";
 import MoviePoster from "@/components/posters/MoviePoster";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
-import { Ionicons } from "@expo/vector-icons";
 import {
-  BaseItemDto,
+  genreFilterAtom,
+  sortByAtom,
+  sortOptions,
+  sortOrderAtom,
+  sortOrderOptions,
+  tagsFilterAtom,
+  yearFilterAtom,
+} from "@/utils/atoms/filters";
+import {
+  BaseItemDtoQueryResult,
   BaseItemKind,
-  ItemSortBy,
 } from "@jellyfin/sdk/lib/generated-client/models";
-import { getItemsApi } from "@jellyfin/sdk/lib/utils/api";
-import { useQuery } from "@tanstack/react-query";
-import { router, useLocalSearchParams } from "expo-router";
+import {
+  getFilterApi,
+  getItemsApi,
+  getUserLibraryApi,
+} from "@jellyfin/sdk/lib/utils/api";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { Stack, useLocalSearchParams, useNavigation } from "expo-router";
 import { useAtom } from "jotai";
-import { useMemo, useState } from "react";
-import { ScrollView, TouchableOpacity, View } from "react-native";
+import React, { useCallback, useEffect, useMemo } from "react";
+import { NativeScrollEvent, ScrollView, View } from "react-native";
+
+const isCloseToBottom = ({
+  layoutMeasurement,
+  contentOffset,
+  contentSize,
+}: NativeScrollEvent) => {
+  const paddingToBottom = 200;
+  return (
+    layoutMeasurement.height + contentOffset.y >=
+    contentSize.height - paddingToBottom
+  );
+};
 
 const page: React.FC = () => {
   const searchParams = useLocalSearchParams();
@@ -22,200 +48,279 @@ const page: React.FC = () => {
 
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
+  const navigation = useNavigation();
+
+  const [selectedGenres, setSelectedGenres] = useAtom(genreFilterAtom);
+  const [selectedYears, setSelectedYears] = useAtom(yearFilterAtom);
+  const [selectedTags, setSelectedTags] = useAtom(tagsFilterAtom);
+  const [sortBy, setSortBy] = useAtom(sortByAtom);
+  const [sortOrder, setSortOrder] = useAtom(sortOrderAtom);
 
   const { data: collection } = useQuery({
     queryKey: ["collection", collectionId],
     queryFn: async () => {
       if (!api) return null;
-      const response = await getItemsApi(api).getItems({
+      const response = await getUserLibraryApi(api).getItem({
+        itemId: collectionId,
         userId: user?.Id,
-        ids: [collectionId],
       });
-      const data = response.data.Items?.[0];
+      const data = response.data;
       return data;
     },
     enabled: !!api && !!user?.Id && !!collectionId,
     staleTime: 0,
   });
 
-  const [startIndex, setStartIndex] = useState<number>(0);
+  useEffect(() => {
+    navigation.setOptions({ title: collection?.Name || "" });
+  }, [navigation, collection]);
 
-  const { data, isLoading, isError } = useQuery<{
-    Items: BaseItemDto[];
-    TotalRecordCount: number;
-  }>({
-    queryKey: ["collection-items", collection?.Id, startIndex],
-    queryFn: async () => {
-      if (!api || !collectionId)
-        return {
-          Items: [],
-          TotalRecordCount: 0,
-        };
-
-      const sortBy: ItemSortBy[] = [];
-      const includeItemTypes: BaseItemKind[] = [];
-
-      switch (collection?.CollectionType) {
-        case "movies":
-          sortBy.push("SortName", "ProductionYear");
-          break;
-        case "boxsets":
-          sortBy.push("IsFolder", "SortName");
-          break;
-        default:
-          sortBy.push("SortName");
-          break;
-      }
-
-      switch (collection?.CollectionType) {
-        case "movies":
-          includeItemTypes.push("Movie");
-          break;
-        case "boxsets":
-          includeItemTypes.push("BoxSet");
-          break;
-        case "tvshows":
-          includeItemTypes.push("Series");
-          break;
-        case "music":
-          includeItemTypes.push("MusicAlbum");
-          break;
-        default:
-          break;
-      }
+  const fetchItems = useCallback(
+    async ({
+      pageParam,
+    }: {
+      pageParam: number;
+    }): Promise<BaseItemDtoQueryResult | null> => {
+      if (!api || !collection) return null;
 
       const response = await getItemsApi(api).getItems({
         userId: user?.Id,
         parentId: collectionId,
-        limit: 100,
-        startIndex,
-        sortBy,
-        sortOrder: ["Ascending"],
-        includeItemTypes,
-        enableImageTypes: ["Primary", "Backdrop", "Banner", "Thumb"],
-        recursive: true,
-        imageTypeLimit: 1,
-        fields: ["PrimaryImageAspectRatio", "SortName"],
+        limit: 18,
+        startIndex: pageParam,
+        sortBy: [sortBy[0].key, "SortName", "ProductionYear"],
+        sortOrder: [sortOrder[0].key],
+        fields: [
+          "ItemCounts",
+          "PrimaryImageAspectRatio",
+          "CanDelete",
+          "MediaSourceCount",
+        ],
+        genres: selectedGenres,
+        tags: selectedTags,
+        years: selectedYears.map((year) => parseInt(year)),
       });
 
-      const data = response.data.Items;
-
-      return {
-        Items: data || [],
-        TotalRecordCount: response.data.TotalRecordCount || 0,
-      };
+      return response.data || null;
     },
-    enabled: !!collection?.Id && !!api && !!user?.Id,
+    [
+      api,
+      user?.Id,
+      collection,
+      selectedGenres,
+      selectedYears,
+      selectedTags,
+      sortBy,
+      sortOrder,
+    ]
+  );
+
+  const { data, isFetching, fetchNextPage } = useInfiniteQuery({
+    queryKey: [
+      "collection-items",
+      collection,
+      selectedGenres,
+      selectedYears,
+      selectedTags,
+      sortBy,
+      sortOrder,
+    ],
+    queryFn: fetchItems,
+    getNextPageParam: (lastPage, pages) => {
+      if (
+        !lastPage?.Items ||
+        !lastPage?.TotalRecordCount ||
+        lastPage?.TotalRecordCount === 0
+      )
+        return undefined;
+
+      const totalItems = lastPage.TotalRecordCount;
+      const accumulatedItems = pages.reduce(
+        (acc, curr) => acc + (curr?.Items?.length || 0),
+        0
+      );
+
+      if (accumulatedItems < totalItems) {
+        return lastPage?.Items?.length * pages.length;
+      } else {
+        return undefined;
+      }
+    },
+    initialPageParam: 0,
+    enabled: !!api && !!user?.Id && !!collection,
   });
 
-  const totalItems = useMemo(() => {
-    return data?.TotalRecordCount;
+  useEffect(() => {
+    console.log("Data: ", data);
   }, [data]);
 
+  const type = useMemo(() => {
+    return data?.pages.flatMap((page) => page?.Items)[0]?.Type || null;
+  }, [data]);
+
+  const flatData = useMemo(() => {
+    return data?.pages.flatMap((p) => p?.Items) || [];
+  }, [data]);
+
+  if (!collection) return null;
+
   return (
-    <ScrollView>
-      <View>
-        <View className="px-4 mb-4">
-          <Text className="font-bold text-3xl mb-2">{collection?.Name}</Text>
-          <View className="flex flex-row items-center justify-between">
-            <Text>
-              {startIndex + 1}-{Math.min(startIndex + 100, totalItems || 0)} of{" "}
-              {totalItems}
-            </Text>
-            <View className="flex flex-row items-center space-x-2">
-              <TouchableOpacity
-                onPress={() => {
-                  setStartIndex((prev) => Math.max(prev - 100, 0));
+    <ScrollView
+      contentInsetAdjustmentBehavior="automatic"
+      onScroll={({ nativeEvent }) => {
+        if (isCloseToBottom(nativeEvent)) {
+          fetchNextPage();
+        }
+      }}
+      scrollEventThrottle={400}
+    >
+      <View className="mt-4 mb-24">
+        <View className="mb-4">
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <View className="flex flex-row space-x-1 px-3">
+              <ResetFiltersButton />
+              <FilterButton
+                collectionId={collectionId}
+                queryKey="genreFilter"
+                queryFn={async () => {
+                  if (!api) return null;
+                  const response = await getFilterApi(
+                    api
+                  ).getQueryFiltersLegacy({
+                    userId: user?.Id,
+                    includeItemTypes: type ? [type] : [],
+                    parentId: collectionId,
+                  });
+                  return response.data.Genres || [];
                 }}
-              >
-                <Ionicons
-                  name="arrow-back-circle-outline"
-                  size={32}
-                  color="white"
-                />
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => {
-                  setStartIndex((prev) => prev + 100);
+                set={setSelectedGenres}
+                values={selectedGenres}
+                title="Genres"
+                renderItemLabel={(item) => item.toString()}
+                searchFilter={(item, search) =>
+                  item.toLowerCase().includes(search.toLowerCase())
+                }
+              />
+              <FilterButton
+                collectionId={collectionId}
+                queryKey="tagsFilter"
+                queryFn={async () => {
+                  if (!api) return null;
+                  const response = await getFilterApi(
+                    api
+                  ).getQueryFiltersLegacy({
+                    userId: user?.Id,
+                    includeItemTypes: type ? [type] : [],
+                    parentId: collectionId,
+                  });
+                  return response.data.Tags || [];
                 }}
-              >
-                <Ionicons
-                  name="arrow-forward-circle-outline"
-                  size={32}
-                  color="white"
-                />
-              </TouchableOpacity>
+                set={setSelectedTags}
+                values={selectedTags}
+                title="Tags"
+                renderItemLabel={(item) => item.toString()}
+                searchFilter={(item, search) =>
+                  item.toLowerCase().includes(search.toLowerCase())
+                }
+              />
+              <FilterButton
+                collectionId={collectionId}
+                queryKey="yearFilter"
+                queryFn={async () => {
+                  if (!api) return null;
+                  const response = await getFilterApi(
+                    api
+                  ).getQueryFiltersLegacy({
+                    userId: user?.Id,
+                    includeItemTypes: type ? [type] : [],
+                    parentId: collectionId,
+                  });
+                  return (
+                    response.data.Years?.sort((a, b) => b - a).map((y) =>
+                      y.toString()
+                    ) || []
+                  );
+                }}
+                set={setSelectedYears}
+                values={selectedYears}
+                title="Years"
+                renderItemLabel={(item) => item.toString()}
+                searchFilter={(item, search) =>
+                  item.toLowerCase().includes(search.toLowerCase())
+                }
+              />
+              <FilterButton
+                icon="sort"
+                collectionId={collectionId}
+                queryKey="sortByFilter"
+                queryFn={async () => {
+                  return sortOptions;
+                }}
+                set={setSortBy}
+                values={sortBy}
+                title="Sort by"
+                renderItemLabel={(item) => item.value}
+                searchFilter={(item, search) =>
+                  item.value.toLowerCase().includes(search.toLowerCase()) ||
+                  item.value.toLowerCase().includes(search.toLowerCase())
+                }
+                showSearch={false}
+              />
+              <FilterButton
+                icon="sort"
+                showSearch={false}
+                collectionId={collectionId}
+                queryKey="orderByFilter"
+                queryFn={async () => {
+                  return sortOrderOptions;
+                }}
+                set={setSortOrder}
+                values={sortOrder}
+                title="Order by"
+                renderItemLabel={(item) => item.value}
+                searchFilter={(item, search) =>
+                  item.value.toLowerCase().includes(search.toLowerCase()) ||
+                  item.value.toLowerCase().includes(search.toLowerCase())
+                }
+              />
             </View>
-          </View>
+          </ScrollView>
+          {!type && isFetching && (
+            <Loader
+              style={{
+                marginTop: 300,
+              }}
+            />
+          )}
         </View>
-        {isLoading ? (
-          <View className="my-12">
-            <Loader />
-          </View>
-        ) : (
-          <View className="flex flex-row flex-wrap">
-            {data?.Items?.map((item: BaseItemDto, index: number) => (
-              <TouchableOpacity
-                style={{
-                  maxWidth: "33%",
-                  width: "100%",
-                  padding: 10,
-                }}
-                key={index}
-                onPress={() => {
-                  if (item?.Type === "Series") {
-                    router.push(`/series/${item.Id}`);
-                  } else if (item.IsFolder) {
-                    router.push(`/collections/${item?.Id}`);
-                  } else {
-                    router.push(`/items/${item.Id}`);
-                  }
-                }}
-              >
-                <View className="flex flex-col gap-y-2">
-                  {collection?.CollectionType === "movies" ? (
-                    <MoviePoster item={item} />
-                  ) : collection?.CollectionType === "music" ? (
-                    <ArtistPoster item={item} />
-                  ) : (
-                    <MoviePoster item={item} />
-                  )}
-                  <Text>{item.Name}</Text>
-                  <Text className="opacity-50 text-xs">
-                    {item.ProductionYear}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
+        <View className="flex flex-row flex-wrap px-4 justify-between after:content-['']">
+          {flatData.map(
+            (item, index) =>
+              item && (
+                <TouchableItemRouter
+                  key={`${item.Id}`}
+                  style={{
+                    width: "32%",
+                    marginBottom: 4,
+                  }}
+                  item={item}
+                  className={`
+                    `}
+                >
+                  <MoviePoster item={item} />
+                  <ItemCardText item={item} />
+                </TouchableItemRouter>
+              )
+          )}
+          {flatData.length % 3 !== 0 && (
+            <View
+              style={{
+                width: "33%",
+              }}
+            ></View>
+          )}
+        </View>
       </View>
-      {!isLoading && (
-        <View className="flex flex-row items-center space-x-2 justify-center mt-4 mb-12">
-          <TouchableOpacity
-            onPress={() => {
-              setStartIndex((prev) => Math.max(prev - 100, 0));
-            }}
-          >
-            <Ionicons
-              name="arrow-back-circle-outline"
-              size={32}
-              color="white"
-            />
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => {
-              setStartIndex((prev) => prev + 100);
-            }}
-          >
-            <Ionicons
-              name="arrow-forward-circle-outline"
-              size={32}
-              color="white"
-            />
-          </TouchableOpacity>
-        </View>
-      )}
     </ScrollView>
   );
 };
