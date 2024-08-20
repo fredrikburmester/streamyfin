@@ -56,13 +56,6 @@ export const JellyfinProvider: React.FC<{ children: ReactNode }> = ({
   const [jellyfin, setJellyfin] = useState<Jellyfin | undefined>(undefined);
   const [deviceId, setDeviceId] = useState<string | undefined>(undefined);
   const [isConnected, setIsConnected] = useState<boolean>(false);
-  const [playing, setPlaying] = useAtom(playingAtom);
-  const [currentlyPlaying, setCurrentlyPlaying] = useAtom(
-    currentlyPlayingItemAtom
-  );
-  const [showCurrentlyPlayingBar, setShowCurrentlyPlayingBar] = useAtom(
-    showCurrentlyPlayingBarAtom
-  );
 
   useEffect(() => {
     (async () => {
@@ -115,11 +108,8 @@ export const JellyfinProvider: React.FC<{ children: ReactNode }> = ({
       // On PlayPause
       if (command === "PlayPause") {
         console.log("Command ~ PlayPause");
-        setPlaying((state) => !state);
       } else if (command === "Stop") {
         console.log("Command ~ Stop");
-        setPlaying(false);
-        setShowCurrentlyPlayingBar(false);
       }
     };
 
