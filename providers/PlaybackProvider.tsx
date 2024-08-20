@@ -4,6 +4,7 @@ import React, {
   ReactNode,
   useCallback,
   useContext,
+  useEffect,
   useRef,
   useState,
 } from "react";
@@ -19,6 +20,7 @@ import { getMediaInfoApi } from "@jellyfin/sdk/lib/utils/api";
 import { useAtom } from "jotai";
 import { OnProgressData, type VideoRef } from "react-native-video";
 import { apiAtom, userAtom } from "./JellyfinProvider";
+import { getDeviceId } from "@/utils/device";
 
 type CurrentlyPlayingState = {
   url: string;
@@ -34,7 +36,7 @@ interface PlaybackContextType {
   progressTicks: number | null;
   playVideo: () => void;
   pauseVideo: () => void;
-  stopVideo: () => void;
+  stopPlayback: () => void;
   presentFullscreenPlayer: () => void;
   dismissFullscreenPlayer: () => void;
   setIsFullscreen: (isFullscreen: boolean) => void;
@@ -63,6 +65,10 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
   const [currentlyPlaying, setCurrentlyPlaying] =
     useState<CurrentlyPlayingState | null>(null);
 
+  // WS
+  const [ws, setWs] = useState<WebSocket | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
+
   const { data: sessionData } = useQuery({
     queryKey: ["sessionData", currentlyPlaying?.item.Id, user?.Id, api],
     queryFn: async () => {
@@ -74,6 +80,11 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
       return playbackData.data;
     },
     enabled: !!currentlyPlaying?.item.Id && !!api && !!user?.Id,
+  });
+
+  const { data: deviceId } = useQuery({
+    queryKey: ["deviceId", api],
+    queryFn: getDeviceId,
   });
 
   const setCurrentlyPlayingState = (state: CurrentlyPlayingState | null) => {
@@ -120,14 +131,15 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
     });
   }, [sessionData?.PlaySessionId, currentlyPlaying?.item.Id, progressTicks]);
 
-  const stopVideo = useCallback(() => {
-    reportPlaybackStopped({
+  const stopPlayback = useCallback(async () => {
+    await reportPlaybackStopped({
       api,
       itemId: currentlyPlaying?.item?.Id,
       sessionId: sessionData?.PlaySessionId,
       positionTicks: progressTicks ? progressTicks : 0,
     });
-  }, [currentlyPlaying?.item?.Id, sessionData?.PlaySessionId, progressTicks]);
+    setCurrentlyPlayingState(null);
+  }, [currentlyPlaying, sessionData, progressTicks]);
 
   const onProgress = useCallback(
     ({ currentTime }: OnProgressData) => {
@@ -154,6 +166,73 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
     setIsFullscreen(false);
   }, []);
 
+  useEffect(() => {
+    if (!deviceId || !api) return;
+
+    const url = `wss://${api?.basePath
+      .replace("https://", "")
+      .replace("http://", "")}/socket?api_key=${
+      api?.accessToken
+    }&deviceId=${deviceId}`;
+
+    console.log("WS", url);
+
+    const newWebSocket = new WebSocket(url);
+
+    let keepAliveInterval: NodeJS.Timeout | null = null;
+
+    newWebSocket.onopen = () => {
+      setIsConnected(true);
+      // Start sending "KeepAlive" message every 30 seconds
+      keepAliveInterval = setInterval(() => {
+        if (newWebSocket.readyState === WebSocket.OPEN) {
+          newWebSocket.send(JSON.stringify({ MessageType: "KeepAlive" }));
+          console.log("KeepAlive message sent");
+        }
+      }, 30000);
+    };
+
+    newWebSocket.onerror = (e) => {
+      console.error("WebSocket error:", e);
+      setIsConnected(false);
+    };
+
+    newWebSocket.onclose = (e) => {
+      console.log("WebSocket connection closed:", e.reason);
+      if (keepAliveInterval) {
+        clearInterval(keepAliveInterval);
+      }
+    };
+
+    setWs(newWebSocket);
+
+    return () => {
+      if (keepAliveInterval) {
+        clearInterval(keepAliveInterval);
+      }
+      newWebSocket.close();
+    };
+  }, [api, deviceId]);
+
+  useEffect(() => {
+    if (!ws) return;
+
+    ws.onmessage = (e) => {
+      const json = JSON.parse(e.data);
+      const command = json?.Data?.Command;
+
+      // On PlayPause
+      if (command === "PlayPause") {
+        console.log("Command ~ PlayPause");
+        if (isPlaying) pauseVideo();
+        else playVideo();
+      } else if (command === "Stop") {
+        console.log("Command ~ Stop");
+        stopPlayback();
+      }
+    };
+  }, [ws, stopPlayback, playVideo, pauseVideo]);
+
   return (
     <PlaybackContext.Provider
       value={{
@@ -169,7 +248,7 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
         playVideo,
         setCurrentlyPlayingState,
         pauseVideo,
-        stopVideo,
+        stopPlayback,
         presentFullscreenPlayer,
         dismissFullscreenPlayer,
       }}

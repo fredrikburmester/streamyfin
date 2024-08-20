@@ -73,67 +73,6 @@ export const JellyfinProvider: React.FC<{ children: ReactNode }> = ({
 
   const [api, setApi] = useAtom(apiAtom);
   const [user, setUser] = useAtom(userAtom);
-  const [ws, setWs] = useAtom(wsAtom);
-
-  useEffect(() => {
-    if (!deviceId || !api) return;
-
-    const url = `wss://${api?.basePath
-      .replace("https://", "")
-      .replace("http://", "")}/socket?api_key=${
-      api?.accessToken
-    }&deviceId=${deviceId}`;
-
-    console.log("WS", url);
-
-    const newWebSocket = new WebSocket(url);
-
-    let keepAliveInterval: NodeJS.Timeout | null = null;
-
-    newWebSocket.onopen = () => {
-      setIsConnected(true);
-      // Start sending "KeepAlive" message every 30 seconds
-      keepAliveInterval = setInterval(() => {
-        if (newWebSocket.readyState === WebSocket.OPEN) {
-          newWebSocket.send(JSON.stringify({ MessageType: "KeepAlive" }));
-          console.log("KeepAlive message sent");
-        }
-      }, 30000);
-    };
-
-    newWebSocket.onmessage = (e) => {
-      const json = JSON.parse(e.data);
-      const command = json?.Data?.Command;
-
-      // On PlayPause
-      if (command === "PlayPause") {
-        console.log("Command ~ PlayPause");
-      } else if (command === "Stop") {
-        console.log("Command ~ Stop");
-      }
-    };
-
-    newWebSocket.onerror = (e) => {
-      console.error("WebSocket error:", e);
-      setIsConnected(false);
-    };
-
-    newWebSocket.onclose = (e) => {
-      console.log("WebSocket connection closed:", e.reason);
-      if (keepAliveInterval) {
-        clearInterval(keepAliveInterval);
-      }
-    };
-
-    setWs(newWebSocket);
-
-    return () => {
-      if (keepAliveInterval) {
-        clearInterval(keepAliveInterval);
-      }
-      newWebSocket.close();
-    };
-  }, [api, deviceId]);
 
   const discoverServers = async (url: string): Promise<Server[]> => {
     const servers = await jellyfin?.discovery.getRecommendedServerCandidates(

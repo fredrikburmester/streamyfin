@@ -25,7 +25,7 @@ export const CurrentlyPlayingBar: React.FC = () => {
     pauseVideo,
     playVideo,
     setCurrentlyPlayingState,
-    stopVideo,
+    stopPlayback,
     setIsPlaying,
     isPlaying,
     videoRef,
@@ -260,7 +260,7 @@ export const CurrentlyPlayingBar: React.FC = () => {
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => {
-                setCurrentlyPlayingState(null);
+                stopPlayback();
               }}
               className="aspect-square rounded flex flex-col items-center justify-center p-2"
             >
