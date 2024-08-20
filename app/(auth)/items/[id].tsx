@@ -280,12 +280,7 @@ const page: React.FC = () => {
         </View>
         <View className="flex flex-row items-center justify-between w-full">
           <NextEpisodeButton item={item} type="previous" className="mr-2" />
-          <PlayButton
-            item={item}
-            chromecastReady={chromecastReady}
-            onPress={onPressPlay}
-            className="grow"
-          />
+          <PlayButton item={item} url={playbackUrl} className="grow" />
           <NextEpisodeButton item={item} className="ml-2" />
         </View>
       </View>
