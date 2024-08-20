@@ -31,6 +31,25 @@ export const LargeMovieCarousel: React.FC<Props> = ({ ...props }) => {
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
 
+  const { data: sf_carousel, isFetching: l1 } = useQuery({
+    queryKey: ["sf_carousel", user?.Id, settings?.mediaListCollectionIds],
+    queryFn: async () => {
+      if (!api || !user?.Id) return null;
+
+      const response = await getItemsApi(api).getItems({
+        userId: user.Id,
+        tags: ["sf_carousel"],
+        recursive: true,
+        fields: ["Tags"],
+        includeItemTypes: ["BoxSet"],
+      });
+
+      return response.data.Items?.[0].Id || null;
+    },
+    enabled: !!api && !!user?.Id && settings?.usePopularPlugin === true,
+    staleTime: 0,
+  });
+
   const onPressPagination = (index: number) => {
     ref.current?.scrollTo({
       /**
@@ -42,40 +61,20 @@ export const LargeMovieCarousel: React.FC<Props> = ({ ...props }) => {
     });
   };
 
-  const { data: mediaListCollection, isLoading: l1 } = useQuery<string | null>({
-    queryKey: ["mediaListCollection", user?.Id],
-    queryFn: async () => {
-      if (!api || !user?.Id) return null;
-
-      const response = await getItemsApi(api).getItems({
-        userId: user.Id,
-        tags: ["medialist", "promoted"],
-        recursive: true,
-        fields: ["Tags"],
-        includeItemTypes: ["BoxSet"],
-      });
-
-      const id = response.data.Items?.find((c) => c.Name === "sf_carousel")?.Id;
-      return id || null;
-    },
-    enabled: !!api && !!user?.Id && settings?.usePopularPlugin === true,
-    staleTime: 0,
-  });
-
-  const { data: popularItems, isLoading: l2 } = useQuery<BaseItemDto[]>({
+  const { data: popularItems, isFetching: l2 } = useQuery<BaseItemDto[]>({
     queryKey: ["popular", user?.Id],
     queryFn: async () => {
-      if (!api || !user?.Id || !mediaListCollection) return [];
+      if (!api || !user?.Id || !sf_carousel) return [];
 
       const response = await getItemsApi(api).getItems({
         userId: user.Id,
-        parentId: mediaListCollection,
+        parentId: sf_carousel,
         limit: 10,
       });
 
       return response.data.Items || [];
     },
-    enabled: !!api && !!user?.Id && !!mediaListCollection,
+    enabled: !!api && !!user?.Id && !!sf_carousel,
     staleTime: 0,
   });
 
