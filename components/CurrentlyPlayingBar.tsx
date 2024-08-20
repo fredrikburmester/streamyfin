@@ -17,7 +17,14 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { BlurView } from "expo-blur";
 import { useRouter, useSegments } from "expo-router";
 import { useAtom } from "jotai";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Alert, Platform, TouchableOpacity, View } from "react-native";
 import Animated, {
   useAnimatedStyle,
@@ -27,22 +34,24 @@ import Animated, {
 import Video, { OnProgressData, VideoRef } from "react-native-video";
 import { Text } from "./common/Text";
 import { Loader } from "./Loader";
+import { usePlayback } from "@/providers/PlaybackProvider";
 
 export const CurrentlyPlayingBar: React.FC = () => {
   const segments = useSegments();
-  const queryClient = useQueryClient();
+  const {
+    currentlyPlaying,
+    pauseVideo,
+    playVideo,
+    setCurrentlyPlayingState,
+    stopVideo,
+    setIsPlaying,
+    isPlaying,
+    videoRef,
+    onProgress,
+  } = usePlayback();
 
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
-  const [playing, setPlaying] = useAtom(playingAtom);
-  const [currentlyPlaying, setCurrentlyPlaying] = useAtom(
-    currentlyPlayingItemAtom
-  );
-  const [fullScreen, setFullScreen] = useAtom(fullScreenAtom);
-  const [show, setShow] = useAtom(showCurrentlyPlayingBarAtom);
-
-  const videoRef = useRef<VideoRef | null>(null);
-  const [progress, setProgress] = useState(0);
 
   const aBottom = useSharedValue(0);
   const aPadding = useSharedValue(0);
@@ -90,124 +99,28 @@ export const CurrentlyPlayingBar: React.FC = () => {
     }
   }, [segments]);
 
-  const { data: item } = useQuery({
-    queryKey: ["item", currentlyPlaying?.item.Id],
-    queryFn: async () =>
-      await getUserItemData({
-        api,
-        userId: user?.Id,
-        itemId: currentlyPlaying?.item.Id,
-      }),
-    enabled: !!currentlyPlaying?.item.Id && !!api,
-    staleTime: 60,
-  });
-
-  const { data: sessionData } = useQuery({
-    queryKey: ["sessionData", currentlyPlaying?.item.Id],
-    queryFn: async () => {
-      if (!currentlyPlaying?.item.Id) return null;
-      const playbackData = await getMediaInfoApi(api!).getPlaybackInfo({
-        itemId: currentlyPlaying?.item.Id,
-        userId: user?.Id,
-      });
-      return playbackData.data;
-    },
-    enabled: !!currentlyPlaying?.item.Id && !!api && !!user?.Id,
-    staleTime: 0,
-  });
-
-  const onProgress = useCallback(
-    ({ currentTime }: OnProgressData) => {
-      if (
-        !sessionData?.PlaySessionId ||
-        !api ||
-        !currentlyPlaying?.item.Id ||
-        !user?.Id ||
-        !currentTime
-      ) {
-        return;
-      }
-      const newProgress = currentTime * 10000000;
-      setProgress(newProgress);
-
-      reportPlaybackProgress({
-        api,
-        itemId: currentlyPlaying?.item.Id,
-        positionTicks: newProgress,
-        sessionId: sessionData.PlaySessionId,
-        IsPaused: !playing,
-      });
-
-      queryClient.invalidateQueries({
-        queryKey: ["nextUp", item?.SeriesId],
-        refetchType: "all",
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["episodes"],
-        refetchType: "all",
-      });
-    },
-    [sessionData?.PlaySessionId, api, playing, currentlyPlaying?.item.Id]
-  );
-
-  useEffect(() => {
-    if (!item || !api) return;
-
-    if (playing) {
-      videoRef.current?.resume();
-    } else {
-      videoRef.current?.pause();
-
-      queryClient.invalidateQueries({
-        queryKey: ["nextUp", item?.SeriesId],
-        refetchType: "all",
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["episodes"],
-        refetchType: "all",
-      });
-    }
-  }, [playing, progress, item, sessionData]);
-
-  useEffect(() => {
-    if (fullScreen === true) {
-      videoRef.current?.presentFullscreenPlayer();
-    } else {
-      videoRef.current?.dismissFullscreenPlayer();
-    }
-  }, [fullScreen]);
-
-  useEffect(() => {
-    if (!show && currentlyPlaying && item && sessionData && api) {
-      reportPlaybackStopped({
-        api,
-        itemId: item?.Id,
-        sessionId: sessionData?.PlaySessionId,
-        positionTicks: progress,
-      });
-    }
-  }, [show]);
-
   const startPosition = useMemo(
     () =>
-      item?.UserData?.PlaybackPositionTicks
-        ? Math.round(item.UserData.PlaybackPositionTicks / 10000)
+      currentlyPlaying?.item?.UserData?.PlaybackPositionTicks
+        ? Math.round(
+            currentlyPlaying?.item.UserData.PlaybackPositionTicks / 10000
+          )
         : 0,
-    [item]
+    [currentlyPlaying?.item]
   );
 
   const backdropUrl = useMemo(
     () =>
       getBackdropUrl({
         api,
-        item,
+        item: currentlyPlaying?.item,
         quality: 70,
         width: 200,
       }),
-    [item]
+    [currentlyPlaying?.item, api]
   );
 
-  if (show === false || !api) return null;
+  if (!api || !currentlyPlaying) return null;
 
   return (
     <Animated.View
@@ -234,10 +147,14 @@ export const CurrentlyPlayingBar: React.FC = () => {
                 videoRef.current?.presentFullscreenPlayer();
               }}
               className={`relative h-full bg-neutral-800 rounded-md overflow-hidden
-                ${item?.Type === "Audio" ? "aspect-square" : "aspect-video"}
+                ${
+                  currentlyPlaying.item?.Type === "Audio"
+                    ? "aspect-square"
+                    : "aspect-video"
+                }
                 `}
             >
-              {currentlyPlaying?.playbackUrl && (
+              {currentlyPlaying?.url && (
                 <Video
                   ref={videoRef}
                   allowsExternalPlayback
@@ -249,7 +166,7 @@ export const CurrentlyPlayingBar: React.FC = () => {
                   controls={false}
                   pictureInPicture={true}
                   poster={
-                    backdropUrl && item?.Type === "Audio"
+                    backdropUrl && currentlyPlaying.item?.Type === "Audio"
                       ? backdropUrl
                       : undefined
                   }
@@ -257,13 +174,13 @@ export const CurrentlyPlayingBar: React.FC = () => {
                     enable: true,
                     thread: true,
                   }}
-                  paused={!playing}
+                  paused={!isPlaying}
                   onProgress={(e) => onProgress(e)}
                   subtitleStyle={{
                     fontSize: 16,
                   }}
                   source={{
-                    uri: currentlyPlaying.playbackUrl,
+                    uri: currentlyPlaying.url,
                     isNetwork: true,
                     startPosition,
                     headers: getAuthHeaders(api),
@@ -271,19 +188,15 @@ export const CurrentlyPlayingBar: React.FC = () => {
                   onBuffer={(e) =>
                     e.isBuffering ? console.log("Buffering...") : null
                   }
-                  onFullscreenPlayerDidDismiss={() => {
-                    setFullScreen(false);
-                  }}
-                  onFullscreenPlayerDidPresent={() => {
-                    setFullScreen(true);
-                  }}
+                  onFullscreenPlayerDidDismiss={() => {}}
+                  onFullscreenPlayerDidPresent={() => {}}
                   onPlaybackStateChanged={(e) => {
                     if (e.isPlaying) {
-                      setPlaying(true);
+                      setIsPlaying(true);
                     } else if (e.isSeeking) {
                       return;
                     } else {
-                      setPlaying(false);
+                      setIsPlaying(false);
                     }
                   }}
                   progressUpdateInterval={2000}
@@ -294,11 +207,11 @@ export const CurrentlyPlayingBar: React.FC = () => {
                       "Video playback error: " + JSON.stringify(e)
                     );
                     Alert.alert("Error", "Cannot play this video file.");
-                    setPlaying(false);
-                    setCurrentlyPlaying(null);
+                    setIsPlaying(false);
+                    // setCurrentlyPlaying(null);
                   }}
                   renderLoader={
-                    item?.Type !== "Audio" && (
+                    currentlyPlaying.item?.Type !== "Audio" && (
                       <View className="flex flex-col items-center justify-center h-full">
                         <Loader />
                       </View>
@@ -310,37 +223,41 @@ export const CurrentlyPlayingBar: React.FC = () => {
             <View className="shrink text-xs">
               <TouchableOpacity
                 onPress={() => {
-                  if (item?.Type === "Audio")
-                    router.push(`/albums/${item?.AlbumId}`);
-                  else router.push(`/items/${item?.Id}`);
+                  if (currentlyPlaying.item?.Type === "Audio")
+                    router.push(`/albums/${currentlyPlaying.item?.AlbumId}`);
+                  else router.push(`/items/${currentlyPlaying.item?.Id}`);
                 }}
               >
-                <Text>{item?.Name}</Text>
+                <Text>{currentlyPlaying.item?.Name}</Text>
               </TouchableOpacity>
-              {item?.Type === "Episode" && (
+              {currentlyPlaying.item?.Type === "Episode" && (
                 <TouchableOpacity
                   onPress={() => {
-                    router.push(`/(auth)/series/${item.SeriesId}`);
+                    router.push(
+                      `/(auth)/series/${currentlyPlaying.item.SeriesId}`
+                    );
                   }}
                   className="text-xs opacity-50"
                 >
-                  <Text>{item.SeriesName}</Text>
+                  <Text>{currentlyPlaying.item.SeriesName}</Text>
                 </TouchableOpacity>
               )}
-              {item?.Type === "Movie" && (
+              {currentlyPlaying.item?.Type === "Movie" && (
                 <View>
                   <Text className="text-xs opacity-50">
-                    {item?.ProductionYear}
+                    {currentlyPlaying.item?.ProductionYear}
                   </Text>
                 </View>
               )}
-              {item?.Type === "Audio" && (
+              {currentlyPlaying.item?.Type === "Audio" && (
                 <TouchableOpacity
                   onPress={() => {
-                    router.push(`/albums/${item?.AlbumId}`);
+                    router.push(`/albums/${currentlyPlaying.item?.AlbumId}`);
                   }}
                 >
-                  <Text className="text-xs opacity-50">{item?.Album}</Text>
+                  <Text className="text-xs opacity-50">
+                    {currentlyPlaying.item?.Album}
+                  </Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -348,12 +265,12 @@ export const CurrentlyPlayingBar: React.FC = () => {
           <View className="flex flex-row items-center space-x-2">
             <TouchableOpacity
               onPress={() => {
-                if (playing) setPlaying(false);
-                else setPlaying(true);
+                if (isPlaying) pauseVideo();
+                else playVideo();
               }}
               className="aspect-square rounded flex flex-col items-center justify-center p-2"
             >
-              {playing ? (
+              {isPlaying ? (
                 <Ionicons name="pause" size={24} color="white" />
               ) : (
                 <Ionicons name="play" size={24} color="white" />
@@ -361,7 +278,7 @@ export const CurrentlyPlayingBar: React.FC = () => {
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => {
-                setShow(false);
+                setCurrentlyPlayingState(null);
               }}
               className="aspect-square rounded flex flex-col items-center justify-center p-2"
             >
