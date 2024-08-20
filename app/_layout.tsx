@@ -1,23 +1,22 @@
+import { CurrentlyPlayingBar } from "@/components/CurrentlyPlayingBar";
 import { JellyfinProvider } from "@/providers/JellyfinProvider";
+import { JobQueueProvider } from "@/providers/JobQueueProvider";
+import { PlaybackProvider } from "@/providers/PlaybackProvider";
+import { useSettings } from "@/utils/atoms/settings";
+import { ActionSheetProvider } from "@expo/react-native-action-sheet";
+import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { DarkTheme, ThemeProvider } from "@react-navigation/native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useFonts } from "expo-font";
-import { Stack } from "expo-router";
-import * as SplashScreen from "expo-splash-screen";
-import { Provider as JotaiProvider } from "jotai";
-import { useEffect, useRef, useState } from "react";
-import "react-native-reanimated";
-import * as ScreenOrientation from "expo-screen-orientation";
-import { StatusBar } from "expo-status-bar";
-import { CurrentlyPlayingBar } from "@/components/CurrentlyPlayingBar";
-import { ActionSheetProvider } from "@expo/react-native-action-sheet";
-import { useJobProcessor } from "@/utils/atoms/queue";
-import { JobQueueProvider } from "@/providers/JobQueueProvider";
 import { useKeepAwake } from "expo-keep-awake";
-import { useSettings } from "@/utils/atoms/settings";
+import { Stack } from "expo-router";
+import * as ScreenOrientation from "expo-screen-orientation";
+import * as SplashScreen from "expo-splash-screen";
+import { StatusBar } from "expo-status-bar";
+import { Provider as JotaiProvider } from "jotai";
+import { useEffect, useRef } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
-import { PlaybackProvider } from "@/providers/PlaybackProvider";
+import "react-native-reanimated";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();

@@ -1,40 +1,22 @@
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
-import {
-  currentlyPlayingItemAtom,
-  fullScreenAtom,
-  playingAtom,
-  showCurrentlyPlayingBarAtom,
-} from "@/utils/atoms/playState";
+import { usePlayback } from "@/providers/PlaybackProvider";
 import { getBackdropUrl } from "@/utils/jellyfin/image/getBackdropUrl";
 import { getAuthHeaders } from "@/utils/jellyfin/jellyfin";
-import { reportPlaybackProgress } from "@/utils/jellyfin/playstate/reportPlaybackProgress";
-import { reportPlaybackStopped } from "@/utils/jellyfin/playstate/reportPlaybackStopped";
-import { getUserItemData } from "@/utils/jellyfin/user-library/getUserItemData";
 import { writeToLog } from "@/utils/log";
 import { Ionicons } from "@expo/vector-icons";
-import { getMediaInfoApi } from "@jellyfin/sdk/lib/utils/api";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { BlurView } from "expo-blur";
 import { useRouter, useSegments } from "expo-router";
 import { useAtom } from "jotai";
-import {
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useEffect, useMemo } from "react";
 import { Alert, Platform, TouchableOpacity, View } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
-import Video, { OnProgressData, VideoRef } from "react-native-video";
+import Video from "react-native-video";
 import { Text } from "./common/Text";
 import { Loader } from "./Loader";
-import { usePlayback } from "@/providers/PlaybackProvider";
 
 export const CurrentlyPlayingBar: React.FC = () => {
   const segments = useSegments();
