@@ -159,6 +159,23 @@ export const SettingToggles: React.FC = () => {
           onValueChange={(value) => updateSettings({ forceDirectPlay: value })}
         />
       </View>
+
+      <View className="flex flex-row space-x-2 items-center justify-between bg-neutral-900 p-4">
+        <View className="flex flex-col shrink">
+          <Text className="font-semibold">Use external player (VLC)</Text>
+          <Text className="text-xs opacity-50 shrink">
+            Open all videos in VLC instead of the default player. This requries
+            VLC to be installed on the phone.
+          </Text>
+        </View>
+        <Switch
+          value={settings?.openInVLC}
+          onValueChange={(value) => {
+            updateSettings({ openInVLC: value, forceDirectPlay: value });
+          }}
+        />
+      </View>
+
       <View
         className={`
         flex flex-row items-center space-x-2 justify-between bg-neutral-900 p-4
@@ -219,7 +236,6 @@ export const SettingToggles: React.FC = () => {
         <View
           className={`
             flex flex-row items-center space-x-2 justify-between bg-neutral-900 p-4
-            ${settings?.forceDirectPlay ? "opacity-50 select-none" : ""}
           `}
         >
           <View className="flex flex-col shrink">

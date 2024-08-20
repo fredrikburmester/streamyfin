@@ -12,6 +12,7 @@ type Settings = {
   mediaListCollectionIds?: string[];
   searchEngine: "Marlin" | "Jellyfin";
   marlinServerUrl?: string;
+  openInVLC?: boolean;
 };
 
 /**
@@ -37,6 +38,7 @@ const loadSettings = async (): Promise<Settings> => {
         mediaListCollectionIds: [],
         searchEngine: "Jellyfin",
         marlinServerUrl: "",
+        openInVLC: false,
       };
 };
 

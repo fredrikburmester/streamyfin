@@ -21,6 +21,8 @@ import { useAtom } from "jotai";
 import { OnProgressData, type VideoRef } from "react-native-video";
 import { apiAtom, userAtom } from "./JellyfinProvider";
 import { getDeviceId } from "@/utils/device";
+import * as Linking from "expo-linking";
+import { Platform } from "react-native";
 
 type CurrentlyPlayingState = {
   url: string;
@@ -87,19 +89,29 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
     queryFn: getDeviceId,
   });
 
-  const setCurrentlyPlayingState = (state: CurrentlyPlayingState | null) => {
-    if (state) {
-      setCurrentlyPlaying(state);
-      setIsPlaying(true);
+  const setCurrentlyPlayingState = useCallback(
+    (state: CurrentlyPlayingState | null) => {
+      const vlcLink = "vlc://" + state?.url;
+      console.log(vlcLink, settings?.openInVLC, Platform.OS === "ios");
+      if (vlcLink && settings?.openInVLC) {
+        Linking.openURL("vlc://" + state?.url || "");
+        return;
+      }
 
-      if (settings?.openFullScreenVideoPlayerByDefault)
-        presentFullscreenPlayer();
-    } else {
-      setCurrentlyPlaying(null);
-      setIsFullscreen(false);
-      setIsPlaying(false);
-    }
-  };
+      if (state) {
+        setCurrentlyPlaying(state);
+        setIsPlaying(true);
+
+        if (settings?.openFullScreenVideoPlayerByDefault)
+          presentFullscreenPlayer();
+      } else {
+        setCurrentlyPlaying(null);
+        setIsFullscreen(false);
+        setIsPlaying(false);
+      }
+    },
+    [settings]
+  );
 
   // Define control methods
   const playVideo = useCallback(() => {
@@ -167,7 +179,7 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
   }, []);
 
   useEffect(() => {
-    if (!deviceId || !api) return;
+    if (!deviceId || !api || !user) return;
 
     const url = `wss://${api?.basePath
       .replace("https://", "")
@@ -212,7 +224,7 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
       }
       newWebSocket.close();
     };
-  }, [api, deviceId]);
+  }, [api, deviceId, user]);
 
   useEffect(() => {
     if (!ws) return;
