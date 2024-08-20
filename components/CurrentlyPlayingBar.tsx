@@ -201,19 +201,17 @@ export const CurrentlyPlayingBar: React.FC = () => {
                 //     )
                 //   }
                 // />
-                <VLCPlayer
+                <VlCPlayerView
                   style={{
                     width: "100%",
                     height: "100%",
                   }}
-                  videoAspectRatio="16:9"
                   source={{
                     uri: encodeURIComponent(currentlyPlaying.url),
                   }}
-                  onError={(e) => {
-                    console.log(e);
-                  }}
                   key={"1"}
+                  autoAspectRatio={true}
+                  resizeMode="cover"
                 />
               )}
             </TouchableOpacity>

@@ -219,7 +219,6 @@ export const SettingToggles: React.FC = () => {
         <View
           className={`
             flex flex-row items-center space-x-2 justify-between bg-neutral-900 p-4
-            ${settings?.forceDirectPlay ? "opacity-50 select-none" : ""}
           `}
         >
           <View className="flex flex-col shrink">
