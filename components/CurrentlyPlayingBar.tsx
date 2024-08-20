@@ -17,6 +17,7 @@ import Animated, {
 import Video from "react-native-video";
 import { Text } from "./common/Text";
 import { Loader } from "./Loader";
+import { VLCPlayer, VlCPlayerView } from "react-native-vlc-media-player";
 
 export const CurrentlyPlayingBar: React.FC = () => {
   const segments = useSegments();
@@ -137,68 +138,82 @@ export const CurrentlyPlayingBar: React.FC = () => {
                 `}
             >
               {currentlyPlaying?.url && (
-                <Video
-                  ref={videoRef}
-                  allowsExternalPlayback
-                  style={{ width: "100%", height: "100%" }}
-                  playWhenInactive={true}
-                  playInBackground={true}
-                  showNotificationControls={true}
-                  ignoreSilentSwitch="ignore"
-                  controls={false}
-                  pictureInPicture={true}
-                  poster={
-                    backdropUrl && currentlyPlaying.item?.Type === "Audio"
-                      ? backdropUrl
-                      : undefined
-                  }
-                  debug={{
-                    enable: true,
-                    thread: true,
+                // <Video
+                //   ref={videoRef}
+                //   allowsExternalPlayback
+                //   style={{ width: "100%", height: "100%" }}
+                //   playWhenInactive={true}
+                //   playInBackground={true}
+                //   showNotificationControls={true}
+                //   ignoreSilentSwitch="ignore"
+                //   controls={false}
+                //   pictureInPicture={true}
+                //   poster={
+                //     backdropUrl && currentlyPlaying.item?.Type === "Audio"
+                //       ? backdropUrl
+                //       : undefined
+                //   }
+                //   debug={{
+                //     enable: true,
+                //     thread: true,
+                //   }}
+                //   paused={!isPlaying}
+                //   onProgress={(e) => onProgress(e)}
+                //   subtitleStyle={{
+                //     fontSize: 16,
+                //   }}
+                //   source={{
+                //     uri: currentlyPlaying.url,
+                //     isNetwork: true,
+                //     startPosition,
+                //     headers: getAuthHeaders(api),
+                //   }}
+                //   onBuffer={(e) =>
+                //     e.isBuffering ? console.log("Buffering...") : null
+                //   }
+                //   onFullscreenPlayerDidDismiss={() => {}}
+                //   onFullscreenPlayerDidPresent={() => {}}
+                //   onPlaybackStateChanged={(e) => {
+                //     if (e.isPlaying) {
+                //       setIsPlaying(true);
+                //     } else if (e.isSeeking) {
+                //       return;
+                //     } else {
+                //       setIsPlaying(false);
+                //     }
+                //   }}
+                //   progressUpdateInterval={2000}
+                //   onError={(e) => {
+                //     console.log(e);
+                //     writeToLog(
+                //       "ERROR",
+                //       "Video playback error: " + JSON.stringify(e)
+                //     );
+                //     Alert.alert("Error", "Cannot play this video file.");
+                //     setIsPlaying(false);
+                //     // setCurrentlyPlaying(null);
+                //   }}
+                //   renderLoader={
+                //     currentlyPlaying.item?.Type !== "Audio" && (
+                //       <View className="flex flex-col items-center justify-center h-full">
+                //         <Loader />
+                //       </View>
+                //     )
+                //   }
+                // />
+                <VLCPlayer
+                  style={{
+                    width: "100%",
+                    height: "100%",
                   }}
-                  paused={!isPlaying}
-                  onProgress={(e) => onProgress(e)}
-                  subtitleStyle={{
-                    fontSize: 16,
-                  }}
+                  videoAspectRatio="16:9"
                   source={{
-                    uri: currentlyPlaying.url,
-                    isNetwork: true,
-                    startPosition,
-                    headers: getAuthHeaders(api),
+                    uri: encodeURIComponent(currentlyPlaying.url),
                   }}
-                  onBuffer={(e) =>
-                    e.isBuffering ? console.log("Buffering...") : null
-                  }
-                  onFullscreenPlayerDidDismiss={() => {}}
-                  onFullscreenPlayerDidPresent={() => {}}
-                  onPlaybackStateChanged={(e) => {
-                    if (e.isPlaying) {
-                      setIsPlaying(true);
-                    } else if (e.isSeeking) {
-                      return;
-                    } else {
-                      setIsPlaying(false);
-                    }
-                  }}
-                  progressUpdateInterval={2000}
                   onError={(e) => {
                     console.log(e);
-                    writeToLog(
-                      "ERROR",
-                      "Video playback error: " + JSON.stringify(e)
-                    );
-                    Alert.alert("Error", "Cannot play this video file.");
-                    setIsPlaying(false);
-                    // setCurrentlyPlaying(null);
                   }}
-                  renderLoader={
-                    currentlyPlaying.item?.Type !== "Audio" && (
-                      <View className="flex flex-col items-center justify-center h-full">
-                        <Loader />
-                      </View>
-                    )
-                  }
+                  key={"1"}
                 />
               )}
             </TouchableOpacity>

@@ -96,6 +96,17 @@
         {
           "motionPermission": "Allow Streamyfin to access your device motion for landscape video watching."
         }
+      ],
+      [
+        "react-native-vlc-media-player",
+        {
+          "ios": {
+            "includeVLCKit": false // should be true if react-native version < 0.61
+          },
+          "android": {
+            "legacyJetifier": false // should be true if react-native version < 0.71
+          }
+        }
       ]
     ],
     "experiments": {
