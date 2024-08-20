@@ -1,27 +1,24 @@
+import { useQuery } from "@tanstack/react-query";
 import React, {
   createContext,
+  ReactNode,
+  useCallback,
   useContext,
   useRef,
   useState,
-  useEffect,
-  ReactNode,
-  useCallback,
 } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { getUserItemData } from "@/utils/jellyfin/user-library/getUserItemData";
 
-import { getMediaInfoApi } from "@jellyfin/sdk/lib/utils/api";
-import { Ionicons } from "@expo/vector-icons";
-import { useAtom } from "jotai";
-import { OnProgressData, type VideoRef } from "react-native-video";
-import { apiAtom, userAtom } from "./JellyfinProvider";
+import { useSettings } from "@/utils/atoms/settings";
+import { reportPlaybackProgress } from "@/utils/jellyfin/playstate/reportPlaybackProgress";
+import { reportPlaybackStopped } from "@/utils/jellyfin/playstate/reportPlaybackStopped";
 import {
   BaseItemDto,
   PlaybackInfoResponse,
 } from "@jellyfin/sdk/lib/generated-client/models";
-import { reportPlaybackStopped } from "@/utils/jellyfin/playstate/reportPlaybackStopped";
-import { reportPlaybackProgress } from "@/utils/jellyfin/playstate/reportPlaybackProgress";
-import { useSettings } from "@/utils/atoms/settings";
+import { getMediaInfoApi } from "@jellyfin/sdk/lib/utils/api";
+import { useAtom } from "jotai";
+import { OnProgressData, type VideoRef } from "react-native-video";
+import { apiAtom, userAtom } from "./JellyfinProvider";
 
 type CurrentlyPlayingState = {
   url: string;
