@@ -53,7 +53,7 @@ export const getStreamUrl = async ({
       headers: {
         Authorization: `MediaBrowser DeviceId="${api.deviceInfo.id}", Token="${api.accessToken}"`,
       },
-    },
+    }
   );
 
   const mediaSource = response.data.MediaSources?.[0] as MediaSourceInfo;
@@ -69,7 +69,16 @@ export const getStreamUrl = async ({
   if (mediaSource.SupportsDirectPlay || forceDirectPlay === true) {
     if (item.MediaType === "Video") {
       console.log("Using direct stream for video!");
-      return `${api.basePath}/Videos/${itemId}/stream.mp4?playSessionId=${sessionData.PlaySessionId}&mediaSourceId=${itemId}&static=true`;
+
+      const params = new URLSearchParams({
+        mediaSourceId: itemId,
+        Static: "true",
+        deviceId: api.deviceInfo.id,
+        api_key: api.accessToken,
+        Tag: item.MediaSources?.[0].ETag || "",
+      });
+
+      return `${api.basePath}/Videos/${itemId}/stream.mp4?${params.toString()}`;
     } else if (item.MediaType === "Audio") {
       console.log("Using direct stream for audio!");
       const searchParams = new URLSearchParams({
@@ -87,7 +96,9 @@ export const getStreamUrl = async ({
         EnableRedirection: "true",
         EnableRemoteMedia: "false",
       });
-      return `${api.basePath}/Audio/${itemId}/universal?${searchParams.toString()}`;
+      return `${
+        api.basePath
+      }/Audio/${itemId}/universal?${searchParams.toString()}`;
     }
   }
 
