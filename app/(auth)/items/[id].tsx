@@ -15,6 +15,12 @@ import { CurrentSeries } from "@/components/series/CurrentSeries";
 import { NextEpisodeButton } from "@/components/series/NextEpisodeButton";
 import { SeriesTitleHeader } from "@/components/series/SeriesTitleHeader";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
+import {
+  currentlyPlayingItemAtom,
+  fullScreenAtom,
+  playingAtom,
+  showCurrentlyPlayingBarAtom,
+} from "@/utils/atoms/playState";
 import { useSettings } from "@/utils/atoms/settings";
 import { getBackdropUrl } from "@/utils/jellyfin/image/getBackdropUrl";
 import { getLogoImageUrlById } from "@/utils/jellyfin/image/getLogoImageUrlById";
@@ -37,12 +43,6 @@ import CastContext, {
   useRemoteMediaClient,
 } from "react-native-google-cast";
 import { ParallaxScrollView } from "../../../components/ParallaxPage";
-import {
-  currentlyPlayingItemAtom,
-  fullScreenAtom,
-  playingAtom,
-  showCurrentlyPlayingBarAtom,
-} from "@/utils/atoms/playState";
 
 const page: React.FC = () => {
   const local = useLocalSearchParams();
