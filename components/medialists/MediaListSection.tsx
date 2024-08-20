@@ -13,6 +13,7 @@ import { InfiniteHorizontalScroll } from "../common/InfiniteHorrizontalScroll";
 import { TouchableItemRouter } from "../common/TouchableItemRouter";
 import MoviePoster from "../posters/MoviePoster";
 import { useCallback } from "react";
+import { ItemCardText } from "../ItemCardText";
 
 interface Props extends ViewProps {
   collection: BaseItemDto;
@@ -56,11 +57,12 @@ export const MediaListSection: React.FC<Props> = ({ collection, ...props }) => {
             key={index}
             item={item}
             className={`flex flex-col
-              ${"w-32"}
+              ${"w-28"}
             `}
           >
             <View>
               <MoviePoster item={item} />
+              <ItemCardText item={item} />
             </View>
           </TouchableItemRouter>
         )}

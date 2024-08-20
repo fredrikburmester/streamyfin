@@ -21,23 +21,23 @@ const ContinueWatchingPoster: React.FC<ContinueWatchingPosterProps> = ({
       getPrimaryImageUrl({
         api,
         item,
-        quality: 70,
-        width: 300,
+        quality: 90,
+        width: 176 * 2,
       }),
-    [item],
+    [item]
   );
 
   const [progress, setProgress] = useState(
-    item.UserData?.PlayedPercentage || 0,
+    item.UserData?.PlayedPercentage || 0
   );
 
   if (!url)
     return (
-      <View className="w-48 aspect-video border border-neutral-800"></View>
+      <View className="w-44 aspect-video border border-neutral-800"></View>
     );
 
   return (
-    <View className="w-48 relative aspect-video rounded-lg overflow-hidden border border-neutral-800">
+    <View className="w-44 relative aspect-video rounded-lg overflow-hidden border border-neutral-800">
       <Image
         key={item.Id}
         id={item.Id}

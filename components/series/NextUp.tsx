@@ -52,7 +52,7 @@ export const NextUp: React.FC<{ seriesId: string }> = ({ seriesId }) => {
               router.push(`/(auth)/items/${item.Id}`);
             }}
             key={item.Id}
-            className="flex flex-col w-32"
+            className="flex flex-col w-44"
           >
             <ContinueWatchingPoster item={item} />
             <ItemCardText item={item} />

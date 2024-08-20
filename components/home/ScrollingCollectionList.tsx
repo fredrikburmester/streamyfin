@@ -41,7 +41,7 @@ export const ScrollingCollectionList: React.FC<Props> = ({
             key={index}
             item={item}
             className={`flex flex-col
-              ${orientation === "vertical" ? "w-32" : "w-48"}
+              ${orientation === "vertical" ? "w-28" : "w-44"}
             `}
           >
             <View>
