@@ -25,22 +25,19 @@ export const SettingToggles: React.FC = () => {
     data: mediaListCollections,
     isLoading: isLoadingMediaListCollections,
   } = useQuery({
-    queryKey: ["mediaListCollections", user?.Id],
+    queryKey: ["sf_promoted", user?.Id, settings?.usePopularPlugin],
     queryFn: async () => {
       if (!api || !user?.Id) return [];
 
       const response = await getItemsApi(api).getItems({
         userId: user.Id,
-        tags: ["medialist", "promoted"],
+        tags: ["sf_promoted"],
         recursive: true,
         fields: ["Tags"],
         includeItemTypes: ["BoxSet"],
       });
 
-      const ids =
-        response.data.Items?.filter((c) => c.Name !== "sf_carousel") ?? [];
-
-      return ids;
+      return response.data.Items ?? [];
     },
     enabled: !!api && !!user?.Id && settings?.usePopularPlugin === true,
     staleTime: 0,

@@ -171,30 +171,19 @@ export default function index() {
   });
 
   const { data: mediaListCollections } = useQuery({
-    queryKey: [
-      "mediaListCollections-home",
-      user?.Id,
-      settings?.mediaListCollectionIds,
-    ],
+    queryKey: ["sf_promoted", user?.Id, settings?.usePopularPlugin],
     queryFn: async () => {
       if (!api || !user?.Id) return [];
 
       const response = await getItemsApi(api).getItems({
         userId: user.Id,
-        tags: ["medialist", "promoted"],
+        tags: ["sf_promoted"],
         recursive: true,
         fields: ["Tags"],
         includeItemTypes: ["BoxSet"],
       });
 
-      const ids =
-        response.data.Items?.filter(
-          (c) =>
-            c.Name !== "cf_carousel" &&
-            settings?.mediaListCollectionIds?.includes(c.Id!)
-        ) ?? [];
-
-      return ids;
+      return response.data.Items || [];
     },
     enabled: !!api && !!user?.Id && settings?.usePopularPlugin === true,
     staleTime: 0,
@@ -208,7 +197,10 @@ export default function index() {
     await queryClient.refetchQueries({ queryKey: ["recentlyAddedInTVShows"] });
     await queryClient.refetchQueries({ queryKey: ["suggestions"] });
     await queryClient.refetchQueries({
-      queryKey: ["mediaListCollections-home"],
+      queryKey: ["sf_promoted"],
+    });
+    await queryClient.refetchQueries({
+      queryKey: ["sf_carousel"],
     });
     setLoading(false);
   }, [queryClient, user?.Id]);
