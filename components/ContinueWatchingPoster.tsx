@@ -9,10 +9,12 @@ import { getPrimaryImageUrl } from "@/utils/jellyfin/image/getPrimaryImageUrl";
 
 type ContinueWatchingPosterProps = {
   item: BaseItemDto;
+  width?: number;
 };
 
 const ContinueWatchingPoster: React.FC<ContinueWatchingPosterProps> = ({
   item,
+  width = 176,
 }) => {
   const [api] = useAtom(apiAtom);
 
@@ -33,11 +35,21 @@ const ContinueWatchingPoster: React.FC<ContinueWatchingPosterProps> = ({
 
   if (!url)
     return (
-      <View className="w-44 aspect-video border border-neutral-800"></View>
+      <View
+        className="aspect-video border border-neutral-800"
+        style={{
+          width,
+        }}
+      ></View>
     );
 
   return (
-    <View className="w-44 relative aspect-video rounded-lg overflow-hidden border border-neutral-800">
+    <View
+      style={{
+        width,
+      }}
+      className="relative aspect-video rounded-lg overflow-hidden border border-neutral-800"
+    >
       <Image
         key={item.Id}
         id={item.Id}
