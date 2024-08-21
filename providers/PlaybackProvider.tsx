@@ -179,7 +179,7 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
   }, []);
 
   useEffect(() => {
-    if (!deviceId || !api || !user) return;
+    if (!deviceId || !api?.accessToken) return;
 
     const url = `wss://${api?.basePath
       .replace("https://", "")
