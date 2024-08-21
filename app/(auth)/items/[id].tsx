@@ -55,13 +55,6 @@ const page: React.FC = () => {
 
   const castDevice = useCastDevice();
 
-  const [, setCurrentlyPlying] = useAtom(currentlyPlayingItemAtom);
-  const [, setShowCurrentlyPlayingBar] = useAtom(showCurrentlyPlayingBarAtom);
-  const [, setPlaying] = useAtom(playingAtom);
-  const [, setFullscreen] = useAtom(fullScreenAtom);
-
-  const client = useRemoteMediaClient();
-  const chromecastReady = useMemo(() => !!castDevice?.deviceId, [castDevice]);
   const [selectedAudioStream, setSelectedAudioStream] = useState<number>(-1);
   const [selectedSubtitleStream, setSelectedSubtitleStream] =
     useState<number>(0);
@@ -141,47 +134,6 @@ const page: React.FC = () => {
     staleTime: 0,
   });
 
-  const onPressPlay = useCallback(
-    async (type: "device" | "cast" = "device") => {
-      if (!playbackUrl || !item) return;
-
-      if (type === "cast" && client) {
-        await CastContext.getPlayServicesState().then((state) => {
-          if (state && state !== PlayServicesState.SUCCESS)
-            CastContext.showPlayServicesErrorDialog(state);
-          else {
-            client.loadMedia({
-              mediaInfo: {
-                contentUrl: playbackUrl,
-                contentType: "video/mp4",
-                metadata: {
-                  type: item.Type === "Episode" ? "tvShow" : "movie",
-                  title: item.Name || "",
-                  subtitle: item.Overview || "",
-                },
-              },
-              startTime: 0,
-            });
-          }
-        });
-      } else {
-        setCurrentlyPlying({
-          item,
-          playbackUrl,
-        });
-        setPlaying(true);
-        setShowCurrentlyPlayingBar(true);
-
-        if (settings?.openFullScreenVideoPlayerByDefault === true) {
-          setTimeout(() => {
-            setFullscreen(true);
-          }, 100);
-        }
-      }
-    },
-    [playbackUrl, item, settings]
-  );
-
   const backdropUrl = useMemo(
     () =>
       getBackdropUrl({
@@ -252,7 +204,7 @@ const page: React.FC = () => {
 
         <View className="flex flex-row justify-between items-center mb-2">
           {playbackUrl ? (
-            <DownloadItem item={item} playbackUrl={playbackUrl} />
+            <DownloadItem item={item} />
           ) : (
             <View className="h-12 aspect-square flex items-center justify-center"></View>
           )}
