@@ -34,6 +34,34 @@ interface Props<T> extends ViewProps {
 
 const LIMIT = 100;
 
+/**
+ * FilterSheet Component
+ *
+ * This component creates a bottom sheet modal for filtering and selecting items from a list.
+ *
+ * @template T - The type of items in the list
+ *
+ * @param {Object} props - The component props
+ * @param {boolean} props.open - Whether the bottom sheet is open
+ * @param {function} props.setOpen - Function to set the open state
+ * @param {T[] | null} [props.data] - The full list of items to filter from
+ * @param {T[]} props.values - The currently selected items
+ * @param {function} props.set - Function to update the selected items
+ * @param {string} props.title - The title of the bottom sheet
+ * @param {function} props.searchFilter - Function to filter items based on search query
+ * @param {function} props.renderItemLabel - Function to render the label for each item
+ * @param {boolean} [props.showSearch=true] - Whether to show the search input
+ *
+ * @returns {React.ReactElement} The FilterSheet component
+ *
+ * Features:
+ * - Displays a list of items in a bottom sheet
+ * - Allows searching and filtering of items
+ * - Supports single selection of items
+ * - Loads items in batches for performance optimization
+ * - Customizable item rendering
+ */
+
 export const FilterSheet = <T,>({
   values,
   data: _data,
@@ -65,6 +93,8 @@ export const FilterSheet = <T,>({
     return results.slice(0, 100);
   }, [search, _data, searchFilter]);
 
+  // Loads data in batches of LIMIT size, starting from offset,
+  // to implement efficient "load more" functionality
   useEffect(() => {
     if (!_data || _data.length === 0) return;
     const tmp = new Set(data);
@@ -146,14 +176,12 @@ export const FilterSheet = <T,>({
               <>
                 <TouchableOpacity
                   onPress={() => {
-                    set(
-                      values.includes(item)
-                        ? values.filter((i) => i !== item)
-                        : [item]
-                    );
-                    setTimeout(() => {
-                      setOpen(false);
-                    }, 250);
+                    if (!values.includes(item)) {
+                      set([item]);
+                      setTimeout(() => {
+                        setOpen(false);
+                      }, 250);
+                    }
                   }}
                   key={`${index}`}
                   className=" bg-neutral-800 px-4 py-3 flex flex-row items-center justify-between"
