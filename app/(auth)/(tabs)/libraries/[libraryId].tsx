@@ -1,4 +1,3 @@
-import { Text } from "@/components/common/Text";
 import { TouchableItemRouter } from "@/components/common/TouchableItemRouter";
 import { FilterButton } from "@/components/filters/FilterButton";
 import { ResetFiltersButton } from "@/components/filters/ResetFiltersButton";
@@ -7,9 +6,10 @@ import { Loader } from "@/components/Loader";
 import MoviePoster from "@/components/posters/MoviePoster";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import {
+  currentCollectionIdAtom,
   genreFilterAtom,
   sortByAtom,
-  sortOptions,
+  sortByOptions,
   sortOrderAtom,
   sortOrderOptions,
   tagsFilterAtom,
@@ -25,7 +25,7 @@ import {
   getUserLibraryApi,
 } from "@jellyfin/sdk/lib/utils/api";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import { Stack, useLocalSearchParams, useNavigation } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { useAtom } from "jotai";
 import React, { useCallback, useEffect, useMemo } from "react";
 import { NativeScrollEvent, ScrollView, View } from "react-native";
@@ -46,9 +46,14 @@ const page: React.FC = () => {
   const searchParams = useLocalSearchParams();
   const { libraryId } = searchParams as { libraryId: string };
 
+  const [, setCurrentCollectionId] = useAtom(currentCollectionIdAtom);
+
+  useEffect(() => {
+    setCurrentCollectionId(libraryId);
+  }, [libraryId]);
+
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
-  const navigation = useNavigation();
 
   const [selectedGenres, setSelectedGenres] = useAtom(genreFilterAtom);
   const [selectedYears, setSelectedYears] = useAtom(yearFilterAtom);
@@ -204,7 +209,7 @@ const page: React.FC = () => {
                   });
                   return response.data.Genres || [];
                 }}
-                set={setSelectedGenres}
+                set={(value) => setSelectedGenres(value, libraryId)}
                 values={selectedGenres}
                 title="Genres"
                 renderItemLabel={(item) => item.toString()}
@@ -226,7 +231,7 @@ const page: React.FC = () => {
                   });
                   return response.data.Tags || [];
                 }}
-                set={setSelectedTags}
+                set={(value) => setSelectedTags(value, libraryId)}
                 values={selectedTags}
                 title="Tags"
                 renderItemLabel={(item) => item.toString()}
@@ -252,7 +257,7 @@ const page: React.FC = () => {
                     ) || []
                   );
                 }}
-                set={setSelectedYears}
+                set={(value) => setSelectedYears(value, libraryId)}
                 values={selectedYears}
                 title="Years"
                 renderItemLabel={(item) => item.toString()}
@@ -265,9 +270,9 @@ const page: React.FC = () => {
                 collectionId={libraryId}
                 queryKey="sortByFilter"
                 queryFn={async () => {
-                  return sortOptions;
+                  return sortByOptions;
                 }}
-                set={setSortBy}
+                set={(value) => setSortBy(value, libraryId)}
                 values={sortBy}
                 title="Sort by"
                 renderItemLabel={(item) => item.value}
@@ -285,7 +290,7 @@ const page: React.FC = () => {
                 queryFn={async () => {
                   return sortOrderOptions;
                 }}
-                set={setSortOrder}
+                set={(value) => setSortOrder(value, libraryId)}
                 values={sortOrder}
                 title="Order by"
                 renderItemLabel={(item) => item.value}

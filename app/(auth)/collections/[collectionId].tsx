@@ -7,9 +7,10 @@ import { Loader } from "@/components/Loader";
 import MoviePoster from "@/components/posters/MoviePoster";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import {
+  currentCollectionIdAtom,
   genreFilterAtom,
   sortByAtom,
-  sortOptions,
+  sortByOptions,
   sortOrderAtom,
   sortOrderOptions,
   tagsFilterAtom,
@@ -55,20 +56,29 @@ const page: React.FC = () => {
   const [selectedTags, setSelectedTags] = useAtom(tagsFilterAtom);
   const [sortBy, setSortBy] = useAtom(sortByAtom);
   const [sortOrder, setSortOrder] = useAtom(sortOrderAtom);
+  const [currentCollection, setCurrentCollection] = useAtom(
+    currentCollectionIdAtom
+  );
 
   useEffect(() => {
-    setSortBy([
-      {
-        key: "PremiereDate",
-        value: "Premiere Date",
-      },
-    ]);
-    setSortOrder([
-      {
-        key: "Ascending",
-        value: "Ascending",
-      },
-    ]);
+    setSortBy(
+      [
+        {
+          key: "PremiereDate",
+          value: "Premiere Date",
+        },
+      ],
+      collectionId
+    );
+    setSortOrder(
+      [
+        {
+          key: "Ascending",
+          value: "Ascending",
+        },
+      ],
+      collectionId
+    );
   }, []);
 
   const { data: collection } = useQuery({
@@ -208,7 +218,7 @@ const page: React.FC = () => {
                   });
                   return response.data.Genres || [];
                 }}
-                set={setSelectedGenres}
+                set={(value) => setSelectedGenres(value, collectionId)}
                 values={selectedGenres}
                 title="Genres"
                 renderItemLabel={(item) => item.toString()}
@@ -230,7 +240,7 @@ const page: React.FC = () => {
                   });
                   return response.data.Tags || [];
                 }}
-                set={setSelectedTags}
+                set={(value) => setSelectedTags(value, collectionId)}
                 values={selectedTags}
                 title="Tags"
                 renderItemLabel={(item) => item.toString()}
@@ -256,7 +266,7 @@ const page: React.FC = () => {
                     ) || []
                   );
                 }}
-                set={setSelectedYears}
+                set={(value) => setSelectedYears(value, collectionId)}
                 values={selectedYears}
                 title="Years"
                 renderItemLabel={(item) => item.toString()}
@@ -269,9 +279,9 @@ const page: React.FC = () => {
                 collectionId={collectionId}
                 queryKey="sortByFilter"
                 queryFn={async () => {
-                  return sortOptions;
+                  return sortByOptions;
                 }}
-                set={setSortBy}
+                set={(value) => setSortBy(value, collectionId)}
                 values={sortBy}
                 title="Sort by"
                 renderItemLabel={(item) => item.value}
@@ -289,7 +299,7 @@ const page: React.FC = () => {
                 queryFn={async () => {
                   return sortOrderOptions;
                 }}
-                set={setSortOrder}
+                set={(value) => setSortOrder(value, collectionId)}
                 values={sortOrder}
                 title="Order by"
                 renderItemLabel={(item) => item.value}

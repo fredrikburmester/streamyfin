@@ -1,6 +1,7 @@
 import { Text } from "@/components/common/Text";
 import { Loader } from "@/components/Loader";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
+import { currentCollectionIdAtom } from "@/utils/atoms/filters";
 import { getPrimaryImageUrl } from "@/utils/jellyfin/image/getPrimaryImageUrl";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import { getUserViewsApi } from "@jellyfin/sdk/lib/utils/api";
@@ -66,6 +67,10 @@ const LibraryItemCard: React.FC<Props> = ({ library }) => {
 
   const [api] = useAtom(apiAtom);
 
+  const [currentCollection, setCurrentCollection] = useAtom(
+    currentCollectionIdAtom
+  );
+
   const url = useMemo(
     () =>
       getPrimaryImageUrl({
@@ -80,6 +85,8 @@ const LibraryItemCard: React.FC<Props> = ({ library }) => {
   return (
     <TouchableOpacity
       onPress={() => {
+        if (!library.Id) return;
+        setCurrentCollection(library.Id);
         router.push(`/libraries/${library.Id}`);
       }}
     >
