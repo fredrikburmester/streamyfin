@@ -11,11 +11,7 @@ import { useFiles } from "@/hooks/useFiles";
 import { runtimeTicksToMinutes } from "@/utils/time";
 
 import { useSettings } from "@/utils/atoms/settings";
-import {
-  currentlyPlayingItemAtom,
-  playingAtom,
-  fullScreenAtom,
-} from "@/utils/atoms/playState";
+import { usePlayback } from "@/providers/PlaybackProvider";
 
 interface MovieCardProps {
   item: BaseItemDto;
@@ -28,25 +24,16 @@ interface MovieCardProps {
  */
 export const MovieCard: React.FC<MovieCardProps> = ({ item }) => {
   const { deleteFile } = useFiles();
-  const [, setCurrentlyPlaying] = useAtom(currentlyPlayingItemAtom);
-  const [, setPlaying] = useAtom(playingAtom);
-  const [, setFullscreen] = useAtom(fullScreenAtom);
   const [settings] = useSettings();
 
-  /**
-   * Handles opening the file for playback.
-   */
+  const { setCurrentlyPlayingState } = usePlayback();
+
   const handleOpenFile = useCallback(() => {
-    console.log("Open movie file", item.Name);
-    setCurrentlyPlaying({
+    setCurrentlyPlayingState({
       item,
-      playbackUrl: `${FileSystem.documentDirectory}/${item.Id}.mp4`,
+      url: `${FileSystem.documentDirectory}/${item.Id}.mp4`,
     });
-    setPlaying(true);
-    if (settings?.openFullScreenVideoPlayerByDefault === true) {
-      setFullscreen(true);
-    }
-  }, [item, setCurrentlyPlaying, setPlaying, settings]);
+  }, [item, setCurrentlyPlayingState]);
 
   /**
    * Handles deleting the file with haptic feedback.

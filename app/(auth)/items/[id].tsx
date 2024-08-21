@@ -15,12 +15,6 @@ import { CurrentSeries } from "@/components/series/CurrentSeries";
 import { NextEpisodeButton } from "@/components/series/NextEpisodeButton";
 import { SeriesTitleHeader } from "@/components/series/SeriesTitleHeader";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
-import {
-  currentlyPlayingItemAtom,
-  fullScreenAtom,
-  playingAtom,
-  showCurrentlyPlayingBarAtom,
-} from "@/utils/atoms/playState";
 import { useSettings } from "@/utils/atoms/settings";
 import { getBackdropUrl } from "@/utils/jellyfin/image/getBackdropUrl";
 import { getLogoImageUrlById } from "@/utils/jellyfin/image/getLogoImageUrlById";
@@ -35,13 +29,9 @@ import { useQuery } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import { useLocalSearchParams } from "expo-router";
 import { useAtom } from "jotai";
-import { useCallback, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { View } from "react-native";
-import CastContext, {
-  PlayServicesState,
-  useCastDevice,
-  useRemoteMediaClient,
-} from "react-native-google-cast";
+import { useCastDevice } from "react-native-google-cast";
 import { ParallaxScrollView } from "../../../components/ParallaxPage";
 
 const page: React.FC = () => {
