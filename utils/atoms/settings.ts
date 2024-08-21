@@ -2,6 +2,28 @@ import { atom, useAtom } from "jotai";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect } from "react";
 
+export type DownloadQuality = "original" | "high" | "low";
+
+export type DownloadOption = {
+  label: string;
+  value: DownloadQuality;
+};
+
+export const DownloadOptions: DownloadOption[] = [
+  {
+    label: "Original quality",
+    value: "original",
+  },
+  {
+    label: "High quality",
+    value: "high",
+  },
+  {
+    label: "Small file size",
+    value: "low",
+  },
+];
+
 type Settings = {
   autoRotate?: boolean;
   forceLandscapeInVideoPlayer?: boolean;
@@ -13,6 +35,7 @@ type Settings = {
   searchEngine: "Marlin" | "Jellyfin";
   marlinServerUrl?: string;
   openInVLC?: boolean;
+  downloadQuality?: DownloadOption;
 };
 
 /**
@@ -23,23 +46,31 @@ type Settings = {
  *
  */
 
-// Utility function to load settings from AsyncStorage
 const loadSettings = async (): Promise<Settings> => {
-  const jsonValue = await AsyncStorage.getItem("settings");
-  return jsonValue != null
-    ? JSON.parse(jsonValue)
-    : {
-        autoRotate: true,
-        forceLandscapeInVideoPlayer: false,
-        openFullScreenVideoPlayerByDefault: false,
-        usePopularPlugin: false,
-        deviceProfile: "Expo",
-        forceDirectPlay: false,
-        mediaListCollectionIds: [],
-        searchEngine: "Jellyfin",
-        marlinServerUrl: "",
-        openInVLC: false,
-      };
+  const defaultValues: Settings = {
+    autoRotate: true,
+    forceLandscapeInVideoPlayer: false,
+    openFullScreenVideoPlayerByDefault: false,
+    usePopularPlugin: false,
+    deviceProfile: "Expo",
+    forceDirectPlay: false,
+    mediaListCollectionIds: [],
+    searchEngine: "Jellyfin",
+    marlinServerUrl: "",
+    openInVLC: false,
+    downloadQuality: DownloadOptions[0],
+  };
+
+  try {
+    const jsonValue = await AsyncStorage.getItem("settings");
+    const loadedValues: Partial<Settings> =
+      jsonValue != null ? JSON.parse(jsonValue) : {};
+
+    return { ...defaultValues, ...loadedValues };
+  } catch (error) {
+    console.error("Failed to load settings:", error);
+    return defaultValues;
+  }
 };
 
 // Utility function to save settings to AsyncStorage
