@@ -13,7 +13,9 @@ export const sortOptions: {
   { key: "SortName", value: "Name" },
   { key: "CommunityRating", value: "Community Rating" },
   { key: "CriticRating", value: "Critics Rating" },
-  { key: "DateLastContentAdded", value: "Content Added" },
+  { key: "DateCreated", value: "Date Added" },
+  // only works for shows (last episode added) keeping for future ref.
+  // { key: "DateLastContentAdded", value: "Content Added" },
   { key: "DatePlayed", value: "Date Played" },
   { key: "PlayCount", value: "Play Count" },
   { key: "ProductionYear", value: "Production Year" },
