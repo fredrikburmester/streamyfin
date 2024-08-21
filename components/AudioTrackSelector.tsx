@@ -22,12 +22,12 @@ export const AudioTrackSelector: React.FC<Props> = ({
   const audioStreams = useMemo(
     () =>
       item.MediaSources?.[0].MediaStreams?.filter((x) => x.Type === "Audio"),
-    [item],
+    [item]
   );
 
   const selectedAudioSteam = useMemo(
     () => audioStreams?.find((x) => x.Index === selected),
-    [audioStreams, selected],
+    [audioStreams, selected]
   );
 
   useEffect(() => {
@@ -42,7 +42,7 @@ export const AudioTrackSelector: React.FC<Props> = ({
           <View className="flex flex-col mb-2">
             <Text className="opacity-50 mb-1 text-xs">Audio streams</Text>
             <View className="flex flex-row">
-              <TouchableOpacity className="bg-neutral-900 max-w-32 h-12 rounded-2xl border-neutral-900 border px-3 py-2 flex flex-row items-center justify-between">
+              <TouchableOpacity className="bg-neutral-900 max-w-32 h-10 rounded-xl border-neutral-900 border px-3 py-2 flex flex-row items-center justify-between">
                 <Text className="">
                   {tc(selectedAudioSteam?.DisplayTitle, 13)}
                 </Text>
