@@ -44,8 +44,11 @@ const Login: React.FC = () => {
         await login(credentials.username, credentials.password);
       }
     } catch (error) {
-      const e = error as AxiosError;
-      setError(e.message);
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError("An unexpected error occurred");
+      }
     } finally {
       setLoading(false);
     }
