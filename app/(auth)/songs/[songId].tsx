@@ -2,10 +2,6 @@ import { AudioTrackSelector } from "@/components/AudioTrackSelector";
 import { Bitrate, BitrateSelector } from "@/components/BitrateSelector";
 import { Chromecast } from "@/components/Chromecast";
 import { Text } from "@/components/common/Text";
-import {
-  currentlyPlayingItemAtom,
-  playingAtom,
-} from "@/components/CurrentlyPlayingBar";
 import { DownloadItem } from "@/components/DownloadItem";
 import { Loader } from "@/components/Loader";
 import { MoviesTitleHeader } from "@/components/movies/MoviesTitleHeader";
@@ -15,6 +11,7 @@ import { NextEpisodeButton } from "@/components/series/NextEpisodeButton";
 import { SimilarItems } from "@/components/SimilarItems";
 import { SubtitleTrackSelector } from "@/components/SubtitleTrackSelector";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
+import { usePlayback } from "@/providers/PlaybackProvider";
 import { getBackdropUrl } from "@/utils/jellyfin/image/getBackdropUrl";
 import { getLogoImageUrlById } from "@/utils/jellyfin/image/getLogoImageUrlById";
 import { getStreamUrl } from "@/utils/jellyfin/media/getStreamUrl";
@@ -41,7 +38,7 @@ const page: React.FC = () => {
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
 
-  const [, setPlaying] = useAtom(playingAtom);
+  const { setCurrentlyPlayingState } = usePlayback();
 
   const castDevice = useCastDevice();
   const navigation = useNavigation();
@@ -140,7 +137,6 @@ const page: React.FC = () => {
     staleTime: 0,
   });
 
-  const [, setCp] = useAtom(currentlyPlayingItemAtom);
   const client = useRemoteMediaClient();
 
   const onPressPlay = useCallback(
@@ -167,11 +163,10 @@ const page: React.FC = () => {
           }
         });
       } else {
-        setCp({
+        setCurrentlyPlayingState({
           item,
-          playbackUrl,
+          url: playbackUrl,
         });
-        setPlaying(true);
       }
     },
     [playbackUrl, item]
@@ -224,7 +219,7 @@ const page: React.FC = () => {
 
         <View className="flex flex-row justify-between items-center w-full my-4">
           {playbackUrl ? (
-            <DownloadItem item={item} playbackUrl={playbackUrl} />
+            <DownloadItem item={item} />
           ) : (
             <View className="h-12 aspect-square flex items-center justify-center"></View>
           )}
@@ -249,12 +244,7 @@ const page: React.FC = () => {
         </View>
         <View className="flex flex-row items-center justify-between w-full">
           <NextEpisodeButton item={item} type="previous" className="mr-2" />
-          <PlayButton
-            item={item}
-            chromecastReady={chromecastReady}
-            onPress={onPressPlay}
-            className="grow"
-          />
+          <PlayButton item={item} className="grow" />
           <NextEpisodeButton item={item} className="ml-2" />
         </View>
       </View>

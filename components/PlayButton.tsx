@@ -18,7 +18,7 @@ interface Props extends React.ComponentProps<typeof Button> {
 export const PlayButton: React.FC<Props> = ({ item, url, ...props }) => {
   const { showActionSheetWithOptions } = useActionSheet();
   const client = useRemoteMediaClient();
-  const { currentlyPlaying, setCurrentlyPlayingState } = usePlayback();
+  const { setCurrentlyPlayingState } = usePlayback();
 
   const onPress = async () => {
     if (!url || !item) return;
