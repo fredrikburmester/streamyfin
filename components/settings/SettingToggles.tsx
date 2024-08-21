@@ -1,5 +1,5 @@
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
-import { useSettings } from "@/utils/atoms/settings";
+import { DownloadOptions, useSettings } from "@/utils/atoms/settings";
 import { getItemsApi } from "@jellyfin/sdk/lib/utils/api";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAtom } from "jotai";
@@ -58,6 +58,46 @@ export const SettingToggles: React.FC = () => {
           onValueChange={(value) => updateSettings({ autoRotate: value })}
         />
       </View>
+      <View
+        className={`
+            flex flex-row items-center space-x-2 justify-between bg-neutral-900 p-4
+          `}
+      >
+        <View className="flex flex-col shrink">
+          <Text className="font-semibold">Download quality</Text>
+          <Text className="text-xs opacity-50">
+            Choose the search engine you want to use.
+          </Text>
+        </View>
+        <DropdownMenu.Root>
+          <DropdownMenu.Trigger>
+            <TouchableOpacity className="bg-neutral-800 rounded-lg border-neutral-900 border px-3 py-2 flex flex-row items-center justify-between">
+              <Text>{settings?.downloadQuality?.label}</Text>
+            </TouchableOpacity>
+          </DropdownMenu.Trigger>
+          <DropdownMenu.Content
+            loop={true}
+            side="bottom"
+            align="start"
+            alignOffset={0}
+            avoidCollisions={true}
+            collisionPadding={8}
+            sideOffset={8}
+          >
+            <DropdownMenu.Label>Quality</DropdownMenu.Label>
+            {DownloadOptions.map((option) => (
+              <DropdownMenu.Item
+                key={option.value}
+                onSelect={() => {
+                  updateSettings({ downloadQuality: option });
+                }}
+              >
+                <DropdownMenu.ItemTitle>{option.label}</DropdownMenu.ItemTitle>
+              </DropdownMenu.Item>
+            ))}
+          </DropdownMenu.Content>
+        </DropdownMenu.Root>
+      </View>
       <View className="flex flex-row items-center justify-between bg-neutral-900 p-4">
         <View className="shrink">
           <Text className="font-semibold">Start videos in fullscreen</Text>
@@ -73,6 +113,23 @@ export const SettingToggles: React.FC = () => {
           }
         />
       </View>
+
+      <View className="flex flex-row space-x-2 items-center justify-between bg-neutral-900 p-4">
+        <View className="flex flex-col shrink">
+          <Text className="font-semibold">Use external player (VLC)</Text>
+          <Text className="text-xs opacity-50 shrink">
+            Open all videos in VLC instead of the default player. This requries
+            VLC to be installed on the phone.
+          </Text>
+        </View>
+        <Switch
+          value={settings?.openInVLC}
+          onValueChange={(value) => {
+            updateSettings({ openInVLC: value, forceDirectPlay: value });
+          }}
+        />
+      </View>
+
       <View className="flex flex-col">
         <View className="flex flex-row items-center justify-between bg-neutral-900 p-4">
           <View className="flex flex-col">
@@ -154,22 +211,6 @@ export const SettingToggles: React.FC = () => {
         <Switch
           value={settings?.forceDirectPlay}
           onValueChange={(value) => updateSettings({ forceDirectPlay: value })}
-        />
-      </View>
-
-      <View className="flex flex-row space-x-2 items-center justify-between bg-neutral-900 p-4">
-        <View className="flex flex-col shrink">
-          <Text className="font-semibold">Use external player (VLC)</Text>
-          <Text className="text-xs opacity-50 shrink">
-            Open all videos in VLC instead of the default player. This requries
-            VLC to be installed on the phone.
-          </Text>
-        </View>
-        <Switch
-          value={settings?.openInVLC}
-          onValueChange={(value) => {
-            updateSettings({ openInVLC: value, forceDirectPlay: value });
-          }}
         />
       </View>
 
