@@ -27,8 +27,9 @@ import {
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { Stack, useLocalSearchParams, useNavigation } from "expo-router";
 import { useAtom } from "jotai";
-import React, { useCallback, useEffect, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { NativeScrollEvent, ScrollView, View } from "react-native";
+import * as ScreenOrientation from "expo-screen-orientation";
 
 const isCloseToBottom = ({
   layoutMeasurement,
@@ -55,6 +56,27 @@ const page: React.FC = () => {
   const [selectedTags, setSelectedTags] = useAtom(tagsFilterAtom);
   const [sortBy, setSortBy] = useAtom(sortByAtom);
   const [sortOrder, setSortOrder] = useAtom(sortOrderAtom);
+
+  const [orientation, setOrientation] = useState(
+    ScreenOrientation.Orientation.PORTRAIT_UP
+  );
+
+  useEffect(() => {
+    const subscription = ScreenOrientation.addOrientationChangeListener(
+      (event) => {
+        setOrientation(event.orientationInfo.orientation);
+      }
+    );
+
+    // Set the initial orientation
+    ScreenOrientation.getOrientationAsync().then((initialOrientation) => {
+      setOrientation(initialOrientation);
+    });
+
+    return () => {
+      ScreenOrientation.removeOrientationChangeListener(subscription);
+    };
+  }, [ScreenOrientation]);
 
   const { data: library } = useQuery({
     queryKey: ["library", libraryId],
@@ -311,8 +333,14 @@ const page: React.FC = () => {
                 <TouchableItemRouter
                   key={`${item.Id}-${index}`}
                   style={{
-                    width: "32%",
-                    marginBottom: 4,
+                    width:
+                      orientation === ScreenOrientation.Orientation.PORTRAIT_UP
+                        ? "32%"
+                        : "20%",
+                    marginBottom:
+                      orientation === ScreenOrientation.Orientation.PORTRAIT_UP
+                        ? 4
+                        : 16,
                   }}
                   item={item}
                   className={`
@@ -326,7 +354,10 @@ const page: React.FC = () => {
           {flatData.length % 3 !== 0 && (
             <View
               style={{
-                width: "33%",
+                width:
+                  orientation === ScreenOrientation.Orientation.PORTRAIT_UP
+                    ? "32%"
+                    : "20%",
               }}
             ></View>
           )}
