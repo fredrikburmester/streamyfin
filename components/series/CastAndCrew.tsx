@@ -11,9 +11,12 @@ import { useAtom } from "jotai";
 import { apiAtom } from "@/providers/JellyfinProvider";
 import { getPrimaryImageUrl } from "@/utils/jellyfin/image/getPrimaryImageUrl";
 import { router, usePathname } from "expo-router";
+import { useSettings } from "@/utils/atoms/settings";
 
 export const CastAndCrew = ({ item }: { item: BaseItemDto }) => {
   const [api] = useAtom(apiAtom);
+
+  const [settings] = useSettings();
 
   const pathname = usePathname();
 
@@ -25,7 +28,10 @@ export const CastAndCrew = ({ item }: { item: BaseItemDto }) => {
         renderItem={(item, index) => (
           <TouchableOpacity
             onPress={() => {
-              router.push(`/search?q=${item.Name}&prev=${pathname}`);
+              if (settings?.searchEngine === "Marlin")
+                router.push(`/search?q=${item.Name}&prev=${pathname}`);
+              else
+                Linking.openURL(`https://www.google.com/search?q=${item.Name}`);
             }}
             key={item.Id}
             className="flex flex-col w-32"
