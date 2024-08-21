@@ -14,7 +14,7 @@ export const sortOptions: {
   { key: "CommunityRating", value: "Community Rating" },
   { key: "CriticRating", value: "Critics Rating" },
   { key: "DateCreated", value: "Date Added" },
-  // only works for shows (last episode added) keeping for future ref.
+  // Only works for shows (last episode added) keeping for future ref.
   // { key: "DateLastContentAdded", value: "Content Added" },
   { key: "DatePlayed", value: "Date Played" },
   { key: "PlayCount", value: "Play Count" },
@@ -25,7 +25,8 @@ export const sortOptions: {
   { key: "StartDate", value: "Start Date" },
   { key: "IsUnplayed", value: "Is Unplayed" },
   { key: "IsPlayed", value: "Is Played" },
-  { key: "VideoBitRate", value: "Video Bit Rate" },
+  // Broken in JF
+  // { key: "VideoBitRate", value: "Video Bit Rate" },
   { key: "AirTime", value: "Air Time" },
   { key: "Studio", value: "Studio" },
   { key: "IsFavoriteOrLiked", value: "Is Favorite Or Liked" },
