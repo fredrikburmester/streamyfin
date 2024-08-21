@@ -93,7 +93,7 @@ export const LargeMovieCarousel: React.FC<Props> = ({ ...props }) => {
     <View className="flex flex-col items-center" {...props}>
       <Carousel
         autoPlay={true}
-        autoPlayInterval={2000}
+        autoPlayInterval={3000}
         loop={true}
         ref={ref}
         width={width}
