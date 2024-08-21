@@ -43,7 +43,7 @@ const page: React.FC = () => {
         quality: 90,
         width: 1000,
       }),
-    [item],
+    [item]
   );
 
   const logoUrl = useMemo(
@@ -52,7 +52,7 @@ const page: React.FC = () => {
         api,
         item,
       }),
-    [item],
+    [item]
   );
 
   if (!item || !backdropUrl) return null;
@@ -87,7 +87,7 @@ const page: React.FC = () => {
         </>
       }
     >
-      <View className="flex flex-col pt-4 pb-24">
+      <View className="flex flex-col pt-4">
         <View className="px-4 py-4">
           <Text className="text-3xl font-bold">{item?.Name}</Text>
           <Text className="">{item?.Overview}</Text>
