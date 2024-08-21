@@ -59,14 +59,14 @@ const page: React.FC = () => {
   useEffect(() => {
     setSortBy([
       {
-        key: "ProductionYear",
-        value: "Production Year",
+        key: "PremiereDate",
+        value: "Premiere Date",
       },
     ]);
     setSortOrder([
       {
-        key: "Descending",
-        value: "Descending",
+        key: "Ascending",
+        value: "Ascending",
       },
     ]);
   }, []);
