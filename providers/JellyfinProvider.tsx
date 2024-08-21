@@ -7,6 +7,7 @@ import { Api, Jellyfin } from "@jellyfin/sdk";
 import { UserDto } from "@jellyfin/sdk/lib/generated-client/models";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import axios from "axios";
 import { router, useSegments } from "expo-router";
 import { atom, useAtom } from "jotai";
 import React, {
@@ -115,15 +116,40 @@ export const JellyfinProvider: React.FC<{ children: ReactNode }> = ({
     }) => {
       if (!api || !jellyfin) throw new Error("API not initialized");
 
-      const auth = await api.authenticateUserByName(username, password);
+      try {
+        const auth = await api.authenticateUserByName(username, password);
 
-      if (auth.data.AccessToken && auth.data.User) {
-        setUser(auth.data.User);
-        await AsyncStorage.setItem("user", JSON.stringify(auth.data.User));
-        setApi(jellyfin.createApi(api?.basePath, auth.data?.AccessToken));
-        await AsyncStorage.setItem("token", auth.data?.AccessToken);
-      } else {
-        throw new Error("Invalid username or password");
+        if (auth.data.AccessToken && auth.data.User) {
+          setUser(auth.data.User);
+          await AsyncStorage.setItem("user", JSON.stringify(auth.data.User));
+          setApi(jellyfin.createApi(api?.basePath, auth.data?.AccessToken));
+          await AsyncStorage.setItem("token", auth.data?.AccessToken);
+        }
+      } catch (error) {
+        if (axios.isAxiosError(error)) {
+          console.log("Axios error", error.response?.status);
+          switch (error.response?.status) {
+            case 401:
+              throw new Error("Invalid username or password");
+            case 403:
+              throw new Error("User does not have permission to log in");
+            case 408:
+              throw new Error(
+                "Server is taking too long to respond, try again later"
+              );
+            case 429:
+              throw new Error(
+                "Server received too many requests, try again later"
+              );
+            case 500:
+              throw new Error("There is a server error");
+            default:
+              throw new Error(
+                "An unexpected error occurred. Did you enter the server URL correctly?"
+              );
+          }
+        }
+        throw error;
       }
     },
     onError: (error) => {
