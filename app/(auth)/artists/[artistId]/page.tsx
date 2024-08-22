@@ -84,7 +84,7 @@ export default function page() {
 
   useEffect(() => {
     navigation.setOptions({
-      title: albums?.Items?.[0].AlbumArtist,
+      title: albums?.Items?.[0]?.AlbumArtist || "",
     });
   }, [albums]);
 
