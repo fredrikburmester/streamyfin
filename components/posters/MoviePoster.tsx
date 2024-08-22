@@ -23,6 +23,7 @@ const MoviePoster: React.FC<MoviePosterProps> = ({
       getPrimaryImageUrl({
         api,
         item,
+        width: 300,
       }),
     [item]
   );

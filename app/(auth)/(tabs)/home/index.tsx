@@ -72,6 +72,7 @@ export default function index() {
           await getTvShowsApi(api).getNextUp({
             userId: user?.Id,
             fields: ["MediaSourceCount"],
+            limit: 20,
           })
         ).data.Items) ||
       [],
