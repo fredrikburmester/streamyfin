@@ -1,17 +1,15 @@
+import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
+import { getTvShowsApi } from "@jellyfin/sdk/lib/utils/api";
+import { useQuery } from "@tanstack/react-query";
+import { router } from "expo-router";
+import { useAtom } from "jotai";
 import React from "react";
 import { TouchableOpacity, View } from "react-native";
 import { HorizontalScroll } from "../common/HorrizontalScroll";
 import { Text } from "../common/Text";
-import Poster from "../posters/Poster";
 import ContinueWatchingPoster from "../ContinueWatchingPoster";
 import { ItemCardText } from "../ItemCardText";
-import { router } from "expo-router";
-import { useQuery } from "@tanstack/react-query";
-import { useAtom } from "jotai";
-import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
-import { nextUp } from "@/utils/jellyfin/tvshows/nextUp";
-import { getTvShowsApi } from "@jellyfin/sdk/lib/utils/api";
 
 export const NextUp: React.FC<{ seriesId: string }> = ({ seriesId }) => {
   const [user] = useAtom(userAtom);
@@ -26,6 +24,7 @@ export const NextUp: React.FC<{ seriesId: string }> = ({ seriesId }) => {
           userId: user?.Id,
           seriesId,
           fields: ["MediaSourceCount"],
+          limit: 20,
         })
       ).data.Items;
     },
