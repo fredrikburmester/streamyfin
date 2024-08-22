@@ -4,16 +4,14 @@ import {
   BaseItemDtoQueryResult,
 } from "@jellyfin/sdk/lib/generated-client/models";
 import { getItemsApi } from "@jellyfin/sdk/lib/utils/api";
-import { useQuery } from "@tanstack/react-query";
 import { useAtom } from "jotai";
-import { View, ViewProps } from "react-native";
-import { ScrollingCollectionList } from "../home/ScrollingCollectionList";
-import { Text } from "../common/Text";
-import { InfiniteHorizontalScroll } from "../common/InfiniteHorrizontalScroll";
-import { TouchableItemRouter } from "../common/TouchableItemRouter";
-import MoviePoster from "../posters/MoviePoster";
 import { useCallback } from "react";
+import { View, ViewProps } from "react-native";
+import { InfiniteHorizontalScroll } from "../common/InfiniteHorrizontalScroll";
+import { Text } from "../common/Text";
+import { TouchableItemRouter } from "../common/TouchableItemRouter";
 import { ItemCardText } from "../ItemCardText";
+import MoviePoster from "../posters/MoviePoster";
 
 interface Props extends ViewProps {
   collection: BaseItemDto;
@@ -35,7 +33,7 @@ export const MediaListSection: React.FC<Props> = ({ collection, ...props }) => {
         userId: user.Id,
         parentId: collection.Id,
         startIndex: pageParam,
-        limit: 10,
+        limit: 8,
       });
 
       return response.data;

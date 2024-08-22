@@ -38,7 +38,7 @@ const MoviePoster: React.FC<MoviePosterProps> = ({
   }, [item]);
 
   return (
-    <View className="relative rounded-md overflow-hidden border border-neutral-900">
+    <View className="relative rounded-lg overflow-hidden border border-neutral-900">
       <Image
         placeholder={{
           blurhash,
