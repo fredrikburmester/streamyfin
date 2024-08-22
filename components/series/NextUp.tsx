@@ -24,7 +24,7 @@ export const NextUp: React.FC<{ seriesId: string }> = ({ seriesId }) => {
           userId: user?.Id,
           seriesId,
           fields: ["MediaSourceCount"],
-          limit: 20,
+          limit: 10,
         })
       ).data.Items;
     },
