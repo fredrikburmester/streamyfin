@@ -173,7 +173,7 @@ export const FilterSheet = <T,>({
             className="mb-4 flex flex-col rounded-xl overflow-hidden"
           >
             {renderData?.map((item, index) => (
-              <>
+              <View key={index}>
                 <TouchableOpacity
                   onPress={() => {
                     if (!values.includes(item)) {
@@ -183,7 +183,6 @@ export const FilterSheet = <T,>({
                       }, 250);
                     }
                   }}
-                  key={`${index}`}
                   className=" bg-neutral-800 px-4 py-3 flex flex-row items-center justify-between"
                 >
                   <Text>{renderItemLabel(item)}</Text>
@@ -199,7 +198,7 @@ export const FilterSheet = <T,>({
                   }}
                   className="h-1 divide-neutral-700 "
                 ></View>
-              </>
+              </View>
             ))}
           </View>
           {data.length < (_data?.length || 0) && (

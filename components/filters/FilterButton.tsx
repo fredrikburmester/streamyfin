@@ -1,7 +1,7 @@
 import { Text } from "@/components/common/Text";
 import { FontAwesome, Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { TouchableOpacity, View, ViewProps } from "react-native";
 import { FilterSheet } from "./FilterSheet";
 
@@ -34,16 +34,19 @@ export const FilterButton = <T,>({
   const [open, setOpen] = useState(false);
 
   const { data: filters } = useQuery<T[]>({
-    queryKey: [queryKey, collectionId],
+    queryKey: ["filters", title, queryKey, collectionId],
     queryFn,
     staleTime: 0,
+    enabled: !!collectionId && !!queryFn && !!queryKey,
   });
-
-  if (filters?.length === 0) return null;
 
   return (
     <>
-      <TouchableOpacity onPress={() => setOpen(true)}>
+      <TouchableOpacity
+        onPress={() => {
+          filters?.length && setOpen(true);
+        }}
+      >
         <View
           className={`
             px-3 py-1.5 rounded-full flex flex-row items-center space-x-1
@@ -52,6 +55,7 @@ export const FilterButton = <T,>({
                 ? "bg-purple-600  border border-purple-700"
                 : "bg-neutral-900 border border-neutral-900"
             }
+          ${filters?.length === 0 && "opacity-50"}
             `}
           {...props}
         >

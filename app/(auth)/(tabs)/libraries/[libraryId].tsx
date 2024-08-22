@@ -117,6 +117,8 @@ const page: React.FC = () => {
           includeItemTypes.push("MusicAlbum");
           break;
         default:
+          includeItemTypes.push("Movie");
+          includeItemTypes.push("Series");
           break;
       }
 
@@ -155,7 +157,7 @@ const page: React.FC = () => {
   const { data, isFetching, fetchNextPage } = useInfiniteQuery({
     queryKey: [
       "library-items",
-      library,
+      libraryId,
       selectedGenres,
       selectedYears,
       selectedTags,
@@ -187,15 +189,11 @@ const page: React.FC = () => {
     enabled: !!api && !!user?.Id && !!library,
   });
 
-  const type = useMemo(() => {
-    return data?.pages.flatMap((page) => page?.Items)[0]?.Type || null;
-  }, [data]);
-
   const flatData = useMemo(() => {
     return data?.pages.flatMap((p) => p?.Items) || [];
   }, [data]);
 
-  if (!library || !library.CollectionType) return null;
+  if (!library) return null;
 
   return (
     <ScrollView
@@ -221,9 +219,9 @@ const page: React.FC = () => {
                     api
                   ).getQueryFiltersLegacy({
                     userId: user?.Id,
-                    includeItemTypes: type ? [type] : [],
                     parentId: libraryId,
                   });
+                  console.log("Resukt:", response.data.Genres || "Nothing...");
                   return response.data.Genres || [];
                 }}
                 set={setSelectedGenres}
@@ -243,7 +241,6 @@ const page: React.FC = () => {
                     api
                   ).getQueryFiltersLegacy({
                     userId: user?.Id,
-                    includeItemTypes: type ? [type] : [],
                     parentId: libraryId,
                   });
                   return response.data.Tags || [];
@@ -265,7 +262,6 @@ const page: React.FC = () => {
                     api
                   ).getQueryFiltersLegacy({
                     userId: user?.Id,
-                    includeItemTypes: type ? [type] : [],
                     parentId: libraryId,
                   });
                   return (
@@ -318,7 +314,7 @@ const page: React.FC = () => {
               />
             </View>
           </ScrollView>
-          {!type && isFetching && (
+          {isFetching && (
             <Loader
               style={{
                 marginTop: 300,
