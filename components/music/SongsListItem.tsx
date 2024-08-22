@@ -1,27 +1,20 @@
-import {
-  TouchableOpacity,
-  TouchableOpacityProps,
-  View,
-  ViewProps,
-} from "react-native";
 import { Text } from "@/components/common/Text";
-import index from "@/app/(auth)/(tabs)/home";
-import { runtimeTicksToSeconds } from "@/utils/time";
-import { router } from "expo-router";
-import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
-import { getStreamUrl } from "@/utils/jellyfin/media/getStreamUrl";
-import { useAtom } from "jotai";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
+import { usePlayback } from "@/providers/PlaybackProvider";
+import { getStreamUrl } from "@/utils/jellyfin/media/getStreamUrl";
 import { chromecastProfile } from "@/utils/profiles/chromecast";
+import ios from "@/utils/profiles/ios";
+import { runtimeTicksToSeconds } from "@/utils/time";
+import { useActionSheet } from "@expo/react-native-action-sheet";
+import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import { getMediaInfoApi } from "@jellyfin/sdk/lib/utils/api";
+import { useAtom } from "jotai";
+import { TouchableOpacity, TouchableOpacityProps, View } from "react-native";
 import CastContext, {
   PlayServicesState,
   useCastDevice,
   useRemoteMediaClient,
 } from "react-native-google-cast";
-import { currentlyPlayingItemAtom, playingAtom } from "../CurrentlyPlayingBar";
-import { useActionSheet } from "@expo/react-native-action-sheet";
-import ios from "@/utils/profiles/ios";
 
 interface Props extends TouchableOpacityProps {
   collectionId: string;
@@ -42,11 +35,11 @@ export const SongsListItem: React.FC<Props> = ({
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
   const castDevice = useCastDevice();
-  const [, setCp] = useAtom(currentlyPlayingItemAtom);
-  const [, setPlaying] = useAtom(playingAtom);
 
   const client = useRemoteMediaClient();
   const { showActionSheetWithOptions } = useActionSheet();
+
+  const { setCurrentlyPlayingState } = usePlayback();
 
   const openSelect = () => {
     if (!castDevice?.deviceId) {
@@ -73,7 +66,7 @@ export const SongsListItem: React.FC<Props> = ({
           case cancelButtonIndex:
             break;
         }
-      },
+      }
     );
   };
 
@@ -118,11 +111,10 @@ export const SongsListItem: React.FC<Props> = ({
         }
       });
     } else {
-      setCp({
+      setCurrentlyPlayingState({
         item,
-        playbackUrl: url,
+        url,
       });
-      setPlaying(true);
     }
   };
 
