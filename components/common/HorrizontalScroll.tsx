@@ -1,5 +1,6 @@
+import { FlashList, FlashListProps } from "@shopify/flash-list";
 import React, { useEffect } from "react";
-import { ScrollView, ScrollViewProps, View, ViewStyle } from "react-native";
+import { View, ViewStyle } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -8,7 +9,13 @@ import Animated, {
 import { Loader } from "../Loader";
 import { Text } from "./Text";
 
-interface HorizontalScrollProps<T> extends ScrollViewProps {
+type PartialExcept<T, K extends keyof T> = Partial<T> & Pick<T, K>;
+
+interface HorizontalScrollProps<T>
+  extends PartialExcept<
+    Omit<FlashListProps<T>, "renderItem">,
+    "estimatedItemSize"
+  > {
   data?: T[] | null;
   renderItem: (item: T, index: number) => React.ReactNode;
   containerStyle?: ViewStyle;
@@ -58,31 +65,31 @@ export function HorizontalScroll<T>({
     );
   }
 
+  const renderFlashListItem = ({ item, index }: { item: T; index: number }) => (
+    <View className="mr-2">
+      <React.Fragment>{renderItem(item, index)}</React.Fragment>
+    </View>
+  );
+
   return (
-    <ScrollView
-      horizontal
-      style={containerStyle}
-      contentContainerStyle={contentContainerStyle}
-      showsHorizontalScrollIndicator={false}
-      {...props}
-    >
-      <Animated.View
-        className={`
-        flex flex-row px-4
-      `}
-        style={[animatedStyle1]}
-      >
-        {data.map((item, index) => (
-          <View className="mr-2" key={index}>
-            <React.Fragment>{renderItem(item, index)}</React.Fragment>
-          </View>
-        ))}
-        {data.length === 0 && (
+    <Animated.View style={[containerStyle, animatedStyle1]}>
+      <FlashList
+        data={data}
+        renderItem={renderFlashListItem}
+        horizontal
+        estimatedItemSize={100}
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingHorizontal: 16,
+          ...contentContainerStyle,
+        }}
+        ListEmptyComponent={() => (
           <View className="flex-1 justify-center items-center">
             <Text className="text-center text-gray-500">No data available</Text>
           </View>
         )}
-      </Animated.View>
-    </ScrollView>
+        {...props}
+      />
+    </Animated.View>
   );
 }

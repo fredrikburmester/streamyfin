@@ -1,9 +1,20 @@
-import { Text } from "@/components/common/Text";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { useLocalSearchParams, useNavigation } from "expo-router";
+import * as ScreenOrientation from "expo-screen-orientation";
+import { useAtom } from "jotai";
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useState,
+} from "react";
+import { FlatList, View } from "react-native";
+
 import { TouchableItemRouter } from "@/components/common/TouchableItemRouter";
 import { FilterButton } from "@/components/filters/FilterButton";
 import { ResetFiltersButton } from "@/components/filters/ResetFiltersButton";
 import { ItemCardText } from "@/components/ItemCardText";
-import { Loader } from "@/components/Loader";
 import MoviePoster from "@/components/posters/MoviePoster";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import {
@@ -16,6 +27,7 @@ import {
   yearFilterAtom,
 } from "@/utils/atoms/filters";
 import {
+  BaseItemDto,
   BaseItemDtoQueryResult,
   BaseItemKind,
 } from "@jellyfin/sdk/lib/generated-client/models";
@@ -24,26 +36,13 @@ import {
   getItemsApi,
   getUserLibraryApi,
 } from "@jellyfin/sdk/lib/utils/api";
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import { Stack, useLocalSearchParams, useNavigation } from "expo-router";
-import { useAtom } from "jotai";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { NativeScrollEvent, ScrollView, View } from "react-native";
-import * as ScreenOrientation from "expo-screen-orientation";
+import { FlashList } from "@shopify/flash-list";
+import { opacity } from "react-native-reanimated/lib/typescript/reanimated2/Colors";
+import { Text } from "@/components/common/Text";
 
-const isCloseToBottom = ({
-  layoutMeasurement,
-  contentOffset,
-  contentSize,
-}: NativeScrollEvent) => {
-  const paddingToBottom = 200;
-  return (
-    layoutMeasurement.height + contentOffset.y >=
-    contentSize.height - paddingToBottom
-  );
-};
+const MemoizedTouchableItemRouter = React.memo(TouchableItemRouter);
 
-const page: React.FC = () => {
+const Page = () => {
   const searchParams = useLocalSearchParams();
   const { libraryId } = searchParams as { libraryId: string };
 
@@ -61,6 +60,21 @@ const page: React.FC = () => {
     ScreenOrientation.Orientation.PORTRAIT_UP
   );
 
+  useLayoutEffect(() => {
+    setSortBy([
+      {
+        key: "SortName",
+        value: "Name",
+      },
+    ]);
+    setSortOrder([
+      {
+        key: "Ascending",
+        value: "Ascending",
+      },
+    ]);
+  }, []);
+
   useEffect(() => {
     const subscription = ScreenOrientation.addOrientationChangeListener(
       (event) => {
@@ -68,7 +82,6 @@ const page: React.FC = () => {
       }
     );
 
-    // Set the initial orientation
     ScreenOrientation.getOrientationAsync().then((initialOrientation) => {
       setOrientation(initialOrientation);
     });
@@ -76,7 +89,7 @@ const page: React.FC = () => {
     return () => {
       ScreenOrientation.removeOrientationChangeListener(subscription);
     };
-  }, [ScreenOrientation]);
+  }, []);
 
   const { data: library } = useQuery({
     queryKey: ["library", libraryId],
@@ -86,8 +99,7 @@ const page: React.FC = () => {
         itemId: libraryId,
         userId: user?.Id,
       });
-      const data = response.data;
-      return data;
+      return response.data;
     },
     enabled: !!api && !!user?.Id && !!libraryId,
     staleTime: 0,
@@ -101,7 +113,7 @@ const page: React.FC = () => {
     }): Promise<BaseItemDtoQueryResult | null> => {
       if (!api || !library) return null;
 
-      const includeItemTypes: BaseItemKind[] = [];
+      let includeItemTypes: BaseItemKind[] | undefined = [];
 
       switch (library?.CollectionType) {
         case "movies":
@@ -117,15 +129,14 @@ const page: React.FC = () => {
           includeItemTypes.push("MusicAlbum");
           break;
         default:
-          includeItemTypes.push("Movie");
-          includeItemTypes.push("Series");
+          includeItemTypes = undefined;
           break;
       }
 
       const response = await getItemsApi(api).getItems({
         userId: user?.Id,
         parentId: libraryId,
-        limit: 66,
+        limit: 20,
         startIndex: pageParam,
         sortBy: [sortBy[0].key, "SortName", "ProductionYear"],
         sortOrder: [sortOrder[0].key],
@@ -154,7 +165,7 @@ const page: React.FC = () => {
     ]
   );
 
-  const { data, isFetching, fetchNextPage } = useInfiniteQuery({
+  const { data, isFetching, fetchNextPage, hasNextPage } = useInfiniteQuery({
     queryKey: [
       "library-items",
       libraryId,
@@ -190,177 +201,235 @@ const page: React.FC = () => {
   });
 
   const flatData = useMemo(() => {
-    return data?.pages.flatMap((p) => p?.Items) || [];
+    return (
+      (data?.pages.flatMap((p) => p?.Items).filter(Boolean) as BaseItemDto[]) ||
+      []
+    );
   }, [data]);
+
+  const renderItem = useCallback(
+    ({ item, index }: { item: BaseItemDto; index: number }) => (
+      <MemoizedTouchableItemRouter
+        key={item.Id}
+        style={{
+          width: "100%",
+          marginBottom:
+            orientation === ScreenOrientation.Orientation.PORTRAIT_UP ? 4 : 16,
+        }}
+        item={item}
+      >
+        <View
+          style={{
+            alignSelf:
+              index % 3 === 0
+                ? "flex-end"
+                : (index + 1) % 3 === 0
+                ? "flex-start"
+                : "center",
+            width: "89%",
+          }}
+        >
+          <MoviePoster item={item} />
+          <ItemCardText item={item} />
+        </View>
+      </MemoizedTouchableItemRouter>
+    ),
+    [orientation]
+  );
+
+  const keyExtractor = useCallback((item: BaseItemDto) => item.Id || "", []);
+
+  const ListHeaderComponent = useCallback(
+    () => (
+      <View className="">
+        <FlatList
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{
+            display: "flex",
+            paddingHorizontal: 15,
+            paddingVertical: 16,
+            flexDirection: "row",
+          }}
+          data={[
+            {
+              key: "reset",
+              component: <ResetFiltersButton />,
+            },
+            {
+              key: "genre",
+              component: (
+                <FilterButton
+                  className="mr-1"
+                  collectionId={libraryId}
+                  queryKey="genreFilter"
+                  queryFn={async () => {
+                    if (!api) return null;
+                    const response = await getFilterApi(
+                      api
+                    ).getQueryFiltersLegacy({
+                      userId: user?.Id,
+                      parentId: libraryId,
+                    });
+                    return response.data.Genres || [];
+                  }}
+                  set={setSelectedGenres}
+                  values={selectedGenres}
+                  title="Genres"
+                  renderItemLabel={(item) => item.toString()}
+                  searchFilter={(item, search) =>
+                    item.toLowerCase().includes(search.toLowerCase())
+                  }
+                />
+              ),
+            },
+            {
+              key: "year",
+              component: (
+                <FilterButton
+                  className="mr-1"
+                  collectionId={libraryId}
+                  queryKey="yearFilter"
+                  queryFn={async () => {
+                    if (!api) return null;
+                    const response = await getFilterApi(
+                      api
+                    ).getQueryFiltersLegacy({
+                      userId: user?.Id,
+                      parentId: libraryId,
+                    });
+                    return response.data.Years || [];
+                  }}
+                  set={setSelectedYears}
+                  values={selectedYears}
+                  title="Years"
+                  renderItemLabel={(item) => item.toString()}
+                  searchFilter={(item, search) => item.includes(search)}
+                />
+              ),
+            },
+            {
+              key: "tags",
+              component: (
+                <FilterButton
+                  className="mr-1"
+                  collectionId={libraryId}
+                  queryKey="tagsFilter"
+                  queryFn={async () => {
+                    if (!api) return null;
+                    const response = await getFilterApi(
+                      api
+                    ).getQueryFiltersLegacy({
+                      userId: user?.Id,
+                      parentId: libraryId,
+                    });
+                    return response.data.Tags || [];
+                  }}
+                  set={setSelectedTags}
+                  values={selectedTags}
+                  title="Tags"
+                  renderItemLabel={(item) => item.toString()}
+                  searchFilter={(item, search) =>
+                    item.toLowerCase().includes(search.toLowerCase())
+                  }
+                />
+              ),
+            },
+            {
+              key: "sortBy",
+              component: (
+                <FilterButton
+                  className="mr-1"
+                  collectionId={libraryId}
+                  queryKey="sortBy"
+                  queryFn={async () => sortOptions}
+                  set={setSortBy}
+                  values={sortBy}
+                  title="Sort By"
+                  renderItemLabel={(item) => item.value}
+                  searchFilter={(item, search) =>
+                    item.value.toLowerCase().includes(search.toLowerCase())
+                  }
+                />
+              ),
+            },
+            {
+              key: "sortOrder",
+              component: (
+                <FilterButton
+                  className="mr-1"
+                  collectionId={libraryId}
+                  queryKey="sortOrder"
+                  queryFn={async () => sortOrderOptions}
+                  set={setSortOrder}
+                  values={sortOrder}
+                  title="Sort Order"
+                  renderItemLabel={(item) => item.value}
+                  searchFilter={(item, search) =>
+                    item.value.toLowerCase().includes(search.toLowerCase())
+                  }
+                />
+              ),
+            },
+          ]}
+          renderItem={({ item }) => item.component}
+          keyExtractor={(item) => item.key}
+        />
+      </View>
+    ),
+    [
+      libraryId,
+      api,
+      user?.Id,
+      selectedGenres,
+      setSelectedGenres,
+      selectedYears,
+      setSelectedYears,
+      selectedTags,
+      setSelectedTags,
+      sortBy,
+      setSortBy,
+      sortOrder,
+      setSortOrder,
+      isFetching,
+    ]
+  );
 
   if (!library) return null;
 
   return (
-    <ScrollView
+    <FlashList
+      ListEmptyComponent={
+        <View className="flex flex-col items-center justify-center h-full">
+          <Text className="font-bold text-xl text-neutral-500">No results</Text>
+        </View>
+      }
       contentInsetAdjustmentBehavior="automatic"
-      onScroll={({ nativeEvent }) => {
-        if (isCloseToBottom(nativeEvent)) {
+      data={flatData}
+      renderItem={renderItem}
+      keyExtractor={keyExtractor}
+      estimatedItemSize={255}
+      numColumns={
+        orientation === ScreenOrientation.Orientation.PORTRAIT_UP ? 3 : 5
+      }
+      onEndReached={() => {
+        if (hasNextPage) {
           fetchNextPage();
         }
       }}
-      scrollEventThrottle={400}
-    >
-      <View className="mt-4 mb-24">
-        <View className="mb-4">
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View className="flex flex-row space-x-1 px-3">
-              <ResetFiltersButton />
-              <FilterButton
-                collectionId={libraryId}
-                queryKey="genreFilter"
-                queryFn={async () => {
-                  if (!api) return null;
-                  const response = await getFilterApi(
-                    api
-                  ).getQueryFiltersLegacy({
-                    userId: user?.Id,
-                    parentId: libraryId,
-                  });
-                  console.log("Resukt:", response.data.Genres || "Nothing...");
-                  return response.data.Genres || [];
-                }}
-                set={setSelectedGenres}
-                values={selectedGenres}
-                title="Genres"
-                renderItemLabel={(item) => item.toString()}
-                searchFilter={(item, search) =>
-                  item.toLowerCase().includes(search.toLowerCase())
-                }
-              />
-              <FilterButton
-                collectionId={libraryId}
-                queryKey="tagsFilter"
-                queryFn={async () => {
-                  if (!api) return null;
-                  const response = await getFilterApi(
-                    api
-                  ).getQueryFiltersLegacy({
-                    userId: user?.Id,
-                    parentId: libraryId,
-                  });
-                  return response.data.Tags || [];
-                }}
-                set={setSelectedTags}
-                values={selectedTags}
-                title="Tags"
-                renderItemLabel={(item) => item.toString()}
-                searchFilter={(item, search) =>
-                  item.toLowerCase().includes(search.toLowerCase())
-                }
-              />
-              <FilterButton
-                collectionId={libraryId}
-                queryKey="yearFilter"
-                queryFn={async () => {
-                  if (!api) return null;
-                  const response = await getFilterApi(
-                    api
-                  ).getQueryFiltersLegacy({
-                    userId: user?.Id,
-                    parentId: libraryId,
-                  });
-                  return (
-                    response.data.Years?.sort((a, b) => b - a).map((y) =>
-                      y.toString()
-                    ) || []
-                  );
-                }}
-                set={setSelectedYears}
-                values={selectedYears}
-                title="Years"
-                renderItemLabel={(item) => item.toString()}
-                searchFilter={(item, search) =>
-                  item.toLowerCase().includes(search.toLowerCase())
-                }
-              />
-              <FilterButton
-                icon="sort"
-                collectionId={libraryId}
-                queryKey="sortByFilter"
-                queryFn={async () => {
-                  return sortOptions;
-                }}
-                set={setSortBy}
-                values={sortBy}
-                title="Sort by"
-                renderItemLabel={(item) => item.value}
-                searchFilter={(item, search) =>
-                  item.value.toLowerCase().includes(search.toLowerCase()) ||
-                  item.value.toLowerCase().includes(search.toLowerCase())
-                }
-                showSearch={false}
-              />
-              <FilterButton
-                icon="sort"
-                showSearch={false}
-                collectionId={libraryId}
-                queryKey="orderByFilter"
-                queryFn={async () => {
-                  return sortOrderOptions;
-                }}
-                set={setSortOrder}
-                values={sortOrder}
-                title="Order by"
-                renderItemLabel={(item) => item.value}
-                searchFilter={(item, search) =>
-                  item.value.toLowerCase().includes(search.toLowerCase()) ||
-                  item.value.toLowerCase().includes(search.toLowerCase())
-                }
-              />
-            </View>
-          </ScrollView>
-          {isFetching && (
-            <Loader
-              style={{
-                marginTop: 300,
-              }}
-            />
-          )}
-        </View>
-        <View className="flex flex-row flex-wrap px-4 justify-between after:content-['']">
-          {flatData.map(
-            (item, index) =>
-              item && (
-                <TouchableItemRouter
-                  key={`${item.Id}-${index}`}
-                  style={{
-                    width:
-                      orientation === ScreenOrientation.Orientation.PORTRAIT_UP
-                        ? "32%"
-                        : "20%",
-                    marginBottom:
-                      orientation === ScreenOrientation.Orientation.PORTRAIT_UP
-                        ? 4
-                        : 16,
-                  }}
-                  item={item}
-                  className={`
-                    `}
-                >
-                  <MoviePoster item={item} />
-                  <ItemCardText item={item} />
-                </TouchableItemRouter>
-              )
-          )}
-          {flatData.length % 3 !== 0 && (
-            <View
-              style={{
-                width:
-                  orientation === ScreenOrientation.Orientation.PORTRAIT_UP
-                    ? "32%"
-                    : "20%",
-              }}
-            ></View>
-          )}
-        </View>
-      </View>
-    </ScrollView>
+      onEndReachedThreshold={0.5}
+      ListHeaderComponent={ListHeaderComponent}
+      contentContainerStyle={{ paddingBottom: 24 }}
+      ItemSeparatorComponent={() => (
+        <View
+          style={{
+            width: 10,
+            height: 10,
+          }}
+        ></View>
+      )}
+    />
   );
 };
 
-export default page;
+export default React.memo(Page);
