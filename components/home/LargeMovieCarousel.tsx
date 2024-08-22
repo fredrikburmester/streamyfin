@@ -123,14 +123,16 @@ export const LargeMovieCarousel: React.FC<Props> = ({ ...props }) => {
 const RenderItem: React.FC<{ item: BaseItemDto }> = ({ item }) => {
   const [api] = useAtom(apiAtom);
 
+  const screenWidth = Dimensions.get("screen").width;
+
   const uri = useMemo(() => {
     if (!api) return null;
 
     return getBackdropUrl({
       api,
       item,
-      quality: 90,
-      width: 1000,
+      quality: 70,
+      width: Math.floor(screenWidth * 0.8 * 2),
     });
   }, [api, item]);
 

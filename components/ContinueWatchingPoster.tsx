@@ -23,8 +23,8 @@ const ContinueWatchingPoster: React.FC<ContinueWatchingPosterProps> = ({
       getPrimaryImageUrl({
         api,
         item,
-        quality: 90,
-        width: 176 * 2,
+        quality: 80,
+        width: 300,
       }),
     [item]
   );
