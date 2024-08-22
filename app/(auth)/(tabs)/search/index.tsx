@@ -157,6 +157,16 @@ export default function search() {
     enabled: debouncedSearch.length > 0,
   });
 
+  const { data: collections, isFetching: l7 } = useQuery({
+    queryKey: ["search", "collections", debouncedSearch],
+    queryFn: () =>
+      searchFn({
+        query: debouncedSearch,
+        types: ["BoxSet"],
+      }),
+    enabled: debouncedSearch.length > 0,
+  });
+
   const { data: artists, isFetching: l4 } = useQuery({
     queryKey: ["search", "artists", debouncedSearch],
     queryFn: () =>
@@ -194,13 +204,14 @@ export default function search() {
       songs?.length ||
       movies?.length ||
       episodes?.length ||
-      series?.length
+      series?.length ||
+      collections?.length
     );
-  }, [artists, episodes, albums, songs, movies, series]);
+  }, [artists, episodes, albums, songs, movies, series, collections]);
 
   const loading = useMemo(() => {
-    return l1 || l2 || l3 || l4 || l5 || l6;
-  }, [l1, l2, l3, l4, l5, l6]);
+    return l1 || l2 || l3 || l4 || l5 || l6 || l7;
+  }, [l1, l2, l3, l4, l5, l6, l7]);
 
   return (
     <>
@@ -290,6 +301,27 @@ export default function search() {
                   >
                     <ContinueWatchingPoster item={item} />
                     <ItemCardText item={item} />
+                  </TouchableOpacity>
+                )}
+              />
+            )}
+          />
+          <SearchItemWrapper
+            ids={collections?.map((m) => m.Id!)}
+            header="Collections"
+            renderItem={(data) => (
+              <HorizontalScroll<BaseItemDto>
+                data={data}
+                renderItem={(item) => (
+                  <TouchableOpacity
+                    key={item.Id}
+                    className="flex flex-col w-28"
+                    onPress={() => router.push(`/collections/${item.Id}`)}
+                  >
+                    <MoviePoster item={item} key={item.Id} />
+                    <Text numberOfLines={2} className="mt-2">
+                      {item.Name}
+                    </Text>
                   </TouchableOpacity>
                 )}
               />
