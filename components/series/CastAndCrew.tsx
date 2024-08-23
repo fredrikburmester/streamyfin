@@ -28,10 +28,7 @@ export const CastAndCrew = ({ item }: { item: BaseItemDto }) => {
         renderItem={(item, index) => (
           <TouchableOpacity
             onPress={() => {
-              if (settings?.searchEngine === "Marlin")
-                router.push(`/search?q=${item.Name}&prev=${pathname}`);
-              else
-                Linking.openURL(`https://www.google.com/search?q=${item.Name}`);
+              router.push(`/actors/${item.Id}`);
             }}
             key={item.Id}
             className="flex flex-col w-32"

@@ -45,6 +45,10 @@ export const TouchableItemRouter: React.FC<PropsWithChildren<Props>> = ({
           router.push(`/artists/${item.Id}/page`);
           return;
         }
+        if (item.Type === "Person") {
+          router.push(`/actors/${item.Id}`);
+          return;
+        }
 
         if (item.Type === "BoxSet") {
           router.push(`/collections/${item.Id}`);

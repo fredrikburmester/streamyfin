@@ -119,6 +119,13 @@ function Layout() {
                         }}
                       />
                       <Stack.Screen
+                        name="(auth)/actors/[actorId]"
+                        options={{
+                          title: "",
+                          headerShown: false,
+                        }}
+                      />
+                      <Stack.Screen
                         name="(auth)/collections/[collectionId]"
                         options={{
                           title: "",

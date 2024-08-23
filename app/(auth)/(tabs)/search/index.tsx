@@ -167,6 +167,16 @@ export default function search() {
     enabled: debouncedSearch.length > 0,
   });
 
+  const { data: actors, isFetching: l8 } = useQuery({
+    queryKey: ["search", "actors", debouncedSearch],
+    queryFn: () =>
+      searchFn({
+        query: debouncedSearch,
+        types: ["Person"],
+      }),
+    enabled: debouncedSearch.length > 0,
+  });
+
   const { data: artists, isFetching: l4 } = useQuery({
     queryKey: ["search", "artists", debouncedSearch],
     queryFn: () =>
@@ -205,13 +215,14 @@ export default function search() {
       movies?.length ||
       episodes?.length ||
       series?.length ||
-      collections?.length
+      collections?.length ||
+      actors?.length
     );
-  }, [artists, episodes, albums, songs, movies, series, collections]);
+  }, [artists, episodes, albums, songs, movies, series, collections, actors]);
 
   const loading = useMemo(() => {
-    return l1 || l2 || l3 || l4 || l5 || l6 || l7;
-  }, [l1, l2, l3, l4, l5, l6, l7]);
+    return l1 || l2 || l3 || l4 || l5 || l6 || l7 || l8;
+  }, [l1, l2, l3, l4, l5, l6, l7, l8]);
 
   return (
     <>
@@ -323,6 +334,25 @@ export default function search() {
                       {item.Name}
                     </Text>
                   </TouchableOpacity>
+                )}
+              />
+            )}
+          />
+          <SearchItemWrapper
+            ids={actors?.map((m) => m.Id!)}
+            header="Actors"
+            renderItem={(data) => (
+              <HorizontalScroll<BaseItemDto>
+                data={data}
+                renderItem={(item) => (
+                  <TouchableItemRouter
+                    item={item}
+                    key={item.Id}
+                    className="flex flex-col w-28"
+                  >
+                    <MoviePoster item={item} />
+                    <ItemCardText item={item} />
+                  </TouchableItemRouter>
                 )}
               />
             )}

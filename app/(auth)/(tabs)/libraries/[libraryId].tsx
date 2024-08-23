@@ -11,6 +11,7 @@ import React, {
 } from "react";
 import { FlatList, View } from "react-native";
 
+import { Text } from "@/components/common/Text";
 import { TouchableItemRouter } from "@/components/common/TouchableItemRouter";
 import { FilterButton } from "@/components/filters/FilterButton";
 import { ResetFiltersButton } from "@/components/filters/ResetFiltersButton";
@@ -37,8 +38,6 @@ import {
   getUserLibraryApi,
 } from "@jellyfin/sdk/lib/utils/api";
 import { FlashList } from "@shopify/flash-list";
-import { opacity } from "react-native-reanimated/lib/typescript/reanimated2/Colors";
-import { Text } from "@/components/common/Text";
 
 const MemoizedTouchableItemRouter = React.memo(TouchableItemRouter);
 
