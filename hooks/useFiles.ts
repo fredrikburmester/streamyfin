@@ -26,11 +26,12 @@ export const useFiles = () => {
         fileNames.map((item) =>
           FileSystem.deleteAsync(`${directoryUri}/${item}`, {
             idempotent: true,
-          }),
-        ),
+          })
+        )
       );
       await AsyncStorage.removeItem("downloaded_files");
       queryClient.invalidateQueries({ queryKey: ["downloaded_files"] });
+      queryClient.invalidateQueries({ queryKey: ["downloaded"] });
     } catch (error) {
       console.error("Failed to delete all files:", error);
     }
@@ -49,7 +50,7 @@ export const useFiles = () => {
     try {
       await FileSystem.deleteAsync(
         `${FileSystem.documentDirectory}/${id}.mp4`,
-        { idempotent: true },
+        { idempotent: true }
       );
 
       const currentFiles = await getDownloadedFiles();
@@ -57,7 +58,7 @@ export const useFiles = () => {
 
       await AsyncStorage.setItem(
         "downloaded_files",
-        JSON.stringify(updatedFiles),
+        JSON.stringify(updatedFiles)
       );
 
       queryClient.invalidateQueries({ queryKey: ["downloaded_files"] });
