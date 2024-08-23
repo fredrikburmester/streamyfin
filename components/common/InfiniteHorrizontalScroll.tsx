@@ -17,7 +17,7 @@ import { Loader } from "../Loader";
 import { Text } from "./Text";
 
 interface HorizontalScrollProps
-  extends Omit<FlashListProps<BaseItemDto>, "renderItem" | "data"> {
+  extends Omit<FlashListProps<BaseItemDto>, "renderItem" | "data" | "style"> {
   queryFn: ({
     pageParam,
   }: {

@@ -10,12 +10,8 @@ interface Props extends ViewProps {
 export const MoviesTitleHeader: React.FC<Props> = ({ item, ...props }) => {
   const router = useRouter();
   return (
-    <>
-      <View className="flex flex-row items-center self-center px-4">
-        <Text className="text-center font-bold text-2xl mr-2">
-          {item?.Name}
-        </Text>
-      </View>
-    </>
+    <View className="flex flex-row items-center self-center px-4" {...props}>
+      <Text className="text-center font-bold text-2xl mr-2">{item?.Name}</Text>
+    </View>
   );
 };
