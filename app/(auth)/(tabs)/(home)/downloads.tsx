@@ -8,7 +8,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useQuery } from "@tanstack/react-query";
-import { router } from "expo-router";
+import { router, Stack } from "expo-router";
 import { FFmpegKit } from "ffmpeg-kit-react-native";
 import { useAtom } from "jotai";
 import { useMemo } from "react";
