@@ -33,14 +33,14 @@ export const ParallaxScrollView: React.FC<Props> = ({
           translateY: interpolate(
             scrollOffset.value,
             [-HEADER_HEIGHT, 0, HEADER_HEIGHT],
-            [-HEADER_HEIGHT / 2, 0, HEADER_HEIGHT * 0.75],
+            [-HEADER_HEIGHT / 2, 0, HEADER_HEIGHT * 0.75]
           ),
         },
         {
           scale: interpolate(
             scrollOffset.value,
             [-HEADER_HEIGHT, 0, HEADER_HEIGHT],
-            [2, 1, 1],
+            [2, 1, 1]
           ),
         },
       ],
@@ -58,30 +58,6 @@ export const ParallaxScrollView: React.FC<Props> = ({
         ref={scrollRef}
         scrollEventThrottle={16}
       >
-        <TouchableOpacity
-          onPress={() => router.back()}
-          className="absolute left-4 z-50 bg-black rounded-full p-2 border border-neutral-900"
-          style={{
-            top: inset.top + 17,
-          }}
-        >
-          <Ionicons
-            className="drop-shadow-2xl"
-            name="arrow-back"
-            size={24}
-            color="#077DF2"
-          />
-        </TouchableOpacity>
-
-        <View
-          className="absolute right-4 z-50 bg-black rounded-full p-0.5"
-          style={{
-            top: inset.top + 17,
-          }}
-        >
-          <Chromecast width={22} height={22} />
-        </View>
-
         {logo && (
           <View className="absolute top-[250px] h-[130px] left-0 w-full z-40 px-4 flex justify-center items-center">
             {logo}

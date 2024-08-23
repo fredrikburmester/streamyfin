@@ -1,8 +1,3 @@
-import {
-  currentlyPlayingItemAtom,
-  playingAtom,
-  showCurrentlyPlayingBarAtom,
-} from "@/utils/atoms/playState";
 import { Api, Jellyfin } from "@jellyfin/sdk";
 import { UserDto } from "@jellyfin/sdk/lib/generated-client/models";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -233,7 +228,7 @@ function useProtectedRoute(user: UserDto | null, loading = false) {
     if (!user?.Id && inAuthGroup) {
       router.replace("/login");
     } else if (user?.Id && !inAuthGroup) {
-      router.replace("/home");
+      router.replace("/(auth)/(tabs)/(home)/");
     }
   }, [user, segments, loading]);
 }

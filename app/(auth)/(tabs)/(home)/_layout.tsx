@@ -1,8 +1,9 @@
 import { Chromecast } from "@/components/Chromecast";
+import { HeaderBackButton } from "@/components/common/HeaderBackButton";
+import { nestedTabPageScreenOptions } from "@/components/stacks/NestedTabPageStack";
 import { Feather } from "@expo/vector-icons";
 import { Stack, useRouter } from "expo-router";
-import { Platform, View } from "react-native";
-import { TouchableOpacity } from "react-native";
+import { Platform, TouchableOpacity, View } from "react-native";
 
 export default function IndexLayout() {
   const router = useRouter();
@@ -45,6 +46,9 @@ export default function IndexLayout() {
           ),
         }}
       />
+      {Object.entries(nestedTabPageScreenOptions).map(([name, options]) => (
+        <Stack.Screen key={name} name={name} options={options} />
+      ))}
     </Stack>
   );
 }

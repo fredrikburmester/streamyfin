@@ -1,4 +1,5 @@
 import { Text } from "@/components/common/Text";
+import { TouchableItemRouter } from "@/components/common/TouchableItemRouter";
 import { Loader } from "@/components/Loader";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import { getPrimaryImageUrl } from "@/utils/jellyfin/image/getPrimaryImageUrl";
@@ -62,8 +63,6 @@ interface Props {
 }
 
 const LibraryItemCard: React.FC<Props> = ({ library }) => {
-  const router = useRouter();
-
   const [api] = useAtom(apiAtom);
 
   const url = useMemo(
@@ -78,11 +77,7 @@ const LibraryItemCard: React.FC<Props> = ({ library }) => {
   if (!url) return null;
 
   return (
-    <TouchableOpacity
-      onPress={() => {
-        router.push(`/libraries/${library.Id}`);
-      }}
-    >
+    <TouchableItemRouter item={library}>
       <View className="flex justify-center rounded-xl w-full relative border border-neutral-900 h-20 ">
         <Image
           source={{ uri: url }}
@@ -99,6 +94,6 @@ const LibraryItemCard: React.FC<Props> = ({ library }) => {
           {library.Name}
         </Text>
       </View>
-    </TouchableOpacity>
+    </TouchableItemRouter>
   );
 };

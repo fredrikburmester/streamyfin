@@ -1,4 +1,5 @@
-import { Stack, useRouter } from "expo-router";
+import { nestedTabPageScreenOptions } from "@/components/stacks/NestedTabPageStack";
+import { Stack } from "expo-router";
 import { Platform } from "react-native";
 
 export default function IndexLayout() {
@@ -25,6 +26,9 @@ export default function IndexLayout() {
           headerShadowVisible: false,
         }}
       />
+      {Object.entries(nestedTabPageScreenOptions).map(([name, options]) => (
+        <Stack.Screen key={name} name={name} options={options} />
+      ))}
     </Stack>
   );
 }

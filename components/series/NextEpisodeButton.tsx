@@ -90,7 +90,7 @@ export const NextEpisodeButton: React.FC<Props> = ({
 
   return (
     <Button
-      onPress={() => router.replace(`/items/${nextEpisode?.Id}`)}
+      onPress={() => router.push(`/items/${nextEpisode?.Id}`)}
       className={`h-12 aspect-square`}
       disabled={disabled}
       {...props}
