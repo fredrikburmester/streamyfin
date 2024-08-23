@@ -7,7 +7,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import { useRouter, useSegments } from "expo-router";
 import { useAtom } from "jotai";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Alert, Platform, TouchableOpacity, View } from "react-native";
 import Animated, {
   useAnimatedStyle,
@@ -17,6 +17,14 @@ import Animated, {
 import Video from "react-native-video";
 import { Text } from "./common/Text";
 import { Loader } from "./Loader";
+import * as FileSystem from "expo-file-system";
+import {
+  FFmpegKit,
+  FFmpegKitConfig,
+  FFmpegSession,
+  ReturnCode,
+} from "ffmpeg-kit-react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export const CurrentlyPlayingBar: React.FC = () => {
   const segments = useSegments();
@@ -62,6 +70,106 @@ export const CurrentlyPlayingBar: React.FC = () => {
       }),
     };
   });
+
+  const [streamUrl, setStreamUrl] = useState<string | null>(null);
+  const [ffmpegSession, setFfmpegSession] = useState<FFmpegSession | null>(
+    null
+  );
+
+  const startStreamingTranscode = async (inputUrl: string) => {
+    const outputDir = `${FileSystem.cacheDirectory}stream_${Date.now()}`;
+    const manifestPath = `${outputDir}/stream.m3u8`;
+
+    // Ensure the output directory exists
+    await FileSystem.makeDirectoryAsync(outputDir, { intermediates: true });
+
+    // Base FFmpeg command
+    let ffmpegCommand = `-i "${inputUrl}" `;
+
+    // Add hardware acceleration based on platform
+    if (Platform.OS === "android") {
+      ffmpegCommand += "-c:v h264_mediacodec "; // Hardware acceleration for Android
+    } else if (Platform.OS === "ios") {
+      ffmpegCommand += "-c:v h264_videotoolbox "; // Hardware acceleration for iOS
+    } else {
+      ffmpegCommand += "-c:v libx264 "; // Fallback to software encoding
+    }
+
+    // Complete the command
+    ffmpegCommand += `-c:a aac -f hls -hls_time 4 -hls_list_size 5 -hls_flags delete_segments "${manifestPath}"`;
+
+    console.log("FFmpeg command:", ffmpegCommand);
+
+    // Start FFmpeg process and return the session
+    return FFmpegKit.executeAsync(ffmpegCommand);
+  };
+
+  useEffect(() => {
+    const prepareStream = async () => {
+      if (currentlyPlaying?.url) {
+        try {
+          // Check if we already have a stream for this URL
+          const existingStream = await AsyncStorage.getItem(
+            currentlyPlaying.url
+          );
+          if (existingStream) {
+            setStreamUrl(existingStream);
+          } else {
+            const session = await startStreamingTranscode(currentlyPlaying.url);
+            setFfmpegSession(session);
+
+            const returnCode = await session.getReturnCode();
+
+            if (ReturnCode.isSuccess(returnCode)) {
+              console.log("Transcoding completed successfully");
+              const outputDir = `${
+                FileSystem.cacheDirectory
+              }stream_${Date.now()}`;
+              const manifestPath = `${outputDir}/stream.m3u8`;
+              setStreamUrl(manifestPath);
+              // Store the stream URL
+              await AsyncStorage.setItem(currentlyPlaying.url, manifestPath);
+            } else {
+              console.error("Transcoding failed");
+              // Handle failure (e.g., retry or show error message)
+            }
+          }
+        } catch (error) {
+          console.error("Error preparing stream:", error);
+        }
+      }
+    };
+
+    prepareStream();
+
+    return () => {
+      // Cleanup: cancel FFmpeg session when component unmounts
+      if (ffmpegSession) {
+        ffmpegSession.cancel();
+      }
+    };
+  }, [currentlyPlaying?.url]);
+
+  // Cleanup function
+  useEffect(() => {
+    return () => {
+      const cleanup = async () => {
+        if (streamUrl) {
+          try {
+            // Remove the stream URL from AsyncStorage
+            await AsyncStorage.removeItem(currentlyPlaying?.url || "");
+            // Delete the stream files
+            await FileSystem.deleteAsync(streamUrl.replace("file://", ""), {
+              idempotent: true,
+            });
+          } catch (error) {
+            console.error("Error cleaning up stream:", error);
+          }
+        }
+      };
+      cleanup();
+    };
+  }, [streamUrl, currentlyPlaying?.url]);
 
   useEffect(() => {
     if (segments.find((s) => s.includes("tabs"))) {
@@ -136,7 +244,7 @@ export const CurrentlyPlayingBar: React.FC = () => {
                 }
                 `}
             >
-              {currentlyPlaying?.url && (
+              {streamUrl && (
                 <Video
                   ref={videoRef}
                   allowsExternalPlayback
@@ -162,7 +270,7 @@ export const CurrentlyPlayingBar: React.FC = () => {
                     fontSize: 16,
                   }}
                   source={{
-                    uri: currentlyPlaying.url,
+                    uri: streamUrl,
                     isNetwork: true,
                     startPosition,
                     headers: getAuthHeaders(api),

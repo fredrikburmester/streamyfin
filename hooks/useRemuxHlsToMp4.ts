@@ -7,6 +7,7 @@ import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import { runningProcesses } from "@/utils/atoms/downloads";
 import { writeToLog } from "@/utils/log";
 import { useQueryClient } from "@tanstack/react-query";
+import { Platform } from "react-native";
 
 /**
  * Custom hook for remuxing HLS to MP4 using FFmpeg.
@@ -29,6 +30,16 @@ export const useRemuxHlsToMp4 = (item: BaseItemDto) => {
   const startRemuxing = useCallback(
     async (url: string) => {
       const command = `-y -loglevel quiet -thread_queue_size 512 -protocol_whitelist file,http,https,tcp,tls,crypto -multiple_requests 1 -tcp_nodelay 1 -fflags +genpts -i ${url} -c copy -bufsize 50M -max_muxing_queue_size 4096 ${output}`;
+
+      // let command: string | null = null;
+
+      // if (Platform.OS === "android") {
+      //   command = `-y -loglevel quiet -thread_queue_size 512 -protocol_whitelist file,http,https,tcp,tls,crypto -multiple_requests 1 -tcp_nodelay 1 -fflags +genpts -i ${url} -c:v h264_mediacodec -c:a copy -bufsize 50M -max_muxing_queue_size 4096 ${output}`;
+      // } else if (Platform.OS === "ios") {
+      //   command = `-y -loglevel quiet -thread_queue_size 512 -protocol_whitelist file,http,https,tcp,tls,crypto -multiple_requests 1 -tcp_nodelay 1 -fflags +genpts -i ${url} -c:v h264_videotoolbox -c:a copy -bufsize 50M -max_muxing_queue_size 4096 ${output}`;
+      // } else {
+      //   throw new Error("Unsupported platform");
+      // }
 
       writeToLog(
         "INFO",
