@@ -30,7 +30,7 @@
     },
     "android": {
       "jsEngine": "hermes",
-      "versionCode": 22,
+      "versionCode": 23,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png"
       },
