@@ -3,7 +3,6 @@ import { TouchableItemRouter } from "@/components/common/TouchableItemRouter";
 import { FilterButton } from "@/components/filters/FilterButton";
 import { ResetFiltersButton } from "@/components/filters/ResetFiltersButton";
 import { ItemCardText } from "@/components/ItemCardText";
-import { Loader } from "@/components/Loader";
 import MoviePoster from "@/components/posters/MoviePoster";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import {
@@ -18,7 +17,6 @@ import {
 import {
   BaseItemDto,
   BaseItemDtoQueryResult,
-  BaseItemKind,
 } from "@jellyfin/sdk/lib/generated-client/models";
 import {
   getFilterApi,
@@ -27,7 +25,8 @@ import {
 } from "@jellyfin/sdk/lib/utils/api";
 import { FlashList } from "@shopify/flash-list";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import { Stack, useLocalSearchParams, useNavigation } from "expo-router";
+import { useLocalSearchParams, useNavigation } from "expo-router";
+import * as ScreenOrientation from "expo-screen-orientation";
 import { useAtom } from "jotai";
 import React, {
   useCallback,
@@ -36,8 +35,7 @@ import React, {
   useMemo,
   useState,
 } from "react";
-import { FlatList, NativeScrollEvent, ScrollView, View } from "react-native";
-import * as ScreenOrientation from "expo-screen-orientation";
+import { FlatList, View } from "react-native";
 
 const MemoizedTouchableItemRouter = React.memo(TouchableItemRouter);
 

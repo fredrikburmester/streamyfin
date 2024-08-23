@@ -1,4 +1,5 @@
 import { Text } from "@/components/common/Text";
+import { TouchableItemRouter } from "@/components/common/TouchableItemRouter";
 import ArtistPoster from "@/components/posters/ArtistPoster";
 import MoviePoster from "@/components/posters/MoviePoster";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
@@ -90,15 +91,13 @@ export default function page() {
         justifyContent: "space-between",
       }}
       renderItem={({ item, index }) => (
-        <TouchableOpacity
+        <TouchableItemRouter
           style={{
             maxWidth: "30%",
             width: "100%",
           }}
           key={index}
-          onPress={() => {
-            router.push(`/artists/${item.Id}/page`);
-          }}
+          item={item}
         >
           <View className="flex flex-col gap-y-2">
             {collection?.CollectionType === "movies" && (
@@ -110,7 +109,7 @@ export default function page() {
             <Text>{item.Name}</Text>
             <Text className="opacity-50 text-xs">{item.ProductionYear}</Text>
           </View>
-        </TouchableOpacity>
+        </TouchableItemRouter>
       )}
       keyExtractor={(item) => item.Id || ""}
     />

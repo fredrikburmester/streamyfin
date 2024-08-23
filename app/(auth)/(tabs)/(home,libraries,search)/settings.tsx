@@ -1,15 +1,14 @@
 import { Button } from "@/components/Button";
 import { Text } from "@/components/common/Text";
 import { ListItem } from "@/components/ListItem";
+import { SettingToggles } from "@/components/settings/SettingToggles";
+import { useFiles } from "@/hooks/useFiles";
 import { apiAtom, useJellyfin, userAtom } from "@/providers/JellyfinProvider";
 import { clearLogs, readFromLog } from "@/utils/log";
 import { useQuery } from "@tanstack/react-query";
+import * as Haptics from "expo-haptics";
 import { useAtom } from "jotai";
 import { ScrollView, View } from "react-native";
-import * as Haptics from "expo-haptics";
-import { useFiles } from "@/hooks/useFiles";
-import { SettingToggles } from "@/components/settings/SettingToggles";
-import { WebSocketsTest } from "@/components/settings/WebsocketsText";
 
 export default function settings() {
   const { logout } = useJellyfin();

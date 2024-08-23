@@ -1,13 +1,10 @@
-import { router, Tabs } from "expo-router";
-import React, { useEffect } from "react";
-import * as NavigationBar from "expo-navigation-bar";
 import { TabBarIcon } from "@/components/navigation/TabBarIcon";
 import { Colors } from "@/constants/Colors";
-import { Platform, TouchableOpacity, View } from "react-native";
-import { Feather } from "@expo/vector-icons";
-import { Chromecast } from "@/components/Chromecast";
 import { BlurView } from "expo-blur";
-import { StyleSheet } from "react-native";
+import * as NavigationBar from "expo-navigation-bar";
+import { Tabs } from "expo-router";
+import React, { useEffect } from "react";
+import { Platform, StyleSheet } from "react-native";
 
 export default function TabLayout() {
   useEffect(() => {
@@ -50,7 +47,7 @@ export default function TabLayout() {
     >
       <Tabs.Screen redirect name="index" />
       <Tabs.Screen
-        name="home"
+        name="(home)"
         options={{
           headerShown: false,
           title: "Home",
@@ -63,7 +60,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="search"
+        name="(search)"
         options={{
           headerShown: false,
           title: "Search",
@@ -73,7 +70,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="libraries"
+        name="(libraries)"
         options={{
           headerShown: false,
           title: "Library",

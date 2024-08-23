@@ -18,11 +18,10 @@ import { useEffect, useRef } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
 export const unstable_settings = {
-  initialRouteName: "/index",
+  initialRouteName: "/(auth)/(tabs)/(home)/",
 };
 
 export default function RootLayout() {
@@ -91,88 +90,6 @@ function Layout() {
                         options={{
                           headerShown: false,
                           title: "",
-                        }}
-                      />
-                      <Stack.Screen
-                        name="(auth)/settings"
-                        options={{
-                          headerShown: true,
-                          title: "Settings",
-                          headerStyle: { backgroundColor: "black" },
-                          headerShadowVisible: false,
-                        }}
-                      />
-                      <Stack.Screen
-                        name="(auth)/downloads"
-                        options={{
-                          headerShown: true,
-                          title: "Downloads",
-                          headerStyle: { backgroundColor: "black" },
-                          headerShadowVisible: false,
-                        }}
-                      />
-                      <Stack.Screen
-                        name="(auth)/items/[id]"
-                        options={{
-                          title: "",
-                          headerShown: false,
-                        }}
-                      />
-                      <Stack.Screen
-                        name="(auth)/actors/[actorId]"
-                        options={{
-                          title: "",
-                          headerShown: false,
-                        }}
-                      />
-                      <Stack.Screen
-                        name="(auth)/collections/[collectionId]"
-                        options={{
-                          title: "",
-                          headerShown: true,
-                          headerStyle: { backgroundColor: "black" },
-                          headerShadowVisible: false,
-                        }}
-                      />
-                      <Stack.Screen
-                        name="(auth)/artists/page"
-                        options={{
-                          title: "",
-                          headerShown: true,
-                          headerStyle: { backgroundColor: "black" },
-                          headerShadowVisible: false,
-                        }}
-                      />
-                      <Stack.Screen
-                        name="(auth)/artists/[artistId]/page"
-                        options={{
-                          title: "",
-                          headerShown: true,
-                          headerStyle: { backgroundColor: "black" },
-                          headerShadowVisible: false,
-                        }}
-                      />
-                      <Stack.Screen
-                        name="(auth)/albums/[albumId]"
-                        options={{
-                          title: "",
-                          headerShown: true,
-                          headerStyle: { backgroundColor: "black" },
-                          headerShadowVisible: false,
-                        }}
-                      />
-                      <Stack.Screen
-                        name="(auth)/songs/[songId]"
-                        options={{
-                          title: "",
-                          headerShown: false,
-                        }}
-                      />
-                      <Stack.Screen
-                        name="(auth)/series/[id]"
-                        options={{
-                          title: "",
-                          headerShown: false,
                         }}
                       />
                       <Stack.Screen

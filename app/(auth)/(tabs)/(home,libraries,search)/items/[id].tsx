@@ -3,6 +3,7 @@ import { Bitrate, BitrateSelector } from "@/components/BitrateSelector";
 import { DownloadItem } from "@/components/DownloadItem";
 import { Loader } from "@/components/Loader";
 import { OverviewText } from "@/components/OverviewText";
+import { ParallaxScrollView } from "@/components/ParallaxPage";
 import { PlayButton } from "@/components/PlayButton";
 import { PlayedStatus } from "@/components/PlayedStatus";
 import { Ratings } from "@/components/Ratings";
@@ -32,7 +33,6 @@ import { useAtom } from "jotai";
 import { useMemo, useState } from "react";
 import { View } from "react-native";
 import { useCastDevice } from "react-native-google-cast";
-import { ParallaxScrollView } from "../../../components/ParallaxPage";
 
 const page: React.FC = () => {
   const local = useLocalSearchParams();

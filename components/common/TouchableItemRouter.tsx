@@ -1,14 +1,8 @@
-import {
-  TouchableOpacity,
-  TouchableOpacityProps,
-  View,
-  ViewProps,
-} from "react-native";
-import { Text } from "@/components/common/Text";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
-import { PropsWithChildren } from "react";
-import { useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
+import { useRouter, useSegments } from "expo-router";
+import { PropsWithChildren } from "react";
+import { Alert, TouchableOpacity, TouchableOpacityProps } from "react-native";
 
 interface Props extends TouchableOpacityProps {
   item: BaseItemDto;
@@ -20,46 +14,69 @@ export const TouchableItemRouter: React.FC<PropsWithChildren<Props>> = ({
   ...props
 }) => {
   const router = useRouter();
-  return (
-    <TouchableOpacity
-      onPress={() => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  const segments = useSegments();
 
-        if (item.Type === "Series") {
-          router.push(`/series/${item.Id}`);
-          return;
-        }
-        if (item.Type === "Episode") {
-          router.push(`/items/${item.Id}`);
-          return;
-        }
-        if (item.Type === "MusicAlbum") {
-          router.push(`/albums/${item.Id}`);
-          return;
-        }
-        if (item.Type === "Audio") {
-          router.push(`/albums/${item.AlbumId}`);
-          return;
-        }
-        if (item.Type === "MusicArtist") {
-          router.push(`/artists/${item.Id}/page`);
-          return;
-        }
-        if (item.Type === "Person") {
-          router.push(`/actors/${item.Id}`);
-          return;
-        }
+  const from = segments[2];
 
-        if (item.Type === "BoxSet") {
-          router.push(`/collections/${item.Id}`);
-          return;
-        }
+  if (from === "(home)" || from === "(search)" || from === "(libraries)")
+    return (
+      <TouchableOpacity
+        onPress={() => {
+          console.log("[0]", item.Type);
 
-        router.push(`/items/${item.Id}`);
-      }}
-      {...props}
-    >
-      {children}
-    </TouchableOpacity>
-  );
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+          if (item.Type === "Series") {
+            router.push(`/(auth)/(tabs)/${from}/series/${item.Id}`);
+            return;
+          }
+
+          if (item.Type === "MusicAlbum") {
+            router.push(`/(auth)/(tabs)/${from}/albums/${item.Id}`);
+            return;
+          }
+
+          if (item.Type === "Audio") {
+            router.push(`/(auth)/(tabs)/${from}/albums/${item.AlbumId}`);
+            return;
+          }
+
+          if (item.Type === "MusicArtist") {
+            router.push(`/(auth)/(tabs)/${from}/artists/${item.Id}`);
+            return;
+          }
+
+          if (item.Type === "Person") {
+            router.push(`/(auth)/(tabs)/${from}/actors/${item.Id}`);
+            return;
+          }
+
+          if (item.Type === "BoxSet") {
+            router.push(`/(auth)/(tabs)/${from}/collections/${item.Id}`);
+            return;
+          }
+
+          if (item.Type === "UserView") {
+            Alert.alert("Not implemented");
+            return;
+          }
+
+          if (item.Type === "CollectionFolder") {
+            router.push(`/(auth)/(tabs)/(libraries)/${item.Id}`);
+            return;
+          }
+
+          // Same as default
+          // if (item.Type === "Episode") {
+          //   router.push(`/items/${item.Id}`);
+          //   return;
+          // }
+
+          router.push(`/(auth)/(tabs)/${from}/items/${item.Id}`);
+        }}
+        {...props}
+      >
+        {children}
+      </TouchableOpacity>
+    );
 };

@@ -257,10 +257,10 @@ export default function search() {
               <HorizontalScroll<BaseItemDto>
                 data={data}
                 renderItem={(item) => (
-                  <TouchableOpacity
+                  <TouchableItemRouter
                     key={item.Id}
                     className="flex flex-col w-28"
-                    onPress={() => router.push(`/items/${item.Id}`)}
+                    item={item}
                   >
                     <MoviePoster item={item} key={item.Id} />
                     <Text numberOfLines={2} className="mt-2">
@@ -269,7 +269,7 @@ export default function search() {
                     <Text className="opacity-50 text-xs">
                       {item.ProductionYear}
                     </Text>
-                  </TouchableOpacity>
+                  </TouchableItemRouter>
                 )}
               />
             )}

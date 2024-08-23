@@ -1,5 +1,6 @@
 import { Chromecast } from "@/components/Chromecast";
 import { Text } from "@/components/common/Text";
+import { TouchableItemRouter } from "@/components/common/TouchableItemRouter";
 import { SongsList } from "@/components/music/SongsList";
 import ArtistPoster from "@/components/posters/ArtistPoster";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
@@ -102,16 +103,11 @@ export default function page() {
 
             <View className="flex flex-row space-x-2 mt-1">
               {album.AlbumArtists?.map((a) => (
-                <TouchableOpacity
-                  key={a.Id}
-                  onPress={() => {
-                    router.push(`/artists/${a.Id}/page`);
-                  }}
-                >
+                <TouchableItemRouter key={a.Id} item={album}>
                   <Text className="font-bold text-purple-600">
                     {album?.AlbumArtist}
                   </Text>
-                </TouchableOpacity>
+                </TouchableItemRouter>
               ))}
             </View>
           </View>
