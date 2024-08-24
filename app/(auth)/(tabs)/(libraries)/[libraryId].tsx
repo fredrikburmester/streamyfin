@@ -114,34 +114,36 @@ const Page = () => {
 
       let includeItemTypes: BaseItemKind[] | undefined = [];
 
-      switch (library?.CollectionType) {
-        case "movies":
-          includeItemTypes.push("Movie");
-          break;
-        case "boxsets":
-          includeItemTypes.push("BoxSet");
-          break;
-        case "tvshows":
-          includeItemTypes.push("Series");
-          break;
-        case "music":
-          includeItemTypes.push("MusicAlbum");
-          break;
-        default:
-          includeItemTypes = undefined;
-          break;
-      }
+      console.log("Page:", pageParam);
+
+      // switch (library?.CollectionType) {
+      //   case "movies":
+      //     includeItemTypes.push("Movie");
+      //     break;
+      //   case "boxsets":
+      //     includeItemTypes.push("BoxSet");
+      //     break;
+      //   case "tvshows":
+      //     includeItemTypes.push("Series");
+      //     break;
+      //   case "music":
+      //     includeItemTypes.push("MusicAlbum");
+      //     break;
+      //   default:
+      //     includeItemTypes = ["Series", "Movie", "CollectionFolder"];
+      //     break;
+      // }
 
       const response = await getItemsApi(api).getItems({
         userId: user?.Id,
         parentId: libraryId,
-        limit: 20,
+        limit: 36,
         startIndex: pageParam,
         sortBy: [sortBy[0].key, "SortName", "ProductionYear"],
         sortOrder: [sortOrder[0].key],
         includeItemTypes,
         enableImageTypes: ["Primary", "Backdrop", "Banner", "Thumb"],
-        recursive: true,
+        recursive: false,
         imageTypeLimit: 1,
         fields: ["PrimaryImageAspectRatio", "SortName"],
         genres: selectedGenres,
@@ -407,7 +409,7 @@ const Page = () => {
       data={flatData}
       renderItem={renderItem}
       keyExtractor={keyExtractor}
-      estimatedItemSize={255}
+      estimatedItemSize={244}
       numColumns={
         orientation === ScreenOrientation.Orientation.PORTRAIT_UP ? 3 : 5
       }
@@ -416,7 +418,7 @@ const Page = () => {
           fetchNextPage();
         }
       }}
-      onEndReachedThreshold={0.5}
+      onEndReachedThreshold={1}
       ListHeaderComponent={ListHeaderComponent}
       contentContainerStyle={{ paddingBottom: 24 }}
       ItemSeparatorComponent={() => (
