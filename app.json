@@ -72,6 +72,12 @@
         }
       ],
       [
+        "./plugins/withAndroidMainActivityAttributes",
+        {
+          "com.reactnative.googlecast.RNGCExpandedControllerActivity": true
+        }
+      ],
+      [
         "expo-build-properties",
         {
           "ios": {
