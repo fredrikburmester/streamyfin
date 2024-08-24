@@ -9,6 +9,7 @@ import CastContext, {
   useRemoteMediaClient,
 } from "react-native-google-cast";
 import { Button } from "./Button";
+import { isCancel } from "axios";
 
 interface Props extends React.ComponentProps<typeof Button> {
   item?: BaseItemDto | null;
@@ -18,7 +19,7 @@ interface Props extends React.ComponentProps<typeof Button> {
 export const PlayButton: React.FC<Props> = ({ item, url, ...props }) => {
   const { showActionSheetWithOptions } = useActionSheet();
   const client = useRemoteMediaClient();
-  const { setCurrentlyPlayingState } = usePlayback();
+  const { setCurrentlyPlayingState, isPlaying, currentlyPlaying } = usePlayback();
 
   const onPress = async () => {
     if (!url || !item) return;
@@ -37,12 +38,22 @@ export const PlayButton: React.FC<Props> = ({ item, url, ...props }) => {
         cancelButtonIndex,
       },
       async (selectedIndex: number | undefined) => {
+        const isOpeningCurrentlyPlayingMedia = isPlaying 
+          && currentlyPlaying?.item?.Name 
+          && currentlyPlaying?.item?.Name === item?.Name
         switch (selectedIndex) {
           case 0:
             await CastContext.getPlayServicesState().then((state) => {
               if (state && state !== PlayServicesState.SUCCESS)
                 CastContext.showPlayServicesErrorDialog(state);
               else {
+                // If we're opening a currently playing item, don't restart the media.
+                // Instead just open controls
+                console.log({ isOpeningCurrentlyPlayingMedia, currentlyPlaying })
+                if (isOpeningCurrentlyPlayingMedia) {
+                  CastContext.showExpandedControls();
+                  return;
+                }
                 client.loadMedia({
                   mediaInfo: {
                     contentUrl: url,
@@ -54,6 +65,14 @@ export const PlayButton: React.FC<Props> = ({ item, url, ...props }) => {
                     },
                   },
                   startTime: 0,
+                }).then(() => {
+                  if (isOpeningCurrentlyPlayingMedia) {
+                    return
+                  }
+                  setCurrentlyPlayingState({ item, url });
+                  CastContext.showExpandedControls();
+                }).catch(e => {
+                  console.log({ e })
                 });
               }
             });
