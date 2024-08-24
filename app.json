@@ -74,6 +74,7 @@
           "com.reactnative.googlecast.RNGCExpandedControllerActivity": true
         }
       ],
+      ["./plugins/withExpandedController.js"],
       [
         "expo-build-properties",
         {
