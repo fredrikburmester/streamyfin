@@ -181,13 +181,15 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
   useEffect(() => {
     if (!deviceId || !api?.accessToken) return;
 
-    const url = `ws://${api?.basePath
+    const protocol = api?.basePath.includes('https') ? 'wss' : 'ws'
+
+    const url = `${protocol}://${api?.basePath
       .replace("https://", "")
       .replace("http://", "")}/socket?api_key=${
       api?.accessToken
     }&deviceId=${deviceId}`;
 
-    console.log("WS", url);
+    console.log(protocol, url);
 
     const newWebSocket = new WebSocket(url);
 
