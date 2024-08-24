@@ -10,6 +10,7 @@ import { TouchableOpacity, View } from "react-native";
 import CastContext, {
   PlayServicesState,
   useRemoteMediaClient,
+  useMediaStatus,
 } from "react-native-google-cast";
 import Animated, {
   Easing,
@@ -35,7 +36,8 @@ const MIN_PLAYBACK_WIDTH = 15;
 export const PlayButton: React.FC<Props> = ({ item, url, ...props }) => {
   const { showActionSheetWithOptions } = useActionSheet();
   const client = useRemoteMediaClient();
-  const { setCurrentlyPlayingState, isPlaying, currentlyPlaying } = usePlayback();
+  const { setCurrentlyPlayingState } = usePlayback();
+  const mediaStatus = useMediaStatus()
 
   const [colorAtom] = useAtom(itemThemeColorAtom);
 
@@ -63,9 +65,9 @@ export const PlayButton: React.FC<Props> = ({ item, url, ...props }) => {
         cancelButtonIndex,
       },
       async (selectedIndex: number | undefined) => {
-        const isOpeningCurrentlyPlayingMedia = isPlaying 
-          && currentlyPlaying?.item?.Name 
-          && currentlyPlaying?.item?.Name === item?.Name
+        const currentTitle = mediaStatus?.mediaInfo?.metadata?.title
+        const isOpeningCurrentlyPlayingMedia = currentTitle && currentTitle === item?.Name
+
         switch (selectedIndex) {
           case 0:
             await CastContext.getPlayServicesState().then((state) => {
@@ -73,8 +75,7 @@ export const PlayButton: React.FC<Props> = ({ item, url, ...props }) => {
                 CastContext.showPlayServicesErrorDialog(state);
               else {
                 // If we're opening a currently playing item, don't restart the media.
-                // Instead just open controls
-                console.log({ isOpeningCurrentlyPlayingMedia, currentlyPlaying })
+                // Instead just open controls.
                 if (isOpeningCurrentlyPlayingMedia) {
                   CastContext.showExpandedControls();
                   return;
@@ -91,14 +92,13 @@ export const PlayButton: React.FC<Props> = ({ item, url, ...props }) => {
                   },
                   startTime: 0,
                 }).then(() => {
+                  // state is already set when reopening current media, so skip it here.
                   if (isOpeningCurrentlyPlayingMedia) {
                     return
                   }
                   setCurrentlyPlayingState({ item, url });
                   CastContext.showExpandedControls();
-                }).catch(e => {
-                  console.log({ e })
-                });
+                })
               }
             });
             break;
