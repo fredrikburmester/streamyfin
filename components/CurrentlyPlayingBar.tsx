@@ -29,6 +29,7 @@ export const CurrentlyPlayingBar: React.FC = () => {
     setIsPlaying,
     isPlaying,
     videoRef,
+    presentFullscreenPlayer,
     onProgress,
   } = usePlayback();
 
@@ -181,6 +182,11 @@ export const CurrentlyPlayingBar: React.FC = () => {
                         ? currentlyPlaying.item?.Album
                         : undefined,
                     },
+                  }}
+                  onRestoreUserInterfaceForPictureInPictureStop={() => {
+                    setTimeout(() => {
+                      presentFullscreenPlayer();
+                    }, 300);
                   }}
                   onBuffer={(e) =>
                     e.isBuffering ? console.log("Buffering...") : null
