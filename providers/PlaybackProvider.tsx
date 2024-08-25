@@ -102,8 +102,11 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
         setCurrentlyPlaying(state);
         setIsPlaying(true);
 
-        if (settings?.openFullScreenVideoPlayerByDefault)
-          presentFullscreenPlayer();
+        if (settings?.openFullScreenVideoPlayerByDefault) {
+          setTimeout(() => {
+            presentFullscreenPlayer();
+          }, 300);
+        }
       } else {
         setCurrentlyPlaying(null);
         setIsFullscreen(false);

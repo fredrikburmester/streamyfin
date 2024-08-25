@@ -9,7 +9,7 @@ import React, {
   useMemo,
   useState,
 } from "react";
-import { FlatList, View } from "react-native";
+import { FlatList, RefreshControl, View } from "react-native";
 
 import { Text } from "@/components/common/Text";
 import { TouchableItemRouter } from "@/components/common/TouchableItemRouter";
@@ -38,6 +38,7 @@ import {
   getUserLibraryApi,
 } from "@jellyfin/sdk/lib/utils/api";
 import { FlashList } from "@shopify/flash-list";
+import { Loader } from "@/components/Loader";
 
 const MemoizedTouchableItemRouter = React.memo(TouchableItemRouter);
 
@@ -90,7 +91,7 @@ const Page = () => {
     };
   }, []);
 
-  const { data: library } = useQuery({
+  const { data: library, isLoading: isLibraryLoading } = useQuery({
     queryKey: ["library", libraryId],
     queryFn: async () => {
       if (!api) return null;
@@ -101,7 +102,7 @@ const Page = () => {
       return response.data;
     },
     enabled: !!api && !!user?.Id && !!libraryId,
-    staleTime: 0,
+    staleTime: 60 * 1000,
   });
 
   const fetchItems = useCallback(
@@ -112,36 +113,15 @@ const Page = () => {
     }): Promise<BaseItemDtoQueryResult | null> => {
       if (!api || !library) return null;
 
-      let includeItemTypes: BaseItemKind[] | undefined = [];
-
-      switch (library?.CollectionType) {
-        case "movies":
-          includeItemTypes.push("Movie");
-          break;
-        case "boxsets":
-          includeItemTypes.push("BoxSet");
-          break;
-        case "tvshows":
-          includeItemTypes.push("Series");
-          break;
-        case "music":
-          includeItemTypes.push("MusicAlbum");
-          break;
-        default:
-          includeItemTypes = undefined;
-          break;
-      }
-
       const response = await getItemsApi(api).getItems({
         userId: user?.Id,
         parentId: libraryId,
-        limit: 20,
+        limit: 36,
         startIndex: pageParam,
         sortBy: [sortBy[0].key, "SortName", "ProductionYear"],
         sortOrder: [sortOrder[0].key],
-        includeItemTypes,
         enableImageTypes: ["Primary", "Backdrop", "Banner", "Thumb"],
-        recursive: true,
+        recursive: false,
         imageTypeLimit: 1,
         fields: ["PrimaryImageAspectRatio", "SortName"],
         genres: selectedGenres,
@@ -164,40 +144,41 @@ const Page = () => {
     ]
   );
 
-  const { data, isFetching, fetchNextPage, hasNextPage } = useInfiniteQuery({
-    queryKey: [
-      "library-items",
-      libraryId,
-      selectedGenres,
-      selectedYears,
-      selectedTags,
-      sortBy,
-      sortOrder,
-    ],
-    queryFn: fetchItems,
-    getNextPageParam: (lastPage, pages) => {
-      if (
-        !lastPage?.Items ||
-        !lastPage?.TotalRecordCount ||
-        lastPage?.TotalRecordCount === 0
-      )
-        return undefined;
+  const { data, isFetching, fetchNextPage, hasNextPage, isLoading } =
+    useInfiniteQuery({
+      queryKey: [
+        "library-items",
+        libraryId,
+        selectedGenres,
+        selectedYears,
+        selectedTags,
+        sortBy,
+        sortOrder,
+      ],
+      queryFn: fetchItems,
+      getNextPageParam: (lastPage, pages) => {
+        if (
+          !lastPage?.Items ||
+          !lastPage?.TotalRecordCount ||
+          lastPage?.TotalRecordCount === 0
+        )
+          return undefined;
 
-      const totalItems = lastPage.TotalRecordCount;
-      const accumulatedItems = pages.reduce(
-        (acc, curr) => acc + (curr?.Items?.length || 0),
-        0
-      );
+        const totalItems = lastPage.TotalRecordCount;
+        const accumulatedItems = pages.reduce(
+          (acc, curr) => acc + (curr?.Items?.length || 0),
+          0
+        );
 
-      if (accumulatedItems < totalItems) {
-        return lastPage?.Items?.length * pages.length;
-      } else {
-        return undefined;
-      }
-    },
-    initialPageParam: 0,
-    enabled: !!api && !!user?.Id && !!library,
-  });
+        if (accumulatedItems < totalItems) {
+          return lastPage?.Items?.length * pages.length;
+        } else {
+          return undefined;
+        }
+      },
+      initialPageParam: 0,
+      enabled: !!api && !!user?.Id && !!library,
+    });
 
   const flatData = useMemo(() => {
     return (
@@ -394,7 +375,19 @@ const Page = () => {
     ]
   );
 
-  if (!library) return null;
+  if (isLoading || isLibraryLoading)
+    return (
+      <View className="w-full h-full flex items-center justify-center">
+        <Loader />
+      </View>
+    );
+
+  if (flatData.length === 0)
+    return (
+      <View className="h-full w-full flex justify-center items-center">
+        <Text className="text-lg text-neutral-500">No items found</Text>
+      </View>
+    );
 
   return (
     <FlashList
@@ -407,7 +400,7 @@ const Page = () => {
       data={flatData}
       renderItem={renderItem}
       keyExtractor={keyExtractor}
-      estimatedItemSize={255}
+      estimatedItemSize={244}
       numColumns={
         orientation === ScreenOrientation.Orientation.PORTRAIT_UP ? 3 : 5
       }
@@ -416,7 +409,7 @@ const Page = () => {
           fetchNextPage();
         }
       }}
-      onEndReachedThreshold={0.5}
+      onEndReachedThreshold={1}
       ListHeaderComponent={ListHeaderComponent}
       contentContainerStyle={{ paddingBottom: 24 }}
       ItemSeparatorComponent={() => (
