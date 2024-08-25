@@ -117,7 +117,7 @@ export const LibraryItemCard: React.FC<Props> = ({ library, ...props }) => {
   if (settings?.libraryOptions?.display === "row") {
     return (
       <TouchableItemRouter item={library} className="w-full px-4">
-        <View className="flex flex-row items-center w-full relative">
+        <View className="flex flex-row items-center w-full relative ">
           <Ionicons
             name={icons[library.CollectionType!] || "folder"}
             size={22}
@@ -126,6 +126,11 @@ export const LibraryItemCard: React.FC<Props> = ({ library, ...props }) => {
           <Text className="text-start px-4 text-neutral-200">
             {library.Name}
           </Text>
+          {settings?.libraryOptions?.showStats && (
+            <Text className="font-bold text-xs text-neutral-500 text-start px-4 ml-auto">
+              {itemsCount} items
+            </Text>
+          )}
         </View>
       </TouchableItemRouter>
     );
@@ -135,8 +140,7 @@ export const LibraryItemCard: React.FC<Props> = ({ library, ...props }) => {
     return (
       <TouchableItemRouter item={library} className="w-full">
         <View className="flex justify-center rounded-xl w-full relative border border-neutral-900 h-20 ">
-          <Image
-            source={{ uri: url }}
+          <View
             style={{
               width: "100%",
               height: "100%",
@@ -144,11 +148,35 @@ export const LibraryItemCard: React.FC<Props> = ({ library, ...props }) => {
               position: "absolute",
               top: 0,
               left: 0,
+              overflow: "hidden",
             }}
-          />
+          >
+            <Image
+              source={{ uri: url }}
+              style={{
+                width: "100%",
+                height: "100%",
+              }}
+            />
+            <View
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundColor: "rgba(0, 0, 0, 0.3)", // Adjust the alpha value (0.3) to control darkness
+              }}
+            />
+          </View>
           {settings?.libraryOptions?.showTitles && (
-            <Text className="font-bold text-xl text-start px-4">
+            <Text className="font-bold text-lg text-start px-4">
               {library.Name}
+            </Text>
+          )}
+          {settings?.libraryOptions?.showStats && (
+            <Text className="font-bold text-xs  text-start px-4">
+              {itemsCount} items
             </Text>
           )}
         </View>
@@ -163,9 +191,11 @@ export const LibraryItemCard: React.FC<Props> = ({ library, ...props }) => {
           <Text className="font-bold text-lg text-start px-4">
             {library.Name}
           </Text>
-          <Text className="font-bold text-xs text-neutral-500 text-start px-4">
-            {itemsCount} items
-          </Text>
+          {settings?.libraryOptions?.showStats && (
+            <Text className="font-bold text-xs text-neutral-500 text-start px-4">
+              {itemsCount} items
+            </Text>
+          )}
         </View>
         <View className="p-2">
           <Image

@@ -29,6 +29,7 @@ export type LibraryOptions = {
   cardStyle: "compact" | "detailed";
   imageStyle: "poster" | "cover";
   showTitles: boolean;
+  showStats: boolean;
 };
 
 type Settings = {
@@ -72,6 +73,7 @@ const loadSettings = async (): Promise<Settings> => {
       cardStyle: "detailed",
       imageStyle: "cover",
       showTitles: true,
+      showStats: true,
     },
   };
 

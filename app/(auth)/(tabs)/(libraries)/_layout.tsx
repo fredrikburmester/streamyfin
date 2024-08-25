@@ -157,6 +157,23 @@ export default function IndexLayout() {
                       Show titles
                     </DropdownMenu.ItemTitle>
                   </DropdownMenu.CheckboxItem>
+                  <DropdownMenu.CheckboxItem
+                    key="show-stats-option"
+                    value={settings.libraryOptions.showStats}
+                    onValueChange={(newValue) => {
+                      updateSettings({
+                        libraryOptions: {
+                          ...settings.libraryOptions,
+                          showStats: newValue === "on" ? true : false,
+                        },
+                      });
+                    }}
+                  >
+                    <DropdownMenu.ItemIndicator />
+                    <DropdownMenu.ItemTitle key="show-stats-title">
+                      Show stats
+                    </DropdownMenu.ItemTitle>
+                  </DropdownMenu.CheckboxItem>
                 </DropdownMenu.Group>
 
                 <DropdownMenu.Separator />
