@@ -19,22 +19,22 @@ const BITRATES: Bitrate[] = [
     height: 1080,
   },
   {
-    key: "4 Mb/s - 1080p",
+    key: "4 Mb/s",
     value: 4000000,
     height: 1080,
   },
   {
-    key: "2 Mb/s - 720p",
+    key: "2 Mb/s",
     value: 2000000,
     height: 720,
   },
   {
-    key: "500 Kb/s - 480p",
+    key: "500 Kb/s",
     value: 500000,
     height: 480,
   },
   {
-    key: "250 Kb/s - 480p",
+    key: "250 Kb/s",
     value: 250000,
     height: 480,
   },
