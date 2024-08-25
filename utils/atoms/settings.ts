@@ -24,6 +24,13 @@ export const DownloadOptions: DownloadOption[] = [
   },
 ];
 
+export type LibraryOptions = {
+  display: "row" | "list";
+  cardStyle: "compact" | "detailed";
+  imageStyle: "poster" | "cover";
+  showTitles: boolean;
+};
+
 type Settings = {
   autoRotate?: boolean;
   forceLandscapeInVideoPlayer?: boolean;
@@ -36,6 +43,7 @@ type Settings = {
   marlinServerUrl?: string;
   openInVLC?: boolean;
   downloadQuality?: DownloadOption;
+  libraryOptions: LibraryOptions;
 };
 
 /**
@@ -59,6 +67,12 @@ const loadSettings = async (): Promise<Settings> => {
     marlinServerUrl: "",
     openInVLC: false,
     downloadQuality: DownloadOptions[0],
+    libraryOptions: {
+      display: "list",
+      cardStyle: "detailed",
+      imageStyle: "cover",
+      showTitles: true,
+    },
   };
 
   try {
