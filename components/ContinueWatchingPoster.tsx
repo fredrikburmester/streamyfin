@@ -17,12 +17,23 @@ const ContinueWatchingPoster: React.FC<ContinueWatchingPosterProps> = ({
 }) => {
   const [api] = useAtom(apiAtom);
 
+  /**
+   * Get horrizontal poster for movie and episode, with failover to primary.
+   */
   const url = useMemo(() => {
     if (!api) return;
-    if (item.Type === "Episode")
-      return `${api?.basePath}/Items/${item.ParentBackdropItemId}/Images/Thumb?fillHeight=389&quality=80&tag=${item.ParentThumbImageTag}`;
-    if (item.Type === "Movie")
-      return `${api?.basePath}/Items/${item.Id}/Images/Thumb?fillHeight=389&quality=80&tag=${item.ImageTags?.["Thumb"]}`;
+    if (item.Type === "Episode") {
+      if (item.ParentBackdropItemId && item.ParentThumbImageTag)
+        return `${api?.basePath}/Items/${item.ParentBackdropItemId}/Images/Thumb?fillHeight=389&quality=80&tag=${item.ParentThumbImageTag}`;
+      else
+        return `${api?.basePath}/Items/${item.Id}/Images/Primary?fillHeight=389&quality=80`;
+    }
+    if (item.Type === "Movie") {
+      if (item.ImageTags?.["Thumb"])
+        return `${api?.basePath}/Items/${item.Id}/Images/Thumb?fillHeight=389&quality=80&tag=${item.ImageTags?.["Thumb"]}`;
+      else
+        return `${api?.basePath}/Items/${item.Id}/Images/Primary?fillHeight=389&quality=80`;
+    }
   }, [item]);
 
   const [progress, setProgress] = useState(
