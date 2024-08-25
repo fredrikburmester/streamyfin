@@ -1,7 +1,5 @@
-import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
 import type { PropsWithChildren, ReactElement } from "react";
-import { TouchableOpacity, View } from "react-native";
+import { View } from "react-native";
 import Animated, {
   interpolate,
   useAnimatedRef,
@@ -9,7 +7,6 @@ import Animated, {
   useScrollViewOffset,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Chromecast } from "./Chromecast";
 
 const HEADER_HEIGHT = 400;
 
@@ -75,6 +72,7 @@ export const ParallaxScrollView: React.FC<Props> = ({
         >
           {headerImage}
         </Animated.View>
+
         <View className="flex-1 overflow-hidden bg-black pb-24">
           {children}
         </View>

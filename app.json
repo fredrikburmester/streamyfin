@@ -2,7 +2,7 @@
   "expo": {
     "name": "Streamyfin",
     "slug": "streamyfin",
-    "version": "0.8.2",
+    "version": "0.8.3",
     "orientation": "default",
     "icon": "./assets/images/icon.png",
     "scheme": "streamyfin",
@@ -33,7 +33,7 @@
     },
     "android": {
       "jsEngine": "hermes",
-      "versionCode": 23,
+      "versionCode": 24,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png"
       },
@@ -78,6 +78,11 @@
             "deploymentTarget": "14.0"
           },
           "android": {
+            "android": {
+              "compileSdkVersion": 34,
+              "targetSdkVersion": 34,
+              "buildToolsVersion": "34.0.0"
+            },
             "minSdkVersion": 24,
             "usesCleartextTraffic": true,
             "packagingOptions": {
