@@ -62,7 +62,7 @@ const page: React.FC = () => {
         itemId: id,
       }),
     enabled: !!id && !!api,
-    staleTime: 60,
+    staleTime: 60 * 1000,
   });
 
   const { data: sessionData } = useQuery({
@@ -130,8 +130,8 @@ const page: React.FC = () => {
       getBackdropUrl({
         api,
         item,
-        quality: 90,
-        width: 1000,
+        quality: 95,
+        width: 1200,
       }),
     [item]
   );
@@ -227,16 +227,11 @@ const page: React.FC = () => {
           <NextEpisodeButton item={item} className="ml-2" />
         </View>
       </View>
-
-      <CastAndCrew item={item} />
-
-      {item.Type === "Episode" && (
-        <View className="mb-4">
-          <CurrentSeries item={item} />
-        </View>
-      )}
-
-      <SimilarItems itemId={item.Id} />
+      <View className="flex flex-col space-y-4">
+        <CastAndCrew item={item} />
+        {item.Type === "Episode" && <CurrentSeries item={item} />}
+        <SimilarItems itemId={item.Id} />
+      </View>
 
       <View className="h-12"></View>
     </ParallaxScrollView>

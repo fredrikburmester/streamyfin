@@ -11,6 +11,8 @@ import {
   useQuery,
   type QueryFunction,
 } from "@tanstack/react-query";
+import SeriesPoster from "../posters/SeriesPoster";
+import { EpisodePoster } from "../posters/EpisodePoster";
 
 interface Props extends ViewProps {
   title?: string | null;
@@ -34,7 +36,7 @@ export const ScrollingCollectionList: React.FC<Props> = ({
     queryKey,
     queryFn,
     enabled: !disabled,
-    staleTime: 0,
+    staleTime: 60 * 1000,
   });
 
   if (disabled || !title) return null;
@@ -53,15 +55,18 @@ export const ScrollingCollectionList: React.FC<Props> = ({
             key={index}
             item={item}
             className={`flex flex-col
-              ${orientation === "vertical" ? "w-28" : "w-44"}
+              ${orientation === "horizontal" ? "w-44" : "w-28"}
             `}
           >
             <View>
-              {orientation === "vertical" ? (
-                <MoviePoster item={item} />
-              ) : (
+              {item.Type === "Episode" && orientation === "horizontal" && (
                 <ContinueWatchingPoster item={item} />
               )}
+              {item.Type === "Episode" && orientation === "vertical" && (
+                <SeriesPoster item={item} />
+              )}
+              {item.Type === "Movie" && <MoviePoster item={item} />}
+              {item.Type === "Series" && <MoviePoster item={item} />}
               <ItemCardText item={item} />
             </View>
           </TouchableItemRouter>

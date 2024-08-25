@@ -18,15 +18,16 @@ const MoviePoster: React.FC<MoviePosterProps> = ({
 }) => {
   const [api] = useAtom(apiAtom);
 
-  const url = useMemo(
-    () =>
-      getPrimaryImageUrl({
-        api,
-        item,
-        width: 300,
-      }),
-    [item]
-  );
+  const url = useMemo(() => {
+    if (item.Type === "Episode") {
+      return `${api?.basePath}/Items/${item.ParentBackdropItemId}/Images/Thumb?fillHeight=389&quality=80&tag=${item.ParentThumbImageTag}`;
+    }
+    return getPrimaryImageUrl({
+      api,
+      item,
+      width: 300,
+    });
+  }, [item]);
 
   const [progress, setProgress] = useState(
     item.UserData?.PlayedPercentage || 0

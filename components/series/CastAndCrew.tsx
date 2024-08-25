@@ -1,27 +1,26 @@
+import { apiAtom } from "@/providers/JellyfinProvider";
+import { getPrimaryImageUrl } from "@/utils/jellyfin/image/getPrimaryImageUrl";
 import {
   BaseItemDto,
   BaseItemPerson,
 } from "@jellyfin/sdk/lib/generated-client/models";
+import { router } from "expo-router";
+import { useAtom } from "jotai";
 import React from "react";
-import { Linking, TouchableOpacity, View } from "react-native";
+import { TouchableOpacity, View, ViewProps } from "react-native";
 import { HorizontalScroll } from "../common/HorrizontalScroll";
 import { Text } from "../common/Text";
 import Poster from "../posters/Poster";
-import { useAtom } from "jotai";
-import { apiAtom } from "@/providers/JellyfinProvider";
-import { getPrimaryImageUrl } from "@/utils/jellyfin/image/getPrimaryImageUrl";
-import { router, usePathname } from "expo-router";
-import { useSettings } from "@/utils/atoms/settings";
 
-export const CastAndCrew = ({ item }: { item: BaseItemDto }) => {
+interface Props extends ViewProps {
+  item: BaseItemDto;
+}
+
+export const CastAndCrew: React.FC<Props> = ({ item, ...props }) => {
   const [api] = useAtom(apiAtom);
 
-  const [settings] = useSettings();
-
-  const pathname = usePathname();
-
   return (
-    <View>
+    <View {...props}>
       <Text className="text-lg font-bold mb-2 px-4">Cast & Crew</Text>
       <HorizontalScroll<NonNullable<BaseItemPerson>>
         data={item.People}

@@ -6,6 +6,8 @@ import { useMemo, useState } from "react";
 import { View } from "react-native";
 import { WatchedIndicator } from "./WatchedIndicator";
 import { getPrimaryImageUrl } from "@/utils/jellyfin/image/getPrimaryImageUrl";
+import { getBackdropUrl } from "@/utils/jellyfin/image/getBackdropUrl";
+import { getPrimaryImageUrlById } from "@/utils/jellyfin/image/getPrimaryImageUrlById";
 
 type ContinueWatchingPosterProps = {
   item: BaseItemDto;
@@ -20,12 +22,7 @@ const ContinueWatchingPoster: React.FC<ContinueWatchingPosterProps> = ({
 
   const url = useMemo(
     () =>
-      getPrimaryImageUrl({
-        api,
-        item,
-        quality: 80,
-        width: 300,
-      }),
+      `${api?.basePath}/Items/${item.ParentBackdropItemId}/Images/Thumb?fillHeight=389&quality=80&tag=${item.ParentThumbImageTag}`,
     [item]
   );
 

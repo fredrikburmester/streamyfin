@@ -12,19 +12,21 @@ type MoviePosterProps = {
   showProgress?: boolean;
 };
 
-const SeriesPoster: React.FC<MoviePosterProps> = ({ item }) => {
+export const EpisodePoster: React.FC<MoviePosterProps> = ({
+  item,
+  showProgress = false,
+}) => {
   const [api] = useAtom(apiAtom);
 
   const url = useMemo(() => {
     if (item.Type === "Episode") {
-      return `${api?.basePath}/Items/${item.SeriesId}/Images/Primary?fillHeight=389&quality=80&tag=${item.SeriesPrimaryImageTag}`;
+      return `${api?.basePath}/Items/${item.ParentBackdropItemId}/Images/Thumb?fillHeight=389&quality=80&tag=${item.ParentThumbImageTag}`;
     }
-    return getPrimaryImageUrl({
-      api,
-      item,
-      width: 300,
-    });
   }, [item]);
+
+  const [progress, setProgress] = useState(
+    item.UserData?.PlayedPercentage || 0
+  );
 
   const blurhash = useMemo(() => {
     const key = item.ImageTags?.["Primary"] as string;
@@ -53,8 +55,10 @@ const SeriesPoster: React.FC<MoviePosterProps> = ({ item }) => {
           width: "100%",
         }}
       />
+      <WatchedIndicator item={item} />
+      {showProgress && progress > 0 && (
+        <View className="h-1 bg-red-600 w-full"></View>
+      )}
     </View>
   );
 };
-
-export default SeriesPoster;
