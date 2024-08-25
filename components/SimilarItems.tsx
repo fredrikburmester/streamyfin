@@ -6,16 +6,19 @@ import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { useAtom } from "jotai";
 import { useMemo } from "react";
-import { ScrollView, TouchableOpacity, View } from "react-native";
+import { ScrollView, TouchableOpacity, View, ViewProps } from "react-native";
 import { Text } from "./common/Text";
 import { ItemCardText } from "./ItemCardText";
 import { Loader } from "./Loader";
 
-type SimilarItemsProps = {
+interface SimilarItemsProps extends ViewProps {
   itemId: string;
-};
+}
 
-export const SimilarItems: React.FC<SimilarItemsProps> = ({ itemId }) => {
+export const SimilarItems: React.FC<SimilarItemsProps> = ({
+  itemId,
+  ...props
+}) => {
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
 
@@ -41,8 +44,8 @@ export const SimilarItems: React.FC<SimilarItemsProps> = ({ itemId }) => {
   );
 
   return (
-    <View>
-      <Text className="px-4 text-2xl font-bold mb-2">Similar items</Text>
+    <View {...props}>
+      <Text className="px-4 text-lg font-bold mb-2">Similar items</Text>
       {isLoading ? (
         <View className="my-12">
           <Loader />

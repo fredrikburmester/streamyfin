@@ -34,7 +34,7 @@ export const NextUp: React.FC<{ seriesId: string }> = ({ seriesId }) => {
 
   if (!items?.length)
     return (
-      <View>
+      <View className="px-4">
         <Text className="text-lg font-bold mb-2">Next up</Text>
         <Text className="opacity-50">No items to display</Text>
       </View>

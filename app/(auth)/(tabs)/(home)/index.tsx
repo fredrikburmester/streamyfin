@@ -109,7 +109,7 @@ export default function index() {
       return response.data.Items || [];
     },
     enabled: !!api && !!user?.Id && settings?.usePopularPlugin === true,
-    staleTime: 0,
+    staleTime: 60 * 1000,
   });
 
   const movieCollectionId = useMemo(() => {
@@ -148,6 +148,7 @@ export default function index() {
           (
             await getItemsApi(api).getResumeItems({
               userId: user.Id,
+              enableImageTypes: ["Primary", "Backdrop", "Thumb"],
             })
           ).data.Items || [],
         type: "ScrollingCollectionList",
@@ -162,6 +163,7 @@ export default function index() {
               userId: user?.Id,
               fields: ["MediaSourceCount"],
               limit: 20,
+              enableImageTypes: ["Primary", "Backdrop", "Thumb"],
             })
           ).data.Items || [],
         type: "ScrollingCollectionList",
@@ -220,7 +222,7 @@ export default function index() {
             })
           ).data.Items || [],
         type: "ScrollingCollectionList",
-        orientation: "horizontal",
+        orientation: "vertical",
       },
     ];
     return ss;
