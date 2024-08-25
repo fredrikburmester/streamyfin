@@ -29,6 +29,7 @@ export const CurrentlyPlayingBar: React.FC = () => {
     setIsPlaying,
     isPlaying,
     videoRef,
+    presentFullscreenPlayer,
     onProgress,
   } = usePlayback();
 
@@ -166,6 +167,26 @@ export const CurrentlyPlayingBar: React.FC = () => {
                     isNetwork: true,
                     startPosition,
                     headers: getAuthHeaders(api),
+                    metadata: {
+                      artist: currentlyPlaying.item?.AlbumArtist
+                        ? currentlyPlaying.item?.AlbumArtist
+                        : undefined,
+                      title: currentlyPlaying.item?.Name
+                        ? currentlyPlaying.item?.Name
+                        : "Unknown",
+                      description: currentlyPlaying.item?.Overview
+                        ? currentlyPlaying.item?.Overview
+                        : undefined,
+                      imageUri: backdropUrl ? backdropUrl : undefined,
+                      subtitle: currentlyPlaying.item?.Album
+                        ? currentlyPlaying.item?.Album
+                        : undefined,
+                    },
+                  }}
+                  onRestoreUserInterfaceForPictureInPictureStop={() => {
+                    setTimeout(() => {
+                      presentFullscreenPlayer();
+                    }, 300);
                   }}
                   onBuffer={(e) =>
                     e.isBuffering ? console.log("Buffering...") : null

@@ -114,6 +114,7 @@ const page: React.FC = () => {
         audioStreamIndex: selectedAudioStream,
         subtitleStreamIndex: selectedSubtitleStream,
         forceDirectPlay: settings?.forceDirectPlay,
+        height: maxBitrate.height,
       });
 
       console.log("Transcode URL: ", url);
