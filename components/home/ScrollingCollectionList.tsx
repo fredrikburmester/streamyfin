@@ -6,26 +6,38 @@ import ContinueWatchingPoster from "../ContinueWatchingPoster";
 import { ItemCardText } from "../ItemCardText";
 import { HorizontalScroll } from "../common/HorrizontalScroll";
 import { TouchableItemRouter } from "../common/TouchableItemRouter";
+import {
+  type QueryKey,
+  useQuery,
+  type QueryFunction,
+} from "@tanstack/react-query";
 
 interface Props extends ViewProps {
-  title: string;
-  loading?: boolean;
+  title?: string | null;
   orientation?: "horizontal" | "vertical";
-  data?: BaseItemDto[] | null;
   height?: "small" | "large";
   disabled?: boolean;
+  queryKey: QueryKey;
+  queryFn: QueryFunction<BaseItemDto[]>;
 }
 
 export const ScrollingCollectionList: React.FC<Props> = ({
   title,
-  data,
   orientation = "vertical",
   height = "small",
-  loading = false,
   disabled = false,
+  queryFn,
+  queryKey,
   ...props
 }) => {
-  if (disabled) return null;
+  const { data, isLoading } = useQuery({
+    queryKey,
+    queryFn,
+    enabled: !disabled,
+    staleTime: 0,
+  });
+
+  if (disabled || !title) return null;
 
   return (
     <View {...props}>
@@ -35,7 +47,7 @@ export const ScrollingCollectionList: React.FC<Props> = ({
       <HorizontalScroll<BaseItemDto>
         data={data}
         height={orientation === "vertical" ? 247 : 164}
-        loading={loading}
+        loading={isLoading}
         renderItem={(item, index) => (
           <TouchableItemRouter
             key={index}
