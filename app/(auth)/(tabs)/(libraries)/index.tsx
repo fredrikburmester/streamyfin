@@ -34,7 +34,7 @@ export default function index() {
       return response.data.Items || null;
     },
     enabled: !!api && !!user?.Id,
-    staleTime: 60 * 1000,
+    staleTime: 60 * 1000 * 60,
   });
 
   useEffect(() => {

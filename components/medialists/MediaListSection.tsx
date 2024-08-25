@@ -34,7 +34,7 @@ export const MediaListSection: React.FC<Props> = ({
   const { data: collection, isLoading } = useQuery({
     queryKey,
     queryFn,
-    staleTime: 0,
+    staleTime: 60 * 1000,
   });
 
   const fetchItems = useCallback(

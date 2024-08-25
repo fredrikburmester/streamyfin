@@ -1,4 +1,3 @@
-import { Button } from "@/components/Button";
 import { HorizontalScroll } from "@/components/common/HorrizontalScroll";
 import { Input } from "@/components/common/Input";
 import { Text } from "@/components/common/Text";
@@ -12,8 +11,6 @@ import SeriesPoster from "@/components/posters/SeriesPoster";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import { useSettings } from "@/utils/atoms/settings";
 import { getUserItemData } from "@/utils/jellyfin/user-library/getUserItemData";
-import { Ionicons } from "@expo/vector-icons";
-import { Api } from "@jellyfin/sdk";
 import {
   BaseItemDto,
   BaseItemKind,
@@ -21,13 +18,7 @@ import {
 import { getItemsApi, getSearchApi } from "@jellyfin/sdk/lib/utils/api";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import {
-  Href,
-  router,
-  useLocalSearchParams,
-  useNavigation,
-  usePathname,
-} from "expo-router";
+import { Href, router, useLocalSearchParams, useNavigation } from "expo-router";
 import { useAtom } from "jotai";
 import React, {
   useCallback,
