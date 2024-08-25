@@ -6,7 +6,7 @@ import {
   BaseItemDto,
   PlaybackInfoResponse,
 } from "@jellyfin/sdk/lib/generated-client/models";
-import { View } from "react-native";
+import { TouchableOpacity, View } from "react-native";
 import CastContext, {
   PlayServicesState,
   useRemoteMediaClient,
@@ -83,7 +83,7 @@ export const PlayButton: React.FC<Props> = ({ item, url, ...props }) => {
   }, [item]);
 
   return (
-    <View className="relative">
+    <TouchableOpacity onPress={onPress} className="relative" {...props}>
       <View
         style={{
           width:
@@ -101,7 +101,7 @@ export const PlayButton: React.FC<Props> = ({ item, url, ...props }) => {
         }}
         className="absolute w-full h-full top-0 left-0 rounded-xl bg-purple-500 opacity-40"
       ></View>
-      <View className="absolute top-0 left-0 w-full h-full flex flex-row items-center justify-center bg-transparent rounded-xl z-10">
+      <View className="flex flex-row items-center justify-center bg-transparent rounded-xl z-20 h-12 w-full ">
         <View className="flex flex-row items-center space-x-2">
           <Text className="font-bold">
             {runtimeTicksToMinutes(item?.RunTimeTicks)}
@@ -110,7 +110,6 @@ export const PlayButton: React.FC<Props> = ({ item, url, ...props }) => {
           {client && <Feather name="cast" size={22} color="white" />}
         </View>
       </View>
-      <Button onPress={onPress} {...props} color="transparent"></Button>
-    </View>
+    </TouchableOpacity>
   );
 };
