@@ -169,17 +169,17 @@ export const CurrentlyPlayingBar: React.FC = () => {
                     metadata: {
                       artist: currentlyPlaying.item?.AlbumArtist
                         ? currentlyPlaying.item?.AlbumArtist
-                        : "Unknown",
+                        : undefined,
                       title: currentlyPlaying.item?.Name
                         ? currentlyPlaying.item?.Name
                         : "Unknown",
                       description: currentlyPlaying.item?.Overview
                         ? currentlyPlaying.item?.Overview
-                        : "Unknown",
+                        : undefined,
                       imageUri: backdropUrl ? backdropUrl : undefined,
                       subtitle: currentlyPlaying.item?.Album
                         ? currentlyPlaying.item?.Album
-                        : "Unknown",
+                        : undefined,
                     },
                   }}
                   onBuffer={(e) =>
