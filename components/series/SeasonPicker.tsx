@@ -57,7 +57,10 @@ export const SeasonPicker: React.FC<Props> = ({ item }) => {
 
   useEffect(() => {
     if (seasons && seasons.length > 0 && seasonIndex === undefined) {
-      const firstSeason = seasons[0];
+      const season1 = seasons.find((season: any) => season.IndexNumber === 1);
+      const season0 = seasons.find((season: any) => season.IndexNumber === 0);
+      const firstSeason = season1 || season0 || seasons[0];
+
       if (firstSeason.IndexNumber !== undefined) {
         setSeasonIndexState((prev) => ({
           ...prev,
@@ -66,6 +69,7 @@ export const SeasonPicker: React.FC<Props> = ({ item }) => {
       }
     }
   }, [seasons, seasonIndex, setSeasonIndexState, item.Id]);
+
   const selectedSeasonId: string | null = useMemo(
     () =>
       seasons?.find((season: any) => season.IndexNumber === seasonIndex)?.Id,
