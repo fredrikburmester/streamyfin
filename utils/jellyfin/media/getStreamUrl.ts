@@ -17,6 +17,7 @@ export const getStreamUrl = async ({
   audioStreamIndex = 0,
   subtitleStreamIndex = 0,
   forceDirectPlay = false,
+  height,
 }: {
   api: Api | null | undefined;
   item: BaseItemDto | null | undefined;
@@ -28,6 +29,7 @@ export const getStreamUrl = async ({
   audioStreamIndex?: number;
   subtitleStreamIndex?: number;
   forceDirectPlay?: boolean;
+  height?: number;
 }) => {
   if (!api || !userId || !item?.Id) {
     return null;
@@ -48,12 +50,16 @@ export const getStreamUrl = async ({
       AllowVideoStreamCopy: maxStreamingBitrate ? false : true,
       AudioStreamIndex: audioStreamIndex,
       SubtitleStreamIndex: subtitleStreamIndex,
+      DeInterlace: true,
+      BreakOnNonKeyFrames: false,
+      CopyTimestamps: false,
+      EnableMpegtsM2TsMode: false,
     },
     {
       headers: {
         Authorization: `MediaBrowser DeviceId="${api.deviceInfo.id}", Token="${api.accessToken}"`,
       },
-    },
+    }
   );
 
   const mediaSource = response.data.MediaSources?.[0] as MediaSourceInfo;
@@ -87,7 +93,9 @@ export const getStreamUrl = async ({
         EnableRedirection: "true",
         EnableRemoteMedia: "false",
       });
-      return `${api.basePath}/Audio/${itemId}/universal?${searchParams.toString()}`;
+      return `${
+        api.basePath
+      }/Audio/${itemId}/universal?${searchParams.toString()}`;
     }
   }
 

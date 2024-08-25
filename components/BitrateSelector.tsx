@@ -1,11 +1,11 @@
 import { TouchableOpacity, View } from "react-native";
 import * as DropdownMenu from "zeego/dropdown-menu";
 import { Text } from "./common/Text";
-import { atom, useAtom } from "jotai";
 
 export type Bitrate = {
   key: string;
   value: number | undefined;
+  height?: number;
 };
 
 const BITRATES: Bitrate[] = [
@@ -16,22 +16,27 @@ const BITRATES: Bitrate[] = [
   {
     key: "8 Mb/s",
     value: 8000000,
+    height: 1080,
   },
   {
-    key: "4 Mb/s",
+    key: "4 Mb/s - 1080p",
     value: 4000000,
+    height: 1080,
   },
   {
-    key: "2 Mb/s",
+    key: "2 Mb/s - 720p",
     value: 2000000,
+    height: 720,
   },
   {
-    key: "500 Kb/s",
+    key: "500 Kb/s - 480p",
     value: 500000,
+    height: 480,
   },
   {
-    key: "250 Kb/s",
+    key: "250 Kb/s - 480p",
     value: 250000,
+    height: 480,
   },
 ];
 
