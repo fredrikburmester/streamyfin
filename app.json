@@ -25,6 +25,9 @@
           "NSAllowsArbitraryLoads": true
         }
       },
+      "config": {
+        "usesNonExemptEncryption": false
+      },
       "supportsTablet": true,
       "bundleIdentifier": "com.fredrikburmester.streamyfin"
     },
