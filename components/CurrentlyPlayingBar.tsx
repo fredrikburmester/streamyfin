@@ -105,6 +105,29 @@ export const CurrentlyPlayingBar: React.FC = () => {
     [currentlyPlaying?.item, api]
   );
 
+  const videoSource = useMemo(() => {
+    if (!api || !currentlyPlaying || !backdropUrl) return null;
+    return {
+      uri: currentlyPlaying.url,
+      isNetwork: true,
+      startPosition,
+      headers: getAuthHeaders(api),
+      metadata: {
+        artist: currentlyPlaying.item?.AlbumArtist
+          ? currentlyPlaying.item?.AlbumArtist
+          : undefined,
+        title: currentlyPlaying.item?.Name || "Unknown",
+        description: currentlyPlaying.item?.Overview
+          ? currentlyPlaying.item?.Overview
+          : undefined,
+        imageUri: backdropUrl,
+        subtitle: currentlyPlaying.item?.Album
+          ? currentlyPlaying.item?.Album
+          : undefined,
+      },
+    };
+  }, [currentlyPlaying, startPosition, api, backdropUrl]);
+
   if (!api || !currentlyPlaying) return null;
 
   return (
@@ -139,7 +162,7 @@ export const CurrentlyPlayingBar: React.FC = () => {
                 }
                 `}
             >
-              {currentlyPlaying?.url && (
+              {videoSource && (
                 <Video
                   ref={videoRef}
                   allowsExternalPlayback
@@ -164,44 +187,26 @@ export const CurrentlyPlayingBar: React.FC = () => {
                   subtitleStyle={{
                     fontSize: 16,
                   }}
-                  source={{
-                    uri: currentlyPlaying.url,
-                    isNetwork: true,
-                    startPosition,
-                    headers: getAuthHeaders(api),
-                    metadata: {
-                      artist: currentlyPlaying.item?.AlbumArtist
-                        ? currentlyPlaying.item?.AlbumArtist
-                        : undefined,
-                      title: currentlyPlaying.item?.Name
-                        ? currentlyPlaying.item?.Name
-                        : "Unknown",
-                      description: currentlyPlaying.item?.Overview
-                        ? currentlyPlaying.item?.Overview
-                        : undefined,
-                      imageUri: backdropUrl ? backdropUrl : undefined,
-                      subtitle: currentlyPlaying.item?.Album
-                        ? currentlyPlaying.item?.Album
-                        : undefined,
-                    },
-                  }}
+                  source={videoSource}
                   onRestoreUserInterfaceForPictureInPictureStop={() => {
                     setTimeout(() => {
                       presentFullscreenPlayer();
                     }, 300);
                   }}
-                  onBuffer={(e) =>
-                    e.isBuffering ? console.log("Buffering...") : null
-                  }
                   onFullscreenPlayerDidDismiss={() => {}}
                   onFullscreenPlayerDidPresent={() => {}}
                   onPlaybackStateChanged={(e) => {
-                    setIsPlaying(e.isPlaying);
+                    console.log("onPlaybackStateChanged ~", e.isPlaying);
+                    if (e.isPlaying === true) {
+                      playVideo(false);
+                    } else if (e.isPlaying === false) {
+                      pauseVideo(false);
+                    }
                   }}
                   onVolumeChange={(e) => {
                     setVolume(e.volume);
                   }}
-                  progressUpdateInterval={2000}
+                  progressUpdateInterval={4000}
                   onError={(e) => {
                     console.log(e);
                     writeToLog(

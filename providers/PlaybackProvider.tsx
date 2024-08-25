@@ -13,6 +13,7 @@ import { useSettings } from "@/utils/atoms/settings";
 import { getDeviceId } from "@/utils/device";
 import { reportPlaybackProgress } from "@/utils/jellyfin/playstate/reportPlaybackProgress";
 import { reportPlaybackStopped } from "@/utils/jellyfin/playstate/reportPlaybackStopped";
+import { postCapabilities } from "@/utils/jellyfin/session/capabilities";
 import {
   BaseItemDto,
   PlaybackInfoResponse,
@@ -20,11 +21,10 @@ import {
 import { getMediaInfoApi } from "@jellyfin/sdk/lib/utils/api";
 import * as Linking from "expo-linking";
 import { useAtom } from "jotai";
+import { debounce } from "lodash";
 import { Alert, Platform } from "react-native";
 import { OnProgressData, type VideoRef } from "react-native-video";
 import { apiAtom, userAtom } from "./JellyfinProvider";
-import { postCapabilities } from "@/utils/jellyfin/session/capabilities";
-import { debounce } from "lodash";
 
 type CurrentlyPlayingState = {
   url: string;
@@ -38,8 +38,8 @@ interface PlaybackContextType {
   isPlaying: boolean;
   isFullscreen: boolean;
   progressTicks: number | null;
-  playVideo: () => void;
-  pauseVideo: () => void;
+  playVideo: (triggerRef?: boolean) => void;
+  pauseVideo: (triggerRef?: boolean) => void;
   stopPlayback: () => void;
   presentFullscreenPlayer: () => void;
   dismissFullscreenPlayer: () => void;
@@ -133,30 +133,39 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
     [settings, user, api]
   );
 
-  // Define control methods
-  const playVideo = useCallback(() => {
-    videoRef.current?.resume();
-    setIsPlaying(true);
-    reportPlaybackProgress({
-      api,
-      itemId: currentlyPlaying?.item.Id,
-      positionTicks: progressTicks ? progressTicks : 0,
-      sessionId: session?.PlaySessionId,
-      IsPaused: true,
-    });
-  }, [api, currentlyPlaying?.item.Id, session?.PlaySessionId, progressTicks]);
+  const playVideo = useCallback(
+    (triggerRef: boolean = true) => {
+      if (triggerRef) {
+        videoRef.current?.resume();
+      }
+      _setIsPlaying(true);
+      reportPlaybackProgress({
+        api,
+        itemId: currentlyPlaying?.item.Id,
+        positionTicks: progressTicks ? progressTicks : 0,
+        sessionId: session?.PlaySessionId,
+        IsPaused: false,
+      });
+    },
+    [api, currentlyPlaying?.item.Id, session?.PlaySessionId, progressTicks]
+  );
 
-  const pauseVideo = useCallback(() => {
-    videoRef.current?.pause();
-    setIsPlaying(false);
-    reportPlaybackProgress({
-      api,
-      itemId: currentlyPlaying?.item.Id,
-      positionTicks: progressTicks ? progressTicks : 0,
-      sessionId: session?.PlaySessionId,
-      IsPaused: false,
-    });
-  }, [session?.PlaySessionId, currentlyPlaying?.item.Id, progressTicks]);
+  const pauseVideo = useCallback(
+    (triggerRef: boolean = true) => {
+      if (triggerRef) {
+        videoRef.current?.pause();
+      }
+      _setIsPlaying(false);
+      reportPlaybackProgress({
+        api,
+        itemId: currentlyPlaying?.item.Id,
+        positionTicks: progressTicks ? progressTicks : 0,
+        sessionId: session?.PlaySessionId,
+        IsPaused: true,
+      });
+    },
+    [session?.PlaySessionId, currentlyPlaying?.item.Id, progressTicks]
+  );
 
   const stopPlayback = useCallback(async () => {
     await reportPlaybackStopped({
@@ -166,17 +175,23 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
       positionTicks: progressTicks ? progressTicks : 0,
     });
     setCurrentlyPlayingState(null);
-  }, [currentlyPlaying, session, progressTicks]);
+  }, [currentlyPlaying?.item.Id, session?.PlaySessionId, progressTicks, api]);
 
   const setIsPlaying = useCallback(
     debounce((value: boolean) => {
       _setIsPlaying(value);
-    }, 100),
+    }, 500),
     []
   );
 
-  const onProgress = useCallback(
+  const _onProgress = useCallback(
     ({ currentTime }: OnProgressData) => {
+      if (
+        !session?.PlaySessionId ||
+        !currentlyPlaying?.item.Id ||
+        currentTime === 0
+      )
+        return;
       const ticks = currentTime * 10000000;
       setProgressTicks(ticks);
       reportPlaybackProgress({
@@ -187,7 +202,14 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
         IsPaused: !isPlaying,
       });
     },
-    [session?.PlaySessionId, currentlyPlaying?.item.Id, isPlaying]
+    [session?.PlaySessionId, currentlyPlaying?.item.Id, isPlaying, api]
+  );
+
+  const onProgress = useCallback(
+    debounce((e: OnProgressData) => {
+      _onProgress(e);
+    }, 1000),
+    [_onProgress]
   );
 
   const presentFullscreenPlayer = useCallback(() => {
