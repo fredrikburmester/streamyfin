@@ -10,6 +10,7 @@ import React, {
 } from "react";
 
 import { useSettings } from "@/utils/atoms/settings";
+import { getDeviceId } from "@/utils/device";
 import { reportPlaybackProgress } from "@/utils/jellyfin/playstate/reportPlaybackProgress";
 import { reportPlaybackStopped } from "@/utils/jellyfin/playstate/reportPlaybackStopped";
 import {
@@ -17,12 +18,12 @@ import {
   PlaybackInfoResponse,
 } from "@jellyfin/sdk/lib/generated-client/models";
 import { getMediaInfoApi } from "@jellyfin/sdk/lib/utils/api";
+import * as Linking from "expo-linking";
 import { useAtom } from "jotai";
+import { Alert, Platform } from "react-native";
 import { OnProgressData, type VideoRef } from "react-native-video";
 import { apiAtom, userAtom } from "./JellyfinProvider";
-import { getDeviceId } from "@/utils/device";
-import * as Linking from "expo-linking";
-import { Platform } from "react-native";
+import { postCapabilities } from "@/utils/jellyfin/session/capabilities";
 
 type CurrentlyPlayingState = {
   url: string;
@@ -44,6 +45,7 @@ interface PlaybackContextType {
   setIsFullscreen: (isFullscreen: boolean) => void;
   setIsPlaying: (isPlaying: boolean) => void;
   onProgress: (data: OnProgressData) => void;
+  setVolume: (volume: number) => void;
   setCurrentlyPlayingState: (
     currentlyPlaying: CurrentlyPlayingState | null
   ) => void;
@@ -61,9 +63,13 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
 
   const [settings] = useSettings();
 
+  const previousVolume = useRef<number | null>(null);
+
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [progressTicks, setProgressTicks] = useState<number | null>(0);
+  const [volume, _setVolume] = useState<number | null>(null);
+  const [session, setSession] = useState<PlaybackInfoResponse | null>(null);
   const [currentlyPlaying, setCurrentlyPlaying] =
     useState<CurrentlyPlayingState | null>(null);
 
@@ -71,18 +77,14 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
   const [ws, setWs] = useState<WebSocket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
 
-  const { data: sessionData } = useQuery({
-    queryKey: ["sessionData", currentlyPlaying?.item.Id, user?.Id, api],
-    queryFn: async () => {
-      if (!currentlyPlaying?.item.Id) return null;
-      const playbackData = await getMediaInfoApi(api!).getPlaybackInfo({
-        itemId: currentlyPlaying?.item.Id,
-        userId: user?.Id,
-      });
-      return playbackData.data;
+  const setVolume = useCallback(
+    (newVolume: number) => {
+      previousVolume.current = volume;
+      _setVolume(newVolume);
+      videoRef.current?.setVolume(newVolume);
     },
-    enabled: !!currentlyPlaying?.item.Id && !!api && !!user?.Id,
-  });
+    [_setVolume]
+  );
 
   const { data: deviceId } = useQuery({
     queryKey: ["deviceId", api],
@@ -90,15 +92,29 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
   });
 
   const setCurrentlyPlayingState = useCallback(
-    (state: CurrentlyPlayingState | null) => {
-      const vlcLink = "vlc://" + state?.url;
-      console.log(vlcLink, settings?.openInVLC, Platform.OS === "ios");
-      if (vlcLink && settings?.openInVLC) {
-        Linking.openURL("vlc://" + state?.url || "");
-        return;
-      }
+    async (state: CurrentlyPlayingState | null) => {
+      if (!api) return;
 
-      if (state) {
+      if (state && state.item.Id && user?.Id) {
+        const vlcLink = "vlc://" + state?.url;
+        if (vlcLink && settings?.openInVLC) {
+          console.log(vlcLink, settings?.openInVLC, Platform.OS === "ios");
+          Linking.openURL("vlc://" + state?.url || "");
+          return;
+        }
+
+        const res = await getMediaInfoApi(api).getPlaybackInfo({
+          itemId: state.item.Id,
+          userId: user.Id,
+        });
+
+        await postCapabilities({
+          api,
+          itemId: state.item.Id,
+          sessionId: res.data.PlaySessionId,
+        });
+
+        setSession(res.data);
         setCurrentlyPlaying(state);
         setIsPlaying(true);
 
@@ -113,7 +129,7 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
         setIsPlaying(false);
       }
     },
-    [settings]
+    [settings, user, api]
   );
 
   // Define control methods
@@ -124,15 +140,10 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
       api,
       itemId: currentlyPlaying?.item.Id,
       positionTicks: progressTicks ? progressTicks : 0,
-      sessionId: sessionData?.PlaySessionId,
+      sessionId: session?.PlaySessionId,
       IsPaused: true,
     });
-  }, [
-    api,
-    currentlyPlaying?.item.Id,
-    sessionData?.PlaySessionId,
-    progressTicks,
-  ]);
+  }, [api, currentlyPlaying?.item.Id, session?.PlaySessionId, progressTicks]);
 
   const pauseVideo = useCallback(() => {
     videoRef.current?.pause();
@@ -141,20 +152,20 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
       api,
       itemId: currentlyPlaying?.item.Id,
       positionTicks: progressTicks ? progressTicks : 0,
-      sessionId: sessionData?.PlaySessionId,
+      sessionId: session?.PlaySessionId,
       IsPaused: false,
     });
-  }, [sessionData?.PlaySessionId, currentlyPlaying?.item.Id, progressTicks]);
+  }, [session?.PlaySessionId, currentlyPlaying?.item.Id, progressTicks]);
 
   const stopPlayback = useCallback(async () => {
     await reportPlaybackStopped({
       api,
       itemId: currentlyPlaying?.item?.Id,
-      sessionId: sessionData?.PlaySessionId,
+      sessionId: session?.PlaySessionId,
       positionTicks: progressTicks ? progressTicks : 0,
     });
     setCurrentlyPlayingState(null);
-  }, [currentlyPlaying, sessionData, progressTicks]);
+  }, [currentlyPlaying, session, progressTicks]);
 
   const onProgress = useCallback(
     ({ currentTime }: OnProgressData) => {
@@ -164,11 +175,11 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
         api,
         itemId: currentlyPlaying?.item.Id,
         positionTicks: ticks,
-        sessionId: sessionData?.PlaySessionId,
+        sessionId: session?.PlaySessionId,
         IsPaused: !isPlaying,
       });
     },
-    [sessionData?.PlaySessionId, currentlyPlaying?.item.Id, isPlaying]
+    [session?.PlaySessionId, currentlyPlaying?.item.Id, isPlaying]
   );
 
   const presentFullscreenPlayer = useCallback(() => {
@@ -236,6 +247,8 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
       const json = JSON.parse(e.data);
       const command = json?.Data?.Command;
 
+      console.log("[WS] ~ ", json);
+
       // On PlayPause
       if (command === "PlayPause") {
         console.log("Command ~ PlayPause");
@@ -244,6 +257,19 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
       } else if (command === "Stop") {
         console.log("Command ~ Stop");
         stopPlayback();
+      } else if (command === "Mute") {
+        console.log("Command ~ Mute");
+        setVolume(0);
+      } else if (command === "Unmute") {
+        console.log("Command ~ Unmute");
+        setVolume(previousVolume.current || 20);
+      } else if (command === "SetVolume") {
+        console.log("Command ~ SetVolume");
+      } else if (json?.Data?.Name === "DisplayMessage") {
+        console.log("Command ~ DisplayMessage");
+        const title = json?.Data?.Arguments?.Header;
+        const body = json?.Data?.Arguments?.Text;
+        Alert.alert(title, body);
       }
     };
   }, [ws, stopPlayback, playVideo, pauseVideo]);
@@ -253,12 +279,13 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
       value={{
         onProgress,
         progressTicks,
+        setVolume,
         setIsPlaying,
         setIsFullscreen,
         isFullscreen,
         isPlaying,
         currentlyPlaying,
-        sessionData,
+        sessionData: session,
         videoRef,
         playVideo,
         setCurrentlyPlayingState,
