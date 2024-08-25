@@ -66,7 +66,7 @@ export const ScrollingCollectionList: React.FC<Props> = ({
                 <SeriesPoster item={item} />
               )}
               {item.Type === "Movie" && <MoviePoster item={item} />}
-              {item.Type === "Series" && <MoviePoster item={item} />}
+              {item.Type === "Series" && <SeriesPoster item={item} />}
               <ItemCardText item={item} />
             </View>
           </TouchableItemRouter>
