@@ -26,6 +26,7 @@ export const CurrentlyPlayingBar: React.FC = () => {
     playVideo,
     setCurrentlyPlayingState,
     stopPlayback,
+    setVolume,
     setIsPlaying,
     isPlaying,
     videoRef,
@@ -201,6 +202,9 @@ export const CurrentlyPlayingBar: React.FC = () => {
                     } else {
                       setIsPlaying(false);
                     }
+                  }}
+                  onVolumeChange={(e) => {
+                    setVolume(e.volume);
                   }}
                   progressUpdateInterval={2000}
                   onError={(e) => {
