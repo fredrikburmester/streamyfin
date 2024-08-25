@@ -5,9 +5,6 @@ import { useAtom } from "jotai";
 import { useMemo, useState } from "react";
 import { View } from "react-native";
 import { WatchedIndicator } from "./WatchedIndicator";
-import { getPrimaryImageUrl } from "@/utils/jellyfin/image/getPrimaryImageUrl";
-import { getBackdropUrl } from "@/utils/jellyfin/image/getBackdropUrl";
-import { getPrimaryImageUrlById } from "@/utils/jellyfin/image/getPrimaryImageUrlById";
 
 type ContinueWatchingPosterProps = {
   item: BaseItemDto;
@@ -20,11 +17,13 @@ const ContinueWatchingPoster: React.FC<ContinueWatchingPosterProps> = ({
 }) => {
   const [api] = useAtom(apiAtom);
 
-  const url = useMemo(
-    () =>
-      `${api?.basePath}/Items/${item.ParentBackdropItemId}/Images/Thumb?fillHeight=389&quality=80&tag=${item.ParentThumbImageTag}`,
-    [item]
-  );
+  const url = useMemo(() => {
+    if (!api) return;
+    if (item.Type === "Episode")
+      return `${api?.basePath}/Items/${item.ParentBackdropItemId}/Images/Thumb?fillHeight=389&quality=80&tag=${item.ParentThumbImageTag}`;
+    if (item.Type === "Movie")
+      return `${api?.basePath}/Items/${item.Id}/Images/Thumb?fillHeight=389&quality=80&tag=${item.ImageTags?.["Thumb"]}`;
+  }, [item]);
 
   const [progress, setProgress] = useState(
     item.UserData?.PlayedPercentage || 0
