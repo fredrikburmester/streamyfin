@@ -17,6 +17,7 @@ import Animated, {
 import Video from "react-native-video";
 import { Text } from "./common/Text";
 import { Loader } from "./Loader";
+import { debounce } from "lodash";
 
 export const CurrentlyPlayingBar: React.FC = () => {
   const segments = useSegments();
@@ -195,13 +196,7 @@ export const CurrentlyPlayingBar: React.FC = () => {
                   onFullscreenPlayerDidDismiss={() => {}}
                   onFullscreenPlayerDidPresent={() => {}}
                   onPlaybackStateChanged={(e) => {
-                    if (e.isPlaying) {
-                      setIsPlaying(true);
-                    } else if (e.isSeeking) {
-                      return;
-                    } else {
-                      setIsPlaying(false);
-                    }
+                    setIsPlaying(e.isPlaying);
                   }}
                   onVolumeChange={(e) => {
                     setVolume(e.volume);

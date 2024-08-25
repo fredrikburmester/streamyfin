@@ -24,6 +24,7 @@ import { Alert, Platform } from "react-native";
 import { OnProgressData, type VideoRef } from "react-native-video";
 import { apiAtom, userAtom } from "./JellyfinProvider";
 import { postCapabilities } from "@/utils/jellyfin/session/capabilities";
+import { debounce } from "lodash";
 
 type CurrentlyPlayingState = {
   url: string;
@@ -65,7 +66,7 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
 
   const previousVolume = useRef<number | null>(null);
 
-  const [isPlaying, setIsPlaying] = useState<boolean>(false);
+  const [isPlaying, _setIsPlaying] = useState<boolean>(false);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [progressTicks, setProgressTicks] = useState<number | null>(0);
   const [volume, _setVolume] = useState<number | null>(null);
@@ -166,6 +167,13 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
     });
     setCurrentlyPlayingState(null);
   }, [currentlyPlaying, session, progressTicks]);
+
+  const setIsPlaying = useCallback(
+    debounce((value: boolean) => {
+      _setIsPlaying(value);
+    }, 100),
+    []
+  );
 
   const onProgress = useCallback(
     ({ currentTime }: OnProgressData) => {
