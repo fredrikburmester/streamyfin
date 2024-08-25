@@ -9,7 +9,7 @@ import { DarkTheme, ThemeProvider } from "@react-navigation/native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useFonts } from "expo-font";
 import { useKeepAwake } from "expo-keep-awake";
-import { Stack } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import * as ScreenOrientation from "expo-screen-orientation";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
@@ -17,12 +17,9 @@ import { Provider as JotaiProvider } from "jotai";
 import { useEffect, useRef } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
+import * as Linking from "expo-linking";
 
 SplashScreen.preventAutoHideAsync();
-
-export const unstable_settings = {
-  initialRouteName: "/(auth)/(tabs)/(home)/",
-};
 
 export default function RootLayout() {
   const [loaded] = useFonts({
@@ -73,6 +70,16 @@ function Layout() {
         ScreenOrientation.OrientationLock.PORTRAIT_UP
       );
   }, [settings]);
+
+  const url = Linking.useURL();
+  const router = useRouter();
+
+  if (url) {
+    const { hostname, path, queryParams } = Linking.parse(url);
+    console.log("Linking ~ ", hostname, path, queryParams);
+    // @ts-ignore
+    // router.push("/(auth)/(home)/");
+  }
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

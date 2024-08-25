@@ -4,8 +4,9 @@ import { Text } from "@/components/common/Text";
 import { apiAtom, useJellyfin } from "@/providers/JellyfinProvider";
 import { Ionicons } from "@expo/vector-icons";
 import { AxiosError } from "axios";
+import { useLocalSearchParams } from "expo-router";
 import { useAtom } from "jotai";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -23,16 +24,40 @@ const CredentialsSchema = z.object({
 const Login: React.FC = () => {
   const { setServer, login, removeServer } = useJellyfin();
   const [api] = useAtom(apiAtom);
+  const params = useLocalSearchParams();
 
-  const [serverURL, setServerURL] = useState<string>("");
+  const {
+    apiUrl: _apiUrl,
+    username: _username,
+    password: _password,
+  } = params as { apiUrl: string; username: string; password: string };
+
+  const [serverURL, setServerURL] = useState<string>(_apiUrl);
   const [error, setError] = useState<string>("");
   const [credentials, setCredentials] = useState<{
     username: string;
     password: string;
   }>({
-    username: "",
-    password: "",
+    username: _username,
+    password: _password,
   });
+
+  useEffect(() => {
+    (async () => {
+      if (_apiUrl) {
+        setServer({
+          address: _apiUrl,
+        });
+
+        setTimeout(() => {
+          if (_username && _password) {
+            setCredentials({ username: _username, password: _password });
+            login(_username, _password);
+          }
+        }, 300);
+      }
+    })();
+  }, [_apiUrl, _username, _password]);
 
   const [loading, setLoading] = useState<boolean>(false);
 
