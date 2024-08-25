@@ -166,6 +166,21 @@ export const CurrentlyPlayingBar: React.FC = () => {
                     isNetwork: true,
                     startPosition,
                     headers: getAuthHeaders(api),
+                    metadata: {
+                      artist: currentlyPlaying.item?.AlbumArtist
+                        ? currentlyPlaying.item?.AlbumArtist
+                        : "Unknown",
+                      title: currentlyPlaying.item?.Name
+                        ? currentlyPlaying.item?.Name
+                        : "Unknown",
+                      description: currentlyPlaying.item?.Overview
+                        ? currentlyPlaying.item?.Overview
+                        : "Unknown",
+                      imageUri: backdropUrl ? backdropUrl : undefined,
+                      subtitle: currentlyPlaying.item?.Album
+                        ? currentlyPlaying.item?.Album
+                        : "Unknown",
+                    },
                   }}
                   onBuffer={(e) =>
                     e.isBuffering ? console.log("Buffering...") : null
