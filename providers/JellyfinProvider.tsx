@@ -97,7 +97,6 @@ export const JellyfinProvider: React.FC<{ children: ReactNode }> = ({
       if (response?.status === 200) {
         setSecret(response?.data?.Secret);
         setIsPolling(true);
-        console.log("Initiating quick connect");
         return response.data?.Code;
       } else {
         throw new Error("Failed to initiate quick connect");
@@ -116,7 +115,6 @@ export const JellyfinProvider: React.FC<{ children: ReactNode }> = ({
         `${api.basePath}/QuickConnect/Connect?Secret=${secret}`
       );
 
-      console.log("Polling quick connect");
       if (response.status === 200) {
         if (response.data.Authenticated) {
           setIsPolling(false);
@@ -133,7 +131,6 @@ export const JellyfinProvider: React.FC<{ children: ReactNode }> = ({
 
           const { AccessToken, User } = authResponse.data;
           api.accessToken = AccessToken;
-          console.log("Quick connect authenticated", AccessToken, User.Id);
           setUser(User);
           await AsyncStorage.setItem("token", AccessToken);
           await AsyncStorage.setItem("user", JSON.stringify(User));
@@ -207,7 +204,6 @@ export const JellyfinProvider: React.FC<{ children: ReactNode }> = ({
         }
       } catch (error) {
         if (axios.isAxiosError(error)) {
-          console.log("Axios error", error.response?.status);
           switch (error.response?.status) {
             case 401:
               throw new Error("Invalid username or password");

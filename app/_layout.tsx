@@ -76,9 +76,6 @@ function Layout() {
 
   if (url) {
     const { hostname, path, queryParams } = Linking.parse(url);
-    console.log("Linking ~ ", hostname, path, queryParams);
-    // @ts-ignore
-    // router.push("/(auth)/(home)/");
   }
 
   return (

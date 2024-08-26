@@ -107,7 +107,7 @@ export const LibraryItemCard: React.FC<Props> = ({ library, ...props }) => {
           });
         })
         .catch((error) => {
-          console.log("Error getting colors", error);
+          console.error("Error getting colors", error);
         });
     }
   }, [url]);

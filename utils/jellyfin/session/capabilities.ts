@@ -52,7 +52,6 @@ export const postCapabilities = async ({
     );
     return d;
   } catch (error: any | AxiosError) {
-    console.log("Failed to mark as not played", error);
     throw new Error("Failed to mark as not played");
   }
 };

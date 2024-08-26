@@ -22,8 +22,6 @@ export const TouchableItemRouter: React.FC<PropsWithChildren<Props>> = ({
     return (
       <TouchableOpacity
         onPress={() => {
-          console.log("[0]", item.Type);
-
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
           if (item.Type === "Series") {

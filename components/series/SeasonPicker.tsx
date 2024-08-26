@@ -60,7 +60,6 @@ export const SeasonPicker: React.FC<Props> = ({ item, initialSeasonIndex }) => {
     if (seasons && seasons.length > 0 && seasonIndex === undefined) {
       let initialIndex: number | undefined;
 
-      console.log("initialSeasonIndex", initialSeasonIndex);
       if (initialSeasonIndex !== undefined) {
         // Use the provided initialSeasonIndex if it exists in the seasons
         const seasonExists = seasons.some(

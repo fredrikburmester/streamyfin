@@ -99,7 +99,6 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
       if (state && state.item.Id && user?.Id) {
         const vlcLink = "vlc://" + state?.url;
         if (vlcLink && settings?.openInVLC) {
-          console.log(vlcLink, settings?.openInVLC, Platform.OS === "ios");
           Linking.openURL("vlc://" + state?.url || "");
           return;
         }
@@ -231,8 +230,6 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
       api?.accessToken
     }&deviceId=${deviceId}`;
 
-    console.log("WS", url);
-
     const newWebSocket = new WebSocket(url);
 
     let keepAliveInterval: NodeJS.Timeout | null = null;
@@ -243,7 +240,6 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
       keepAliveInterval = setInterval(() => {
         if (newWebSocket.readyState === WebSocket.OPEN) {
           newWebSocket.send(JSON.stringify({ MessageType: "KeepAlive" }));
-          console.log("KeepAlive message sent");
         }
       }, 30000);
     };
@@ -254,7 +250,6 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
     };
 
     newWebSocket.onclose = (e) => {
-      console.log("WebSocket connection closed:", e.reason);
       if (keepAliveInterval) {
         clearInterval(keepAliveInterval);
       }
