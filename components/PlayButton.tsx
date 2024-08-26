@@ -2,10 +2,8 @@ import { usePlayback } from "@/providers/PlaybackProvider";
 import { runtimeTicksToMinutes } from "@/utils/time";
 import { useActionSheet } from "@expo/react-native-action-sheet";
 import { Feather, Ionicons } from "@expo/vector-icons";
-import {
-  BaseItemDto,
-  PlaybackInfoResponse,
-} from "@jellyfin/sdk/lib/generated-client/models";
+import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
+import { useMemo } from "react";
 import { TouchableOpacity, View } from "react-native";
 import CastContext, {
   PlayServicesState,
@@ -13,7 +11,6 @@ import CastContext, {
 } from "react-native-google-cast";
 import { Button } from "./Button";
 import { Text } from "./common/Text";
-import { useMemo } from "react";
 
 interface Props extends React.ComponentProps<typeof Button> {
   item?: BaseItemDto | null;

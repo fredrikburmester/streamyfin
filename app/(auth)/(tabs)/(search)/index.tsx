@@ -245,7 +245,7 @@ export default function search() {
             header="Movies"
             ids={movies?.map((m) => m.Id!)}
             renderItem={(data) => (
-              <HorizontalScroll<BaseItemDto>
+              <HorizontalScroll
                 data={data}
                 renderItem={(item) => (
                   <TouchableItemRouter
@@ -269,7 +269,7 @@ export default function search() {
             ids={series?.map((m) => m.Id!)}
             header="Series"
             renderItem={(data) => (
-              <HorizontalScroll<BaseItemDto>
+              <HorizontalScroll
                 data={data}
                 renderItem={(item) => (
                   <TouchableOpacity
@@ -293,12 +293,12 @@ export default function search() {
             ids={episodes?.map((m) => m.Id!)}
             header="Episodes"
             renderItem={(data) => (
-              <HorizontalScroll<BaseItemDto>
+              <HorizontalScroll
                 data={data}
                 renderItem={(item) => (
                   <TouchableOpacity
                     key={item.Id}
-                    onPress={() => router.push(`/items/${item.Id}`)}
+                    onPress={() => router.push(`/items/page?id=${item.Id}`)}
                     className="flex flex-col w-44"
                   >
                     <ContinueWatchingPoster item={item} />
@@ -312,7 +312,7 @@ export default function search() {
             ids={collections?.map((m) => m.Id!)}
             header="Collections"
             renderItem={(data) => (
-              <HorizontalScroll<BaseItemDto>
+              <HorizontalScroll
                 data={data}
                 renderItem={(item) => (
                   <TouchableOpacity
@@ -333,7 +333,7 @@ export default function search() {
             ids={actors?.map((m) => m.Id!)}
             header="Actors"
             renderItem={(data) => (
-              <HorizontalScroll<BaseItemDto>
+              <HorizontalScroll
                 data={data}
                 renderItem={(item) => (
                   <TouchableItemRouter
@@ -352,7 +352,7 @@ export default function search() {
             ids={artists?.map((m) => m.Id!)}
             header="Artists"
             renderItem={(data) => (
-              <HorizontalScroll<BaseItemDto>
+              <HorizontalScroll
                 data={data}
                 renderItem={(item) => (
                   <TouchableItemRouter
@@ -371,7 +371,7 @@ export default function search() {
             ids={albums?.map((m) => m.Id!)}
             header="Albums"
             renderItem={(data) => (
-              <HorizontalScroll<BaseItemDto>
+              <HorizontalScroll
                 data={data}
                 renderItem={(item) => (
                   <TouchableItemRouter
@@ -390,7 +390,7 @@ export default function search() {
             ids={songs?.map((m) => m.Id!)}
             header="Songs"
             renderItem={(data) => (
-              <HorizontalScroll<BaseItemDto>
+              <HorizontalScroll
                 data={data}
                 renderItem={(item) => (
                   <TouchableItemRouter

@@ -13,17 +13,19 @@ import { Text } from "../common/Text";
 import Poster from "../posters/Poster";
 
 interface Props extends ViewProps {
-  item: BaseItemDto;
+  item?: BaseItemDto | null;
+  loading?: boolean;
 }
 
-export const CastAndCrew: React.FC<Props> = ({ item, ...props }) => {
+export const CastAndCrew: React.FC<Props> = ({ item, loading, ...props }) => {
   const [api] = useAtom(apiAtom);
 
   return (
-    <View {...props}>
+    <View {...props} className="flex flex-col">
       <Text className="text-lg font-bold mb-2 px-4">Cast & Crew</Text>
-      <HorizontalScroll<NonNullable<BaseItemPerson>>
-        data={item.People}
+      <HorizontalScroll
+        loading={loading}
+        data={item?.People || []}
         renderItem={(item, index) => (
           <TouchableOpacity
             onPress={() => {

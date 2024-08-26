@@ -1,7 +1,6 @@
 import { AudioTrackSelector } from "@/components/AudioTrackSelector";
 import { Bitrate, BitrateSelector } from "@/components/BitrateSelector";
 import { DownloadItem } from "@/components/DownloadItem";
-import { Loader } from "@/components/Loader";
 import { OverviewText } from "@/components/OverviewText";
 import { ParallaxScrollView } from "@/components/ParallaxPage";
 import { PlayButton } from "@/components/PlayButton";
@@ -9,18 +8,16 @@ import { PlayedStatus } from "@/components/PlayedStatus";
 import { Ratings } from "@/components/Ratings";
 import { SimilarItems } from "@/components/SimilarItems";
 import { SubtitleTrackSelector } from "@/components/SubtitleTrackSelector";
+import { ItemImage } from "@/components/common/ItemImage";
 import { Text } from "@/components/common/Text";
 import { MoviesTitleHeader } from "@/components/movies/MoviesTitleHeader";
 import { CastAndCrew } from "@/components/series/CastAndCrew";
 import { CurrentSeries } from "@/components/series/CurrentSeries";
-import { NextEpisodeButton } from "@/components/series/NextEpisodeButton";
-import { SeriesTitleHeader } from "@/components/series/SeriesTitleHeader";
+import { SeasonEpisodesCarousel } from "@/components/series/SeasonEpisodesCarousel";
+import { EpisodeTitleHeader } from "@/components/series/EpisodeTitleHeader";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import { useSettings } from "@/utils/atoms/settings";
-import { getBackdropUrl } from "@/utils/jellyfin/image/getBackdropUrl";
 import { getLogoImageUrlById } from "@/utils/jellyfin/image/getLogoImageUrlById";
-import { getParentBackdropImageUrl } from "@/utils/jellyfin/image/getParentBackdropImageUrl";
-import { getPrimaryParentImageUrl } from "@/utils/jellyfin/image/getPrimaryParentImageUrl";
 import { getStreamUrl } from "@/utils/jellyfin/media/getStreamUrl";
 import { getUserItemData } from "@/utils/jellyfin/user-library/getUserItemData";
 import { chromecastProfile } from "@/utils/profiles/chromecast";
@@ -30,21 +27,17 @@ import old from "@/utils/profiles/old";
 import { getMediaInfoApi } from "@jellyfin/sdk/lib/utils/api";
 import { useQuery } from "@tanstack/react-query";
 import { Image } from "expo-image";
-import { useLocalSearchParams } from "expo-router";
 import { useAtom } from "jotai";
-import { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { View } from "react-native";
 import { useCastDevice } from "react-native-google-cast";
+import { ItemHeader } from "./ItemHeader";
 
-const page: React.FC = () => {
-  const local = useLocalSearchParams();
-  const { id } = local as { id: string };
-
+export const ItemContent: React.FC<{ id: string }> = React.memo(({ id }) => {
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
 
   const [settings] = useSettings();
-
   const castDevice = useCastDevice();
 
   const [selectedAudioStream, setSelectedAudioStream] = useState<number>(-1);
@@ -55,7 +48,11 @@ const page: React.FC = () => {
     value: undefined,
   });
 
-  const { data: item, isLoading: l1 } = useQuery({
+  const {
+    data: item,
+    isLoading,
+    isFetching,
+  } = useQuery({
     queryKey: ["item", id],
     queryFn: async () =>
       await getUserItemData({
@@ -127,63 +124,36 @@ const page: React.FC = () => {
     staleTime: 0,
   });
 
-  const itemBackdropUrl = useMemo(
-    () =>
-      getBackdropUrl({
-        api,
-        item,
-        quality: 95,
-        width: 1200,
-      }),
-    [item]
-  );
-
-  const seriesBackdropUrl = useMemo(
-    () =>
-      getParentBackdropImageUrl({
-        api,
-        item,
-        quality: 95,
-        width: 1200,
-      }),
-    [item]
-  );
-
   const logoUrl = useMemo(() => getLogoImageUrlById({ api, item }), [item]);
 
-  const episodePoster = useMemo(
-    () =>
-      item?.Type === "Episode"
-        ? `${api?.basePath}/Items/${item.Id}/Images/Primary?fillHeight=389&quality=80`
-        : null,
-    [item]
+  const loading = useMemo(
+    () => isLoading || isFetching,
+    [isLoading, isFetching]
   );
-
-  if (l1)
-    return (
-      <View className="justify-center items-center h-full">
-        <Loader />
-      </View>
-    );
-
-  if (!item?.Id) return null;
 
   return (
     <ParallaxScrollView
-      headerHeight={item.Type === "Episode" ? 300 : 400}
+      headerHeight={300}
       headerImage={
         <>
-          {itemBackdropUrl ? (
-            <Image
-              source={{
-                uri: itemBackdropUrl,
-              }}
+          {item ? (
+            <ItemImage
+              variant={item.Type === "Movie" ? "Backdrop" : "Primary"}
+              item={item}
               style={{
                 width: "100%",
                 height: "100%",
               }}
             />
-          ) : null}
+          ) : (
+            <View
+              style={{
+                width: "100%",
+                height: "100%",
+                backgroundColor: "black",
+              }}
+            ></View>
+          )}
         </>
       }
       logo={
@@ -203,62 +173,65 @@ const page: React.FC = () => {
         </>
       }
     >
-      <View className="flex flex-col px-4 pt-4">
-        <View className="flex flex-col">
-          {item.Type === "Episode" ? (
-            <SeriesTitleHeader item={item} />
+      <View className="flex flex-col">
+        <View className="flex flex-col px-4 w-full space-y-1 pt-4">
+          <ItemHeader item={item} />
+
+          {item ? (
+            <View className="flex flex-row justify-between items-center mb-2">
+              <DownloadItem item={item} />
+              <PlayedStatus item={item} />
+            </View>
           ) : (
-            <>
-              <MoviesTitleHeader item={item} />
-            </>
+            <View>
+              <View className="bg-neutral-950 h-8 w-full rounded-lg my-2"></View>
+            </View>
           )}
-          <Text className="text-center opacity-50">{item?.ProductionYear}</Text>
-          <Ratings item={item} />
-        </View>
 
-        <View className="flex flex-row justify-between items-center mb-2">
-          {playbackUrl ? (
-            <DownloadItem item={item} />
+          {item ? (
+            <View className="flex flex-row items-center space-x-2 w-full mb-1">
+              <BitrateSelector
+                onChange={(val) => setMaxBitrate(val)}
+                selected={maxBitrate}
+              />
+              {item && (
+                <AudioTrackSelector
+                  item={item}
+                  onChange={setSelectedAudioStream}
+                  selected={selectedAudioStream}
+                />
+              )}
+              {item && (
+                <SubtitleTrackSelector
+                  item={item}
+                  onChange={setSelectedSubtitleStream}
+                  selected={selectedSubtitleStream}
+                />
+              )}
+            </View>
           ) : (
-            <View className="h-12 aspect-square flex items-center justify-center"></View>
+            <View className="mb-1">
+              <View className="bg-neutral-950 h-4 w-2/4 rounded-md mb-1"></View>
+              <View className="bg-neutral-950 h-10 w-3/4 rounded-lg"></View>
+            </View>
           )}
-          <PlayedStatus item={item} />
+
+          <PlayButton item={item} url={playbackUrl} className="grow mb-2" />
         </View>
 
-        <OverviewText text={item.Overview} />
-      </View>
-      <View className="flex flex-col p-4 w-full">
-        <View className="flex flex-row items-center space-x-2 w-full">
-          <BitrateSelector
-            onChange={(val) => setMaxBitrate(val)}
-            selected={maxBitrate}
-          />
-          <AudioTrackSelector
-            item={item}
-            onChange={setSelectedAudioStream}
-            selected={selectedAudioStream}
-          />
-          <SubtitleTrackSelector
-            item={item}
-            onChange={setSelectedSubtitleStream}
-            selected={selectedSubtitleStream}
-          />
-        </View>
-        <View className="flex flex-row items-center justify-between w-full">
-          <NextEpisodeButton item={item} type="previous" className="mr-2" />
-          <PlayButton item={item} url={playbackUrl} className="grow" />
-          <NextEpisodeButton item={item} className="ml-2" />
-        </View>
-      </View>
-      <View className="flex flex-col space-y-4">
-        <CastAndCrew item={item} />
-        {item.Type === "Episode" && <CurrentSeries item={item} />}
-        <SimilarItems itemId={item.Id} />
-      </View>
+        <SeasonEpisodesCarousel item={item} loading={loading} />
 
-      <View className="h-12"></View>
+        <OverviewText text={item?.Overview} className="px-4 mb-4" />
+
+        <CastAndCrew item={item} className="mb-4" loading={loading} />
+
+        {item?.Type === "Episode" && (
+          <CurrentSeries item={item} className="mb-4" />
+        )}
+        <SimilarItems itemId={item?.Id} />
+
+        <View className="h-16"></View>
+      </View>
     </ParallaxScrollView>
   );
-};
-
-export default page;
+});

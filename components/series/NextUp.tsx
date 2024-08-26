@@ -43,12 +43,12 @@ export const NextUp: React.FC<{ seriesId: string }> = ({ seriesId }) => {
   return (
     <View>
       <Text className="text-lg font-bold mb-2 px-4">Next up</Text>
-      <HorizontalScroll<BaseItemDto>
+      <HorizontalScroll
         data={items}
         renderItem={(item, index) => (
           <TouchableOpacity
             onPress={() => {
-              router.push(`/(auth)/items/${item.Id}`);
+              router.push(`/(auth)/items/page?id=${item.Id}`);
             }}
             key={item.Id}
             className="flex flex-col w-44"
