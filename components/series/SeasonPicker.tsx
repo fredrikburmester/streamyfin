@@ -14,6 +14,7 @@ import { Text } from "../common/Text";
 
 type Props = {
   item: BaseItemDto;
+  initialSeasonIndex?: number;
 };
 
 type SeasonIndexState = {
@@ -22,7 +23,7 @@ type SeasonIndexState = {
 
 export const seasonIndexAtom = atom<SeasonIndexState>({});
 
-export const SeasonPicker: React.FC<Props> = ({ item }) => {
+export const SeasonPicker: React.FC<Props> = ({ item, initialSeasonIndex }) => {
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
   const [seasonIndexState, setSeasonIndexState] = useAtom(seasonIndexAtom);
@@ -57,18 +58,35 @@ export const SeasonPicker: React.FC<Props> = ({ item }) => {
 
   useEffect(() => {
     if (seasons && seasons.length > 0 && seasonIndex === undefined) {
-      const season1 = seasons.find((season: any) => season.IndexNumber === 1);
-      const season0 = seasons.find((season: any) => season.IndexNumber === 0);
-      const firstSeason = season1 || season0 || seasons[0];
+      let initialIndex: number | undefined;
 
-      if (firstSeason.IndexNumber !== undefined) {
+      console.log("initialSeasonIndex", initialSeasonIndex);
+      if (initialSeasonIndex !== undefined) {
+        // Use the provided initialSeasonIndex if it exists in the seasons
+        const seasonExists = seasons.some(
+          (season: any) => season.IndexNumber === initialSeasonIndex
+        );
+        if (seasonExists) {
+          initialIndex = initialSeasonIndex;
+        }
+      }
+
+      if (initialIndex === undefined) {
+        // Fall back to the previous logic if initialIndex is not set
+        const season1 = seasons.find((season: any) => season.IndexNumber === 1);
+        const season0 = seasons.find((season: any) => season.IndexNumber === 0);
+        const firstSeason = season1 || season0 || seasons[0];
+        initialIndex = firstSeason.IndexNumber;
+      }
+
+      if (initialIndex !== undefined) {
         setSeasonIndexState((prev) => ({
           ...prev,
-          [item.Id ?? ""]: firstSeason.IndexNumber,
+          [item.Id ?? ""]: initialIndex,
         }));
       }
     }
-  }, [seasons, seasonIndex, setSeasonIndexState, item.Id]);
+  }, [seasons, seasonIndex, setSeasonIndexState, item.Id, initialSeasonIndex]);
 
   const selectedSeasonId: string | null = useMemo(
     () =>

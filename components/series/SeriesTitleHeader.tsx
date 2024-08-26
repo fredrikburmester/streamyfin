@@ -23,7 +23,14 @@ export const SeriesTitleHeader: React.FC<Props> = ({ item, ...props }) => {
       </View>
       <View>
         <View className="flex flex-row items-center self-center">
-          <TouchableOpacity onPress={() => {}}>
+          <TouchableOpacity
+            onPress={() => {
+              router.push(
+                // @ts-ignore
+                `/(auth)/series/${item.SeriesId}?seasonIndex=${item?.ParentIndexNumber}`
+              );
+            }}
+          >
             <Text className="text-center opacity-50">{item?.SeasonName}</Text>
           </TouchableOpacity>
           <Text className="text-center opacity-50 mx-2">{"—"}</Text>
