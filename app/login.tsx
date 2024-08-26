@@ -3,10 +3,9 @@ import { Input } from "@/components/common/Input";
 import { Text } from "@/components/common/Text";
 import { apiAtom, useJellyfin } from "@/providers/JellyfinProvider";
 import { Ionicons } from "@expo/vector-icons";
-import { AxiosError } from "axios";
 import { useLocalSearchParams } from "expo-router";
 import { useAtom } from "jotai";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -22,7 +21,8 @@ const CredentialsSchema = z.object({
 });
 
 const Login: React.FC = () => {
-  const { setServer, login, removeServer } = useJellyfin();
+  const { setServer, login, removeServer, initiateQuickConnect } =
+    useJellyfin();
   const [api] = useAtom(apiAtom);
   const params = useLocalSearchParams();
 
@@ -85,6 +85,21 @@ const Login: React.FC = () => {
       return;
     }
     setServer({ address: url.trim() });
+  };
+
+  const handleQuickConnect = async () => {
+    try {
+      const code = await initiateQuickConnect();
+      if (code) {
+        Alert.alert("Quick Connect", `Enter code ${code} to login`, [
+          {
+            text: "Got It",
+          },
+        ]);
+      }
+    } catch (error) {
+      Alert.alert("Error", "Failed to initiate Quick Connect");
+    }
   };
 
   if (api?.basePath) {
@@ -162,13 +177,18 @@ const Login: React.FC = () => {
               <Text className="text-red-600 mb-2">{error}</Text>
             </View>
 
-            <Button
-              onPress={handleLogin}
-              loading={loading}
-              className="mt-auto mb-2"
-            >
-              Log in
-            </Button>
+            <View className="mt-auto mb-2">
+              <Button
+                color="black"
+                onPress={handleQuickConnect}
+                className="mb-2"
+              >
+                Use Quick Connect
+              </Button>
+              <Button onPress={handleLogin} loading={loading}>
+                Log in
+              </Button>
+            </View>
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>
