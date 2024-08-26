@@ -182,7 +182,6 @@ export const CurrentlyPlayingBar: React.FC = () => {
                     enable: true,
                     thread: true,
                   }}
-                  paused={!isPlaying}
                   onProgress={(e) => onProgress(e)}
                   subtitleStyle={{
                     fontSize: 16,

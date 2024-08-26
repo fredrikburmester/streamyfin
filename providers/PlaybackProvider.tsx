@@ -135,7 +135,7 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
 
   const playVideo = useCallback(
     (triggerRef: boolean = true) => {
-      if (triggerRef) {
+      if (triggerRef === true) {
         videoRef.current?.resume();
       }
       _setIsPlaying(true);
@@ -152,7 +152,7 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
 
   const pauseVideo = useCallback(
     (triggerRef: boolean = true) => {
-      if (triggerRef) {
+      if (triggerRef === true) {
         videoRef.current?.pause();
       }
       _setIsPlaying(false);
