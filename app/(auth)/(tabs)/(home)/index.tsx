@@ -1,4 +1,3 @@
-import { Button } from "@/components/Button";
 import { Text } from "@/components/common/Text";
 import { LargeMovieCarousel } from "@/components/home/LargeMovieCarousel";
 import { ScrollingCollectionList } from "@/components/home/ScrollingCollectionList";
@@ -6,7 +5,6 @@ import { Loader } from "@/components/Loader";
 import { MediaListSection } from "@/components/medialists/MediaListSection";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import { useSettings } from "@/utils/atoms/settings";
-import { Ionicons } from "@expo/vector-icons";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import {
   getItemsApi,
@@ -41,7 +39,6 @@ type MediaListSection = BaseSection & {
 type Section = ScrollingCollectionListSection | MediaListSection;
 
 export default function index() {
-  const router = useRouter();
   const queryClient = useQueryClient();
 
   const [api] = useAtom(apiAtom);
@@ -211,14 +208,30 @@ export default function index() {
         type: "ScrollingCollectionList",
       },
       {
-        title: "Suggestions",
-        queryKey: ["suggestions", user?.Id],
+        title: "Suggested Movies",
+        queryKey: ["suggestedMovies", user?.Id],
         queryFn: async () =>
           (
             await getSuggestionsApi(api).getSuggestions({
               userId: user?.Id,
-              limit: 5,
+              limit: 10,
               mediaType: ["Video"],
+              type: ["Movie"],
+            })
+          ).data.Items || [],
+        type: "ScrollingCollectionList",
+        orientation: "vertical",
+      },
+      {
+        title: "Suggested Episodes",
+        queryKey: ["suggestedEpisodes", user?.Id],
+        queryFn: async () =>
+          (
+            await getSuggestionsApi(api).getSuggestions({
+              userId: user?.Id,
+              limit: 10,
+              mediaType: ["Video"],
+              type: ["Episode"],
             })
           ).data.Items || [],
         type: "ScrollingCollectionList",
