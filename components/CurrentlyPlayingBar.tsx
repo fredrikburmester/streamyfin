@@ -195,7 +195,6 @@ export const CurrentlyPlayingBar: React.FC = () => {
                   onFullscreenPlayerDidDismiss={() => {}}
                   onFullscreenPlayerDidPresent={() => {}}
                   onPlaybackStateChanged={(e) => {
-                    console.log("onPlaybackStateChanged ~", e.isPlaying);
                     if (e.isPlaying === true) {
                       playVideo(false);
                     } else if (e.isPlaying === false) {

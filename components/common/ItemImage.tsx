@@ -51,11 +51,9 @@ export const ItemImage: React.FC<Props> = ({
         };
         break;
       case "Primary":
-        console.log("case Primary");
         tag = item.ImageTags?.["Primary"];
         if (!tag) break;
         blurhash = item.ImageBlurHashes?.Primary?.[tag];
-        console.log("bh: ", blurhash);
 
         src = {
           uri: `${api.basePath}/Items/${item.Id}/Images/Primary?quality=${quality}&tag=${tag}`,
@@ -63,11 +61,9 @@ export const ItemImage: React.FC<Props> = ({
         };
         break;
       case "Thumb":
-        console.log("case Thumb");
         tag = item.ImageTags?.["Thumb"];
         if (!tag) break;
         blurhash = item.ImageBlurHashes?.Thumb?.[tag];
-        console.log("bh: ", blurhash);
 
         src = {
           uri: `${api.basePath}/Items/${item.Id}/Images/Backdrop?quality=${quality}&tag=${tag}`,
@@ -75,7 +71,6 @@ export const ItemImage: React.FC<Props> = ({
         };
         break;
       default:
-        console.log("case default");
         tag = item.ImageTags?.["Primary"];
         src = {
           uri: `${api.basePath}/Items/${item.Id}/Images/Primary?quality=${quality}&tag=${tag}`,

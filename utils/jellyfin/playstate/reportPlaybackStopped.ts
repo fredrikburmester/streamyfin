@@ -41,8 +41,6 @@ export const reportPlaybackStopped = async ({
     return;
   }
 
-  console.log("reportPlaybackStopped ~", { sessionId, itemId });
-
   try {
     const url = `${api.basePath}/PlayingItems/${itemId}`;
     const params = {
