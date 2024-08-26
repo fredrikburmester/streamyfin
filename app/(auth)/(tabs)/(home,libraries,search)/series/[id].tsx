@@ -61,6 +61,7 @@ const page: React.FC = () => {
 
   return (
     <ParallaxScrollView
+      headerHeight={300}
       headerImage={
         <Image
           source={{

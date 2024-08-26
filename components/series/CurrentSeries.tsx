@@ -10,7 +10,7 @@ import { Text } from "../common/Text";
 import { getPrimaryImageUrlById } from "@/utils/jellyfin/image/getPrimaryImageUrlById";
 
 interface Props extends ViewProps {
-  item: BaseItemDto;
+  item?: BaseItemDto | null;
 }
 
 export const CurrentSeries: React.FC<Props> = ({ item, ...props }) => {
@@ -19,7 +19,7 @@ export const CurrentSeries: React.FC<Props> = ({ item, ...props }) => {
   return (
     <View {...props}>
       <Text className="text-lg font-bold mb-2 px-4">Series</Text>
-      <HorizontalScroll<BaseItemDto>
+      <HorizontalScroll
         data={[item]}
         renderItem={(item, index) => (
           <TouchableOpacity

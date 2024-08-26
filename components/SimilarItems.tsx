@@ -12,7 +12,7 @@ import { ItemCardText } from "./ItemCardText";
 import { Loader } from "./Loader";
 
 interface SimilarItemsProps extends ViewProps {
-  itemId: string;
+  itemId?: string | null;
 }
 
 export const SimilarItems: React.FC<SimilarItemsProps> = ({
@@ -25,7 +25,7 @@ export const SimilarItems: React.FC<SimilarItemsProps> = ({
   const { data: similarItems, isLoading } = useQuery<BaseItemDto[]>({
     queryKey: ["similarItems", itemId],
     queryFn: async () => {
-      if (!api || !user?.Id) return [];
+      if (!api || !user?.Id || !itemId) return [];
       const response = await getLibraryApi(api).getSimilarItems({
         itemId,
         userId: user.Id,
@@ -56,7 +56,7 @@ export const SimilarItems: React.FC<SimilarItemsProps> = ({
             {movies.map((item) => (
               <TouchableOpacity
                 key={item.Id}
-                onPress={() => router.push(`/items/${item.Id}`)}
+                onPress={() => router.push(`/items/page?id=${item.Id}`)}
                 className="flex flex-col w-32"
               >
                 <MoviePoster item={item} />
@@ -66,7 +66,9 @@ export const SimilarItems: React.FC<SimilarItemsProps> = ({
           </View>
         </ScrollView>
       )}
-      {movies.length === 0 && <Text className="px-4">No similar items</Text>}
+      {movies.length === 0 && (
+        <Text className="px-4 text-neutral-500">No similar items</Text>
+      )}
     </View>
   );
 };

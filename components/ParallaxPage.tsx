@@ -1,4 +1,4 @@
-import { useMemo, type PropsWithChildren, type ReactElement } from "react";
+import { type PropsWithChildren, type ReactElement } from "react";
 import { View } from "react-native";
 import Animated, {
   interpolate,
@@ -6,7 +6,6 @@ import Animated, {
   useAnimatedStyle,
   useScrollViewOffset,
 } from "react-native-reanimated";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type Props = PropsWithChildren<{
   headerImage: ReactElement;
@@ -45,8 +44,6 @@ export const ParallaxScrollView: React.FC<Props> = ({
       ],
     };
   });
-
-  const inset = useSafeAreaInsets();
 
   return (
     <View className="flex-1">

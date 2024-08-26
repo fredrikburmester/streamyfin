@@ -47,7 +47,7 @@ export const SubtitleTrackSelector: React.FC<Props> = ({
     <View className="flex flex-row items-center justify-between" {...props}>
       <DropdownMenu.Root>
         <DropdownMenu.Trigger>
-          <View className="flex flex-col mb-2">
+          <View className="flex flex-col">
             <Text className="opacity-50 mb-1 text-xs">Subtitles</Text>
             <View className="flex flex-row">
               <TouchableOpacity className="bg-neutral-900 max-w-32 h-10 rounded-xl border-neutral-900 border px-3 py-2 flex flex-row items-center justify-between">

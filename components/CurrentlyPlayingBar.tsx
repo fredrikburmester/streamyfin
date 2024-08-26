@@ -231,7 +231,8 @@ export const CurrentlyPlayingBar: React.FC = () => {
                 onPress={() => {
                   if (currentlyPlaying.item?.Type === "Audio")
                     router.push(`/albums/${currentlyPlaying.item?.AlbumId}`);
-                  else router.push(`/items/${currentlyPlaying.item?.Id}`);
+                  else
+                    router.push(`/items/page?id=${currentlyPlaying.item?.Id}`);
                 }}
               >
                 <Text>{currentlyPlaying.item?.Name}</Text>

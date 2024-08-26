@@ -168,7 +168,7 @@ export const SeasonPicker: React.FC<Props> = ({ item, initialSeasonIndex }) => {
       {/* Old View. Might have a setting later to manually select view. */}
       {/* {episodes && (
         <View className="mt-4">
-          <HorizontalScroll<BaseItemDto>
+          <HorizontalScroll
             data={episodes}
             renderItem={(item, index) => (
               <TouchableOpacity
@@ -200,7 +200,7 @@ export const SeasonPicker: React.FC<Props> = ({ item, initialSeasonIndex }) => {
             <TouchableOpacity
               key={e.Id}
               onPress={() => {
-                router.push(`/(auth)/items/${e.Id}`);
+                router.push(`/(auth)/items/page?id=${e.Id}`);
               }}
               className="flex flex-col mb-4"
             >

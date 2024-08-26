@@ -46,7 +46,7 @@ export const ScrollingCollectionList: React.FC<Props> = ({
       <Text className="px-4 text-2xl font-bold mb-2 text-neutral-100">
         {title}
       </Text>
-      <HorizontalScroll<BaseItemDto>
+      <HorizontalScroll
         data={data}
         height={orientation === "vertical" ? 247 : 164}
         loading={isLoading}

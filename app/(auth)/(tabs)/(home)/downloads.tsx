@@ -8,7 +8,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useQuery } from "@tanstack/react-query";
-import { router, Stack } from "expo-router";
+import { router } from "expo-router";
 import { FFmpegKit } from "ffmpeg-kit-react-native";
 import { useAtom } from "jotai";
 import { useMemo } from "react";
@@ -70,7 +70,9 @@ const downloads: React.FC = () => {
             <View className="flex flex-col space-y-2">
               {queue.map((q) => (
                 <TouchableOpacity
-                  onPress={() => router.push(`/(auth)/items/${q.item.Id}`)}
+                  onPress={() =>
+                    router.push(`/(auth)/items/page?id=${q.item.Id}`)
+                  }
                   className="relative bg-neutral-900 border border-neutral-800 p-4 rounded-2xl overflow-hidden flex flex-row items-center justify-between"
                 >
                   <View>
@@ -97,7 +99,9 @@ const downloads: React.FC = () => {
             <Text className="text-2xl font-bold mb-2">Active download</Text>
             {process?.item ? (
               <TouchableOpacity
-                onPress={() => router.push(`/(auth)/items/${process.item.Id}`)}
+                onPress={() =>
+                  router.push(`/(auth)/items/page?id=${process.item.Id}`)
+                }
                 className="relative bg-neutral-900 border border-neutral-800 p-4 rounded-2xl overflow-hidden flex flex-row items-center justify-between"
               >
                 <View>

@@ -10,35 +10,32 @@ interface Props extends ViewProps {
 
 export const OverviewText: React.FC<Props> = ({
   text,
-  characterLimit = 140,
+  characterLimit = 100,
   ...props
 }) => {
   const [limit, setLimit] = useState(characterLimit);
 
   if (!text) return null;
 
-  if (text.length > characterLimit)
-    return (
+  return (
+    <View className="flex flex-col" {...props}>
+      <Text className="text-xl font-bold mb-2">Overview</Text>
       <TouchableOpacity
         onPress={() =>
           setLimit((prev) =>
             prev === characterLimit ? text.length : characterLimit
           )
         }
-        {...props}
       >
-        <View {...props} className="">
+        <View>
           <Text>{tc(text, limit)}</Text>
-          <Text className="text-purple-600 mt-1">
-            {limit === characterLimit ? "Show more" : "Show less"}
-          </Text>
+          {text.length > characterLimit && (
+            <Text className="text-purple-600 mt-1">
+              {limit === characterLimit ? "Show more" : "Show less"}
+            </Text>
+          )}
         </View>
       </TouchableOpacity>
-    );
-
-  return (
-    <View {...props}>
-      <Text>{text}</Text>
     </View>
   );
 };
