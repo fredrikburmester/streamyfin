@@ -9,11 +9,13 @@ import { WatchedIndicator } from "./WatchedIndicator";
 type ContinueWatchingPosterProps = {
   item: BaseItemDto;
   width?: number;
+  useEpisodePoster?: boolean;
 };
 
 const ContinueWatchingPoster: React.FC<ContinueWatchingPosterProps> = ({
   item,
   width = 176,
+  useEpisodePoster = false,
 }) => {
   const [api] = useAtom(apiAtom);
 
@@ -22,6 +24,9 @@ const ContinueWatchingPoster: React.FC<ContinueWatchingPosterProps> = ({
    */
   const url = useMemo(() => {
     if (!api) return;
+    if (item.Type === "Episode" && useEpisodePoster) {
+      return `${api?.basePath}/Items/${item.Id}/Images/Primary?fillHeight=389&quality=80`;
+    }
     if (item.Type === "Episode") {
       if (item.ParentBackdropItemId && item.ParentThumbImageTag)
         return `${api?.basePath}/Items/${item.ParentBackdropItemId}/Images/Thumb?fillHeight=389&quality=80&tag=${item.ParentThumbImageTag}`;

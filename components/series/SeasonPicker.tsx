@@ -188,7 +188,11 @@ export const SeasonPicker: React.FC<Props> = ({ item }) => {
             >
               <View className="flex flex-row items-center mb-2">
                 <View className="w-32 aspect-video overflow-hidden mr-2">
-                  <ContinueWatchingPoster item={e} width={128} />
+                  <ContinueWatchingPoster
+                    item={e}
+                    width={128}
+                    useEpisodePoster
+                  />
                 </View>
                 <View className="shrink">
                   <Text numberOfLines={2} className="">

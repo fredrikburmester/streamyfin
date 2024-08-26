@@ -19,6 +19,8 @@ import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import { useSettings } from "@/utils/atoms/settings";
 import { getBackdropUrl } from "@/utils/jellyfin/image/getBackdropUrl";
 import { getLogoImageUrlById } from "@/utils/jellyfin/image/getLogoImageUrlById";
+import { getParentBackdropImageUrl } from "@/utils/jellyfin/image/getParentBackdropImageUrl";
+import { getPrimaryParentImageUrl } from "@/utils/jellyfin/image/getPrimaryParentImageUrl";
 import { getStreamUrl } from "@/utils/jellyfin/media/getStreamUrl";
 import { getUserItemData } from "@/utils/jellyfin/user-library/getUserItemData";
 import { chromecastProfile } from "@/utils/profiles/chromecast";
@@ -125,7 +127,7 @@ const page: React.FC = () => {
     staleTime: 0,
   });
 
-  const backdropUrl = useMemo(
+  const itemBackdropUrl = useMemo(
     () =>
       getBackdropUrl({
         api,
@@ -136,8 +138,24 @@ const page: React.FC = () => {
     [item]
   );
 
-  const logoUrl = useMemo(
-    () => (item?.Type === "Movie" ? getLogoImageUrlById({ api, item }) : null),
+  const seriesBackdropUrl = useMemo(
+    () =>
+      getParentBackdropImageUrl({
+        api,
+        item,
+        quality: 95,
+        width: 1200,
+      }),
+    [item]
+  );
+
+  const logoUrl = useMemo(() => getLogoImageUrlById({ api, item }), [item]);
+
+  const episodePoster = useMemo(
+    () =>
+      item?.Type === "Episode"
+        ? `${api?.basePath}/Items/${item.Id}/Images/Primary?fillHeight=389&quality=80`
+        : null,
     [item]
   );
 
@@ -148,20 +166,25 @@ const page: React.FC = () => {
       </View>
     );
 
-  if (!item?.Id || !backdropUrl) return null;
+  if (!item?.Id) return null;
 
   return (
     <ParallaxScrollView
+      headerHeight={item.Type === "Episode" ? 300 : 400}
       headerImage={
-        <Image
-          source={{
-            uri: backdropUrl,
-          }}
-          style={{
-            width: "100%",
-            height: "100%",
-          }}
-        />
+        <>
+          {itemBackdropUrl ? (
+            <Image
+              source={{
+                uri: itemBackdropUrl,
+              }}
+              style={{
+                width: "100%",
+                height: "100%",
+              }}
+            />
+          ) : null}
+        </>
       }
       logo={
         <>
