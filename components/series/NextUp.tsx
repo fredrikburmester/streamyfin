@@ -53,7 +53,7 @@ export const NextUp: React.FC<{ seriesId: string }> = ({ seriesId }) => {
             key={item.Id}
             className="flex flex-col w-44"
           >
-            <ContinueWatchingPoster item={item} />
+            <ContinueWatchingPoster item={item} useEpisodePoster />
             <ItemCardText item={item} />
           </TouchableOpacity>
         )}

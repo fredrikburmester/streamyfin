@@ -222,7 +222,7 @@ export default function index() {
             })
           ).data.Items || [],
         type: "ScrollingCollectionList",
-        orientation: "vertical",
+        orientation: "horizontal",
       },
     ];
     return ss;

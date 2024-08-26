@@ -1,4 +1,4 @@
-import type { PropsWithChildren, ReactElement } from "react";
+import { useMemo, type PropsWithChildren, type ReactElement } from "react";
 import { View } from "react-native";
 import Animated, {
   interpolate,
@@ -8,16 +8,18 @@ import Animated, {
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const HEADER_HEIGHT = 400;
-
 type Props = PropsWithChildren<{
   headerImage: ReactElement;
   logo?: ReactElement;
+  episodePoster?: ReactElement;
+  headerHeight?: number;
 }>;
 
 export const ParallaxScrollView: React.FC<Props> = ({
   children,
   headerImage,
+  episodePoster,
+  headerHeight = 400,
   logo,
 }: Props) => {
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
@@ -29,14 +31,14 @@ export const ParallaxScrollView: React.FC<Props> = ({
         {
           translateY: interpolate(
             scrollOffset.value,
-            [-HEADER_HEIGHT, 0, HEADER_HEIGHT],
-            [-HEADER_HEIGHT / 2, 0, HEADER_HEIGHT * 0.75]
+            [-headerHeight, 0, headerHeight],
+            [-headerHeight / 2, 0, headerHeight * 0.75]
           ),
         },
         {
           scale: interpolate(
             scrollOffset.value,
-            [-HEADER_HEIGHT, 0, HEADER_HEIGHT],
+            [-headerHeight, 0, headerHeight],
             [2, 1, 1]
           ),
         },
@@ -56,15 +58,29 @@ export const ParallaxScrollView: React.FC<Props> = ({
         scrollEventThrottle={16}
       >
         {logo && (
-          <View className="absolute top-[250px] h-[130px] left-0 w-full z-40 px-4 flex justify-center items-center">
+          <View
+            style={{
+              top: headerHeight - 150,
+              height: 130,
+            }}
+            className="absolute left-0 w-full z-40 px-4 flex justify-center items-center"
+          >
             {logo}
+          </View>
+        )}
+
+        {episodePoster && (
+          <View className="absolute top-[290px] h-[120px] w-full left-0 flex justify-center items-center z-50">
+            <View className="h-full aspect-video border border-neutral-800">
+              {episodePoster}
+            </View>
           </View>
         )}
 
         <Animated.View
           style={[
             {
-              height: HEADER_HEIGHT,
+              height: headerHeight,
               backgroundColor: "black",
             },
             headerAnimatedStyle,
