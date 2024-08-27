@@ -107,14 +107,12 @@ export const SeasonEpisodesCarousel: React.FC<Props> = ({
   }, [episodes, api, user?.Id, item]);
 
   useEffect(() => {
-    if (item?.Type === "Episode") {
+    if (item?.Type === "Episode" && item.Id) {
       const index = episodes?.findIndex((ep) => ep.Id === item.Id);
       if (index !== undefined && index !== -1) {
         setTimeout(() => {
           scrollToIndex(index);
         }, 400);
-      } else {
-        console.warn("Episode not found in the list:", item.Id);
       }
     }
   }, [episodes, item]);

@@ -8,7 +8,6 @@ const commonScreenOptions = {
   headerTransparent: true,
   headerShadowVisible: false,
   headerLeft: () => <HeaderBackButton />,
-  headerRight: () => <Chromecast background="blur" width={22} height={22} />,
 };
 
 const routes = [

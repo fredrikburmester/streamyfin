@@ -34,7 +34,6 @@ export const getStreamUrl = async ({
   mediaSourceId?: string | null;
 }) => {
   if (!api || !userId || !item?.Id || !mediaSourceId) {
-    console.error("Missing required parameters");
     return null;
   }
 

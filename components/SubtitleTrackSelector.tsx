@@ -48,7 +48,7 @@ export const SubtitleTrackSelector: React.FC<Props> = ({
       <DropdownMenu.Root>
         <DropdownMenu.Trigger>
           <View className="flex flex-col">
-            <Text className="opacity-50 mb-1 text-xs">Subtitles</Text>
+            <Text className="opacity-50 mb-1 text-xs">Subtitle</Text>
             <View className="flex flex-row">
               <TouchableOpacity className="bg-neutral-900 max-w-32 h-10 rounded-xl border-neutral-900 border px-3 py-2 flex flex-row items-center justify-between">
                 <Text className="">
@@ -69,7 +69,7 @@ export const SubtitleTrackSelector: React.FC<Props> = ({
           collisionPadding={8}
           sideOffset={8}
         >
-          <DropdownMenu.Label>Subtitles</DropdownMenu.Label>
+          <DropdownMenu.Label>Subtitle tracks</DropdownMenu.Label>
           <DropdownMenu.Item
             key={"-1"}
             onSelect={() => {

@@ -21,10 +21,10 @@ export const ItemHeader: React.FC<Props> = ({ item, ...props }) => {
     );
 
   return (
-    <View {...props}>
+    <View className="flex flex-col" {...props}>
+      <Ratings item={item} className="mb-2" />
       {item.Type === "Episode" && <EpisodeTitleHeader item={item} />}
       {item.Type === "Movie" && <MoviesTitleHeader item={item} />}
-      <Ratings item={item} />
     </View>
   );
 };

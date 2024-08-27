@@ -25,7 +25,7 @@ export const postCapabilities = async ({
   sessionId,
 }: PostCapabilitiesParams): Promise<AxiosResponse> => {
   if (!api || !itemId || !sessionId) {
-    throw new Error("Missing required parameters");
+    throw new Error("Missing parameters for marking item as not played");
   }
 
   try {
