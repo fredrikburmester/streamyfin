@@ -66,7 +66,7 @@ export const SettingToggles: React.FC = () => {
         <View className="flex flex-col shrink">
           <Text className="font-semibold">Download quality</Text>
           <Text className="text-xs opacity-50">
-            Choose the search engine you want to use.
+            Choose the download quality.
           </Text>
         </View>
         <DropdownMenu.Root>
