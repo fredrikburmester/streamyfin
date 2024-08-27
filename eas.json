@@ -21,13 +21,13 @@
       }
     },
     "production": {
-      "channel": "0.8.4",
+      "channel": "0.9.0",
       "android": {
         "image": "latest"
       }
     },
     "production-apk": {
-      "channel": "0.8.4",
+      "channel": "0.9.0",
       "android": {
         "buildType": "apk",
         "image": "latest"
