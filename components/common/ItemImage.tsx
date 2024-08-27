@@ -1,10 +1,11 @@
-import { View, ViewProps } from "react-native";
-import { Text } from "@/components/common/Text";
+import { useImageColors } from "@/hooks/useImageColors";
+import { apiAtom } from "@/providers/JellyfinProvider";
+import { itemThemeColorAtom } from "@/utils/atoms/primaryColor";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import { Image, ImageProps, ImageSource } from "expo-image";
-import { useMemo, useState } from "react";
 import { useAtom } from "jotai";
-import { apiAtom } from "@/providers/JellyfinProvider";
+import { useEffect, useMemo } from "react";
+import { getColors } from "react-native-image-colors";
 
 interface Props extends ImageProps {
   item: BaseItemDto;
@@ -80,6 +81,8 @@ export const ItemImage: React.FC<Props> = ({
 
     return src;
   }, [item.ImageTags]);
+
+  useImageColors(source?.uri);
 
   return (
     <Image

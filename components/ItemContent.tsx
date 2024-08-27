@@ -5,16 +5,12 @@ import { OverviewText } from "@/components/OverviewText";
 import { ParallaxScrollView } from "@/components/ParallaxPage";
 import { PlayButton } from "@/components/PlayButton";
 import { PlayedStatus } from "@/components/PlayedStatus";
-import { Ratings } from "@/components/Ratings";
 import { SimilarItems } from "@/components/SimilarItems";
 import { SubtitleTrackSelector } from "@/components/SubtitleTrackSelector";
 import { ItemImage } from "@/components/common/ItemImage";
-import { Text } from "@/components/common/Text";
-import { MoviesTitleHeader } from "@/components/movies/MoviesTitleHeader";
 import { CastAndCrew } from "@/components/series/CastAndCrew";
 import { CurrentSeries } from "@/components/series/CurrentSeries";
 import { SeasonEpisodesCarousel } from "@/components/series/SeasonEpisodesCarousel";
-import { EpisodeTitleHeader } from "@/components/series/EpisodeTitleHeader";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import { useSettings } from "@/utils/atoms/settings";
 import { getLogoImageUrlById } from "@/utils/jellyfin/image/getLogoImageUrlById";
@@ -24,16 +20,19 @@ import { chromecastProfile } from "@/utils/profiles/chromecast";
 import ios from "@/utils/profiles/ios";
 import native from "@/utils/profiles/native";
 import old from "@/utils/profiles/old";
+import { MediaSourceInfo } from "@jellyfin/sdk/lib/generated-client/models";
 import { getMediaInfoApi } from "@jellyfin/sdk/lib/utils/api";
 import { useQuery } from "@tanstack/react-query";
 import { Image } from "expo-image";
+import { useNavigation } from "expo-router";
 import { useAtom } from "jotai";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { View } from "react-native";
 import { useCastDevice } from "react-native-google-cast";
+import { Chromecast } from "./Chromecast";
 import { ItemHeader } from "./ItemHeader";
 import { MediaSourceSelector } from "./MediaSourceSelector";
-import { MediaSourceInfo } from "@jellyfin/sdk/lib/generated-client/models";
+import { useImageColors } from "@/hooks/useImageColors";
 
 export const ItemContent: React.FC<{ id: string }> = React.memo(({ id }) => {
   const [api] = useAtom(apiAtom);
@@ -41,6 +40,7 @@ export const ItemContent: React.FC<{ id: string }> = React.memo(({ id }) => {
 
   const [settings] = useSettings();
   const castDevice = useCastDevice();
+  const navigation = useNavigation();
 
   const [selectedMediaSource, setSelectedMediaSource] =
     useState<MediaSourceInfo | null>(null);
@@ -52,21 +52,44 @@ export const ItemContent: React.FC<{ id: string }> = React.memo(({ id }) => {
     value: undefined,
   });
 
+  const headerHeightRef = useRef(0);
+
   const {
     data: item,
     isLoading,
     isFetching,
   } = useQuery({
     queryKey: ["item", id],
-    queryFn: async () =>
-      await getUserItemData({
+    queryFn: async () => {
+      const res = await getUserItemData({
         api,
         userId: user?.Id,
         itemId: id,
-      }),
+      });
+
+      return res;
+    },
     enabled: !!id && !!api,
     staleTime: 60 * 1000,
   });
+
+  useEffect(() => {
+    navigation.setOptions({
+      headerRight: () =>
+        item && (
+          <View className="flex flex-row items-center space-x-2">
+            <Chromecast background="blur" width={22} height={22} />
+            <DownloadItem item={item} />
+            <PlayedStatus item={item} />
+          </View>
+        ),
+    });
+  }, [item]);
+
+  useEffect(() => {
+    if (item?.Type === "Episode") headerHeightRef.current = 400;
+    else headerHeightRef.current = 500;
+  }, [item]);
 
   const { data: sessionData } = useQuery({
     queryKey: ["sessionData", item?.Id],
@@ -139,12 +162,14 @@ export const ItemContent: React.FC<{ id: string }> = React.memo(({ id }) => {
 
   return (
     <ParallaxScrollView
-      headerHeight={300}
+      headerHeight={headerHeightRef.current}
       headerImage={
         <>
           {item ? (
             <ItemImage
-              variant={item.Type === "Movie" ? "Backdrop" : "Primary"}
+              variant={
+                item.Type === "Movie" && logoUrl ? "Backdrop" : "Primary"
+              }
               item={item}
               style={{
                 width: "100%",
@@ -179,23 +204,12 @@ export const ItemContent: React.FC<{ id: string }> = React.memo(({ id }) => {
         </>
       }
     >
-      <View className="flex flex-col">
-        <View className="flex flex-col px-4 w-full space-y-1 pt-4">
-          <ItemHeader item={item} />
+      <View className="flex flex-col bg-transparent">
+        <View className="flex flex-col px-4 w-full space-y-2 pt-2 mb-2">
+          <ItemHeader item={item} className="mb-4" />
 
           {item ? (
-            <View className="flex flex-row justify-between items-center mb-2">
-              <DownloadItem item={item} />
-              <PlayedStatus item={item} />
-            </View>
-          ) : (
-            <View>
-              <View className="bg-neutral-950 h-8 w-full rounded-lg my-2"></View>
-            </View>
-          )}
-
-          {item ? (
-            <View className="flex flex-row items-center space-x-2 w-full mb-1">
+            <View className="flex flex-row items-center space-x-2 w-full">
               <BitrateSelector
                 onChange={(val) => setMaxBitrate(val)}
                 selected={maxBitrate}
@@ -227,7 +241,7 @@ export const ItemContent: React.FC<{ id: string }> = React.memo(({ id }) => {
             </View>
           )}
 
-          <PlayButton item={item} url={playbackUrl} className="grow mb-2" />
+          <PlayButton item={item} url={playbackUrl} className="grow" />
         </View>
 
         {item?.Type === "Episode" && (

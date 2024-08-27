@@ -36,7 +36,7 @@ export const HeaderBackButton: React.FC<Props> = ({
             className="drop-shadow-2xl"
             name="arrow-back"
             size={24}
-            color="#077DF2"
+            color="white"
           />
         </TouchableOpacity>
       </BlurView>

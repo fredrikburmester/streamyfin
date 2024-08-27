@@ -1,3 +1,4 @@
+import { LinearGradient } from "expo-linear-gradient";
 import { type PropsWithChildren, type ReactElement } from "react";
 import { View } from "react-native";
 import Animated, {
@@ -57,20 +58,12 @@ export const ParallaxScrollView: React.FC<Props> = ({
         {logo && (
           <View
             style={{
-              top: headerHeight - 150,
+              top: headerHeight - 200,
               height: 130,
             }}
             className="absolute left-0 w-full z-40 px-4 flex justify-center items-center"
           >
             {logo}
-          </View>
-        )}
-
-        {episodePoster && (
-          <View className="absolute top-[290px] h-[120px] w-full left-0 flex justify-center items-center z-50">
-            <View className="h-full aspect-video border border-neutral-800">
-              {episodePoster}
-            </View>
           </View>
         )}
 
@@ -86,7 +79,34 @@ export const ParallaxScrollView: React.FC<Props> = ({
           {headerImage}
         </Animated.View>
 
-        <View className="flex-1 overflow-hidden bg-black pb-24">
+        <View
+          style={{
+            top: -50,
+          }}
+          className="relative flex-1  bg-transparent pb-24"
+        >
+          <LinearGradient
+            // Background Linear Gradient
+            colors={["transparent", "rgba(0,0,0,1)"]}
+            style={{
+              position: "absolute",
+              left: 0,
+              right: 0,
+              top: -150,
+              height: 200,
+            }}
+          />
+          <View
+            // Background Linear Gradient
+            style={{
+              position: "absolute",
+              left: 0,
+              right: 0,
+              top: 50,
+              height: "100%",
+              backgroundColor: "black",
+            }}
+          />
           {children}
         </View>
       </Animated.ScrollView>

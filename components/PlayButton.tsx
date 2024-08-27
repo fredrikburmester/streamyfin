@@ -11,6 +11,8 @@ import CastContext, {
 } from "react-native-google-cast";
 import { Button } from "./Button";
 import { Text } from "./common/Text";
+import { useAtom } from "jotai";
+import { itemThemeColorAtom } from "@/utils/atoms/primaryColor";
 
 interface Props extends React.ComponentProps<typeof Button> {
   item?: BaseItemDto | null;
@@ -21,6 +23,8 @@ export const PlayButton: React.FC<Props> = ({ item, url, ...props }) => {
   const { showActionSheetWithOptions } = useActionSheet();
   const client = useRemoteMediaClient();
   const { setCurrentlyPlayingState } = usePlayback();
+
+  const [color] = useAtom(itemThemeColorAtom);
 
   const onPress = async () => {
     if (!url || !item) return;
@@ -88,23 +92,30 @@ export const PlayButton: React.FC<Props> = ({ item, url, ...props }) => {
               ? "100%"
               : `${Math.max(playbackPercent, 15)}%`,
           height: "100%",
+          backgroundColor: color.primary,
         }}
-        className="absolute w-full h-full top-0 left-0 rounded-xl bg-purple-600 z-10"
+        className="absolute w-full h-full top-0 left-0 rounded-xl  z-10"
       ></View>
       <View
         style={{
           height: "100%",
           width: "100%",
+          backgroundColor: color.primary,
         }}
-        className="absolute w-full h-full top-0 left-0 rounded-xl bg-purple-500 opacity-40"
+        className="absolute w-full h-full top-0 left-0 rounded-xl opacity-40"
       ></View>
       <View className="flex flex-row items-center justify-center bg-transparent rounded-xl z-20 h-12 w-full ">
         <View className="flex flex-row items-center space-x-2">
-          <Text className="font-bold">
+          <Text
+            className="font-bold"
+            style={{
+              color: color.text,
+            }}
+          >
             {runtimeTicksToMinutes(item?.RunTimeTicks)}
           </Text>
-          <Ionicons name="play-circle" size={24} color="white" />
-          {client && <Feather name="cast" size={22} color="white" />}
+          <Ionicons name="play-circle" size={24} color={color.text} />
+          {client && <Feather name="cast" size={22} color={color.text} />}
         </View>
       </View>
     </TouchableOpacity>

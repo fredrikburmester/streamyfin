@@ -34,14 +34,14 @@ export const MediaSourceSelector: React.FC<Props> = ({
 
   useEffect(() => {
     if (mediaSources?.length) onChange(mediaSources[0]);
-  }, []);
+  }, [mediaSources]);
 
   return (
     <View className="flex flex-row items-center justify-between" {...props}>
       <DropdownMenu.Root>
         <DropdownMenu.Trigger>
           <View className="flex flex-col">
-            <Text className="opacity-50 mb-1 text-xs">Video streams</Text>
+            <Text className="opacity-50 mb-1 text-xs">Video</Text>
             <View className="flex flex-row">
               <TouchableOpacity className="bg-neutral-900 max-w-32 h-10 rounded-xl border-neutral-900 border px-3 py-2 flex flex-row items-center justify-between">
                 <Text className="">{tc(selectedMediaSource, 7)}</Text>
@@ -58,7 +58,7 @@ export const MediaSourceSelector: React.FC<Props> = ({
           collisionPadding={8}
           sideOffset={8}
         >
-          <DropdownMenu.Label>Video streams</DropdownMenu.Label>
+          <DropdownMenu.Label>Media sources</DropdownMenu.Label>
           {mediaSources?.map((source, idx: number) => (
             <DropdownMenu.Item
               key={idx.toString()}

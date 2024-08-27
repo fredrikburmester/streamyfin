@@ -8,9 +8,9 @@ interface Props extends ViewProps {
 
 export const MoviesTitleHeader: React.FC<Props> = ({ item, ...props }) => {
   return (
-    <View className="flex flex-col" {...props}>
-      <Text className="text-center font-bold text-2xl">{item?.Name}</Text>
-      <Text className="text-center opacity-50">{item?.ProductionYear}</Text>
+    <View {...props}>
+      <Text className=" font-bold text-2xl mb-1">{item?.Name}</Text>
+      <Text className=" opacity-50">{item?.ProductionYear}</Text>
     </View>
   );
 };

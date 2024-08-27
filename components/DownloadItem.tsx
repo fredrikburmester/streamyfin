@@ -26,7 +26,7 @@ import ios from "@/utils/profiles/ios";
 import native from "@/utils/profiles/native";
 import old from "@/utils/profiles/old";
 
-interface DownloadProps extends TouchableOpacityProps {
+interface DownloadProps extends ViewProps {
   item: BaseItemDto;
 }
 
@@ -143,23 +143,19 @@ export const DownloadItem: React.FC<DownloadProps> = ({ item, ...props }) => {
     enabled: !!item.Id,
   });
 
-  if (isFetching) {
-    return (
-      <View className="rounded h-10 aspect-square flex items-center justify-center">
+  return (
+    <View
+      className="bg-neutral-800/80 rounded-full h-10 w-10 flex items-center justify-center"
+      {...props}
+    >
+      {isFetching ? (
         <Loader />
-      </View>
-    );
-  }
-
-  if (process && process?.item.Id === item.Id) {
-    return (
-      <TouchableOpacity
-        onPress={() => {
-          router.push("/downloads");
-        }}
-        {...props}
-      >
-        <View className="rounded h-10 aspect-square flex items-center justify-center">
+      ) : process && process?.item.Id === item.Id ? (
+        <TouchableOpacity
+          onPress={() => {
+            router.push("/downloads");
+          }}
+        >
           {process.progress === 0 ? (
             <Loader />
           ) : (
@@ -173,61 +169,41 @@ export const DownloadItem: React.FC<DownloadProps> = ({ item, ...props }) => {
               />
             </View>
           )}
-        </View>
-      </TouchableOpacity>
-    );
-  }
-
-  if (queue.some((i) => i.id === item.Id)) {
-    return (
-      <TouchableOpacity
-        onPress={() => {
-          router.push("/downloads");
-        }}
-        {...props}
-      >
-        <View className="rounded h-10 aspect-square flex items-center justify-center opacity-50">
+        </TouchableOpacity>
+      ) : queue.some((i) => i.id === item.Id) ? (
+        <TouchableOpacity
+          onPress={() => {
+            router.push("/downloads");
+          }}
+        >
           <Ionicons name="hourglass" size={24} color="white" />
-        </View>
-      </TouchableOpacity>
-    );
-  }
-
-  if (downloaded) {
-    return (
-      <TouchableOpacity
-        onPress={() => {
-          router.push("/downloads");
-        }}
-        {...props}
-      >
-        <View className="rounded h-10 aspect-square flex items-center justify-center">
+        </TouchableOpacity>
+      ) : downloaded ? (
+        <TouchableOpacity
+          onPress={() => {
+            router.push("/downloads");
+          }}
+        >
           <Ionicons name="cloud-download" size={26} color="#9333ea" />
-        </View>
-      </TouchableOpacity>
-    );
-  } else {
-    return (
-      <TouchableOpacity
-        onPress={() => {
-          queueActions.enqueue(queue, setQueue, {
-            id: item.Id!,
-            execute: async () => {
-              // await startRemuxing(playbackUrl);
-              if (!settings?.downloadQuality?.value) {
-                throw new Error("No download quality selected");
-              }
-              await initiateDownload(settings?.downloadQuality?.value);
-            },
-            item,
-          });
-        }}
-        {...props}
-      >
-        <View className="rounded h-10 aspect-square flex items-center justify-center">
-          <Ionicons name="cloud-download-outline" size={26} color="white" />
-        </View>
-      </TouchableOpacity>
-    );
-  }
+        </TouchableOpacity>
+      ) : (
+        <TouchableOpacity
+          onPress={() => {
+            queueActions.enqueue(queue, setQueue, {
+              id: item.Id!,
+              execute: async () => {
+                if (!settings?.downloadQuality?.value) {
+                  throw new Error("No download quality selected");
+                }
+                await initiateDownload(settings?.downloadQuality?.value);
+              },
+              item,
+            });
+          }}
+        >
+          <Ionicons name="cloud-download-outline" size={24} color="white" />
+        </TouchableOpacity>
+      )}
+    </View>
+  );
 };
