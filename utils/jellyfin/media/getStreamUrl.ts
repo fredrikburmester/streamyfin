@@ -18,6 +18,7 @@ export const getStreamUrl = async ({
   subtitleStreamIndex = 0,
   forceDirectPlay = false,
   height,
+  mediaSourceId,
 }: {
   api: Api | null | undefined;
   item: BaseItemDto | null | undefined;
@@ -30,8 +31,10 @@ export const getStreamUrl = async ({
   subtitleStreamIndex?: number;
   forceDirectPlay?: boolean;
   height?: number;
+  mediaSourceId?: string | null;
 }) => {
-  if (!api || !userId || !item?.Id) {
+  if (!api || !userId || !item?.Id || !mediaSourceId) {
+    console.error("Missing required parameters");
     return null;
   }
 
@@ -46,7 +49,7 @@ export const getStreamUrl = async ({
       StartTimeTicks: startTimeTicks,
       EnableTranscoding: maxStreamingBitrate ? true : undefined,
       AutoOpenLiveStream: true,
-      MediaSourceId: itemId,
+      MediaSourceId: mediaSourceId,
       AllowVideoStreamCopy: maxStreamingBitrate ? false : true,
       AudioStreamIndex: audioStreamIndex,
       SubtitleStreamIndex: subtitleStreamIndex,
@@ -62,7 +65,9 @@ export const getStreamUrl = async ({
     }
   );
 
-  const mediaSource = response.data.MediaSources?.[0] as MediaSourceInfo;
+  const mediaSource: MediaSourceInfo = response.data.MediaSources.find(
+    (source: MediaSourceInfo) => source.Id === mediaSourceId
+  );
 
   if (!mediaSource) {
     throw new Error("No media source");
@@ -75,7 +80,7 @@ export const getStreamUrl = async ({
   if (mediaSource.SupportsDirectPlay || forceDirectPlay === true) {
     if (item.MediaType === "Video") {
       console.log("Using direct stream for video!");
-      return `${api.basePath}/Videos/${itemId}/stream.mp4?playSessionId=${sessionData.PlaySessionId}&mediaSourceId=${itemId}&static=true`;
+      return `${api.basePath}/Videos/${itemId}/stream.mp4?playSessionId=${sessionData.PlaySessionId}&mediaSourceId=${mediaSource.Id}&static=true`;
     } else if (item.MediaType === "Audio") {
       console.log("Using direct stream for audio!");
       const searchParams = new URLSearchParams({

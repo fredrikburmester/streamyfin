@@ -1,40 +1,39 @@
-import { TouchableOpacity, View } from "react-native";
-import * as DropdownMenu from "zeego/dropdown-menu";
-import { Text } from "./common/Text";
-import { atom, useAtom } from "jotai";
+import { tc } from "@/utils/textTools";
 import {
   BaseItemDto,
   MediaSourceInfo,
 } from "@jellyfin/sdk/lib/generated-client/models";
 import { useEffect, useMemo } from "react";
-import { MediaStream } from "@jellyfin/sdk/lib/generated-client/models";
-import { tc } from "@/utils/textTools";
+import { TouchableOpacity, View } from "react-native";
+import * as DropdownMenu from "zeego/dropdown-menu";
+import { Text } from "./common/Text";
 
 interface Props extends React.ComponentProps<typeof View> {
-  source: MediaSourceInfo;
-  onChange: (value: number) => void;
-  selected: number;
+  item: BaseItemDto;
+  onChange: (value: MediaSourceInfo) => void;
+  selected: MediaSourceInfo | null;
 }
 
-export const AudioTrackSelector: React.FC<Props> = ({
-  source,
+export const MediaSourceSelector: React.FC<Props> = ({
+  item,
   onChange,
   selected,
   ...props
 }) => {
-  const audioStreams = useMemo(
-    () => source.MediaStreams?.filter((x) => x.Type === "Audio"),
-    [source]
-  );
+  const mediaSources = useMemo(() => {
+    return item.MediaSources;
+  }, [item]);
 
-  const selectedAudioSteam = useMemo(
-    () => audioStreams?.find((x) => x.Index === selected),
-    [audioStreams, selected]
+  const selectedMediaSource = useMemo(
+    () =>
+      mediaSources
+        ?.find((x) => x.Id === selected?.Id)
+        ?.MediaStreams?.find((x) => x.Type === "Video")?.DisplayTitle || "",
+    [mediaSources, selected]
   );
 
   useEffect(() => {
-    const index = source.DefaultAudioStreamIndex;
-    if (index !== undefined && index !== null) onChange(index);
+    if (mediaSources?.length) onChange(mediaSources[0]);
   }, []);
 
   return (
@@ -42,12 +41,10 @@ export const AudioTrackSelector: React.FC<Props> = ({
       <DropdownMenu.Root>
         <DropdownMenu.Trigger>
           <View className="flex flex-col">
-            <Text className="opacity-50 mb-1 text-xs">Audio streams</Text>
+            <Text className="opacity-50 mb-1 text-xs">Video streams</Text>
             <View className="flex flex-row">
               <TouchableOpacity className="bg-neutral-900 max-w-32 h-10 rounded-xl border-neutral-900 border px-3 py-2 flex flex-row items-center justify-between">
-                <Text className="">
-                  {tc(selectedAudioSteam?.DisplayTitle, 7)}
-                </Text>
+                <Text className="">{tc(selectedMediaSource, 7)}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -61,17 +58,19 @@ export const AudioTrackSelector: React.FC<Props> = ({
           collisionPadding={8}
           sideOffset={8}
         >
-          <DropdownMenu.Label>Audio streams</DropdownMenu.Label>
-          {audioStreams?.map((audio, idx: number) => (
+          <DropdownMenu.Label>Video streams</DropdownMenu.Label>
+          {mediaSources?.map((source, idx: number) => (
             <DropdownMenu.Item
               key={idx.toString()}
               onSelect={() => {
-                if (audio.Index !== null && audio.Index !== undefined)
-                  onChange(audio.Index);
+                onChange(source);
               }}
             >
               <DropdownMenu.ItemTitle>
-                {audio.DisplayTitle}
+                {
+                  source.MediaStreams?.find((s) => s.Type === "Video")
+                    ?.DisplayTitle
+                }
               </DropdownMenu.ItemTitle>
             </DropdownMenu.Item>
           ))}
