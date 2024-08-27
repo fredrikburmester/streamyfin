@@ -32,6 +32,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import { View } from "react-native";
 import { useCastDevice } from "react-native-google-cast";
 import { ItemHeader } from "./ItemHeader";
+import { MediaSourceSelector } from "./MediaSourceSelector";
+import { MediaSourceInfo } from "@jellyfin/sdk/lib/generated-client/models";
 
 export const ItemContent: React.FC<{ id: string }> = React.memo(({ id }) => {
   const [api] = useAtom(apiAtom);
@@ -40,6 +42,8 @@ export const ItemContent: React.FC<{ id: string }> = React.memo(({ id }) => {
   const [settings] = useSettings();
   const castDevice = useCastDevice();
 
+  const [selectedMediaSource, setSelectedMediaSource] =
+    useState<MediaSourceInfo | null>(null);
   const [selectedAudioStream, setSelectedAudioStream] = useState<number>(-1);
   const [selectedSubtitleStream, setSelectedSubtitleStream] =
     useState<number>(0);
@@ -85,6 +89,7 @@ export const ItemContent: React.FC<{ id: string }> = React.memo(({ id }) => {
       item?.Id,
       maxBitrate,
       castDevice,
+      selectedMediaSource,
       selectedAudioStream,
       selectedSubtitleStream,
       settings,
@@ -114,9 +119,10 @@ export const ItemContent: React.FC<{ id: string }> = React.memo(({ id }) => {
         subtitleStreamIndex: selectedSubtitleStream,
         forceDirectPlay: settings?.forceDirectPlay,
         height: maxBitrate.height,
+        mediaSourceId: selectedMediaSource?.Id,
       });
 
-      console.log("Transcode URL: ", url);
+      console.info("Stream URL:", url);
 
       return url;
     },
@@ -194,19 +200,24 @@ export const ItemContent: React.FC<{ id: string }> = React.memo(({ id }) => {
                 onChange={(val) => setMaxBitrate(val)}
                 selected={maxBitrate}
               />
-              {item && (
-                <AudioTrackSelector
-                  item={item}
-                  onChange={setSelectedAudioStream}
-                  selected={selectedAudioStream}
-                />
-              )}
-              {item && (
-                <SubtitleTrackSelector
-                  item={item}
-                  onChange={setSelectedSubtitleStream}
-                  selected={selectedSubtitleStream}
-                />
+              <MediaSourceSelector
+                item={item}
+                onChange={setSelectedMediaSource}
+                selected={selectedMediaSource}
+              />
+              {selectedMediaSource && (
+                <View className="flex flex-row items-center space-x-2">
+                  <AudioTrackSelector
+                    source={selectedMediaSource}
+                    onChange={setSelectedAudioStream}
+                    selected={selectedAudioStream}
+                  />
+                  <SubtitleTrackSelector
+                    source={selectedMediaSource}
+                    onChange={setSelectedSubtitleStream}
+                    selected={selectedSubtitleStream}
+                  />
+                </View>
               )}
             </View>
           ) : (
@@ -219,7 +230,9 @@ export const ItemContent: React.FC<{ id: string }> = React.memo(({ id }) => {
           <PlayButton item={item} url={playbackUrl} className="grow mb-2" />
         </View>
 
-        <SeasonEpisodesCarousel item={item} loading={loading} />
+        {item?.Type === "Episode" && (
+          <SeasonEpisodesCarousel item={item} loading={loading} />
+        )}
 
         <OverviewText text={item?.Overview} className="px-4 mb-4" />
 
