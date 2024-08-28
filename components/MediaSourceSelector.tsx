@@ -37,16 +37,19 @@ export const MediaSourceSelector: React.FC<Props> = ({
   }, [mediaSources]);
 
   return (
-    <View className="flex flex-row items-center justify-between" {...props}>
+    <View
+      className="flex shrink"
+      style={{
+        minWidth: 50,
+      }}
+    >
       <DropdownMenu.Root>
         <DropdownMenu.Trigger>
-          <View className="flex flex-col">
+          <View className="flex flex-col" {...props}>
             <Text className="opacity-50 mb-1 text-xs">Video</Text>
-            <View className="flex flex-row">
-              <TouchableOpacity className="bg-neutral-900 max-w-32 h-10 rounded-xl border-neutral-900 border px-3 py-2 flex flex-row items-center justify-between">
-                <Text className="">{tc(selectedMediaSource, 7)}</Text>
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity className="bg-neutral-900 h-10 rounded-xl border-neutral-800 border px-3 py-2 flex flex-row items-center ">
+              <Text numberOfLines={1}>{selectedMediaSource}</Text>
+            </TouchableOpacity>
           </View>
         </DropdownMenu.Trigger>
         <DropdownMenu.Content
@@ -66,12 +69,7 @@ export const MediaSourceSelector: React.FC<Props> = ({
                 onChange(source);
               }}
             >
-              <DropdownMenu.ItemTitle>
-                {
-                  source.MediaStreams?.find((s) => s.Type === "Video")
-                    ?.DisplayTitle
-                }
-              </DropdownMenu.ItemTitle>
+              <DropdownMenu.ItemTitle>{source.Name}</DropdownMenu.ItemTitle>
             </DropdownMenu.Item>
           ))}
         </DropdownMenu.Content>

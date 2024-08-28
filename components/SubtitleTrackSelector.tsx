@@ -44,20 +44,24 @@ export const SubtitleTrackSelector: React.FC<Props> = ({
   if (subtitleStreams.length === 0) return null;
 
   return (
-    <View className="flex flex-row items-center justify-between" {...props}>
+    <View
+      className="flex col shrink justify-start place-self-start items-start"
+      style={{
+        minWidth: 60,
+        maxWidth: 200,
+      }}
+    >
       <DropdownMenu.Root>
         <DropdownMenu.Trigger>
-          <View className="flex flex-col">
+          <View className="flex flex-col " {...props}>
             <Text className="opacity-50 mb-1 text-xs">Subtitle</Text>
-            <View className="flex flex-row">
-              <TouchableOpacity className="bg-neutral-900 max-w-32 h-10 rounded-xl border-neutral-900 border px-3 py-2 flex flex-row items-center justify-between">
-                <Text className="">
-                  {selectedSubtitleSteam
-                    ? tc(selectedSubtitleSteam?.DisplayTitle, 7)
-                    : "None"}
-                </Text>
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity className="bg-neutral-900  h-10 rounded-xl border-neutral-800 border px-3 py-2 flex flex-row items-center justify-between">
+              <Text className=" ">
+                {selectedSubtitleSteam
+                  ? tc(selectedSubtitleSteam?.DisplayTitle, 7)
+                  : "None"}
+              </Text>
+            </TouchableOpacity>
           </View>
         </DropdownMenu.Trigger>
         <DropdownMenu.Content

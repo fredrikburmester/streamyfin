@@ -1,6 +1,6 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { type PropsWithChildren, type ReactElement } from "react";
-import { View } from "react-native";
+import { View, ViewProps } from "react-native";
 import Animated, {
   interpolate,
   useAnimatedRef,
@@ -8,19 +8,20 @@ import Animated, {
   useScrollViewOffset,
 } from "react-native-reanimated";
 
-type Props = PropsWithChildren<{
+interface Props extends ViewProps {
   headerImage: ReactElement;
   logo?: ReactElement;
   episodePoster?: ReactElement;
   headerHeight?: number;
-}>;
+}
 
-export const ParallaxScrollView: React.FC<Props> = ({
+export const ParallaxScrollView: React.FC<PropsWithChildren<Props>> = ({
   children,
   headerImage,
   episodePoster,
   headerHeight = 400,
   logo,
+  ...props
 }: Props) => {
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
   const scrollOffset = useScrollViewOffset(scrollRef);
@@ -47,7 +48,7 @@ export const ParallaxScrollView: React.FC<Props> = ({
   });
 
   return (
-    <View className="flex-1">
+    <View className="flex-1" {...props}>
       <Animated.ScrollView
         style={{
           position: "relative",
