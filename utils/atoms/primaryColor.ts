@@ -62,8 +62,8 @@ export const itemThemeColorAtom = atom(
     const newColors = { ...currentColors, ...update };
 
     // Recalculate text color if primary color changes
-    if (update.primary) {
-      newColors.text = calculateTextColor(update.primary);
+    if (update.average) {
+      newColors.text = calculateTextColor(update.average);
     }
 
     set(baseThemeColorAtom, newColors);

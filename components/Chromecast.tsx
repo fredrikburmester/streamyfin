@@ -39,7 +39,7 @@ export const Chromecast: React.FC<Props> = ({
   if (background === "transparent")
     return (
       <View
-        className=" rounded h-10 aspect-square flex items-center justify-center"
+        className="rounded-full h-10 w-10 flex items-center justify-center bg-neutral-800/80"
         {...props}
       >
         <CastButton style={{ tintColor: "white", height, width }} />

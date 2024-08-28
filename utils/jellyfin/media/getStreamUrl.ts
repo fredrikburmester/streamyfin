@@ -79,7 +79,7 @@ export const getStreamUrl = async ({
   if (mediaSource.SupportsDirectPlay || forceDirectPlay === true) {
     if (item.MediaType === "Video") {
       console.log("Using direct stream for video!");
-      return `${api.basePath}/Videos/${itemId}/stream.mp4?playSessionId=${sessionData.PlaySessionId}&mediaSourceId=${mediaSource.Id}&static=true`;
+      return `${api.basePath}/Videos/${itemId}/stream.mp4?playSessionId=${sessionData.PlaySessionId}&mediaSourceId=${mediaSource.Id}&static=true&subtitleStreamIndex=${subtitleStreamIndex}&audioStreamIndex=${audioStreamIndex}&deviceId=${api.deviceInfo.id}&api_key=${api.accessToken}`;
     } else if (item.MediaType === "Audio") {
       console.log("Using direct stream for audio!");
       const searchParams = new URLSearchParams({
