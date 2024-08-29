@@ -1,6 +1,6 @@
 import { BlurView } from "expo-blur";
 import React, { useEffect } from "react";
-import { View, ViewProps } from "react-native";
+import { Platform, View, ViewProps } from "react-native";
 import GoogleCast, {
   CastButton,
   useCastDevice,
@@ -37,6 +37,16 @@ export const Chromecast: React.FC<Props> = ({
   }, [client, devices, castDevice, sessionManager, discoveryManager]);
 
   if (background === "transparent")
+    return (
+      <View
+        className="rounded-full h-10 w-10 flex items-center justify-center b"
+        {...props}
+      >
+        <CastButton style={{ tintColor: "white", height, width }} />
+      </View>
+    );
+
+  if (Platform.OS === "android")
     return (
       <View
         className="rounded-full h-10 w-10 flex items-center justify-center bg-neutral-800/80"
