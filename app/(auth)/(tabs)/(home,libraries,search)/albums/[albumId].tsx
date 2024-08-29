@@ -1,7 +1,9 @@
 import { Chromecast } from "@/components/Chromecast";
+import { ItemImage } from "@/components/common/ItemImage";
 import { Text } from "@/components/common/Text";
 import { TouchableItemRouter } from "@/components/common/TouchableItemRouter";
 import { SongsList } from "@/components/music/SongsList";
+import { ParallaxScrollView } from "@/components/ParallaxPage";
 import ArtistPoster from "@/components/posters/ArtistPoster";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
@@ -11,6 +13,7 @@ import { router, useLocalSearchParams, useNavigation } from "expo-router";
 import { useAtom } from "jotai";
 import { useEffect, useState } from "react";
 import { ScrollView, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function page() {
   const searchParams = useLocalSearchParams();
@@ -88,30 +91,31 @@ export default function page() {
     enabled: !!api && !!user?.Id,
   });
 
+  const insets = useSafeAreaInsets();
+
   if (!album) return null;
 
   return (
-    <ScrollView>
-      <View className="px-4 pb-24">
-        <View className="flex flex-row space-x-4 items-start mb-4">
-          <View className="w-24">
-            <ArtistPoster item={album} />
-          </View>
-          <View className="flex flex-col shrink">
-            <Text className="font-bold text-3xl">{album?.Name}</Text>
-            <Text className="">{album?.ProductionYear}</Text>
-
-            <View className="flex flex-row space-x-2 mt-1">
-              {album.AlbumArtists?.map((a) => (
-                <TouchableItemRouter key={a.Id} item={album}>
-                  <Text className="font-bold text-purple-600">
-                    {album?.AlbumArtist}
-                  </Text>
-                </TouchableItemRouter>
-              ))}
-            </View>
-          </View>
-        </View>
+    <ParallaxScrollView
+      headerHeight={400}
+      headerImage={
+        <ItemImage
+          variant={"Primary"}
+          item={album}
+          style={{
+            width: "100%",
+            height: "100%",
+          }}
+        />
+      }
+    >
+      <View className="px-4 mb-8">
+        <Text className="font-bold text-2xl mb-2">{album?.Name}</Text>
+        <Text className="text-neutral-500">
+          {songs?.TotalRecordCount} songs
+        </Text>
+      </View>
+      <View className="px-4">
         <SongsList
           albumId={albumId}
           songs={songs?.Items}
@@ -119,6 +123,6 @@ export default function page() {
           artistId={artistId}
         />
       </View>
-    </ScrollView>
+    </ParallaxScrollView>
   );
 }

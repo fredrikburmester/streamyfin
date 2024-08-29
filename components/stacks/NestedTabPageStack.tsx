@@ -17,7 +17,6 @@ const routes = [
   "artists/[artistId]",
   "collections/[collectionId]",
   "items/page",
-  "songs/[songId]",
   "series/[id]",
 ];
 
