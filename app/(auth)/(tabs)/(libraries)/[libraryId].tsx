@@ -45,7 +45,6 @@ import {
 import { FlashList } from "@shopify/flash-list";
 import { Loader } from "@/components/Loader";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { orientationAtom } from "@/utils/atoms/orientation";
 
 const MemoizedTouchableItemRouter = React.memo(TouchableItemRouter);
 
@@ -64,7 +63,9 @@ const Page = () => {
   const [sortBy, setSortBy] = useAtom(sortByAtom);
   const [sortOrder, setSortOrder] = useAtom(sortOrderAtom);
 
-  const [orientation, setOrientation] = useAtom(orientationAtom);
+  const [orientation, setOrientation] = useState(
+    ScreenOrientation.Orientation.PORTRAIT_UP
+  );
 
   const getNumberOfColumns = useCallback(() => {
     if (orientation === ScreenOrientation.Orientation.PORTRAIT_UP) return 3;
@@ -72,7 +73,7 @@ const Page = () => {
     if (screenWidth < 960) return 6;
     if (screenWidth < 1280) return 7;
     return 6;
-  }, [screenWidth, orientation]);
+  }, [screenWidth]);
 
   useLayoutEffect(() => {
     setSortBy([
@@ -87,6 +88,22 @@ const Page = () => {
         value: "Ascending",
       },
     ]);
+  }, []);
+
+  useEffect(() => {
+    const subscription = ScreenOrientation.addOrientationChangeListener(
+      (event) => {
+        setOrientation(event.orientationInfo.orientation);
+      }
+    );
+
+    ScreenOrientation.getOrientationAsync().then((initialOrientation) => {
+      setOrientation(initialOrientation);
+    });
+
+    return () => {
+      ScreenOrientation.removeOrientationChangeListener(subscription);
+    };
   }, []);
 
   const { data: library, isLoading: isLibraryLoading } = useQuery({
@@ -400,7 +417,6 @@ const Page = () => {
       contentInsetAdjustmentBehavior="automatic"
       data={flatData}
       renderItem={renderItem}
-      extraData={orientation}
       keyExtractor={keyExtractor}
       estimatedItemSize={244}
       numColumns={getNumberOfColumns()}
