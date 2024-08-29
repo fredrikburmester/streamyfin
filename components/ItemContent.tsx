@@ -40,6 +40,8 @@ import Animated, {
 } from "react-native-reanimated";
 import { Loader } from "./Loader";
 import { set } from "lodash";
+import * as ScreenOrientation from "expo-screen-orientation";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export const ItemContent: React.FC<{ id: string }> = React.memo(({ id }) => {
   const [api] = useAtom(apiAtom);
@@ -61,6 +63,26 @@ export const ItemContent: React.FC<{ id: string }> = React.memo(({ id }) => {
 
   const [loadingImage, setLoadingImage] = useState(true);
   const [loadingLogo, setLoadingLogo] = useState(true);
+
+  const [orientation, setOrientation] = useState(
+    ScreenOrientation.Orientation.PORTRAIT_UP
+  );
+
+  useEffect(() => {
+    const subscription = ScreenOrientation.addOrientationChangeListener(
+      (event) => {
+        setOrientation(event.orientationInfo.orientation);
+      }
+    );
+
+    ScreenOrientation.getOrientationAsync().then((initialOrientation) => {
+      setOrientation(initialOrientation);
+    });
+
+    return () => {
+      ScreenOrientation.removeOrientationChangeListener(subscription);
+    };
+  }, []);
 
   const animatedStyle = useAnimatedStyle(() => {
     return {
@@ -138,6 +160,10 @@ export const ItemContent: React.FC<{ id: string }> = React.memo(({ id }) => {
   }, [item]);
 
   useEffect(() => {
+    if (orientation !== ScreenOrientation.Orientation.PORTRAIT_UP) {
+      headerHeightRef.current = 230;
+      return;
+    }
     if (item?.Type === "Episode") headerHeightRef.current = 400;
     else if (item?.Type === "Movie") headerHeightRef.current = 500;
   }, [item]);
@@ -169,7 +195,8 @@ export const ItemContent: React.FC<{ id: string }> = React.memo(({ id }) => {
       settings,
     ],
     queryFn: async () => {
-      if (!api || !user?.Id || !sessionData) return null;
+      if (!api || !user?.Id || !sessionData || !selectedMediaSource?.Id)
+        return null;
 
       let deviceProfile: any = ios;
 
@@ -193,7 +220,7 @@ export const ItemContent: React.FC<{ id: string }> = React.memo(({ id }) => {
         subtitleStreamIndex: selectedSubtitleStream,
         forceDirectPlay: settings?.forceDirectPlay,
         height: maxBitrate.height,
-        mediaSourceId: selectedMediaSource?.Id,
+        mediaSourceId: selectedMediaSource.Id,
       });
 
       console.info("Stream URL:", url);
@@ -212,8 +239,16 @@ export const ItemContent: React.FC<{ id: string }> = React.memo(({ id }) => {
     );
   }, [isLoading, isFetching, loadingImage, loadingLogo, logoUrl]);
 
+  const insets = useSafeAreaInsets();
+
   return (
-    <View className="flex-1 relative">
+    <View
+      className="flex-1 relative"
+      style={{
+        paddingLeft: insets.left,
+        paddingRight: insets.right,
+      }}
+    >
       {loading && (
         <View className="absolute top-0 left-0 right-0 bottom-0 w-full h-full flex flex-col justify-center items-center z-50">
           <Loader />
