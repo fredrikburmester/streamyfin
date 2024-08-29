@@ -145,14 +145,12 @@ export const DownloadItem: React.FC<DownloadProps> = ({ item, ...props }) => {
           item.Id
         }/universal?${searchParams.toString()}`;
       }
-    }
-
-    if (mediaSource.TranscodingUrl) {
+    } else if (mediaSource.TranscodingUrl) {
       console.log("Using transcoded stream!");
       url = `${api.basePath}${mediaSource.TranscodingUrl}`;
-    } else {
-      throw new Error("No transcoding url");
     }
+
+    if (!url) throw new Error("No url");
 
     return await startRemuxing(url);
   }, [

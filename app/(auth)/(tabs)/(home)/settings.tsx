@@ -27,9 +27,15 @@ export default function settings() {
   const insets = useSafeAreaInsets();
 
   return (
-    <ScrollView>
+    <ScrollView
+      contentContainerStyle={{
+        paddingLeft: insets.left,
+        paddingRight: insets.right,
+        paddingBottom: 100,
+      }}
+    >
       <View
-        className="p-4 flex flex-col gap-y-4 pb-12"
+        className="p-4 flex flex-col gap-y-4"
         style={{
           paddingLeft: insets.left,
           paddingRight: insets.right,

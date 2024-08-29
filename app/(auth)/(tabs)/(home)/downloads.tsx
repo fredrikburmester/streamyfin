@@ -65,15 +65,14 @@ const downloads: React.FC = () => {
   }
 
   return (
-    <ScrollView>
-      <View
-        className="px-4 py-4"
-        style={{
-          paddingLeft: insets.left,
-          paddingRight: insets.right,
-          paddingBottom: 100,
-        }}
-      >
+    <ScrollView
+      contentContainerStyle={{
+        paddingLeft: insets.left,
+        paddingRight: insets.right,
+        paddingBottom: 100,
+      }}
+    >
+      <View className="px-4 py-4">
         <View className="mb-4 flex flex-col space-y-4">
           <View>
             <Text className="text-2xl font-bold mb-2">Queue</Text>

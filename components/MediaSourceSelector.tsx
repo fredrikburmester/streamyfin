@@ -36,6 +36,14 @@ export const MediaSourceSelector: React.FC<Props> = ({
     if (mediaSources?.length) onChange(mediaSources[0]);
   }, [mediaSources]);
 
+  const name = (name?: string | null) => {
+    if (name && name.length > 40)
+      return (
+        name.substring(0, 20) + " [...] " + name.substring(name.length - 20)
+      );
+    return name;
+  };
+
   return (
     <View
       className="flex shrink"
@@ -69,7 +77,9 @@ export const MediaSourceSelector: React.FC<Props> = ({
                 onChange(source);
               }}
             >
-              <DropdownMenu.ItemTitle>{source.Name}</DropdownMenu.ItemTitle>
+              <DropdownMenu.ItemTitle>
+                {name(source.Name)}
+              </DropdownMenu.ItemTitle>
             </DropdownMenu.Item>
           ))}
         </DropdownMenu.Content>
