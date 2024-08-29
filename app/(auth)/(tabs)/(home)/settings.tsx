@@ -34,14 +34,7 @@ export default function settings() {
         paddingBottom: 100,
       }}
     >
-      <View
-        className="p-4 flex flex-col gap-y-4"
-        style={{
-          paddingLeft: insets.left,
-          paddingRight: insets.right,
-          paddingBottom: 100,
-        }}
-      >
+      <View className="p-4 flex flex-col gap-y-4">
         <Text className="font-bold text-2xl">Information</Text>
 
         <View className="flex flex-col rounded-xl mb-4 overflow-hidden border-neutral-800 divide-y-2 divide-solid divide-neutral-800 ">
