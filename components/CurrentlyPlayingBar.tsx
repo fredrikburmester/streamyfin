@@ -17,7 +17,6 @@ import Animated, {
 import Video from "react-native-video";
 import { Text } from "./common/Text";
 import { Loader } from "./Loader";
-import { debounce } from "lodash";
 
 export const CurrentlyPlayingBar: React.FC = () => {
   const segments = useSegments();
@@ -25,7 +24,6 @@ export const CurrentlyPlayingBar: React.FC = () => {
     currentlyPlaying,
     pauseVideo,
     playVideo,
-    setCurrentlyPlayingState,
     stopPlayback,
     setVolume,
     setIsPlaying,
@@ -36,7 +34,6 @@ export const CurrentlyPlayingBar: React.FC = () => {
   } = usePlayback();
 
   const [api] = useAtom(apiAtom);
-  const [user] = useAtom(userAtom);
 
   const aBottom = useSharedValue(0);
   const aPadding = useSharedValue(0);
@@ -66,6 +63,8 @@ export const CurrentlyPlayingBar: React.FC = () => {
     };
   });
 
+  const from = useMemo(() => segments[2], [segments]);
+
   useEffect(() => {
     if (segments.find((s) => s.includes("tabs"))) {
       // Tab screen - i.e. home
@@ -94,19 +93,20 @@ export const CurrentlyPlayingBar: React.FC = () => {
     [currentlyPlaying?.item]
   );
 
-  const backdropUrl = useMemo(
-    () =>
-      getBackdropUrl({
+  const poster = useMemo(() => {
+    if (currentlyPlaying?.item.Type === "Audio")
+      return `${api?.basePath}/Items/${currentlyPlaying.item.AlbumId}/Images/Primary?tag=${currentlyPlaying.item.AlbumPrimaryImageTag}&quality=90&maxHeight=200&maxWidth=200`;
+    else
+      return getBackdropUrl({
         api,
         item: currentlyPlaying?.item,
         quality: 70,
         width: 200,
-      }),
-    [currentlyPlaying?.item, api]
-  );
+      });
+  }, [currentlyPlaying?.item.Id, api]);
 
   const videoSource = useMemo(() => {
-    if (!api || !currentlyPlaying || !backdropUrl) return null;
+    if (!api || !currentlyPlaying || !poster) return null;
     return {
       uri: currentlyPlaying.url,
       isNetwork: true,
@@ -120,13 +120,13 @@ export const CurrentlyPlayingBar: React.FC = () => {
         description: currentlyPlaying.item?.Overview
           ? currentlyPlaying.item?.Overview
           : undefined,
-        imageUri: backdropUrl,
+        imageUri: poster,
         subtitle: currentlyPlaying.item?.Album
           ? currentlyPlaying.item?.Album
           : undefined,
       },
     };
-  }, [currentlyPlaying, startPosition, api, backdropUrl]);
+  }, [currentlyPlaying, startPosition, api, poster]);
 
   if (!api || !currentlyPlaying) return null;
 
@@ -174,8 +174,8 @@ export const CurrentlyPlayingBar: React.FC = () => {
                   controls={false}
                   pictureInPicture={true}
                   poster={
-                    backdropUrl && currentlyPlaying.item?.Type === "Audio"
-                      ? backdropUrl
+                    poster && currentlyPlaying.item?.Type === "Audio"
+                      ? poster
                       : undefined
                   }
                   debug={{
@@ -228,10 +228,17 @@ export const CurrentlyPlayingBar: React.FC = () => {
             <View className="shrink text-xs">
               <TouchableOpacity
                 onPress={() => {
-                  if (currentlyPlaying.item?.Type === "Audio")
-                    router.push(`/albums/${currentlyPlaying.item?.AlbumId}`);
-                  else
-                    router.push(`/items/page?id=${currentlyPlaying.item?.Id}`);
+                  if (currentlyPlaying.item?.Type === "Audio") {
+                    router.push(
+                      // @ts-ignore
+                      `/(auth)/(tabs)/${from}/albums/${currentlyPlaying.item.AlbumId}`
+                    );
+                  } else {
+                    router.push(
+                      // @ts-ignore
+                      `/(auth)/(tabs)/${from}/items/page?id=${currentlyPlaying.item?.Id}`
+                    );
+                  }
                 }}
               >
                 <Text>{currentlyPlaying.item?.Name}</Text>
@@ -240,7 +247,8 @@ export const CurrentlyPlayingBar: React.FC = () => {
                 <TouchableOpacity
                   onPress={() => {
                     router.push(
-                      `/(auth)/series/${currentlyPlaying.item.SeriesId}`
+                      // @ts-ignore
+                      `/(auth)/(tabs)/${from}/series/${currentlyPlaying.item.SeriesId}`
                     );
                   }}
                   className="text-xs opacity-50"
