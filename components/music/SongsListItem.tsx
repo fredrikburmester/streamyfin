@@ -71,7 +71,10 @@ export const SongsListItem: React.FC<Props> = ({
   };
 
   const play = async (type: "device" | "cast") => {
-    if (!user?.Id || !api || !item.Id) return;
+    if (!user?.Id || !api || !item.Id) {
+      console.warn("No user, api or item", user, api, item.Id);
+      return;
+    }
 
     const response = await getMediaInfoApi(api!).getPlaybackInfo({
       itemId: item?.Id,
@@ -87,9 +90,13 @@ export const SongsListItem: React.FC<Props> = ({
       startTimeTicks: item?.UserData?.PlaybackPositionTicks || 0,
       sessionData,
       deviceProfile: castDevice?.deviceId ? chromecastProfile : ios,
+      mediaSourceId: item.Id,
     });
 
-    if (!url || !item) return;
+    if (!url || !item) {
+      console.warn("No url or item", url, item.Id);
+      return;
+    }
 
     if (type === "cast" && client) {
       await CastContext.getPlayServicesState().then((state) => {
@@ -111,6 +118,7 @@ export const SongsListItem: React.FC<Props> = ({
         }
       });
     } else {
+      console.log("Playing on device", url, item.Id);
       setCurrentlyPlayingState({
         item,
         url,
