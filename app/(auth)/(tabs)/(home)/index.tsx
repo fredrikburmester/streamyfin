@@ -18,7 +18,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useAtom } from "jotai";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { RefreshControl, ScrollView, View } from "react-native";
+import { RefreshControl, SafeAreaView, ScrollView, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type BaseSection = {
   title: string;
@@ -270,6 +271,8 @@ export default function index() {
   //   );
   // }
 
+  const insets = useSafeAreaInsets();
+
   if (e1 || e2)
     return (
       <View className="flex flex-col items-center justify-center h-full -mt-6">
@@ -286,6 +289,7 @@ export default function index() {
         <Loader />
       </View>
     );
+
   return (
     <ScrollView
       nestedScrollEnabled
@@ -294,7 +298,13 @@ export default function index() {
         <RefreshControl refreshing={loading} onRefresh={refetch} />
       }
     >
-      <View className="flex flex-col pt-4 pb-24 gap-y-4">
+      <View
+        style={{
+          paddingLeft: insets.left,
+          paddingRight: insets.right,
+        }}
+        className="flex flex-col pt-4 pb-24 gap-y-4"
+      >
         <LargeMovieCarousel />
 
         {sections.map((section, index) => {

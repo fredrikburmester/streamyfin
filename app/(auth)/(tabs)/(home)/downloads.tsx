@@ -13,6 +13,7 @@ import { FFmpegKit } from "ffmpeg-kit-react-native";
 import { useAtom } from "jotai";
 import { useMemo } from "react";
 import { ScrollView, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const downloads: React.FC = () => {
   const [process, setProcess] = useAtom(runningProcesses);
@@ -53,6 +54,8 @@ const downloads: React.FC = () => {
     return formatNumber(timeLeft / 10000);
   }, [process]);
 
+  const insets = useSafeAreaInsets();
+
   if (isLoading) {
     return (
       <View className="h-full flex flex-col items-center justify-center -mt-6">
@@ -63,7 +66,14 @@ const downloads: React.FC = () => {
 
   return (
     <ScrollView>
-      <View className="px-4 py-4">
+      <View
+        className="px-4 py-4"
+        style={{
+          paddingLeft: insets.left,
+          paddingRight: insets.right,
+          paddingBottom: 100,
+        }}
+      >
         <View className="mb-4 flex flex-col space-y-4">
           <View>
             <Text className="text-2xl font-bold mb-2">Queue</Text>

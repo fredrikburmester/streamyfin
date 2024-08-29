@@ -31,7 +31,7 @@ export const getStreamUrl = async ({
   subtitleStreamIndex?: number;
   forceDirectPlay?: boolean;
   height?: number;
-  mediaSourceId?: string | null;
+  mediaSourceId: string | null;
 }) => {
   if (!api || !userId || !item?.Id || !mediaSourceId) {
     return null;

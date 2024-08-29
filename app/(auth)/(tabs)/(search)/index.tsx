@@ -28,6 +28,7 @@ import React, {
   useState,
 } from "react";
 import { Platform, ScrollView, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDebounce } from "use-debounce";
 
 const exampleSearches = [
@@ -41,6 +42,7 @@ const exampleSearches = [
 
 export default function search() {
   const params = useLocalSearchParams();
+  const insets = useSafeAreaInsets();
 
   const { q, prev } = params as { q: string; prev: Href<string> };
 
@@ -220,6 +222,10 @@ export default function search() {
       <ScrollView
         keyboardDismissMode="on-drag"
         contentInsetAdjustmentBehavior="automatic"
+        contentContainerStyle={{
+          paddingLeft: insets.left,
+          paddingRight: insets.right,
+        }}
       >
         <View className="flex flex-col pt-4 pb-32">
           {Platform.OS === "android" && (
