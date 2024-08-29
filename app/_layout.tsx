@@ -13,12 +13,11 @@ import { Stack, useRouter } from "expo-router";
 import * as ScreenOrientation from "expo-screen-orientation";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import { Provider as JotaiProvider, useAtom } from "jotai";
+import { Provider as JotaiProvider } from "jotai";
 import { useEffect, useRef } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 import * as Linking from "expo-linking";
-import { orientationAtom } from "@/utils/atoms/orientation";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -46,7 +45,6 @@ export default function RootLayout() {
 
 function Layout() {
   const [settings, updateSettings] = useSettings();
-  const [orientation, setOrientation] = useAtom(orientationAtom);
 
   useKeepAwake();
 
@@ -73,24 +71,8 @@ function Layout() {
       );
   }, [settings]);
 
-  useEffect(() => {
-    const subscription = ScreenOrientation.addOrientationChangeListener(
-      (event) => {
-        console.log(event.orientationInfo.orientation);
-        setOrientation(event.orientationInfo.orientation);
-      }
-    );
-
-    ScreenOrientation.getOrientationAsync().then((initialOrientation) => {
-      setOrientation(initialOrientation);
-    });
-
-    return () => {
-      ScreenOrientation.removeOrientationChangeListener(subscription);
-    };
-  }, []);
-
   const url = Linking.useURL();
+  const router = useRouter();
 
   if (url) {
     const { hostname, path, queryParams } = Linking.parse(url);
