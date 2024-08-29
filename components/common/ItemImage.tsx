@@ -1,11 +1,9 @@
 import { useImageColors } from "@/hooks/useImageColors";
 import { apiAtom } from "@/providers/JellyfinProvider";
-import { itemThemeColorAtom } from "@/utils/atoms/primaryColor";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import { Image, ImageProps, ImageSource } from "expo-image";
 import { useAtom } from "jotai";
-import { useEffect, useMemo } from "react";
-import { getColors } from "react-native-image-colors";
+import { useMemo } from "react";
 
 interface Props extends ImageProps {
   item: BaseItemDto;
