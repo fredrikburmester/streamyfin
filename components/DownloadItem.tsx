@@ -22,7 +22,7 @@ import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { useAtom } from "jotai";
 import { useCallback, useMemo, useRef, useState } from "react";
-import { TouchableOpacity, View, ViewProps } from "react-native";
+import { Alert, TouchableOpacity, View, ViewProps } from "react-native";
 import { AudioTrackSelector } from "./AudioTrackSelector";
 import { Bitrate, BitrateSelector } from "./BitrateSelector";
 import { Button } from "./Button";
@@ -54,11 +54,14 @@ export const DownloadItem: React.FC<DownloadProps> = ({ item, ...props }) => {
     value: undefined,
   });
 
+  const userCanDownload = useMemo(() => {
+    return user?.Policy?.EnableContentDownloading;
+  }, [user]);
+
   /**
    * Bottom sheet
    */
   const bottomSheetModalRef = useRef<BottomSheetModal>(null);
-  const snapPoints = useMemo(() => ["50%"], []);
 
   const handlePresentModalPress = useCallback(() => {
     bottomSheetModalRef.current?.present();
@@ -286,14 +289,21 @@ export const DownloadItem: React.FC<DownloadProps> = ({ item, ...props }) => {
             <Button
               className="mt-auto"
               onPress={() => {
-                closeModal();
-                queueActions.enqueue(queue, setQueue, {
-                  id: item.Id!,
-                  execute: async () => {
-                    await initiateDownload();
-                  },
-                  item,
-                });
+                if (userCanDownload === true) {
+                  closeModal();
+                  queueActions.enqueue(queue, setQueue, {
+                    id: item.Id!,
+                    execute: async () => {
+                      await initiateDownload();
+                    },
+                    item,
+                  });
+                } else {
+                  Alert.alert(
+                    "Disabled",
+                    "This user is not allowed to download files."
+                  );
+                }
               }}
               color="purple"
             >

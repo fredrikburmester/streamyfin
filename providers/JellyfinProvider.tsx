@@ -1,6 +1,7 @@
 import { useInterval } from "@/hooks/useInterval";
 import { Api, Jellyfin } from "@jellyfin/sdk";
 import { UserDto } from "@jellyfin/sdk/lib/generated-client/models";
+import { getUserApi } from "@jellyfin/sdk/lib/utils/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import axios, { AxiosError } from "axios";
@@ -74,6 +75,22 @@ export const JellyfinProvider: React.FC<{ children: ReactNode }> = ({
   const [user, setUser] = useAtom(userAtom);
   const [isPolling, setIsPolling] = useState<boolean>(false);
   const [secret, setSecret] = useState<string | null>(null);
+
+  useQuery({
+    queryKey: ["user", api],
+    queryFn: async () => {
+      if (!api) return null;
+      const response = await getUserApi(api).getCurrentUser();
+      if (response.data) setUser(response.data);
+      return user;
+    },
+    enabled: !!api,
+    refetchOnWindowFocus: true,
+    refetchInterval: 1000 * 60,
+    refetchIntervalInBackground: true,
+    refetchOnMount: true,
+    refetchOnReconnect: true,
+  });
 
   const headers = useMemo(() => {
     if (!deviceId) return {};
