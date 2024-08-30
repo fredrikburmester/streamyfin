@@ -76,7 +76,7 @@ const page: React.FC = () => {
     navigation.setOptions({ title: collection?.Name || "" });
     setSortBy([
       {
-        key: collection?.DisplayOrder as ItemSortBy,
+        key: (collection?.DisplayOrder as ItemSortBy) ?? "PremiereDate",
         value: collection?.DisplayOrder ?? "Premiere Date",
       },
     ]);
