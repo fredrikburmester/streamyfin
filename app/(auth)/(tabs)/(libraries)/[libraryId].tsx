@@ -9,25 +9,23 @@ import React, {
   useMemo,
   useState,
 } from "react";
-import {
-  FlatList,
-  RefreshControl,
-  useWindowDimensions,
-  View,
-} from "react-native";
+import { FlatList, useWindowDimensions, View } from "react-native";
 
 import { Text } from "@/components/common/Text";
 import { TouchableItemRouter } from "@/components/common/TouchableItemRouter";
 import { FilterButton } from "@/components/filters/FilterButton";
 import { ResetFiltersButton } from "@/components/filters/ResetFiltersButton";
 import { ItemCardText } from "@/components/ItemCardText";
+import { Loader } from "@/components/Loader";
 import MoviePoster from "@/components/posters/MoviePoster";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import {
   genreFilterAtom,
   sortByAtom,
+  SortByOption,
   sortOptions,
   sortOrderAtom,
+  SortOrderOption,
   sortOrderOptions,
   tagsFilterAtom,
   yearFilterAtom,
@@ -35,7 +33,6 @@ import {
 import {
   BaseItemDto,
   BaseItemDtoQueryResult,
-  BaseItemKind,
 } from "@jellyfin/sdk/lib/generated-client/models";
 import {
   getFilterApi,
@@ -43,7 +40,6 @@ import {
   getUserLibraryApi,
 } from "@jellyfin/sdk/lib/utils/api";
 import { FlashList } from "@shopify/flash-list";
-import { Loader } from "@/components/Loader";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const MemoizedTouchableItemRouter = React.memo(TouchableItemRouter);
@@ -54,7 +50,6 @@ const Page = () => {
 
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
-  const navigation = useNavigation();
   const { width: screenWidth } = useWindowDimensions();
 
   const [selectedGenres, setSelectedGenres] = useAtom(genreFilterAtom);
@@ -76,18 +71,8 @@ const Page = () => {
   }, [screenWidth]);
 
   useLayoutEffect(() => {
-    setSortBy([
-      {
-        key: "SortName",
-        value: "Name",
-      },
-    ]);
-    setSortOrder([
-      {
-        key: "Ascending",
-        value: "Ascending",
-      },
-    ]);
+    setSortBy([SortByOption.SortName]);
+    setSortOrder([SortOrderOption.Ascending]);
   }, []);
 
   useEffect(() => {
@@ -133,8 +118,8 @@ const Page = () => {
         parentId: libraryId,
         limit: 36,
         startIndex: pageParam,
-        sortBy: [sortBy[0].key, "SortName", "ProductionYear"],
-        sortOrder: [sortOrder[0].key],
+        sortBy: [sortBy[0], "SortName", "ProductionYear"],
+        sortOrder: [sortOrder[0]],
         enableImageTypes: ["Primary", "Backdrop", "Banner", "Thumb"],
         recursive: false,
         imageTypeLimit: 1,
@@ -338,13 +323,15 @@ const Page = () => {
                   className="mr-1"
                   collectionId={libraryId}
                   queryKey="sortBy"
-                  queryFn={async () => sortOptions}
+                  queryFn={async () => sortOptions.map((s) => s.key)}
                   set={setSortBy}
                   values={sortBy}
                   title="Sort By"
-                  renderItemLabel={(item) => item.value}
+                  renderItemLabel={(item) =>
+                    sortOptions.find((i) => i.key === item)?.value || ""
+                  }
                   searchFilter={(item, search) =>
-                    item.value.toLowerCase().includes(search.toLowerCase())
+                    item.toLowerCase().includes(search.toLowerCase())
                   }
                 />
               ),
@@ -356,13 +343,15 @@ const Page = () => {
                   className="mr-1"
                   collectionId={libraryId}
                   queryKey="sortOrder"
-                  queryFn={async () => sortOrderOptions}
+                  queryFn={async () => sortOrderOptions.map((s) => s.key)}
                   set={setSortOrder}
                   values={sortOrder}
                   title="Sort Order"
-                  renderItemLabel={(item) => item.value}
+                  renderItemLabel={(item) =>
+                    sortOrderOptions.find((i) => i.key === item)?.value || ""
+                  }
                   searchFilter={(item, search) =>
-                    item.value.toLowerCase().includes(search.toLowerCase())
+                    item.toLowerCase().includes(search.toLowerCase())
                   }
                 />
               ),
