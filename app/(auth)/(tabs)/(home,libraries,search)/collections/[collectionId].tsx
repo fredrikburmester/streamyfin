@@ -8,8 +8,10 @@ import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import {
   genreFilterAtom,
   sortByAtom,
+  SortByOption,
   sortOptions,
   sortOrderAtom,
+  SortOrderOption,
   sortOrderOptions,
   tagsFilterAtom,
   yearFilterAtom,
@@ -74,18 +76,18 @@ const page: React.FC = () => {
 
   useEffect(() => {
     navigation.setOptions({ title: collection?.Name || "" });
-    setSortBy([
-      {
-        key: (collection?.DisplayOrder as ItemSortBy) ?? "PremiereDate",
-        value: collection?.DisplayOrder ?? "Premiere Date",
-      },
-    ]);
-    setSortOrder([
-      {
-        key: "Ascending",
-        value: "Ascending",
-      },
-    ]);
+    setSortOrder([SortOrderOption.Ascending]);
+
+    if (!collection) return;
+
+    // Convert the DisplayOrder to SortByOption
+    const displayOrder = collection.DisplayOrder as ItemSortBy;
+    const sortByOption = displayOrder
+      ? SortByOption[displayOrder as keyof typeof SortByOption] ||
+        SortByOption.PremiereDate
+      : SortByOption.PremiereDate;
+
+    setSortBy([sortByOption]);
   }, [navigation, collection]);
 
   const fetchItems = useCallback(
@@ -102,8 +104,8 @@ const page: React.FC = () => {
         limit: 18,
         startIndex: pageParam,
         // Set one ordering at a time. As collections do not work with correctly with multiple.
-        sortBy: [sortBy[0].key],
-        sortOrder: [sortOrder[0].key],
+        sortBy: [sortBy[0]],
+        sortOrder: [sortOrder[0]],
         fields: [
           "ItemCounts",
           "PrimaryImageAspectRatio",
@@ -215,6 +217,13 @@ const page: React.FC = () => {
             paddingVertical: 16,
             flexDirection: "row",
           }}
+          extraData={[
+            selectedGenres,
+            selectedYears,
+            selectedTags,
+            sortBy,
+            sortOrder,
+          ]}
           data={[
             {
               key: "reset",
@@ -306,13 +315,15 @@ const page: React.FC = () => {
                   className="mr-1"
                   collectionId={collectionId}
                   queryKey="sortBy"
-                  queryFn={async () => sortOptions}
+                  queryFn={async () => sortOptions.map((s) => s.key)}
                   set={setSortBy}
                   values={sortBy}
                   title="Sort By"
-                  renderItemLabel={(item) => item.value}
+                  renderItemLabel={(item) =>
+                    sortOptions.find((i) => i.key === item)?.value || ""
+                  }
                   searchFilter={(item, search) =>
-                    item.value.toLowerCase().includes(search.toLowerCase())
+                    item.toLowerCase().includes(search.toLowerCase())
                   }
                 />
               ),
@@ -324,13 +335,15 @@ const page: React.FC = () => {
                   className="mr-1"
                   collectionId={collectionId}
                   queryKey="sortOrder"
-                  queryFn={async () => sortOrderOptions}
+                  queryFn={async () => sortOrderOptions.map((s) => s.key)}
                   set={setSortOrder}
                   values={sortOrder}
                   title="Sort Order"
-                  renderItemLabel={(item) => item.value}
+                  renderItemLabel={(item) =>
+                    sortOrderOptions.find((i) => i.key === item)?.value || ""
+                  }
                   searchFilter={(item, search) =>
-                    item.value.toLowerCase().includes(search.toLowerCase())
+                    item.toLowerCase().includes(search.toLowerCase())
                   }
                 />
               ),
@@ -368,6 +381,13 @@ const page: React.FC = () => {
           <Text className="font-bold text-xl text-neutral-500">No results</Text>
         </View>
       }
+      extraData={[
+        selectedGenres,
+        selectedYears,
+        selectedTags,
+        sortBy,
+        sortOrder,
+      ]}
       contentInsetAdjustmentBehavior="automatic"
       data={flatData}
       renderItem={renderItem}
