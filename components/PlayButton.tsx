@@ -1,91 +1,62 @@
 import { usePlayback } from "@/providers/PlaybackProvider";
+import { itemThemeColorAtom } from "@/utils/atoms/primaryColor";
 import { runtimeTicksToMinutes } from "@/utils/time";
 import { useActionSheet } from "@expo/react-native-action-sheet";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useAtom } from "jotai";
+import { useEffect, useMemo } from "react";
 import { TouchableOpacity, View } from "react-native";
 import CastContext, {
   PlayServicesState,
   useRemoteMediaClient,
 } from "react-native-google-cast";
-import { Button } from "./Button";
-import { Text } from "./common/Text";
-import { useAtom } from "jotai";
-import { itemThemeColorAtom } from "@/utils/atoms/primaryColor";
 import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
+  Easing,
+  interpolate,
   interpolateColor,
-  runOnJS,
   useAnimatedReaction,
+  useAnimatedStyle,
+  useDerivedValue,
+  useSharedValue,
+  withTiming,
 } from "react-native-reanimated";
+import { Button } from "./Button";
 
 interface Props extends React.ComponentProps<typeof Button> {
   item?: BaseItemDto | null;
   url?: string | null;
 }
 
+const ANIMATION_DURATION = 500;
+const MIN_PLAYBACK_WIDTH = 15;
+
 export const PlayButton: React.FC<Props> = ({ item, url, ...props }) => {
   const { showActionSheetWithOptions } = useActionSheet();
-  const client = useRemoteMediaClient();
   const { setCurrentlyPlayingState } = usePlayback();
 
-  const [color] = useAtom(itemThemeColorAtom);
+  const client = useRemoteMediaClient();
 
-  // Create a shared value for animation progress
-  const progress = useSharedValue(0);
+  const [colorAtom] = useAtom(itemThemeColorAtom);
 
-  // Create shared values for start and end colors
-  const startColor = useSharedValue(color);
-  const endColor = useSharedValue(color);
+  const memoizedItem = useMemo(() => item, [item?.Id]); // Memoize the item
+  const memoizedColor = useMemo(() => colorAtom, [colorAtom]); // Memoize the color
 
-  useEffect(() => {
-    // When color changes, update end color and animate progress
-    endColor.value = color;
-    progress.value = 0; // Reset progress
-    progress.value = withTiming(1, { duration: 300 }); // Animate to 1 over 500ms
-  }, [color]);
-
-  // Animated style for primary color
-  const animatedPrimaryStyle = useAnimatedStyle(() => ({
-    backgroundColor: interpolateColor(
-      progress.value,
-      [0, 1],
-      [startColor.value.average, endColor.value.average]
-    ),
-  }));
-
-  // Animated style for text color
-  const animatedTextStyle = useAnimatedStyle(() => ({
-    color: interpolateColor(
-      progress.value,
-      [0, 1],
-      [startColor.value.text, endColor.value.text]
-    ),
-  }));
-
-  // Update start color after animation completes
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      startColor.value = color;
-    }, 500); // Should match the duration in withTiming
-
-    return () => clearTimeout(timeout);
-  }, [color]);
+  const startWidth = useSharedValue(0);
+  const targetWidth = useSharedValue(0);
+  const endColor = useSharedValue(memoizedColor);
+  const startColor = useSharedValue(memoizedColor);
+  const widthProgress = useSharedValue(0);
+  const colorChangeProgress = useSharedValue(0);
 
   const onPress = async () => {
     if (!url || !item) return;
-
     if (!client) {
       setCurrentlyPlayingState({ item, url });
       return;
     }
-
     const options = ["Chromecast", "Device", "Cancel"];
     const cancelButtonIndex = 2;
-
     showActionSheetWithOptions(
       {
         options,
@@ -123,38 +94,123 @@ export const PlayButton: React.FC<Props> = ({ item, url, ...props }) => {
     );
   };
 
-  const playbackPercent = useMemo(() => {
-    if (!item || !item.RunTimeTicks) return 0;
-    const userData = item.UserData;
-    if (!userData) return 0;
-    const PlaybackPositionTicks = userData.PlaybackPositionTicks;
-    if (!PlaybackPositionTicks) return 0;
-    return (PlaybackPositionTicks / item.RunTimeTicks) * 100;
-  }, [item]);
+  const derivedTargetWidth = useDerivedValue(() => {
+    if (!memoizedItem || !memoizedItem.RunTimeTicks) return 0;
+    const userData = memoizedItem.UserData;
+    if (userData && userData.PlaybackPositionTicks) {
+      return userData.PlaybackPositionTicks > 0
+        ? Math.max(
+            (userData.PlaybackPositionTicks / memoizedItem.RunTimeTicks) * 100,
+            MIN_PLAYBACK_WIDTH
+          )
+        : 0;
+    }
+    return 0;
+  }, [memoizedItem]);
+
+  useAnimatedReaction(
+    () => derivedTargetWidth.value,
+    (newWidth) => {
+      targetWidth.value = newWidth;
+      widthProgress.value = 0;
+      widthProgress.value = withTiming(1, {
+        duration: ANIMATION_DURATION,
+        easing: Easing.bezier(0.7, 0, 0.3, 1.0),
+      });
+    },
+    [item]
+  );
+
+  useAnimatedReaction(
+    () => memoizedColor,
+    (newColor) => {
+      endColor.value = newColor;
+      colorChangeProgress.value = 0;
+      colorChangeProgress.value = withTiming(1, {
+        duration: ANIMATION_DURATION,
+        easing: Easing.bezier(0.9, 0, 0.31, 0.99),
+      });
+    },
+    [memoizedColor]
+  );
+
+  useEffect(() => {
+    const timeout_2 = setTimeout(() => {
+      startColor.value = memoizedColor;
+      startWidth.value = targetWidth.value;
+    }, ANIMATION_DURATION);
+
+    return () => {
+      clearTimeout(timeout_2);
+    };
+  }, [memoizedColor, memoizedItem]);
+
+  /**
+   * ANIMATED STYLES
+   */
+  const animatedAverageStyle = useAnimatedStyle(() => ({
+    backgroundColor: interpolateColor(
+      colorChangeProgress.value,
+      [0, 1],
+      [startColor.value.average, endColor.value.average]
+    ),
+  }));
+
+  const animatedPrimaryStyle = useAnimatedStyle(() => ({
+    backgroundColor: interpolateColor(
+      colorChangeProgress.value,
+      [0, 1],
+      [startColor.value.primary, endColor.value.primary]
+    ),
+  }));
+
+  const animatedWidthStyle = useAnimatedStyle(() => ({
+    width: `${interpolate(
+      widthProgress.value,
+      [0, 1],
+      [startWidth.value, targetWidth.value]
+    )}%`,
+  }));
+
+  const animatedTextStyle = useAnimatedStyle(() => ({
+    color: interpolateColor(
+      colorChangeProgress.value,
+      [0, 1],
+      [startColor.value.text, endColor.value.text]
+    ),
+  }));
+  /**
+   * *********************
+   */
 
   return (
-    <TouchableOpacity onPress={onPress} className="relative" {...props}>
+    <TouchableOpacity
+      accessibilityLabel="Play button"
+      accessibilityHint="Tap to play the media"
+      onPress={onPress}
+      className="relative"
+      {...props}
+    >
+      <View className="absolute w-full h-full top-0 left-0 rounded-xl z-10 overflow-hidden">
+        <Animated.View
+          style={[
+            animatedPrimaryStyle,
+            animatedWidthStyle,
+            {
+              height: "100%",
+            },
+          ]}
+        />
+      </View>
+
       <Animated.View
-        style={[
-          animatedPrimaryStyle,
-          {
-            width:
-              playbackPercent === 0
-                ? "100%"
-                : `${Math.max(playbackPercent, 15)}%`,
-            height: "100%",
-          },
-        ]}
-        className="absolute w-full h-full top-0 left-0 rounded-xl z-10"
-      />
-      <Animated.View
-        style={[animatedPrimaryStyle]}
-        className="absolute w-full h-full top-0 left-0 rounded-xl "
+        style={[animatedAverageStyle]}
+        className="absolute w-full h-full top-0 left-0 rounded-xl"
       />
       <View
         style={{
           borderWidth: 1,
-          borderColor: color.primary,
+          borderColor: colorAtom.primary,
           borderStyle: "solid",
         }}
         className="flex flex-row items-center justify-center bg-transparent rounded-xl z-20 h-12 w-full "
