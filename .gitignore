@@ -21,6 +21,7 @@ build-*
 *.mp4
 build-*
 Streamyfin.app
+package-lock.json
 
 /ios
 /android

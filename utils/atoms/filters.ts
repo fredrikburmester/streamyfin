@@ -10,6 +10,7 @@ export const sortOptions: {
   key: ItemSortBy;
   value: string;
 }[] = [
+  { key: "Default", value: "Default" },
   { key: "SortName", value: "Name" },
   { key: "CommunityRating", value: "Community Rating" },
   { key: "CriticRating", value: "Critics Rating" },

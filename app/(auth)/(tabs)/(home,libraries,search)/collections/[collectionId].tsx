@@ -17,6 +17,7 @@ import {
 import {
   BaseItemDto,
   BaseItemDtoQueryResult,
+  ItemSortBy,
 } from "@jellyfin/sdk/lib/generated-client/models";
 import {
   getFilterApi,
@@ -56,21 +57,6 @@ const page: React.FC = () => {
   const [sortBy, setSortBy] = useAtom(sortByAtom);
   const [sortOrder, setSortOrder] = useAtom(sortOrderAtom);
 
-  useLayoutEffect(() => {
-    setSortBy([
-      {
-        key: "PremiereDate",
-        value: "Premiere Date",
-      },
-    ]);
-    setSortOrder([
-      {
-        key: "Ascending",
-        value: "Ascending",
-      },
-    ]);
-  }, []);
-
   const { data: collection } = useQuery({
     queryKey: ["collection", collectionId],
     queryFn: async () => {
@@ -88,6 +74,18 @@ const page: React.FC = () => {
 
   useEffect(() => {
     navigation.setOptions({ title: collection?.Name || "" });
+    setSortBy([
+      {
+        key: collection?.DisplayOrder as ItemSortBy,
+        value: collection?.DisplayOrder ?? "Premiere Date",
+      },
+    ]);
+    setSortOrder([
+      {
+        key: "Ascending",
+        value: "Ascending",
+      },
+    ]);
   }, [navigation, collection]);
 
   const fetchItems = useCallback(
@@ -103,7 +101,8 @@ const page: React.FC = () => {
         parentId: collectionId,
         limit: 18,
         startIndex: pageParam,
-        sortBy: [sortBy[0].key, "SortName", "ProductionYear"],
+        // Set one ordering at a time. As collections do not work with correctly with multiple.
+        sortBy: [sortBy[0].key],
         sortOrder: [sortOrder[0].key],
         fields: [
           "ItemCounts",
