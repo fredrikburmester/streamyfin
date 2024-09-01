@@ -9,8 +9,8 @@ import { useEffect, useMemo } from "react";
 import { TouchableOpacity, View } from "react-native";
 import CastContext, {
   PlayServicesState,
-  useRemoteMediaClient,
   useMediaStatus,
+  useRemoteMediaClient,
 } from "react-native-google-cast";
 import Animated, {
   Easing,
@@ -23,7 +23,10 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { Button } from "./Button";
-import { isCancel } from "axios";
+import { getPrimaryImageUrl } from "@/utils/jellyfin/image/getPrimaryImageUrl";
+import { apiAtom } from "@/providers/JellyfinProvider";
+import { getBackdropUrl } from "@/utils/jellyfin/image/getBackdropUrl";
+import { getParentBackdropImageUrl } from "@/utils/jellyfin/image/getParentBackdropImageUrl";
 
 interface Props extends React.ComponentProps<typeof Button> {
   item?: BaseItemDto | null;
@@ -40,6 +43,7 @@ export const PlayButton: React.FC<Props> = ({ item, url, ...props }) => {
   const mediaStatus = useMediaStatus();
 
   const [colorAtom] = useAtom(itemThemeColorAtom);
+  const [api] = useAtom(apiAtom);
 
   const memoizedItem = useMemo(() => item, [item?.Id]); // Memoize the item
   const memoizedColor = useMemo(() => colorAtom, [colorAtom]); // Memoize the color
@@ -65,6 +69,7 @@ export const PlayButton: React.FC<Props> = ({ item, url, ...props }) => {
         cancelButtonIndex,
       },
       async (selectedIndex: number | undefined) => {
+        if (!api) return;
         const currentTitle = mediaStatus?.mediaInfo?.metadata?.title;
         const isOpeningCurrentlyPlayingMedia =
           currentTitle && currentTitle === item?.Name;
@@ -86,11 +91,56 @@ export const PlayButton: React.FC<Props> = ({ item, url, ...props }) => {
                     mediaInfo: {
                       contentUrl: url,
                       contentType: "video/mp4",
-                      metadata: {
-                        type: item.Type === "Episode" ? "tvShow" : "movie",
-                        title: item.Name || "",
-                        subtitle: item.Overview || "",
-                      },
+                      metadata:
+                        item.Type === "Episode"
+                          ? {
+                              type: "tvShow",
+                              title: item.Name || "",
+                              episodeNumber: item.IndexNumber || 0,
+                              seasonNumber: item.ParentIndexNumber || 0,
+                              seriesTitle: item.SeriesName || "",
+                              images: [
+                                {
+                                  url: getParentBackdropImageUrl({
+                                    api,
+                                    item,
+                                    quality: 90,
+                                    width: 2000,
+                                  })!,
+                                },
+                              ],
+                            }
+                          : item.Type === "Movie"
+                          ? {
+                              type: "movie",
+                              title: item.Name || "",
+                              subtitle: item.Overview || "",
+                              images: [
+                                {
+                                  url: getPrimaryImageUrl({
+                                    api,
+                                    item,
+                                    quality: 90,
+                                    width: 2000,
+                                  })!,
+                                },
+                              ],
+                            }
+                          : {
+                              type: "generic",
+                              title: item.Name || "",
+                              subtitle: item.Overview || "",
+                              images: [
+                                {
+                                  url: getPrimaryImageUrl({
+                                    api,
+                                    item,
+                                    quality: 90,
+                                    width: 2000,
+                                  })!,
+                                },
+                              ],
+                            },
                     },
                     startTime: 0,
                   })
@@ -99,7 +149,6 @@ export const PlayButton: React.FC<Props> = ({ item, url, ...props }) => {
                     if (isOpeningCurrentlyPlayingMedia) {
                       return;
                     }
-                    setCurrentlyPlayingState({ item, url });
                     CastContext.showExpandedControls();
                   });
               }
