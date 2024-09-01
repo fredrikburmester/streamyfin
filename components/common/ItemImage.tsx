@@ -1,20 +1,31 @@
 import { useImageColors } from "@/hooks/useImageColors";
 import { apiAtom } from "@/providers/JellyfinProvider";
+import { Ionicons } from "@expo/vector-icons";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import { Image, ImageProps, ImageSource } from "expo-image";
 import { useAtom } from "jotai";
 import { useMemo } from "react";
+import { View } from "react-native";
 
 interface Props extends ImageProps {
   item: BaseItemDto;
-  variant?: "Backdrop" | "Primary" | "Thumb" | "Logo";
+  variant?:
+    | "Primary"
+    | "Backdrop"
+    | "ParentBackdrop"
+    | "ParentLogo"
+    | "Logo"
+    | "AlbumPrimary"
+    | "SeriesPrimary"
+    | "Screenshot"
+    | "Thumb";
   quality?: number;
   width?: number;
 }
 
 export const ItemImage: React.FC<Props> = ({
   item,
-  variant,
+  variant = "Primary",
   quality = 90,
   width = 1000,
   ...props
@@ -28,6 +39,8 @@ export const ItemImage: React.FC<Props> = ({
     let blurhash: string | null | undefined;
     let src: ImageSource | null = null;
 
+    console.log("ImageItem ~ " + variant, item.Name, item.ImageTags);
+
     switch (variant) {
       case "Backdrop":
         if (item.Type === "Episode") {
@@ -35,7 +48,7 @@ export const ItemImage: React.FC<Props> = ({
           if (!tag) break;
           blurhash = item.ImageBlurHashes?.Backdrop?.[tag];
           src = {
-            uri: `${api.basePath}/Items/${item.ParentBackdropItemId}/Images/Backdrop/0?quality=${quality}&tag=${tag}`,
+            uri: `${api.basePath}/Items/${item.ParentBackdropItemId}/Images/Backdrop/0?quality=${quality}&tag=${tag}&width=${width}`,
             blurhash,
           };
           break;
@@ -45,7 +58,7 @@ export const ItemImage: React.FC<Props> = ({
         if (!tag) break;
         blurhash = item.ImageBlurHashes?.Backdrop?.[tag];
         src = {
-          uri: `${api.basePath}/Items/${item.Id}/Images/Backdrop/0?quality=${quality}&tag=${tag}`,
+          uri: `${api.basePath}/Items/${item.Id}/Images/Backdrop/0?quality=${quality}&tag=${tag}&width=${width}`,
           blurhash,
         };
         break;
@@ -55,7 +68,7 @@ export const ItemImage: React.FC<Props> = ({
         blurhash = item.ImageBlurHashes?.Primary?.[tag];
 
         src = {
-          uri: `${api.basePath}/Items/${item.Id}/Images/Primary?quality=${quality}&tag=${tag}`,
+          uri: `${api.basePath}/Items/${item.Id}/Images/Primary?quality=${quality}&tag=${tag}&width=${width}`,
           blurhash,
         };
         break;
@@ -65,28 +78,41 @@ export const ItemImage: React.FC<Props> = ({
         blurhash = item.ImageBlurHashes?.Thumb?.[tag];
 
         src = {
-          uri: `${api.basePath}/Items/${item.Id}/Images/Backdrop?quality=${quality}&tag=${tag}`,
+          uri: `${api.basePath}/Items/${item.Id}/Images/Backdrop?quality=${quality}&tag=${tag}&width=${width}`,
           blurhash,
         };
         break;
       default:
         tag = item.ImageTags?.["Primary"];
         src = {
-          uri: `${api.basePath}/Items/${item.Id}/Images/Primary?quality=${quality}&tag=${tag}`,
+          uri: `${api.basePath}/Items/${item.Id}/Images/Primary?quality=${quality}&tag=${tag}&width=${width}`,
         };
         break;
     }
+
+    console.log("src: ", src?.uri?.slice(0, 30));
 
     return src;
   }, [item.ImageTags]);
 
   useImageColors(source?.uri);
 
+  // return placeholder icon if no source
+  if (!source?.uri) return;
+  <View {...props}>
+    <Ionicons name="image-outline" size={24} color="white" />;
+  </View>;
+
   return (
     <Image
+      cachePolicy={"memory-disk"}
       transition={300}
       placeholder={{
         blurhash: source?.blurhash,
+      }}
+      style={{
+        width: "100%",
+        height: "100%",
       }}
       source={{
         uri: source?.uri,

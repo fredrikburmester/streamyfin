@@ -55,7 +55,7 @@ export const TouchableItemRouter: React.FC<PropsWithChildren<Props>> = ({
           }
 
           if (item.Type === "UserView") {
-            Alert.alert("Not implemented");
+            router.push(`/(auth)/(tabs)/${from}/collections/${item.Id}`);
             return;
           }
 
