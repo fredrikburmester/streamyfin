@@ -1,7 +1,7 @@
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import { runtimeTicksToSeconds } from "@/utils/time";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { atom, useAtom } from "jotai";
 import { useEffect, useMemo, useState } from "react";
@@ -11,9 +11,14 @@ import ContinueWatchingPoster from "../ContinueWatchingPoster";
 import { DownloadItem } from "../DownloadItem";
 import { Loader } from "../Loader";
 import { Text } from "../common/Text";
+import { getTvShowsApi } from "@jellyfin/sdk/lib/utils/api";
+import { getUserItemData } from "@/utils/jellyfin/user-library/getUserItemData";
+import { Image } from "expo-image";
+import { getLogoImageUrlById } from "@/utils/jellyfin/image/getLogoImageUrlById";
 
 type Props = {
   item: BaseItemDto;
+  initialSeasonIndex?: number;
 };
 
 type SeasonIndexState = {
@@ -22,7 +27,7 @@ type SeasonIndexState = {
 
 export const seasonIndexAtom = atom<SeasonIndexState>({});
 
-export const SeasonPicker: React.FC<Props> = ({ item }) => {
+export const SeasonPicker: React.FC<Props> = ({ item, initialSeasonIndex }) => {
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
   const [seasonIndexState, setSeasonIndexState] = useAtom(seasonIndexAtom);
@@ -57,15 +62,35 @@ export const SeasonPicker: React.FC<Props> = ({ item }) => {
 
   useEffect(() => {
     if (seasons && seasons.length > 0 && seasonIndex === undefined) {
-      const firstSeason = seasons[0];
-      if (firstSeason.IndexNumber !== undefined) {
+      let initialIndex: number | undefined;
+
+      if (initialSeasonIndex !== undefined) {
+        // Use the provided initialSeasonIndex if it exists in the seasons
+        const seasonExists = seasons.some(
+          (season: any) => season.IndexNumber === initialSeasonIndex
+        );
+        if (seasonExists) {
+          initialIndex = initialSeasonIndex;
+        }
+      }
+
+      if (initialIndex === undefined) {
+        // Fall back to the previous logic if initialIndex is not set
+        const season1 = seasons.find((season: any) => season.IndexNumber === 1);
+        const season0 = seasons.find((season: any) => season.IndexNumber === 0);
+        const firstSeason = season1 || season0 || seasons[0];
+        initialIndex = firstSeason.IndexNumber;
+      }
+
+      if (initialIndex !== undefined) {
         setSeasonIndexState((prev) => ({
           ...prev,
-          [item.Id ?? ""]: firstSeason.IndexNumber,
+          [item.Id ?? ""]: initialIndex,
         }));
       }
     }
-  }, [seasons, seasonIndex, setSeasonIndexState, item.Id]);
+  }, [seasons, seasonIndex, setSeasonIndexState, item.Id, initialSeasonIndex]);
+
   const selectedSeasonId: string | null = useMemo(
     () =>
       seasons?.find((season: any) => season.IndexNumber === seasonIndex)?.Id,
@@ -75,26 +100,38 @@ export const SeasonPicker: React.FC<Props> = ({ item }) => {
   const { data: episodes, isFetching } = useQuery({
     queryKey: ["episodes", item.Id, selectedSeasonId],
     queryFn: async () => {
-      if (!api || !user?.Id || !item.Id) return [];
-      const response = await api.axiosInstance.get(
-        `${api.basePath}/Shows/${item.Id}/Episodes`,
-        {
-          params: {
-            userId: user?.Id,
-            seasonId: selectedSeasonId,
-            Fields:
-              "ItemCounts,PrimaryImageAspectRatio,CanDelete,MediaSourceCount,Overview",
-          },
-          headers: {
-            Authorization: `MediaBrowser DeviceId="${api.deviceInfo.id}", Token="${api.accessToken}"`,
-          },
-        }
-      );
+      if (!api || !user?.Id || !item.Id || !selectedSeasonId) return [];
+      const res = await getTvShowsApi(api).getEpisodes({
+        seriesId: item.Id,
+        userId: user.Id,
+        seasonId: selectedSeasonId,
+        enableUserData: true,
+        fields: ["MediaSources", "MediaStreams", "Overview"],
+      });
 
-      return response.data.Items as BaseItemDto[];
+      return res.data.Items;
     },
     enabled: !!api && !!user?.Id && !!item.Id && !!selectedSeasonId,
   });
+
+  const queryClient = useQueryClient();
+  useEffect(() => {
+    for (let e of episodes || []) {
+      queryClient.prefetchQuery({
+        queryKey: ["item", e.Id],
+        queryFn: async () => {
+          if (!e.Id) return;
+          const res = await getUserItemData({
+            api,
+            userId: user?.Id,
+            itemId: e.Id,
+          });
+          return res;
+        },
+        staleTime: 60 * 5 * 1000,
+      });
+    }
+  }, [episodes]);
 
   // Used for height calculation
   const [nrOfEpisodes, setNrOfEpisodes] = useState(0);
@@ -143,26 +180,6 @@ export const SeasonPicker: React.FC<Props> = ({ item }) => {
           ))}
         </DropdownMenu.Content>
       </DropdownMenu.Root>
-      {/* Old View. Might have a setting later to manually select view. */}
-      {/* {episodes && (
-        <View className="mt-4">
-          <HorizontalScroll<BaseItemDto>
-            data={episodes}
-            renderItem={(item, index) => (
-              <TouchableOpacity
-                key={item.Id}
-                onPress={() => {
-                  router.push(`/(auth)/items/${item.Id}`);
-                }}
-                className="flex flex-col w-48"
-              >
-                <ContinueWatchingPoster item={item} />
-                <ItemCardText item={item} />
-              </TouchableOpacity>
-            )}
-          />
-        </View>
-      )} */}
       <View className="px-4 flex flex-col my-4">
         {isFetching ? (
           <View
@@ -178,13 +195,17 @@ export const SeasonPicker: React.FC<Props> = ({ item }) => {
             <TouchableOpacity
               key={e.Id}
               onPress={() => {
-                router.push(`/(auth)/items/${e.Id}`);
+                router.push(`/(auth)/items/page?id=${e.Id}`);
               }}
               className="flex flex-col mb-4"
             >
               <View className="flex flex-row items-center mb-2">
                 <View className="w-32 aspect-video overflow-hidden mr-2">
-                  <ContinueWatchingPoster item={e} width={128} />
+                  <ContinueWatchingPoster
+                    item={e}
+                    width={128}
+                    useEpisodePoster
+                  />
                 </View>
                 <View className="shrink">
                   <Text numberOfLines={2} className="">

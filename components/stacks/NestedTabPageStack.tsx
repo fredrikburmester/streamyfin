@@ -8,7 +8,6 @@ const commonScreenOptions = {
   headerTransparent: true,
   headerShadowVisible: false,
   headerLeft: () => <HeaderBackButton />,
-  headerRight: () => <Chromecast background="blur" width={22} height={22} />,
 };
 
 const routes = [
@@ -17,8 +16,7 @@ const routes = [
   "artists/index",
   "artists/[artistId]",
   "collections/[collectionId]",
-  "items/[id]",
-  "songs/[songId]",
+  "items/page",
   "series/[id]",
 ];
 

@@ -24,12 +24,6 @@ export const reportPlaybackProgress = async ({
   IsPaused = false,
 }: ReportPlaybackProgressParams): Promise<void> => {
   if (!api || !sessionId || !itemId || !positionTicks) {
-    console.error(
-      "Missing required parameter",
-      sessionId,
-      itemId,
-      positionTicks
-    );
     return;
   }
 

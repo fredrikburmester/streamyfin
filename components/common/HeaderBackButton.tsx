@@ -36,7 +36,7 @@ export const HeaderBackButton: React.FC<Props> = ({
             className="drop-shadow-2xl"
             name="arrow-back"
             size={24}
-            color="#077DF2"
+            color="white"
           />
         </TouchableOpacity>
       </BlurView>
@@ -45,7 +45,7 @@ export const HeaderBackButton: React.FC<Props> = ({
   return (
     <TouchableOpacity
       onPress={() => router.back()}
-      className=" bg-black rounded-full p-2 border border-neutral-900"
+      className=" bg-neutral-800/80 rounded-full p-2"
       {...touchableOpacityProps}
     >
       <Ionicons

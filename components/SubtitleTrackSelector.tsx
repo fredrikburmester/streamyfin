@@ -2,29 +2,29 @@ import { TouchableOpacity, View } from "react-native";
 import * as DropdownMenu from "zeego/dropdown-menu";
 import { Text } from "./common/Text";
 import { atom, useAtom } from "jotai";
-import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
+import {
+  BaseItemDto,
+  MediaSourceInfo,
+} from "@jellyfin/sdk/lib/generated-client/models";
 import { useEffect, useMemo } from "react";
 import { MediaStream } from "@jellyfin/sdk/lib/generated-client/models";
 import { tc } from "@/utils/textTools";
 
 interface Props extends React.ComponentProps<typeof View> {
-  item: BaseItemDto;
+  source: MediaSourceInfo;
   onChange: (value: number) => void;
   selected: number;
 }
 
 export const SubtitleTrackSelector: React.FC<Props> = ({
-  item,
+  source,
   onChange,
   selected,
   ...props
 }) => {
   const subtitleStreams = useMemo(
-    () =>
-      item.MediaSources?.[0].MediaStreams?.filter(
-        (x) => x.Type === "Subtitle"
-      ) ?? [],
-    [item]
+    () => source.MediaStreams?.filter((x) => x.Type === "Subtitle") ?? [],
+    [source]
   );
 
   const selectedSubtitleSteam = useMemo(
@@ -33,7 +33,7 @@ export const SubtitleTrackSelector: React.FC<Props> = ({
   );
 
   useEffect(() => {
-    const index = item.MediaSources?.[0].DefaultSubtitleStreamIndex;
+    const index = source.DefaultSubtitleStreamIndex;
     if (index !== undefined && index !== null) {
       onChange(index);
     } else {
@@ -44,20 +44,24 @@ export const SubtitleTrackSelector: React.FC<Props> = ({
   if (subtitleStreams.length === 0) return null;
 
   return (
-    <View className="flex flex-row items-center justify-between" {...props}>
+    <View
+      className="flex col shrink justify-start place-self-start items-start"
+      style={{
+        minWidth: 60,
+        maxWidth: 200,
+      }}
+    >
       <DropdownMenu.Root>
         <DropdownMenu.Trigger>
-          <View className="flex flex-col mb-2">
-            <Text className="opacity-50 mb-1 text-xs">Subtitles</Text>
-            <View className="flex flex-row">
-              <TouchableOpacity className="bg-neutral-900 max-w-32 h-10 rounded-xl border-neutral-900 border px-3 py-2 flex flex-row items-center justify-between">
-                <Text className="">
-                  {selectedSubtitleSteam
-                    ? tc(selectedSubtitleSteam?.DisplayTitle, 13)
-                    : "None"}
-                </Text>
-              </TouchableOpacity>
-            </View>
+          <View className="flex flex-col " {...props}>
+            <Text className="opacity-50 mb-1 text-xs">Subtitle</Text>
+            <TouchableOpacity className="bg-neutral-900  h-10 rounded-xl border-neutral-800 border px-3 py-2 flex flex-row items-center justify-between">
+              <Text className=" ">
+                {selectedSubtitleSteam
+                  ? tc(selectedSubtitleSteam?.DisplayTitle, 7)
+                  : "None"}
+              </Text>
+            </TouchableOpacity>
           </View>
         </DropdownMenu.Trigger>
         <DropdownMenu.Content
@@ -69,7 +73,7 @@ export const SubtitleTrackSelector: React.FC<Props> = ({
           collisionPadding={8}
           sideOffset={8}
         >
-          <DropdownMenu.Label>Subtitles</DropdownMenu.Label>
+          <DropdownMenu.Label>Subtitle tracks</DropdownMenu.Label>
           <DropdownMenu.Item
             key={"-1"}
             onSelect={() => {

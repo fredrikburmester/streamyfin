@@ -25,7 +25,7 @@ export const SeriesCard: React.FC<{ items: BaseItemDto[] }> = ({ items }) => {
   return (
     <View>
       <View className="flex flex-row items-center justify-between">
-        <Text className="text-2xl font-bold">{items[0].SeriesName}</Text>
+        <Text className="text-2xl font-bold shrink">{items[0].SeriesName}</Text>
         <View className="bg-purple-600 rounded-full h-6 w-6 flex items-center justify-center">
           <Text className="text-xs font-bold">{items.length}</Text>
         </View>

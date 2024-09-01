@@ -1,4 +1,3 @@
-import { WatchedIndicator } from "@/components/WatchedIndicator";
 import { apiAtom } from "@/providers/JellyfinProvider";
 import { getPrimaryImageUrl } from "@/utils/jellyfin/image/getPrimaryImageUrl";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
@@ -6,24 +5,23 @@ import { Image } from "expo-image";
 import { useAtom } from "jotai";
 import { useMemo, useState } from "react";
 import { View } from "react-native";
+import { WatchedIndicator } from "@/components/WatchedIndicator";
 
 type MoviePosterProps = {
   item: BaseItemDto;
   showProgress?: boolean;
 };
 
-const MoviePoster: React.FC<MoviePosterProps> = ({
+export const EpisodePoster: React.FC<MoviePosterProps> = ({
   item,
   showProgress = false,
 }) => {
   const [api] = useAtom(apiAtom);
 
   const url = useMemo(() => {
-    return getPrimaryImageUrl({
-      api,
-      item,
-      width: 300,
-    });
+    if (item.Type === "Episode") {
+      return `${api?.basePath}/Items/${item.ParentBackdropItemId}/Images/Thumb?fillHeight=389&quality=80&tag=${item.ParentThumbImageTag}`;
+    }
   }, [item]);
 
   const [progress, setProgress] = useState(
@@ -57,7 +55,6 @@ const MoviePoster: React.FC<MoviePosterProps> = ({
           width: "100%",
         }}
       />
-
       <WatchedIndicator item={item} />
       {showProgress && progress > 0 && (
         <View className="h-1 bg-red-600 w-full"></View>
@@ -65,5 +62,3 @@ const MoviePoster: React.FC<MoviePosterProps> = ({
     </View>
   );
 };
-
-export default MoviePoster;

@@ -1,6 +1,6 @@
 import { BlurView } from "expo-blur";
 import React, { useEffect } from "react";
-import { View } from "react-native";
+import { Platform, View, ViewProps } from "react-native";
 import GoogleCast, {
   CastButton,
   useCastDevice,
@@ -8,16 +8,17 @@ import GoogleCast, {
   useRemoteMediaClient,
 } from "react-native-google-cast";
 
-type Props = {
+interface Props extends ViewProps {
   width?: number;
   height?: number;
   background?: "blur" | "transparent";
-};
+}
 
 export const Chromecast: React.FC<Props> = ({
   width = 48,
   height = 48,
   background = "transparent",
+  ...props
 }) => {
   const client = useRemoteMediaClient();
   const castDevice = useCastDevice();
@@ -37,7 +38,20 @@ export const Chromecast: React.FC<Props> = ({
 
   if (background === "transparent")
     return (
-      <View className=" rounded h-10 aspect-square flex items-center justify-center">
+      <View
+        className="rounded-full h-10 w-10 flex items-center justify-center b"
+        {...props}
+      >
+        <CastButton style={{ tintColor: "white", height, width }} />
+      </View>
+    );
+
+  if (Platform.OS === "android")
+    return (
+      <View
+        className="rounded-full h-10 w-10 flex items-center justify-center bg-neutral-800/80"
+        {...props}
+      >
         <CastButton style={{ tintColor: "white", height, width }} />
       </View>
     );
@@ -46,6 +60,7 @@ export const Chromecast: React.FC<Props> = ({
     <BlurView
       intensity={100}
       className="rounded-full overflow-hidden h-10 aspect-square flex items-center justify-center"
+      {...props}
     >
       <CastButton style={{ tintColor: "white", height, width }} />
     </BlurView>

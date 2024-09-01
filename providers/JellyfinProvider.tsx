@@ -1,15 +1,19 @@
+import { useInterval } from "@/hooks/useInterval";
 import { Api, Jellyfin } from "@jellyfin/sdk";
 import { UserDto } from "@jellyfin/sdk/lib/generated-client/models";
+import { getUserApi } from "@jellyfin/sdk/lib/utils/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import { router, useSegments } from "expo-router";
 import { atom, useAtom } from "jotai";
 import React, {
   createContext,
   ReactNode,
+  useCallback,
   useContext,
   useEffect,
+  useMemo,
   useState,
 } from "react";
 import { Platform } from "react-native";
@@ -29,6 +33,7 @@ interface JellyfinContextValue {
   removeServer: () => void;
   login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  initiateQuickConnect: () => Promise<string | undefined>;
 }
 
 const JellyfinContext = createContext<JellyfinContextValue | undefined>(
@@ -51,7 +56,6 @@ export const JellyfinProvider: React.FC<{ children: ReactNode }> = ({
 }) => {
   const [jellyfin, setJellyfin] = useState<Jellyfin | undefined>(undefined);
   const [deviceId, setDeviceId] = useState<string | undefined>(undefined);
-  const [isConnected, setIsConnected] = useState<boolean>(false);
 
   useEffect(() => {
     (async () => {
@@ -59,7 +63,7 @@ export const JellyfinProvider: React.FC<{ children: ReactNode }> = ({
       setJellyfin(
         () =>
           new Jellyfin({
-            clientInfo: { name: "Streamyfin", version: "0.8.2" },
+            clientInfo: { name: "Streamyfin", version: "0.10.3" },
             deviceInfo: { name: Platform.OS === "ios" ? "iOS" : "Android", id },
           })
       );
@@ -69,6 +73,101 @@ export const JellyfinProvider: React.FC<{ children: ReactNode }> = ({
 
   const [api, setApi] = useAtom(apiAtom);
   const [user, setUser] = useAtom(userAtom);
+  const [isPolling, setIsPolling] = useState<boolean>(false);
+  const [secret, setSecret] = useState<string | null>(null);
+
+  useQuery({
+    queryKey: ["user", api],
+    queryFn: async () => {
+      if (!api) return null;
+      const response = await getUserApi(api).getCurrentUser();
+      if (response.data) setUser(response.data);
+      return user;
+    },
+    enabled: !!api,
+    refetchOnWindowFocus: true,
+    refetchInterval: 1000 * 60,
+    refetchIntervalInBackground: true,
+    refetchOnMount: true,
+    refetchOnReconnect: true,
+  });
+
+  const headers = useMemo(() => {
+    if (!deviceId) return {};
+    return {
+      authorization: `MediaBrowser Client="Streamyfin", Device=${
+        Platform.OS === "android" ? "Android" : "iOS"
+      }, DeviceId="${deviceId}", Version="0.10.3"`,
+    };
+  }, [deviceId]);
+
+  const initiateQuickConnect = useCallback(async () => {
+    if (!api || !deviceId) return;
+    try {
+      const response = await api.axiosInstance.post(
+        api.basePath + "/QuickConnect/Initiate",
+        null,
+        {
+          headers,
+        }
+      );
+      if (response?.status === 200) {
+        setSecret(response?.data?.Secret);
+        setIsPolling(true);
+        return response.data?.Code;
+      } else {
+        throw new Error("Failed to initiate quick connect");
+      }
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }, [api, deviceId, headers]);
+
+  const pollQuickConnect = useCallback(async () => {
+    if (!api || !secret) return;
+
+    try {
+      const response = await api.axiosInstance.get(
+        `${api.basePath}/QuickConnect/Connect?Secret=${secret}`
+      );
+
+      if (response.status === 200) {
+        if (response.data.Authenticated) {
+          setIsPolling(false);
+
+          const authResponse = await api.axiosInstance.post(
+            api.basePath + "/Users/AuthenticateWithQuickConnect",
+            {
+              secret,
+            },
+            {
+              headers,
+            }
+          );
+
+          const { AccessToken, User } = authResponse.data;
+          api.accessToken = AccessToken;
+          setUser(User);
+          await AsyncStorage.setItem("token", AccessToken);
+          await AsyncStorage.setItem("user", JSON.stringify(User));
+          return true;
+        }
+      }
+      return false;
+    } catch (error) {
+      if (error instanceof AxiosError && error.response?.status === 400) {
+        setIsPolling(false);
+        setSecret(null);
+        throw new Error("The code has expired. Please try again.");
+      } else {
+        console.error("Error polling Quick Connect:", error);
+        throw error;
+      }
+    }
+  }, [api, secret, headers]);
+
+  useInterval(pollQuickConnect, isPolling ? 1000 : null);
 
   const discoverServers = async (url: string): Promise<Server[]> => {
     const servers = await jellyfin?.discovery.getRecommendedServerCandidates(
@@ -122,7 +221,6 @@ export const JellyfinProvider: React.FC<{ children: ReactNode }> = ({
         }
       } catch (error) {
         if (axios.isAxiosError(error)) {
-          console.log("Axios error", error.response?.status);
           switch (error.response?.status) {
             case 401:
               throw new Error("Invalid username or password");
@@ -199,6 +297,7 @@ export const JellyfinProvider: React.FC<{ children: ReactNode }> = ({
     login: (username, password) =>
       loginMutation.mutateAsync({ username, password }),
     logout: () => logoutMutation.mutateAsync(),
+    initiateQuickConnect,
   };
 
   useProtectedRoute(user, isLoading || isFetching);

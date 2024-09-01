@@ -4,7 +4,7 @@ import {
   SessionApiPostCapabilitiesRequest,
 } from "@jellyfin/sdk/lib/generated-client/api/session-api";
 import { getSessionApi } from "@jellyfin/sdk/lib/utils/api";
-import { AxiosError } from "axios";
+import { AxiosError, AxiosResponse } from "axios";
 import { getAuthHeaders } from "../jellyfin";
 
 interface PostCapabilitiesParams {
@@ -23,17 +23,26 @@ export const postCapabilities = async ({
   api,
   itemId,
   sessionId,
-}: PostCapabilitiesParams): Promise<void> => {
+}: PostCapabilitiesParams): Promise<AxiosResponse> => {
   if (!api || !itemId || !sessionId) {
-    throw new Error("Missing required parameters");
+    throw new Error("Missing parameters for marking item as not played");
   }
 
   try {
-    const r = await api.axiosInstance.post(
+    const d = api.axiosInstance.post(
       api.basePath + "/Sessions/Capabilities/Full",
       {
         playableMediaTypes: ["Audio", "Video", "Audio"],
-        supportedCommands: ["PlayState", "Play"],
+        supportedCommands: [
+          "PlayState",
+          "Play",
+          "ToggleFullscreen",
+          "DisplayMessage",
+          "Mute",
+          "Unmute",
+          "SetVolume",
+          "ToggleMute",
+        ],
         supportsMediaControl: true,
         id: sessionId,
       },
@@ -41,8 +50,8 @@ export const postCapabilities = async ({
         headers: getAuthHeaders(api),
       }
     );
+    return d;
   } catch (error: any | AxiosError) {
-    console.log("Failed to mark as not played", error);
     throw new Error("Failed to mark as not played");
   }
 };

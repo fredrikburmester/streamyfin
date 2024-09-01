@@ -20,6 +20,8 @@ const page: React.FC = () => {
     seasonIndex: string;
   };
 
+  console.log("seasonIndex", seasonIndex);
+
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
 
@@ -59,6 +61,7 @@ const page: React.FC = () => {
 
   return (
     <ParallaxScrollView
+      headerHeight={400}
       headerImage={
         <Image
           source={{
@@ -95,7 +98,7 @@ const page: React.FC = () => {
         <View className="mb-4">
           <NextUp seriesId={seriesId} />
         </View>
-        <SeasonPicker item={item} />
+        <SeasonPicker item={item} initialSeasonIndex={Number(seasonIndex)} />
       </View>
     </ParallaxScrollView>
   );

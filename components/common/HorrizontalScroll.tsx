@@ -1,15 +1,13 @@
 import { FlashList, FlashListProps } from "@shopify/flash-list";
-import React, { useEffect } from "react";
+import React, { forwardRef, useImperativeHandle, useRef } from "react";
 import { View, ViewStyle } from "react-native";
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-} from "react-native-reanimated";
-import { Loader } from "../Loader";
 import { Text } from "./Text";
 
 type PartialExcept<T, K extends keyof T> = Partial<T> & Pick<T, K>;
+
+export interface HorizontalScrollRef {
+  scrollToIndex: (index: number, viewOffset: number) => void;
+}
 
 interface HorizontalScrollProps<T>
   extends PartialExcept<
@@ -23,61 +21,69 @@ interface HorizontalScrollProps<T>
   loadingContainerStyle?: ViewStyle;
   height?: number;
   loading?: boolean;
+  extraData?: any;
 }
 
-export function HorizontalScroll<T>({
-  data = [],
-  renderItem,
-  containerStyle,
-  contentContainerStyle,
-  loadingContainerStyle,
-  loading = false,
-  height = 164,
-  ...props
-}: HorizontalScrollProps<T>): React.ReactElement {
-  const animatedOpacity = useSharedValue(0);
-  const animatedStyle1 = useAnimatedStyle(() => {
-    return {
-      opacity: withTiming(animatedOpacity.value, { duration: 250 }),
-    };
-  });
+export const HorizontalScroll = forwardRef<
+  HorizontalScrollRef,
+  HorizontalScrollProps<any>
+>(
+  <T,>(
+    {
+      data = [],
+      renderItem,
+      containerStyle,
+      contentContainerStyle,
+      loadingContainerStyle,
+      loading = false,
+      height = 164,
+      extraData,
+      ...props
+    }: HorizontalScrollProps<T>,
+    ref: React.ForwardedRef<HorizontalScrollRef>
+  ) => {
+    const flashListRef = useRef<FlashList<T>>(null);
 
-  useEffect(() => {
-    if (data) {
-      animatedOpacity.value = 1;
-    }
-  }, [data]);
+    useImperativeHandle(ref!, () => ({
+      scrollToIndex: (index: number, viewOffset: number) => {
+        flashListRef.current?.scrollToIndex({
+          index,
+          animated: true,
+          viewPosition: 0,
+          viewOffset,
+        });
+      },
+    }));
 
-  if (data === undefined || data === null || loading) {
-    return (
-      <View
-        style={[
-          {
-            flex: 1,
-            justifyContent: "center",
-            alignItems: "center",
-          },
-          loadingContainerStyle,
-        ]}
-      >
-        <Loader />
+    const renderFlashListItem = ({
+      item,
+      index,
+    }: {
+      item: T;
+      index: number;
+    }) => (
+      <View className="mr-2">
+        <React.Fragment>{renderItem(item, index)}</React.Fragment>
       </View>
     );
-  }
 
-  const renderFlashListItem = ({ item, index }: { item: T; index: number }) => (
-    <View className="mr-2">
-      <React.Fragment>{renderItem(item, index)}</React.Fragment>
-    </View>
-  );
+    if (!data || loading) {
+      return (
+        <View className="px-4 mb-2">
+          <View className="bg-neutral-950 h-24 w-full rounded-md mb-2"></View>
+          <View className="bg-neutral-950 h-10 w-full rounded-md mb-1"></View>
+        </View>
+      );
+    }
 
-  return (
-    <Animated.View style={[containerStyle, animatedStyle1]}>
-      <FlashList
+    return (
+      <FlashList<T>
+        ref={flashListRef}
         data={data}
+        extraData={extraData}
         renderItem={renderFlashListItem}
         horizontal
-        estimatedItemSize={100}
+        estimatedItemSize={200}
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{
           paddingHorizontal: 16,
@@ -90,6 +96,6 @@ export function HorizontalScroll<T>({
         )}
         {...props}
       />
-    </Animated.View>
-  );
-}
+    );
+  }
+);

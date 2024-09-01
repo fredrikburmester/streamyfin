@@ -13,6 +13,7 @@ import { useNavigation } from "expo-router";
 import { useAtom } from "jotai";
 import { useEffect } from "react";
 import { StyleSheet, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function index() {
   const [api] = useAtom(apiAtom);
@@ -34,7 +35,7 @@ export default function index() {
       return response.data.Items || null;
     },
     enabled: !!api && !!user?.Id,
-    staleTime: 60 * 1000,
+    staleTime: 60 * 1000 * 60,
   });
 
   useEffect(() => {
@@ -53,6 +54,8 @@ export default function index() {
       });
     }
   }, [data]);
+
+  const insets = useSafeAreaInsets();
 
   if (isLoading)
     return (
@@ -76,6 +79,8 @@ export default function index() {
         paddingTop: 17,
         paddingHorizontal: settings?.libraryOptions?.display === "row" ? 0 : 17,
         paddingBottom: 150,
+        paddingLeft: insets.left,
+        paddingRight: insets.right,
       }}
       data={data}
       renderItem={({ item }) => <LibraryItemCard library={item} />}
