@@ -10,8 +10,10 @@ import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import {
   genreFilterAtom,
   sortByAtom,
+  SortByOption,
   sortOptions,
   sortOrderAtom,
+  SortOrderOption,
   sortOrderOptions,
   tagsFilterAtom,
   yearFilterAtom,
@@ -19,6 +21,7 @@ import {
 import {
   BaseItemDto,
   BaseItemDtoQueryResult,
+  ItemSortBy,
 } from "@jellyfin/sdk/lib/generated-client/models";
 import {
   getFilterApi,
@@ -58,21 +61,6 @@ const page: React.FC = () => {
   const [sortBy, setSortBy] = useAtom(sortByAtom);
   const [sortOrder, setSortOrder] = useAtom(sortOrderAtom);
 
-  useLayoutEffect(() => {
-    setSortBy([
-      {
-        key: "PremiereDate",
-        value: "Premiere Date",
-      },
-    ]);
-    setSortOrder([
-      {
-        key: "Ascending",
-        value: "Ascending",
-      },
-    ]);
-  }, []);
-
   const { data: collection } = useQuery({
     queryKey: ["collection", collectionId],
     queryFn: async () => {
@@ -90,6 +78,18 @@ const page: React.FC = () => {
 
   useEffect(() => {
     navigation.setOptions({ title: collection?.Name || "" });
+    setSortOrder([SortOrderOption.Ascending]);
+
+    if (!collection) return;
+
+    // Convert the DisplayOrder to SortByOption
+    const displayOrder = collection.DisplayOrder as ItemSortBy;
+    const sortByOption = displayOrder
+      ? SortByOption[displayOrder as keyof typeof SortByOption] ||
+        SortByOption.PremiereDate
+      : SortByOption.PremiereDate;
+
+    setSortBy([sortByOption]);
   }, [navigation, collection]);
 
   const fetchItems = useCallback(
@@ -105,8 +105,9 @@ const page: React.FC = () => {
         parentId: collectionId,
         limit: 18,
         startIndex: pageParam,
-        sortBy: [sortBy[0].key, "SortName", "ProductionYear"],
-        sortOrder: [sortOrder[0].key],
+        // Set one ordering at a time. As collections do not work with correctly with multiple.
+        sortBy: [sortBy[0]],
+        sortOrder: [sortOrder[0]],
         fields: [
           "ItemCounts",
           "PrimaryImageAspectRatio",
@@ -219,6 +220,13 @@ const page: React.FC = () => {
             paddingVertical: 16,
             flexDirection: "row",
           }}
+          extraData={[
+            selectedGenres,
+            selectedYears,
+            selectedTags,
+            sortBy,
+            sortOrder,
+          ]}
           data={[
             {
               key: "reset",
@@ -310,13 +318,15 @@ const page: React.FC = () => {
                   className="mr-1"
                   collectionId={collectionId}
                   queryKey="sortBy"
-                  queryFn={async () => sortOptions}
+                  queryFn={async () => sortOptions.map((s) => s.key)}
                   set={setSortBy}
                   values={sortBy}
                   title="Sort By"
-                  renderItemLabel={(item) => item.value}
+                  renderItemLabel={(item) =>
+                    sortOptions.find((i) => i.key === item)?.value || ""
+                  }
                   searchFilter={(item, search) =>
-                    item.value.toLowerCase().includes(search.toLowerCase())
+                    item.toLowerCase().includes(search.toLowerCase())
                   }
                 />
               ),
@@ -328,13 +338,15 @@ const page: React.FC = () => {
                   className="mr-1"
                   collectionId={collectionId}
                   queryKey="sortOrder"
-                  queryFn={async () => sortOrderOptions}
+                  queryFn={async () => sortOrderOptions.map((s) => s.key)}
                   set={setSortOrder}
                   values={sortOrder}
                   title="Sort Order"
-                  renderItemLabel={(item) => item.value}
+                  renderItemLabel={(item) =>
+                    sortOrderOptions.find((i) => i.key === item)?.value || ""
+                  }
                   searchFilter={(item, search) =>
-                    item.value.toLowerCase().includes(search.toLowerCase())
+                    item.toLowerCase().includes(search.toLowerCase())
                   }
                 />
               ),
@@ -372,6 +384,13 @@ const page: React.FC = () => {
           <Text className="font-bold text-xl text-neutral-500">No results</Text>
         </View>
       }
+      extraData={[
+        selectedGenres,
+        selectedYears,
+        selectedTags,
+        sortBy,
+        sortOrder,
+      ]}
       contentInsetAdjustmentBehavior="automatic"
       data={flatData}
       renderItem={renderItem}
