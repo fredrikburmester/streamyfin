@@ -9,7 +9,12 @@ import React, {
   useMemo,
   useState,
 } from "react";
-import { FlatList, RefreshControl, View } from "react-native";
+import {
+  FlatList,
+  RefreshControl,
+  useWindowDimensions,
+  View,
+} from "react-native";
 
 import { Text } from "@/components/common/Text";
 import { TouchableItemRouter } from "@/components/common/TouchableItemRouter";
@@ -39,6 +44,8 @@ import {
 } from "@jellyfin/sdk/lib/utils/api";
 import { FlashList } from "@shopify/flash-list";
 import { Loader } from "@/components/Loader";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { orientationAtom } from "@/utils/atoms/orientation";
 
 const MemoizedTouchableItemRouter = React.memo(TouchableItemRouter);
 
@@ -49,6 +56,7 @@ const Page = () => {
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
   const navigation = useNavigation();
+  const { width: screenWidth } = useWindowDimensions();
 
   const [selectedGenres, setSelectedGenres] = useAtom(genreFilterAtom);
   const [selectedYears, setSelectedYears] = useAtom(yearFilterAtom);
@@ -56,9 +64,15 @@ const Page = () => {
   const [sortBy, setSortBy] = useAtom(sortByAtom);
   const [sortOrder, setSortOrder] = useAtom(sortOrderAtom);
 
-  const [orientation, setOrientation] = useState(
-    ScreenOrientation.Orientation.PORTRAIT_UP
-  );
+  const [orientation, setOrientation] = useAtom(orientationAtom);
+
+  const getNumberOfColumns = useCallback(() => {
+    if (orientation === ScreenOrientation.Orientation.PORTRAIT_UP) return 3;
+    if (screenWidth < 600) return 5;
+    if (screenWidth < 960) return 6;
+    if (screenWidth < 1280) return 7;
+    return 6;
+  }, [screenWidth, orientation]);
 
   useLayoutEffect(() => {
     setSortBy([
@@ -73,22 +87,6 @@ const Page = () => {
         value: "Ascending",
       },
     ]);
-  }, []);
-
-  useEffect(() => {
-    const subscription = ScreenOrientation.addOrientationChangeListener(
-      (event) => {
-        setOrientation(event.orientationInfo.orientation);
-      }
-    );
-
-    ScreenOrientation.getOrientationAsync().then((initialOrientation) => {
-      setOrientation(initialOrientation);
-    });
-
-    return () => {
-      ScreenOrientation.removeOrientationChangeListener(subscription);
-    };
   }, []);
 
   const { data: library, isLoading: isLibraryLoading } = useQuery({
@@ -193,18 +191,19 @@ const Page = () => {
         key={item.Id}
         style={{
           width: "100%",
-          marginBottom:
-            orientation === ScreenOrientation.Orientation.PORTRAIT_UP ? 4 : 16,
+          marginBottom: 4,
         }}
         item={item}
       >
         <View
           style={{
             alignSelf:
-              index % 3 === 0
-                ? "flex-end"
-                : (index + 1) % 3 === 0
-                ? "flex-start"
+              orientation === ScreenOrientation.Orientation.PORTRAIT_UP
+                ? index % 3 === 0
+                  ? "flex-end"
+                  : (index + 1) % 3 === 0
+                  ? "flex-start"
+                  : "center"
                 : "center",
             width: "89%",
           }}
@@ -375,6 +374,8 @@ const Page = () => {
     ]
   );
 
+  const insets = useSafeAreaInsets();
+
   if (isLoading || isLibraryLoading)
     return (
       <View className="w-full h-full flex items-center justify-center">
@@ -399,11 +400,10 @@ const Page = () => {
       contentInsetAdjustmentBehavior="automatic"
       data={flatData}
       renderItem={renderItem}
+      extraData={orientation}
       keyExtractor={keyExtractor}
       estimatedItemSize={244}
-      numColumns={
-        orientation === ScreenOrientation.Orientation.PORTRAIT_UP ? 3 : 5
-      }
+      numColumns={getNumberOfColumns()}
       onEndReached={() => {
         if (hasNextPage) {
           fetchNextPage();
@@ -411,7 +411,11 @@ const Page = () => {
       }}
       onEndReachedThreshold={1}
       ListHeaderComponent={ListHeaderComponent}
-      contentContainerStyle={{ paddingBottom: 24 }}
+      contentContainerStyle={{
+        paddingBottom: 24,
+        paddingLeft: insets.left,
+        paddingRight: insets.right,
+      }}
       ItemSeparatorComponent={() => (
         <View
           style={{

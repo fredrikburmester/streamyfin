@@ -9,20 +9,18 @@ import { DarkTheme, ThemeProvider } from "@react-navigation/native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useFonts } from "expo-font";
 import { useKeepAwake } from "expo-keep-awake";
-import { Stack } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import * as ScreenOrientation from "expo-screen-orientation";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import { Provider as JotaiProvider } from "jotai";
+import { Provider as JotaiProvider, useAtom } from "jotai";
 import { useEffect, useRef } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
+import * as Linking from "expo-linking";
+import { orientationAtom } from "@/utils/atoms/orientation";
 
 SplashScreen.preventAutoHideAsync();
-
-export const unstable_settings = {
-  initialRouteName: "/(auth)/(tabs)/(home)/",
-};
 
 export default function RootLayout() {
   const [loaded] = useFonts({
@@ -48,6 +46,7 @@ export default function RootLayout() {
 
 function Layout() {
   const [settings, updateSettings] = useSettings();
+  const [orientation, setOrientation] = useAtom(orientationAtom);
 
   useKeepAwake();
 
@@ -73,6 +72,29 @@ function Layout() {
         ScreenOrientation.OrientationLock.PORTRAIT_UP
       );
   }, [settings]);
+
+  useEffect(() => {
+    const subscription = ScreenOrientation.addOrientationChangeListener(
+      (event) => {
+        console.log(event.orientationInfo.orientation);
+        setOrientation(event.orientationInfo.orientation);
+      }
+    );
+
+    ScreenOrientation.getOrientationAsync().then((initialOrientation) => {
+      setOrientation(initialOrientation);
+    });
+
+    return () => {
+      ScreenOrientation.removeOrientationChangeListener(subscription);
+    };
+  }, []);
+
+  const url = Linking.useURL();
+
+  if (url) {
+    const { hostname, path, queryParams } = Linking.parse(url);
+  }
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

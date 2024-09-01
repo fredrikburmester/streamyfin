@@ -34,7 +34,7 @@ export const NextUp: React.FC<{ seriesId: string }> = ({ seriesId }) => {
 
   if (!items?.length)
     return (
-      <View>
+      <View className="px-4">
         <Text className="text-lg font-bold mb-2">Next up</Text>
         <Text className="opacity-50">No items to display</Text>
       </View>
@@ -43,17 +43,17 @@ export const NextUp: React.FC<{ seriesId: string }> = ({ seriesId }) => {
   return (
     <View>
       <Text className="text-lg font-bold mb-2 px-4">Next up</Text>
-      <HorizontalScroll<BaseItemDto>
+      <HorizontalScroll
         data={items}
         renderItem={(item, index) => (
           <TouchableOpacity
             onPress={() => {
-              router.push(`/(auth)/items/${item.Id}`);
+              router.push(`/(auth)/items/page?id=${item.Id}`);
             }}
             key={item.Id}
             className="flex flex-col w-44"
           >
-            <ContinueWatchingPoster item={item} />
+            <ContinueWatchingPoster item={item} useEpisodePoster />
             <ItemCardText item={item} />
           </TouchableOpacity>
         )}

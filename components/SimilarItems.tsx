@@ -6,23 +6,26 @@ import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { useAtom } from "jotai";
 import { useMemo } from "react";
-import { ScrollView, TouchableOpacity, View } from "react-native";
+import { ScrollView, TouchableOpacity, View, ViewProps } from "react-native";
 import { Text } from "./common/Text";
 import { ItemCardText } from "./ItemCardText";
 import { Loader } from "./Loader";
 
-type SimilarItemsProps = {
-  itemId: string;
-};
+interface SimilarItemsProps extends ViewProps {
+  itemId?: string | null;
+}
 
-export const SimilarItems: React.FC<SimilarItemsProps> = ({ itemId }) => {
+export const SimilarItems: React.FC<SimilarItemsProps> = ({
+  itemId,
+  ...props
+}) => {
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
 
   const { data: similarItems, isLoading } = useQuery<BaseItemDto[]>({
     queryKey: ["similarItems", itemId],
     queryFn: async () => {
-      if (!api || !user?.Id) return [];
+      if (!api || !user?.Id || !itemId) return [];
       const response = await getLibraryApi(api).getSimilarItems({
         itemId,
         userId: user.Id,
@@ -41,8 +44,8 @@ export const SimilarItems: React.FC<SimilarItemsProps> = ({ itemId }) => {
   );
 
   return (
-    <View>
-      <Text className="px-4 text-2xl font-bold mb-2">Similar items</Text>
+    <View {...props}>
+      <Text className="px-4 text-lg font-bold mb-2">Similar items</Text>
       {isLoading ? (
         <View className="my-12">
           <Loader />
@@ -53,7 +56,7 @@ export const SimilarItems: React.FC<SimilarItemsProps> = ({ itemId }) => {
             {movies.map((item) => (
               <TouchableOpacity
                 key={item.Id}
-                onPress={() => router.push(`/items/${item.Id}`)}
+                onPress={() => router.push(`/items/page?id=${item.Id}`)}
                 className="flex flex-col w-32"
               >
                 <MoviePoster item={item} />
@@ -63,7 +66,9 @@ export const SimilarItems: React.FC<SimilarItemsProps> = ({ itemId }) => {
           </View>
         </ScrollView>
       )}
-      {movies.length === 0 && <Text className="px-4">No similar items</Text>}
+      {movies.length === 0 && (
+        <Text className="px-4 text-neutral-500">No similar items</Text>
+      )}
     </View>
   );
 };

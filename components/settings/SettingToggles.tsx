@@ -58,7 +58,7 @@ export const SettingToggles: React.FC = () => {
           onValueChange={(value) => updateSettings({ autoRotate: value })}
         />
       </View>
-      <View
+      {/* <View
         className={`
             flex flex-row items-center space-x-2 justify-between bg-neutral-900 p-4
           `}
@@ -66,7 +66,7 @@ export const SettingToggles: React.FC = () => {
         <View className="flex flex-col shrink">
           <Text className="font-semibold">Download quality</Text>
           <Text className="text-xs opacity-50">
-            Choose the search engine you want to use.
+            Choose the download quality.
           </Text>
         </View>
         <DropdownMenu.Root>
@@ -97,7 +97,7 @@ export const SettingToggles: React.FC = () => {
             ))}
           </DropdownMenu.Content>
         </DropdownMenu.Root>
-      </View>
+      </View> */}
       <View className="flex flex-row items-center justify-between bg-neutral-900 p-4">
         <View className="shrink">
           <Text className="font-semibold">Start videos in fullscreen</Text>

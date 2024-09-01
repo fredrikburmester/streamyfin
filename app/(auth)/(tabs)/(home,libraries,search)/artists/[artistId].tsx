@@ -8,6 +8,10 @@ import { router, useLocalSearchParams, useNavigation } from "expo-router";
 import { useAtom } from "jotai";
 import { useEffect, useState } from "react";
 import { FlatList, ScrollView, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { ItemImage } from "@/components/common/ItemImage";
+import { ParallaxScrollView } from "@/components/ParallaxPage";
+import { TouchableItemRouter } from "@/components/common/TouchableItemRouter";
 
 export default function page() {
   const searchParams = useLocalSearchParams();
@@ -82,50 +86,45 @@ export default function page() {
     enabled: !!api && !!user?.Id,
   });
 
-  useEffect(() => {
-    navigation.setOptions({
-      title: albums?.Items?.[0]?.AlbumArtist || "",
-    });
-  }, [albums]);
+  const insets = useSafeAreaInsets();
 
   if (!artist || !albums) return null;
 
   return (
-    <FlatList
-      contentContainerStyle={{
-        padding: 16,
-        paddingBottom: 140,
-      }}
-      ListHeaderComponent={
-        <View className="mb-2">
-          <View className="w-32 mb-4">
-            <ArtistPoster item={artist} />
-          </View>
-          <Text className="font-bold text-2xl mb-4">Albums</Text>
-        </View>
-      }
-      nestedScrollEnabled
-      data={albums.Items}
-      numColumns={3}
-      columnWrapperStyle={{
-        justifyContent: "space-between",
-      }}
-      renderItem={({ item, index }) => (
-        <TouchableOpacity
-          style={{ width: "30%" }}
-          key={index}
-          onPress={() => {
-            router.push(`/albums/${item.Id}`);
+    <ParallaxScrollView
+      headerHeight={400}
+      headerImage={
+        <ItemImage
+          variant={"Primary"}
+          item={artist}
+          style={{
+            width: "100%",
+            height: "100%",
           }}
-        >
-          <View className="flex flex-col gap-y-2">
-            <ArtistPoster item={item} />
-            <Text>{item.Name}</Text>
-            <Text className="opacity-50 text-xs">{item.ProductionYear}</Text>
-          </View>
-        </TouchableOpacity>
-      )}
-      keyExtractor={(item) => item.Id || ""}
-    />
+        />
+      }
+    >
+      <View className="px-4 mb-8">
+        <Text className="font-bold text-2xl mb-2">{artist?.Name}</Text>
+        <Text className="text-neutral-500">
+          {albums.TotalRecordCount} albums
+        </Text>
+      </View>
+      <View className="flex flex-row flex-wrap justify-between px-4">
+        {albums.Items.map((item, idx) => (
+          <TouchableItemRouter
+            item={item}
+            style={{ width: "30%", marginBottom: 20 }}
+            key={idx}
+          >
+            <View className="flex flex-col gap-y-2">
+              <ArtistPoster item={item} />
+              <Text numberOfLines={2}>{item.Name}</Text>
+              <Text className="opacity-50 text-xs">{item.ProductionYear}</Text>
+            </View>
+          </TouchableItemRouter>
+        ))}
+      </View>
+    </ParallaxScrollView>
   );
 }

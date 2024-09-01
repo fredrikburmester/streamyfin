@@ -47,7 +47,7 @@ export const LargeMovieCarousel: React.FC<Props> = ({ ...props }) => {
       return response.data.Items?.[0].Id || null;
     },
     enabled: !!api && !!user?.Id && settings?.usePopularPlugin === true,
-    staleTime: 0,
+    staleTime: 60 * 1000,
   });
 
   const onPressPagination = (index: number) => {
@@ -75,7 +75,7 @@ export const LargeMovieCarousel: React.FC<Props> = ({ ...props }) => {
       return response.data.Items || [];
     },
     enabled: !!api && !!user?.Id && !!sf_carousel,
-    staleTime: 0,
+    staleTime: 60 * 1000,
   });
 
   const width = Dimensions.get("screen").width;

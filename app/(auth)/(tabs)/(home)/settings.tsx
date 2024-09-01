@@ -9,6 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 import * as Haptics from "expo-haptics";
 import { useAtom } from "jotai";
 import { ScrollView, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function settings() {
   const { logout } = useJellyfin();
@@ -23,9 +24,17 @@ export default function settings() {
     refetchInterval: 1000,
   });
 
+  const insets = useSafeAreaInsets();
+
   return (
-    <ScrollView>
-      <View className="p-4 flex flex-col gap-y-4 pb-12">
+    <ScrollView
+      contentContainerStyle={{
+        paddingLeft: insets.left,
+        paddingRight: insets.right,
+        paddingBottom: 100,
+      }}
+    >
+      <View className="p-4 flex flex-col gap-y-4">
         <Text className="font-bold text-2xl">Information</Text>
 
         <View className="flex flex-col rounded-xl mb-4 overflow-hidden border-neutral-800 divide-y-2 divide-solid divide-neutral-800 ">

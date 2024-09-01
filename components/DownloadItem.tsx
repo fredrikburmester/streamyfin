@@ -2,8 +2,17 @@ import { useRemuxHlsToMp4 } from "@/hooks/useRemuxHlsToMp4";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import { runningProcesses } from "@/utils/atoms/downloads";
 import { queueActions, queueAtom } from "@/utils/atoms/queue";
-import { getPlaybackInfo } from "@/utils/jellyfin/media/getPlaybackInfo";
+import { useSettings } from "@/utils/atoms/settings";
+import ios from "@/utils/profiles/ios";
+import native from "@/utils/profiles/native";
+import old from "@/utils/profiles/old";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import {
+  BottomSheetBackdrop,
+  BottomSheetBackdropProps,
+  BottomSheetModal,
+  BottomSheetView,
+} from "@gorhom/bottom-sheet";
 import {
   BaseItemDto,
   MediaSourceInfo,
@@ -12,21 +21,18 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { useAtom } from "jotai";
-import {
-  TouchableOpacity,
-  TouchableOpacityProps,
-  View,
-  ViewProps,
-} from "react-native";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { Alert, TouchableOpacity, View, ViewProps } from "react-native";
+import { AudioTrackSelector } from "./AudioTrackSelector";
+import { Bitrate, BitrateSelector } from "./BitrateSelector";
+import { Button } from "./Button";
+import { Text } from "./common/Text";
 import { Loader } from "./Loader";
+import { MediaSourceSelector } from "./MediaSourceSelector";
 import ProgressCircle from "./ProgressCircle";
-import { DownloadQuality, useSettings } from "@/utils/atoms/settings";
-import { useCallback } from "react";
-import ios from "@/utils/profiles/ios";
-import native from "@/utils/profiles/native";
-import old from "@/utils/profiles/old";
+import { SubtitleTrackSelector } from "./SubtitleTrackSelector";
 
-interface DownloadProps extends TouchableOpacityProps {
+interface DownloadProps extends ViewProps {
   item: BaseItemDto;
 }
 
@@ -35,100 +41,135 @@ export const DownloadItem: React.FC<DownloadProps> = ({ item, ...props }) => {
   const [user] = useAtom(userAtom);
   const [process] = useAtom(runningProcesses);
   const [queue, setQueue] = useAtom(queueAtom);
-
   const [settings] = useSettings();
-
   const { startRemuxing } = useRemuxHlsToMp4(item);
 
-  const initiateDownload = useCallback(
-    async (qualitySetting: DownloadQuality) => {
-      if (!api || !user?.Id || !item.Id) {
-        throw new Error(
-          "DownloadItem ~ initiateDownload: No api or user or item"
-        );
-      }
+  const [selectedMediaSource, setSelectedMediaSource] =
+    useState<MediaSourceInfo | null>(null);
+  const [selectedAudioStream, setSelectedAudioStream] = useState<number>(-1);
+  const [selectedSubtitleStream, setSelectedSubtitleStream] =
+    useState<number>(0);
+  const [maxBitrate, setMaxBitrate] = useState<Bitrate>({
+    key: "Max",
+    value: undefined,
+  });
 
-      let deviceProfile: any = ios;
+  const userCanDownload = useMemo(() => {
+    return user?.Policy?.EnableContentDownloading;
+  }, [user]);
 
-      if (settings?.deviceProfile === "Native") {
-        deviceProfile = native;
-      } else if (settings?.deviceProfile === "Old") {
-        deviceProfile = old;
-      }
+  /**
+   * Bottom sheet
+   */
+  const bottomSheetModalRef = useRef<BottomSheetModal>(null);
 
-      let maxStreamingBitrate: number | undefined = undefined;
+  const handlePresentModalPress = useCallback(() => {
+    bottomSheetModalRef.current?.present();
+  }, []);
 
-      if (qualitySetting === "high") {
-        maxStreamingBitrate = 8000000;
-      } else if (qualitySetting === "low") {
-        maxStreamingBitrate = 2000000;
-      }
+  const handleSheetChanges = useCallback((index: number) => {
+    console.log("handleSheetChanges", index);
+  }, []);
 
-      const response = await api.axiosInstance.post(
-        `${api.basePath}/Items/${item.Id}/PlaybackInfo`,
-        {
-          DeviceProfile: deviceProfile,
-          UserId: user.Id,
-          MaxStreamingBitrate: maxStreamingBitrate,
-          StartTimeTicks: 0,
-          EnableTranscoding: maxStreamingBitrate ? true : undefined,
-          AutoOpenLiveStream: true,
-          MediaSourceId: item.Id,
-          AllowVideoStreamCopy: maxStreamingBitrate ? false : true,
-        },
-        {
-          headers: {
-            Authorization: `MediaBrowser DeviceId="${api.deviceInfo.id}", Token="${api.accessToken}"`,
-          },
-        }
+  const closeModal = useCallback(() => {
+    bottomSheetModalRef.current?.dismiss();
+  }, []);
+
+  /**
+   * Start download
+   */
+  const initiateDownload = useCallback(async () => {
+    if (!api || !user?.Id || !item.Id || !selectedMediaSource?.Id) {
+      throw new Error(
+        "DownloadItem ~ initiateDownload: No api or user or item"
       );
+    }
 
-      let url: string | undefined = undefined;
+    let deviceProfile: any = ios;
 
-      const mediaSource = response.data.MediaSources?.[0] as MediaSourceInfo;
+    if (settings?.deviceProfile === "Native") {
+      deviceProfile = native;
+    } else if (settings?.deviceProfile === "Old") {
+      deviceProfile = old;
+    }
 
-      if (!mediaSource) {
-        throw new Error("No media source");
+    const response = await api.axiosInstance.post(
+      `${api.basePath}/Items/${item.Id}/PlaybackInfo`,
+      {
+        DeviceProfile: deviceProfile,
+        UserId: user.Id,
+        MaxStreamingBitrate: maxBitrate.value,
+        StartTimeTicks: 0,
+        EnableTranscoding: maxBitrate.value ? true : undefined,
+        AutoOpenLiveStream: true,
+        AllowVideoStreamCopy: maxBitrate.value ? false : true,
+        MediaSourceId: selectedMediaSource?.Id,
+        AudioStreamIndex: selectedAudioStream,
+        SubtitleStreamIndex: selectedSubtitleStream,
+      },
+      {
+        headers: {
+          Authorization: `MediaBrowser DeviceId="${api.deviceInfo.id}", Token="${api.accessToken}"`,
+        },
       }
+    );
 
-      if (mediaSource.SupportsDirectPlay) {
-        if (item.MediaType === "Video") {
-          console.log("Using direct stream for video!");
-          url = `${api.basePath}/Videos/${item.Id}/stream.mp4?mediaSourceId=${item.Id}&static=true`;
-        } else if (item.MediaType === "Audio") {
-          console.log("Using direct stream for audio!");
-          const searchParams = new URLSearchParams({
-            UserId: user.Id,
-            DeviceId: api.deviceInfo.id,
-            MaxStreamingBitrate: "140000000",
-            Container:
-              "opus,webm|opus,mp3,aac,m4a|aac,m4b|aac,flac,webma,webm|webma,wav,ogg",
-            TranscodingContainer: "mp4",
-            TranscodingProtocol: "hls",
-            AudioCodec: "aac",
-            api_key: api.accessToken,
-            StartTimeTicks: "0",
-            EnableRedirection: "true",
-            EnableRemoteMedia: "false",
-          });
-          url = `${api.basePath}/Audio/${
-            item.Id
-          }/universal?${searchParams.toString()}`;
-        }
+    let url: string | undefined = undefined;
+
+    const mediaSource: MediaSourceInfo = response.data.MediaSources.find(
+      (source: MediaSourceInfo) => source.Id === selectedMediaSource?.Id
+    );
+
+    if (!mediaSource) {
+      throw new Error("No media source");
+    }
+
+    if (mediaSource.SupportsDirectPlay) {
+      if (item.MediaType === "Video") {
+        console.log("Using direct stream for video!");
+        url = `${api.basePath}/Videos/${item.Id}/stream.mp4?mediaSourceId=${item.Id}&static=true&mediaSourceId=${mediaSource.Id}&deviceId=${api.deviceInfo.id}&api_key=${api.accessToken}`;
+      } else if (item.MediaType === "Audio") {
+        console.log("Using direct stream for audio!");
+        const searchParams = new URLSearchParams({
+          UserId: user.Id,
+          DeviceId: api.deviceInfo.id,
+          MaxStreamingBitrate: "140000000",
+          Container:
+            "opus,webm|opus,mp3,aac,m4a|aac,m4b|aac,flac,webma,webm|webma,wav,ogg",
+          TranscodingContainer: "mp4",
+          TranscodingProtocol: "hls",
+          AudioCodec: "aac",
+          api_key: api.accessToken,
+          StartTimeTicks: "0",
+          EnableRedirection: "true",
+          EnableRemoteMedia: "false",
+        });
+        url = `${api.basePath}/Audio/${
+          item.Id
+        }/universal?${searchParams.toString()}`;
       }
+    } else if (mediaSource.TranscodingUrl) {
+      console.log("Using transcoded stream!");
+      url = `${api.basePath}${mediaSource.TranscodingUrl}`;
+    }
 
-      if (mediaSource.TranscodingUrl) {
-        console.log("Using transcoded stream!");
-        url = `${api.basePath}${mediaSource.TranscodingUrl}`;
-      } else {
-        throw new Error("No transcoding url");
-      }
+    if (!url) throw new Error("No url");
 
-      return await startRemuxing(url);
-    },
-    [api, item, startRemuxing, user?.Id]
-  );
+    return await startRemuxing(url);
+  }, [
+    api,
+    item,
+    startRemuxing,
+    user?.Id,
+    selectedMediaSource,
+    selectedAudioStream,
+    selectedSubtitleStream,
+    maxBitrate,
+  ]);
 
+  /**
+   * Check if item is downloaded
+   */
   const { data: downloaded, isFetching } = useQuery({
     queryKey: ["downloaded", item.Id],
     queryFn: async () => {
@@ -143,23 +184,30 @@ export const DownloadItem: React.FC<DownloadProps> = ({ item, ...props }) => {
     enabled: !!item.Id,
   });
 
-  if (isFetching) {
-    return (
-      <View className="rounded h-10 aspect-square flex items-center justify-center">
-        <Loader />
-      </View>
-    );
-  }
-
-  if (process && process?.item.Id === item.Id) {
-    return (
-      <TouchableOpacity
-        onPress={() => {
-          router.push("/downloads");
-        }}
+  const renderBackdrop = useCallback(
+    (props: BottomSheetBackdropProps) => (
+      <BottomSheetBackdrop
         {...props}
-      >
-        <View className="rounded h-10 aspect-square flex items-center justify-center">
+        disappearsOnIndex={-1}
+        appearsOnIndex={0}
+      />
+    ),
+    []
+  );
+
+  return (
+    <View
+      className="bg-neutral-800/80 rounded-full h-10 w-10 flex items-center justify-center"
+      {...props}
+    >
+      {isFetching ? (
+        <Loader />
+      ) : process && process?.item.Id === item.Id ? (
+        <TouchableOpacity
+          onPress={() => {
+            router.push("/downloads");
+          }}
+        >
           {process.progress === 0 ? (
             <Loader />
           ) : (
@@ -173,61 +221,97 @@ export const DownloadItem: React.FC<DownloadProps> = ({ item, ...props }) => {
               />
             </View>
           )}
-        </View>
-      </TouchableOpacity>
-    );
-  }
-
-  if (queue.some((i) => i.id === item.Id)) {
-    return (
-      <TouchableOpacity
-        onPress={() => {
-          router.push("/downloads");
-        }}
-        {...props}
-      >
-        <View className="rounded h-10 aspect-square flex items-center justify-center opacity-50">
+        </TouchableOpacity>
+      ) : queue.some((i) => i.id === item.Id) ? (
+        <TouchableOpacity
+          onPress={() => {
+            router.push("/downloads");
+          }}
+        >
           <Ionicons name="hourglass" size={24} color="white" />
-        </View>
-      </TouchableOpacity>
-    );
-  }
-
-  if (downloaded) {
-    return (
-      <TouchableOpacity
-        onPress={() => {
-          router.push("/downloads");
-        }}
-        {...props}
-      >
-        <View className="rounded h-10 aspect-square flex items-center justify-center">
+        </TouchableOpacity>
+      ) : downloaded ? (
+        <TouchableOpacity
+          onPress={() => {
+            router.push("/downloads");
+          }}
+        >
           <Ionicons name="cloud-download" size={26} color="#9333ea" />
-        </View>
-      </TouchableOpacity>
-    );
-  } else {
-    return (
-      <TouchableOpacity
-        onPress={() => {
-          queueActions.enqueue(queue, setQueue, {
-            id: item.Id!,
-            execute: async () => {
-              // await startRemuxing(playbackUrl);
-              if (!settings?.downloadQuality?.value) {
-                throw new Error("No download quality selected");
-              }
-              await initiateDownload(settings?.downloadQuality?.value);
-            },
-            item,
-          });
+        </TouchableOpacity>
+      ) : (
+        <TouchableOpacity onPress={handlePresentModalPress}>
+          <Ionicons name="cloud-download-outline" size={24} color="white" />
+        </TouchableOpacity>
+      )}
+      <BottomSheetModal
+        ref={bottomSheetModalRef}
+        enableDynamicSizing
+        handleIndicatorStyle={{
+          backgroundColor: "white",
         }}
-        {...props}
+        backgroundStyle={{
+          backgroundColor: "#171717",
+        }}
+        onChange={handleSheetChanges}
+        backdropComponent={renderBackdrop}
       >
-        <View className="rounded h-10 aspect-square flex items-center justify-center">
-          <Ionicons name="cloud-download-outline" size={26} color="white" />
-        </View>
-      </TouchableOpacity>
-    );
-  }
+        <BottomSheetView>
+          <View className="flex flex-col space-y-4 px-4 pb-8 pt-2">
+            <Text className="font-bold text-2xl text-neutral-10">
+              Download options
+            </Text>
+            <View className="flex flex-col space-y-2 w-full items-start">
+              <BitrateSelector
+                inverted
+                onChange={(val) => setMaxBitrate(val)}
+                selected={maxBitrate}
+              />
+              <MediaSourceSelector
+                item={item}
+                onChange={setSelectedMediaSource}
+                selected={selectedMediaSource}
+              />
+              {selectedMediaSource && (
+                <View className="flex flex-col space-y-2">
+                  <AudioTrackSelector
+                    source={selectedMediaSource}
+                    onChange={setSelectedAudioStream}
+                    selected={selectedAudioStream}
+                  />
+                  <SubtitleTrackSelector
+                    source={selectedMediaSource}
+                    onChange={setSelectedSubtitleStream}
+                    selected={selectedSubtitleStream}
+                  />
+                </View>
+              )}
+            </View>
+            <Button
+              className="mt-auto"
+              onPress={() => {
+                if (userCanDownload === true) {
+                  closeModal();
+                  queueActions.enqueue(queue, setQueue, {
+                    id: item.Id!,
+                    execute: async () => {
+                      await initiateDownload();
+                    },
+                    item,
+                  });
+                } else {
+                  Alert.alert(
+                    "Disabled",
+                    "This user is not allowed to download files."
+                  );
+                }
+              }}
+              color="purple"
+            >
+              Download
+            </Button>
+          </View>
+        </BottomSheetView>
+      </BottomSheetModal>
+    </View>
+  );
 };

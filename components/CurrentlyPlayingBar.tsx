@@ -24,8 +24,8 @@ export const CurrentlyPlayingBar: React.FC = () => {
     currentlyPlaying,
     pauseVideo,
     playVideo,
-    setCurrentlyPlayingState,
     stopPlayback,
+    setVolume,
     setIsPlaying,
     isPlaying,
     videoRef,
@@ -34,7 +34,6 @@ export const CurrentlyPlayingBar: React.FC = () => {
   } = usePlayback();
 
   const [api] = useAtom(apiAtom);
-  const [user] = useAtom(userAtom);
 
   const aBottom = useSharedValue(0);
   const aPadding = useSharedValue(0);
@@ -64,6 +63,8 @@ export const CurrentlyPlayingBar: React.FC = () => {
     };
   });
 
+  const from = useMemo(() => segments[2], [segments]);
+
   useEffect(() => {
     if (segments.find((s) => s.includes("tabs"))) {
       // Tab screen - i.e. home
@@ -92,16 +93,40 @@ export const CurrentlyPlayingBar: React.FC = () => {
     [currentlyPlaying?.item]
   );
 
-  const backdropUrl = useMemo(
-    () =>
-      getBackdropUrl({
+  const poster = useMemo(() => {
+    if (currentlyPlaying?.item.Type === "Audio")
+      return `${api?.basePath}/Items/${currentlyPlaying.item.AlbumId}/Images/Primary?tag=${currentlyPlaying.item.AlbumPrimaryImageTag}&quality=90&maxHeight=200&maxWidth=200`;
+    else
+      return getBackdropUrl({
         api,
         item: currentlyPlaying?.item,
         quality: 70,
         width: 200,
-      }),
-    [currentlyPlaying?.item, api]
-  );
+      });
+  }, [currentlyPlaying?.item.Id, api]);
+
+  const videoSource = useMemo(() => {
+    if (!api || !currentlyPlaying || !poster) return null;
+    return {
+      uri: currentlyPlaying.url,
+      isNetwork: true,
+      startPosition,
+      headers: getAuthHeaders(api),
+      metadata: {
+        artist: currentlyPlaying.item?.AlbumArtist
+          ? currentlyPlaying.item?.AlbumArtist
+          : undefined,
+        title: currentlyPlaying.item?.Name || "Unknown",
+        description: currentlyPlaying.item?.Overview
+          ? currentlyPlaying.item?.Overview
+          : undefined,
+        imageUri: poster,
+        subtitle: currentlyPlaying.item?.Album
+          ? currentlyPlaying.item?.Album
+          : undefined,
+      },
+    };
+  }, [currentlyPlaying, startPosition, api, poster]);
 
   if (!api || !currentlyPlaying) return null;
 
@@ -137,7 +162,7 @@ export const CurrentlyPlayingBar: React.FC = () => {
                 }
                 `}
             >
-              {currentlyPlaying?.url && (
+              {videoSource && (
                 <Video
                   ref={videoRef}
                   allowsExternalPlayback
@@ -149,60 +174,37 @@ export const CurrentlyPlayingBar: React.FC = () => {
                   controls={false}
                   pictureInPicture={true}
                   poster={
-                    backdropUrl && currentlyPlaying.item?.Type === "Audio"
-                      ? backdropUrl
+                    poster && currentlyPlaying.item?.Type === "Audio"
+                      ? poster
                       : undefined
                   }
                   debug={{
                     enable: true,
                     thread: true,
                   }}
-                  paused={!isPlaying}
                   onProgress={(e) => onProgress(e)}
                   subtitleStyle={{
                     fontSize: 16,
                   }}
-                  source={{
-                    uri: currentlyPlaying.url,
-                    isNetwork: true,
-                    startPosition,
-                    headers: getAuthHeaders(api),
-                    metadata: {
-                      artist: currentlyPlaying.item?.AlbumArtist
-                        ? currentlyPlaying.item?.AlbumArtist
-                        : undefined,
-                      title: currentlyPlaying.item?.Name
-                        ? currentlyPlaying.item?.Name
-                        : "Unknown",
-                      description: currentlyPlaying.item?.Overview
-                        ? currentlyPlaying.item?.Overview
-                        : undefined,
-                      imageUri: backdropUrl ? backdropUrl : undefined,
-                      subtitle: currentlyPlaying.item?.Album
-                        ? currentlyPlaying.item?.Album
-                        : undefined,
-                    },
-                  }}
+                  source={videoSource}
                   onRestoreUserInterfaceForPictureInPictureStop={() => {
                     setTimeout(() => {
                       presentFullscreenPlayer();
                     }, 300);
                   }}
-                  onBuffer={(e) =>
-                    e.isBuffering ? console.log("Buffering...") : null
-                  }
                   onFullscreenPlayerDidDismiss={() => {}}
                   onFullscreenPlayerDidPresent={() => {}}
                   onPlaybackStateChanged={(e) => {
-                    if (e.isPlaying) {
-                      setIsPlaying(true);
-                    } else if (e.isSeeking) {
-                      return;
-                    } else {
-                      setIsPlaying(false);
+                    if (e.isPlaying === true) {
+                      playVideo(false);
+                    } else if (e.isPlaying === false) {
+                      pauseVideo(false);
                     }
                   }}
-                  progressUpdateInterval={2000}
+                  onVolumeChange={(e) => {
+                    setVolume(e.volume);
+                  }}
+                  progressUpdateInterval={4000}
                   onError={(e) => {
                     console.log(e);
                     writeToLog(
@@ -226,9 +228,17 @@ export const CurrentlyPlayingBar: React.FC = () => {
             <View className="shrink text-xs">
               <TouchableOpacity
                 onPress={() => {
-                  if (currentlyPlaying.item?.Type === "Audio")
-                    router.push(`/albums/${currentlyPlaying.item?.AlbumId}`);
-                  else router.push(`/items/${currentlyPlaying.item?.Id}`);
+                  if (currentlyPlaying.item?.Type === "Audio") {
+                    router.push(
+                      // @ts-ignore
+                      `/(auth)/(tabs)/${from}/albums/${currentlyPlaying.item.AlbumId}`
+                    );
+                  } else {
+                    router.push(
+                      // @ts-ignore
+                      `/(auth)/(tabs)/${from}/items/page?id=${currentlyPlaying.item?.Id}`
+                    );
+                  }
                 }}
               >
                 <Text>{currentlyPlaying.item?.Name}</Text>
@@ -237,7 +247,8 @@ export const CurrentlyPlayingBar: React.FC = () => {
                 <TouchableOpacity
                   onPress={() => {
                     router.push(
-                      `/(auth)/series/${currentlyPlaying.item.SeriesId}`
+                      // @ts-ignore
+                      `/(auth)/(tabs)/${from}/series/${currentlyPlaying.item.SeriesId}`
                     );
                   }}
                   className="text-xs opacity-50"

@@ -12,14 +12,30 @@ import { Text } from "../common/Text";
 import { TouchableItemRouter } from "../common/TouchableItemRouter";
 import { ItemCardText } from "../ItemCardText";
 import MoviePoster from "../posters/MoviePoster";
+import {
+  type QueryKey,
+  type QueryFunction,
+  useQuery,
+} from "@tanstack/react-query";
 
 interface Props extends ViewProps {
-  collection: BaseItemDto;
+  queryKey: QueryKey;
+  queryFn: QueryFunction<BaseItemDto>;
 }
 
-export const MediaListSection: React.FC<Props> = ({ collection, ...props }) => {
+export const MediaListSection: React.FC<Props> = ({
+  queryFn,
+  queryKey,
+  ...props
+}) => {
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
+
+  const { data: collection, isLoading } = useQuery({
+    queryKey,
+    queryFn,
+    staleTime: 60 * 1000,
+  });
 
   const fetchItems = useCallback(
     async ({
@@ -27,7 +43,7 @@ export const MediaListSection: React.FC<Props> = ({ collection, ...props }) => {
     }: {
       pageParam: number;
     }): Promise<BaseItemDtoQueryResult | null> => {
-      if (!api || !user?.Id) return null;
+      if (!api || !user?.Id || !collection) return null;
 
       const response = await getItemsApi(api).getItems({
         userId: user.Id,
@@ -38,7 +54,7 @@ export const MediaListSection: React.FC<Props> = ({ collection, ...props }) => {
 
       return response.data;
     },
-    [api, user?.Id, collection.Id]
+    [api, user?.Id, collection?.Id]
   );
 
   if (!collection) return null;

@@ -5,12 +5,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 
 interface Props extends ViewProps {
-  item: BaseItemDto;
+  item?: BaseItemDto | null;
 }
 
-export const Ratings: React.FC<Props> = ({ item }) => {
+export const Ratings: React.FC<Props> = ({ item, ...props }) => {
+  if (!item) return null;
   return (
-    <View className="flex flex-row items-center justify-center mt-2 space-x-2">
+    <View className="flex flex-row items-center mt-2 space-x-2" {...props}>
       {item.OfficialRating && (
         <Badge text={item.OfficialRating} variant="gray" />
       )}

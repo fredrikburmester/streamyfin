@@ -1,4 +1,3 @@
-import { Button } from "@/components/Button";
 import { HorizontalScroll } from "@/components/common/HorrizontalScroll";
 import { Input } from "@/components/common/Input";
 import { Text } from "@/components/common/Text";
@@ -12,8 +11,6 @@ import SeriesPoster from "@/components/posters/SeriesPoster";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import { useSettings } from "@/utils/atoms/settings";
 import { getUserItemData } from "@/utils/jellyfin/user-library/getUserItemData";
-import { Ionicons } from "@expo/vector-icons";
-import { Api } from "@jellyfin/sdk";
 import {
   BaseItemDto,
   BaseItemKind,
@@ -21,13 +18,7 @@ import {
 import { getItemsApi, getSearchApi } from "@jellyfin/sdk/lib/utils/api";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import {
-  Href,
-  router,
-  useLocalSearchParams,
-  useNavigation,
-  usePathname,
-} from "expo-router";
+import { Href, router, useLocalSearchParams, useNavigation } from "expo-router";
 import { useAtom } from "jotai";
 import React, {
   useCallback,
@@ -37,6 +28,7 @@ import React, {
   useState,
 } from "react";
 import { Platform, ScrollView, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDebounce } from "use-debounce";
 
 const exampleSearches = [
@@ -50,6 +42,7 @@ const exampleSearches = [
 
 export default function search() {
   const params = useLocalSearchParams();
+  const insets = useSafeAreaInsets();
 
   const { q, prev } = params as { q: string; prev: Href<string> };
 
@@ -229,6 +222,10 @@ export default function search() {
       <ScrollView
         keyboardDismissMode="on-drag"
         contentInsetAdjustmentBehavior="automatic"
+        contentContainerStyle={{
+          paddingLeft: insets.left,
+          paddingRight: insets.right,
+        }}
       >
         <View className="flex flex-col pt-4 pb-32">
           {Platform.OS === "android" && (
@@ -254,7 +251,7 @@ export default function search() {
             header="Movies"
             ids={movies?.map((m) => m.Id!)}
             renderItem={(data) => (
-              <HorizontalScroll<BaseItemDto>
+              <HorizontalScroll
                 data={data}
                 renderItem={(item) => (
                   <TouchableItemRouter
@@ -278,7 +275,7 @@ export default function search() {
             ids={series?.map((m) => m.Id!)}
             header="Series"
             renderItem={(data) => (
-              <HorizontalScroll<BaseItemDto>
+              <HorizontalScroll
                 data={data}
                 renderItem={(item) => (
                   <TouchableOpacity
@@ -302,12 +299,12 @@ export default function search() {
             ids={episodes?.map((m) => m.Id!)}
             header="Episodes"
             renderItem={(data) => (
-              <HorizontalScroll<BaseItemDto>
+              <HorizontalScroll
                 data={data}
                 renderItem={(item) => (
                   <TouchableOpacity
                     key={item.Id}
-                    onPress={() => router.push(`/items/${item.Id}`)}
+                    onPress={() => router.push(`/items/page?id=${item.Id}`)}
                     className="flex flex-col w-44"
                   >
                     <ContinueWatchingPoster item={item} />
@@ -321,7 +318,7 @@ export default function search() {
             ids={collections?.map((m) => m.Id!)}
             header="Collections"
             renderItem={(data) => (
-              <HorizontalScroll<BaseItemDto>
+              <HorizontalScroll
                 data={data}
                 renderItem={(item) => (
                   <TouchableOpacity
@@ -342,7 +339,7 @@ export default function search() {
             ids={actors?.map((m) => m.Id!)}
             header="Actors"
             renderItem={(data) => (
-              <HorizontalScroll<BaseItemDto>
+              <HorizontalScroll
                 data={data}
                 renderItem={(item) => (
                   <TouchableItemRouter
@@ -361,7 +358,7 @@ export default function search() {
             ids={artists?.map((m) => m.Id!)}
             header="Artists"
             renderItem={(data) => (
-              <HorizontalScroll<BaseItemDto>
+              <HorizontalScroll
                 data={data}
                 renderItem={(item) => (
                   <TouchableItemRouter
@@ -380,7 +377,7 @@ export default function search() {
             ids={albums?.map((m) => m.Id!)}
             header="Albums"
             renderItem={(data) => (
-              <HorizontalScroll<BaseItemDto>
+              <HorizontalScroll
                 data={data}
                 renderItem={(item) => (
                   <TouchableItemRouter
@@ -399,7 +396,7 @@ export default function search() {
             ids={songs?.map((m) => m.Id!)}
             header="Songs"
             renderItem={(data) => (
-              <HorizontalScroll<BaseItemDto>
+              <HorizontalScroll
                 data={data}
                 renderItem={(item) => (
                   <TouchableItemRouter

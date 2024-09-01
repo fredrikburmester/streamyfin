@@ -5,29 +5,41 @@ import { useAtom } from "jotai";
 import { useMemo, useState } from "react";
 import { View } from "react-native";
 import { WatchedIndicator } from "./WatchedIndicator";
-import { getPrimaryImageUrl } from "@/utils/jellyfin/image/getPrimaryImageUrl";
 
 type ContinueWatchingPosterProps = {
   item: BaseItemDto;
   width?: number;
+  useEpisodePoster?: boolean;
 };
 
 const ContinueWatchingPoster: React.FC<ContinueWatchingPosterProps> = ({
   item,
   width = 176,
+  useEpisodePoster = false,
 }) => {
   const [api] = useAtom(apiAtom);
 
-  const url = useMemo(
-    () =>
-      getPrimaryImageUrl({
-        api,
-        item,
-        quality: 80,
-        width: 300,
-      }),
-    [item]
-  );
+  /**
+   * Get horrizontal poster for movie and episode, with failover to primary.
+   */
+  const url = useMemo(() => {
+    if (!api) return;
+    if (item.Type === "Episode" && useEpisodePoster) {
+      return `${api?.basePath}/Items/${item.Id}/Images/Primary?fillHeight=389&quality=80`;
+    }
+    if (item.Type === "Episode") {
+      if (item.ParentBackdropItemId && item.ParentThumbImageTag)
+        return `${api?.basePath}/Items/${item.ParentBackdropItemId}/Images/Thumb?fillHeight=389&quality=80&tag=${item.ParentThumbImageTag}`;
+      else
+        return `${api?.basePath}/Items/${item.Id}/Images/Primary?fillHeight=389&quality=80`;
+    }
+    if (item.Type === "Movie") {
+      if (item.ImageTags?.["Thumb"])
+        return `${api?.basePath}/Items/${item.Id}/Images/Thumb?fillHeight=389&quality=80&tag=${item.ImageTags?.["Thumb"]}`;
+      else
+        return `${api?.basePath}/Items/${item.Id}/Images/Primary?fillHeight=389&quality=80`;
+    }
+  }, [item]);
 
   const [progress, setProgress] = useState(
     item.UserData?.PlayedPercentage || 0
