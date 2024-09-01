@@ -224,7 +224,9 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
   useEffect(() => {
     if (!deviceId || !api?.accessToken) return;
 
-    const url = `wss://${api?.basePath
+    const protocol = api?.basePath.includes("https") ? "wss" : "ws";
+
+    const url = `${protocol}://${api?.basePath
       .replace("https://", "")
       .replace("http://", "")}/socket?api_key=${
       api?.accessToken

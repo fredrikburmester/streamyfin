@@ -23,7 +23,7 @@ export const FilterButton = <T,>({
   queryFn,
   queryKey,
   set,
-  values,
+  values, // selected values
   title,
   renderItemLabel,
   searchFilter,

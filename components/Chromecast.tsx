@@ -1,10 +1,12 @@
+import { Feather } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import React, { useEffect } from "react";
-import { Platform, View, ViewProps } from "react-native";
+import { Platform, TouchableOpacity, ViewProps } from "react-native";
 import GoogleCast, {
-  CastButton,
+  CastContext,
   useCastDevice,
   useDevices,
+  useMediaStatus,
   useRemoteMediaClient,
 } from "react-native-google-cast";
 
@@ -25,6 +27,7 @@ export const Chromecast: React.FC<Props> = ({
   const devices = useDevices();
   const sessionManager = GoogleCast.getSessionManager();
   const discoveryManager = GoogleCast.getDiscoveryManager();
+  const mediaStatus = useMediaStatus();
 
   useEffect(() => {
     (async () => {
@@ -38,31 +41,47 @@ export const Chromecast: React.FC<Props> = ({
 
   if (background === "transparent")
     return (
-      <View
+      <TouchableOpacity
+        onPress={() => {
+          if (mediaStatus?.currentItemId) CastContext.showExpandedControls();
+          else CastContext.showCastDialog();
+        }}
         className="rounded-full h-10 w-10 flex items-center justify-center b"
         {...props}
       >
-        <CastButton style={{ tintColor: "white", height, width }} />
-      </View>
+        <Feather name="cast" size={22} color={"white"} />
+      </TouchableOpacity>
     );
 
   if (Platform.OS === "android")
     return (
-      <View
+      <TouchableOpacity
+        onPress={() => {
+          if (mediaStatus?.currentItemId) CastContext.showExpandedControls();
+          else CastContext.showCastDialog();
+        }}
         className="rounded-full h-10 w-10 flex items-center justify-center bg-neutral-800/80"
         {...props}
       >
-        <CastButton style={{ tintColor: "white", height, width }} />
-      </View>
+        <Feather name="cast" size={22} color={"white"} />
+      </TouchableOpacity>
     );
 
   return (
-    <BlurView
-      intensity={100}
-      className="rounded-full overflow-hidden h-10 aspect-square flex items-center justify-center"
+    <TouchableOpacity
+      onPress={() => {
+        if (mediaStatus?.currentItemId) CastContext.showExpandedControls();
+        else CastContext.showCastDialog();
+      }}
       {...props}
     >
-      <CastButton style={{ tintColor: "white", height, width }} />
-    </BlurView>
+      <BlurView
+        intensity={100}
+        className="rounded-full overflow-hidden h-10 aspect-square flex items-center justify-center"
+        {...props}
+      >
+        <Feather name="cast" size={22} color={"white"} />
+      </BlurView>
+    </TouchableOpacity>
   );
 };

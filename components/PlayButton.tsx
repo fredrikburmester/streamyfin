@@ -9,6 +9,7 @@ import { useEffect, useMemo } from "react";
 import { TouchableOpacity, View } from "react-native";
 import CastContext, {
   PlayServicesState,
+  useMediaStatus,
   useRemoteMediaClient,
 } from "react-native-google-cast";
 import Animated, {
@@ -22,6 +23,10 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { Button } from "./Button";
+import { getPrimaryImageUrl } from "@/utils/jellyfin/image/getPrimaryImageUrl";
+import { apiAtom } from "@/providers/JellyfinProvider";
+import { getBackdropUrl } from "@/utils/jellyfin/image/getBackdropUrl";
+import { getParentBackdropImageUrl } from "@/utils/jellyfin/image/getParentBackdropImageUrl";
 
 interface Props extends React.ComponentProps<typeof Button> {
   item?: BaseItemDto | null;
@@ -33,11 +38,12 @@ const MIN_PLAYBACK_WIDTH = 15;
 
 export const PlayButton: React.FC<Props> = ({ item, url, ...props }) => {
   const { showActionSheetWithOptions } = useActionSheet();
-  const { setCurrentlyPlayingState } = usePlayback();
-
   const client = useRemoteMediaClient();
+  const { setCurrentlyPlayingState } = usePlayback();
+  const mediaStatus = useMediaStatus();
 
   const [colorAtom] = useAtom(itemThemeColorAtom);
+  const [api] = useAtom(apiAtom);
 
   const memoizedItem = useMemo(() => item, [item?.Id]); // Memoize the item
   const memoizedColor = useMemo(() => colorAtom, [colorAtom]); // Memoize the color
@@ -63,24 +69,88 @@ export const PlayButton: React.FC<Props> = ({ item, url, ...props }) => {
         cancelButtonIndex,
       },
       async (selectedIndex: number | undefined) => {
+        if (!api) return;
+        const currentTitle = mediaStatus?.mediaInfo?.metadata?.title;
+        const isOpeningCurrentlyPlayingMedia =
+          currentTitle && currentTitle === item?.Name;
+
         switch (selectedIndex) {
           case 0:
             await CastContext.getPlayServicesState().then((state) => {
               if (state && state !== PlayServicesState.SUCCESS)
                 CastContext.showPlayServicesErrorDialog(state);
               else {
-                client.loadMedia({
-                  mediaInfo: {
-                    contentUrl: url,
-                    contentType: "video/mp4",
-                    metadata: {
-                      type: item.Type === "Episode" ? "tvShow" : "movie",
-                      title: item.Name || "",
-                      subtitle: item.Overview || "",
+                // If we're opening a currently playing item, don't restart the media.
+                // Instead just open controls.
+                if (isOpeningCurrentlyPlayingMedia) {
+                  CastContext.showExpandedControls();
+                  return;
+                }
+                client
+                  .loadMedia({
+                    mediaInfo: {
+                      contentUrl: url,
+                      contentType: "video/mp4",
+                      metadata:
+                        item.Type === "Episode"
+                          ? {
+                              type: "tvShow",
+                              title: item.Name || "",
+                              episodeNumber: item.IndexNumber || 0,
+                              seasonNumber: item.ParentIndexNumber || 0,
+                              seriesTitle: item.SeriesName || "",
+                              images: [
+                                {
+                                  url: getParentBackdropImageUrl({
+                                    api,
+                                    item,
+                                    quality: 90,
+                                    width: 2000,
+                                  })!,
+                                },
+                              ],
+                            }
+                          : item.Type === "Movie"
+                          ? {
+                              type: "movie",
+                              title: item.Name || "",
+                              subtitle: item.Overview || "",
+                              images: [
+                                {
+                                  url: getPrimaryImageUrl({
+                                    api,
+                                    item,
+                                    quality: 90,
+                                    width: 2000,
+                                  })!,
+                                },
+                              ],
+                            }
+                          : {
+                              type: "generic",
+                              title: item.Name || "",
+                              subtitle: item.Overview || "",
+                              images: [
+                                {
+                                  url: getPrimaryImageUrl({
+                                    api,
+                                    item,
+                                    quality: 90,
+                                    width: 2000,
+                                  })!,
+                                },
+                              ],
+                            },
                     },
-                  },
-                  startTime: 0,
-                });
+                    startTime: 0,
+                  })
+                  .then(() => {
+                    // state is already set when reopening current media, so skip it here.
+                    if (isOpeningCurrentlyPlayingMedia) {
+                      return;
+                    }
+                    CastContext.showExpandedControls();
+                  });
               }
             });
             break;
