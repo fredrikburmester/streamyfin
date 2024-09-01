@@ -96,7 +96,6 @@ export const PlayButton: React.FC<Props> = ({ item, url, ...props }) => {
                   if (isOpeningCurrentlyPlayingMedia) {
                     return
                   }
-                  setCurrentlyPlayingState({ item, url });
                   CastContext.showExpandedControls();
                 })
               }
