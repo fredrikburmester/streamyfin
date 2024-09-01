@@ -35,10 +35,9 @@ const MIN_PLAYBACK_WIDTH = 15;
 
 export const PlayButton: React.FC<Props> = ({ item, url, ...props }) => {
   const { showActionSheetWithOptions } = useActionSheet();
-  const { setCurrentlyPlayingState } = usePlayback();
-  const mediaStatus = useMediaStatus()
-
   const client = useRemoteMediaClient();
+  const { setCurrentlyPlayingState } = usePlayback();
+  const mediaStatus = useMediaStatus();
 
   const [colorAtom] = useAtom(itemThemeColorAtom);
 
@@ -66,8 +65,9 @@ export const PlayButton: React.FC<Props> = ({ item, url, ...props }) => {
         cancelButtonIndex,
       },
       async (selectedIndex: number | undefined) => {
-        const currentTitle = mediaStatus?.mediaInfo?.metadata?.title
-        const isOpeningCurrentlyPlayingMedia = currentTitle && currentTitle === item?.Name
+        const currentTitle = mediaStatus?.mediaInfo?.metadata?.title;
+        const isOpeningCurrentlyPlayingMedia =
+          currentTitle && currentTitle === item?.Name;
 
         switch (selectedIndex) {
           case 0:
@@ -81,25 +81,27 @@ export const PlayButton: React.FC<Props> = ({ item, url, ...props }) => {
                   CastContext.showExpandedControls();
                   return;
                 }
-                client.loadMedia({
-                  mediaInfo: {
-                    contentUrl: url,
-                    contentType: "video/mp4",
-                    metadata: {
-                      type: item.Type === "Episode" ? "tvShow" : "movie",
-                      title: item.Name || "",
-                      subtitle: item.Overview || "",
+                client
+                  .loadMedia({
+                    mediaInfo: {
+                      contentUrl: url,
+                      contentType: "video/mp4",
+                      metadata: {
+                        type: item.Type === "Episode" ? "tvShow" : "movie",
+                        title: item.Name || "",
+                        subtitle: item.Overview || "",
+                      },
                     },
-                  },
-                  startTime: 0,
-                }).then(() => {
-                  // state is already set when reopening current media, so skip it here.
-                  if (isOpeningCurrentlyPlayingMedia) {
-                    return
-                  }
-                  setCurrentlyPlayingState({ item, url });
-                  CastContext.showExpandedControls();
-                })
+                    startTime: 0,
+                  })
+                  .then(() => {
+                    // state is already set when reopening current media, so skip it here.
+                    if (isOpeningCurrentlyPlayingMedia) {
+                      return;
+                    }
+                    setCurrentlyPlayingState({ item, url });
+                    CastContext.showExpandedControls();
+                  });
               }
             });
             break;
