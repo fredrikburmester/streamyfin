@@ -26,7 +26,7 @@ Streamyfin includes some exciting experimental features like media downloading a
 
 ### Downloading
 
-Downloading works by using ffmpeg to convert a HLS stream into a video file on the device. This means that you can download and view any file you can stream! The file is converted by Jellyfin on the server in real time as it is downloaded. This means a **bit longer download times** but supports any file that your server can transcode.
+Downloading works by using ffmpeg to convert an HLS stream into a video file on the device. This means that you can download and view any file you can stream! The file is converted by Jellyfin on the server in real time as it is downloaded. This means a **bit longer download times** but supports any file that your server can transcode.
 
 ### Chromecast
 
@@ -34,19 +34,19 @@ Chromecast support is still in development, and we're working on improving it. C
 
 ## Plugins
 
-In Streamyfin we have build in support for a few plugins. These plugins are not required to use Streamyfin, but they add some extra functionality.
+In Streamyfin we have built-in support for a few plugins. These plugins are not required to use Streamyfin, but they add some extra functionality.
 
 ### Collection rows
 
 Jellyfin collections can be shown as rows or carousel on the home screen.
-The following tags can be added to an collection to provide this functionality.
+The following tags can be added to a collection to provide this functionality.
 
-Avaiable tags:
+Available tags:
 
-- sf_promoted: Wil make the collection an row on home
-- sf_carousel: Wil make the collection an carousel on home.
+- sf_promoted: will make the collection a row at home
+- sf_carousel: will make the collection a carousel on home.
 
-A plugin exists to create collections based on external sources like mdblist. This makes managing collections like trending, most watched etc an automatic process.
+A plugin exists to create collections based on external sources like mdblist. This make the automatic process of managing collections such as trending, most watched, etc.
 See [Collection Import Plugin](https://github.com/lostb1t/jellyfin-plugin-collection-import) for more info.
 
 ### Jellysearch
@@ -90,7 +90,7 @@ We welcome any help to make Streamyfin better. If you'd like to contribute, plea
 ### Development info
 
 1. Use node `20`
-2. Install deps `bun i`
+2. Install dependencies `bun i`
 3. `Create an expo dev build by running `npx expo run:ios` or `npx expo run:android`.
 
 ## Extended chromecast controls
