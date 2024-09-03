@@ -9,6 +9,7 @@ import {
 import { useEffect, useMemo } from "react";
 import { MediaStream } from "@jellyfin/sdk/lib/generated-client/models";
 import { tc } from "@/utils/textTools";
+import { useSettings } from "@/utils/atoms/settings";
 
 interface Props extends React.ComponentProps<typeof View> {
   source: MediaSourceInfo;
@@ -22,6 +23,8 @@ export const SubtitleTrackSelector: React.FC<Props> = ({
   selected,
   ...props
 }) => {
+  const [settings] = useSettings();
+
   const subtitleStreams = useMemo(
     () => source.MediaStreams?.filter((x) => x.Type === "Subtitle") ?? [],
     [source]
@@ -33,13 +36,21 @@ export const SubtitleTrackSelector: React.FC<Props> = ({
   );
 
   useEffect(() => {
-    const index = source.DefaultSubtitleStreamIndex;
-    if (index !== undefined && index !== null) {
-      onChange(index);
-    } else {
-      onChange(-1);
+    // const index = source.DefaultAudioStreamIndex;
+    // if (index !== undefined && index !== null) {
+    //   onChange(index);
+    //   return;
+    // }
+    const defaultSubIndex = subtitleStreams?.find(
+      (x) => x.Language === settings?.defaultSubtitleLanguage?.value
+    )?.Index;
+    if (defaultSubIndex !== undefined && defaultSubIndex !== null) {
+      onChange(defaultSubIndex);
+      return;
     }
-  }, []);
+
+    onChange(-1);
+  }, [subtitleStreams, settings]);
 
   if (subtitleStreams.length === 0) return null;
 

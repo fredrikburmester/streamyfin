@@ -32,6 +32,11 @@ export type LibraryOptions = {
   showStats: boolean;
 };
 
+export type DefaultLanguageOption = {
+  value: string;
+  label: string;
+};
+
 type Settings = {
   autoRotate?: boolean;
   forceLandscapeInVideoPlayer?: boolean;
@@ -45,6 +50,8 @@ type Settings = {
   openInVLC?: boolean;
   downloadQuality?: DownloadOption;
   libraryOptions: LibraryOptions;
+  defaultSubtitleLanguage: DefaultLanguageOption | null;
+  defaultAudioLanguage: DefaultLanguageOption | null;
 };
 
 /**
@@ -75,6 +82,8 @@ const loadSettings = async (): Promise<Settings> => {
       showTitles: true,
       showStats: true,
     },
+    defaultAudioLanguage: null,
+    defaultSubtitleLanguage: null,
   };
 
   try {

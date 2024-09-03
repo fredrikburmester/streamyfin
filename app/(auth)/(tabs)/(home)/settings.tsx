@@ -35,11 +35,13 @@ export default function settings() {
       }}
     >
       <View className="p-4 flex flex-col gap-y-4">
-        <Text className="font-bold text-2xl">Information</Text>
+        <View>
+          <Text className="font-bold text-lg mb-2">Information</Text>
 
-        <View className="flex flex-col rounded-xl mb-4 overflow-hidden border-neutral-800 divide-y-2 divide-solid divide-neutral-800 ">
-          <ListItem title="User" subTitle={user?.Name} />
-          <ListItem title="Server" subTitle={api?.basePath} />
+          <View className="flex flex-col rounded-xl mb-4 overflow-hidden border-neutral-800 divide-y-2 divide-solid divide-neutral-800 ">
+            <ListItem title="User" subTitle={user?.Name} />
+            <ListItem title="Server" subTitle={api?.basePath} />
+          </View>
         </View>
 
         <SettingToggles />
@@ -71,26 +73,27 @@ export default function settings() {
             Delete all logs
           </Button>
         </View>
-
-        <Text className="font-bold text-2xl">Logs</Text>
-        <View className="flex flex-col space-y-2">
-          {logs?.map((log, index) => (
-            <View key={index} className="bg-neutral-900 rounded-xl p-3">
-              <Text
-                className={`
+        <View>
+          <Text className="font-bold text-lg mb-2">Logs</Text>
+          <View className="flex flex-col space-y-2">
+            {logs?.map((log, index) => (
+              <View key={index} className="bg-neutral-900 rounded-xl p-3">
+                <Text
+                  className={`
                   mb-1
               ${log.level === "INFO" && "text-blue-500"}
               ${log.level === "ERROR" && "text-red-500"}
                 `}
-              >
-                {log.level}
-              </Text>
-              <Text className="text-xs">{log.message}</Text>
-            </View>
-          ))}
-          {logs?.length === 0 && (
-            <Text className="opacity-50">No logs available</Text>
-          )}
+                >
+                  {log.level}
+                </Text>
+                <Text className="text-xs">{log.message}</Text>
+              </View>
+            ))}
+            {logs?.length === 0 && (
+              <Text className="opacity-50">No logs available</Text>
+            )}
+          </View>
         </View>
       </View>
     </ScrollView>
