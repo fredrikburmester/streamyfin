@@ -1,3 +1,4 @@
+import { Button } from "@/components/Button";
 import { Text } from "@/components/common/Text";
 import { LargeMovieCarousel } from "@/components/home/LargeMovieCarousel";
 import { ScrollingCollectionList } from "@/components/home/ScrollingCollectionList";
@@ -5,6 +6,7 @@ import { Loader } from "@/components/Loader";
 import { MediaListSection } from "@/components/medialists/MediaListSection";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import { useSettings } from "@/utils/atoms/settings";
+import { Ionicons } from "@expo/vector-icons";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import {
   getItemsApi,
@@ -18,7 +20,13 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useAtom } from "jotai";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { RefreshControl, SafeAreaView, ScrollView, View } from "react-native";
+import {
+  ActivityIndicator,
+  RefreshControl,
+  SafeAreaView,
+  ScrollView,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type BaseSection = {
@@ -41,6 +49,7 @@ type Section = ScrollingCollectionListSection | MediaListSection;
 
 export default function index() {
   const queryClient = useQueryClient();
+  const router = useRouter();
 
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
@@ -49,6 +58,14 @@ export default function index() {
   const [settings, _] = useSettings();
 
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
+  const [loadingRetry, setLoadingRetry] = useState(false);
+
+  const checkConnection = useCallback(async () => {
+    setLoadingRetry(true);
+    const state = await NetInfo.fetch();
+    setIsConnected(state.isConnected);
+    setLoadingRetry(false);
+  }, []);
 
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener((state) => {
@@ -248,28 +265,47 @@ export default function index() {
     mediaListCollections,
   ]);
 
-  // if (isConnected === false) {
-  //   return (
-  //     <View className="flex flex-col items-center justify-center h-full -mt-6 px-8">
-  //       <Text className="text-3xl font-bold mb-2">No Internet</Text>
-  //       <Text className="text-center opacity-70">
-  //         No worries, you can still watch{"\n"}downloaded content.
-  //       </Text>
-  //       <View className="mt-4">
-  //         <Button
-  //           color="purple"
-  //           onPress={() => router.push("/(auth)/downloads")}
-  //           justify="center"
-  //           iconRight={
-  //             <Ionicons name="arrow-forward" size={20} color="white" />
-  //           }
-  //         >
-  //           Go to downloads
-  //         </Button>
-  //       </View>
-  //     </View>
-  //   );
-  // }
+  if (isConnected === false) {
+    return (
+      <View className="flex flex-col items-center justify-center h-full -mt-6 px-8">
+        <Text className="text-3xl font-bold mb-2">No Internet</Text>
+        <Text className="text-center opacity-70">
+          No worries, you can still watch{"\n"}downloaded content.
+        </Text>
+        <View className="mt-4">
+          <Button
+            color="purple"
+            onPress={() => router.push("/(auth)/downloads")}
+            justify="center"
+            iconRight={
+              <Ionicons name="arrow-forward" size={20} color="white" />
+            }
+          >
+            Go to downloads
+          </Button>
+          <Button
+            color="black"
+            onPress={() => {
+              checkConnection();
+            }}
+            justify="center"
+            className="mt-2"
+            iconRight={
+              loadingRetry ? null : (
+                <Ionicons name="refresh" size={20} color="white" />
+              )
+            }
+          >
+            {loadingRetry ? (
+              <ActivityIndicator size={"small"} color={"white"} />
+            ) : (
+              "Retry"
+            )}
+          </Button>
+        </View>
+      </View>
+    );
+  }
 
   const insets = useSafeAreaInsets();
 
