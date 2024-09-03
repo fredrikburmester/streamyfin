@@ -11,8 +11,10 @@ import { ItemImage } from "@/components/common/ItemImage";
 import { CastAndCrew } from "@/components/series/CastAndCrew";
 import { CurrentSeries } from "@/components/series/CurrentSeries";
 import { SeasonEpisodesCarousel } from "@/components/series/SeasonEpisodesCarousel";
+import { useImageColors } from "@/hooks/useImageColors";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import { useSettings } from "@/utils/atoms/settings";
+import { getItemImage } from "@/utils/getItemImage";
 import { getLogoImageUrlById } from "@/utils/jellyfin/image/getLogoImageUrlById";
 import { getStreamUrl } from "@/utils/jellyfin/media/getStreamUrl";
 import { getUserItemData } from "@/utils/jellyfin/user-library/getUserItemData";
@@ -25,23 +27,22 @@ import { getMediaInfoApi } from "@jellyfin/sdk/lib/utils/api";
 import { useQuery } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import { useNavigation } from "expo-router";
+import * as ScreenOrientation from "expo-screen-orientation";
 import { useAtom } from "jotai";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { View } from "react-native";
 import { useCastDevice } from "react-native-google-cast";
+import Animated, {
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Chromecast } from "./Chromecast";
 import { ItemHeader } from "./ItemHeader";
-import { MediaSourceSelector } from "./MediaSourceSelector";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  runOnJS,
-} from "react-native-reanimated";
 import { Loader } from "./Loader";
-import { set } from "lodash";
-import * as ScreenOrientation from "expo-screen-orientation";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { MediaSourceSelector } from "./MediaSourceSelector";
 
 export const ItemContent: React.FC<{ id: string }> = React.memo(({ id }) => {
   const [api] = useAtom(apiAtom);
@@ -61,7 +62,6 @@ export const ItemContent: React.FC<{ id: string }> = React.memo(({ id }) => {
     value: undefined,
   });
 
-  const [loadingImage, setLoadingImage] = useState(true);
   const [loadingLogo, setLoadingLogo] = useState(true);
 
   const [orientation, setOrientation] = useState(
@@ -233,12 +233,22 @@ export const ItemContent: React.FC<{ id: string }> = React.memo(({ id }) => {
   });
 
   const logoUrl = useMemo(() => getLogoImageUrlById({ api, item }), [item]);
+  const themeImageColorSource = useMemo(() => {
+    if (!api || !item) return;
+    return getItemImage({
+      item,
+      api,
+      variant: "Primary",
+      quality: 80,
+      width: 300,
+    });
+  }, [api, item]);
+
+  useImageColors(themeImageColorSource?.uri);
 
   const loading = useMemo(() => {
-    return Boolean(
-      isLoading || isFetching || loadingImage || (logoUrl && loadingLogo)
-    );
-  }, [isLoading, isFetching, loadingImage, loadingLogo, logoUrl]);
+    return Boolean(isLoading || isFetching || (logoUrl && loadingLogo));
+  }, [isLoading, isFetching, loadingLogo, logoUrl]);
 
   const insets = useSafeAreaInsets();
 
@@ -263,6 +273,7 @@ export const ItemContent: React.FC<{ id: string }> = React.memo(({ id }) => {
             <Animated.View style={[animatedStyle, { flex: 1 }]}>
               {localItem && (
                 <ItemImage
+                  useThemeColor
                   variant={
                     localItem.Type === "Movie" && logoUrl
                       ? "Backdrop"
@@ -273,8 +284,6 @@ export const ItemContent: React.FC<{ id: string }> = React.memo(({ id }) => {
                     width: "100%",
                     height: "100%",
                   }}
-                  onLoad={() => setLoadingImage(false)}
-                  onError={() => setLoadingImage(false)}
                 />
               )}
             </Animated.View>

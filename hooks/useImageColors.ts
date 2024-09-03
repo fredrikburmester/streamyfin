@@ -1,12 +1,16 @@
-import { useState, useEffect } from "react";
-import { getColors } from "react-native-image-colors";
 import { itemThemeColorAtom } from "@/utils/atoms/primaryColor";
 import { useAtom } from "jotai";
+import { useEffect } from "react";
+import { getColors } from "react-native-image-colors";
 
-export const useImageColors = (uri: string | undefined | null) => {
+export const useImageColors = (
+  uri: string | undefined | null,
+  disabled = false
+) => {
   const [, setPrimaryColor] = useAtom(itemThemeColorAtom);
 
   useEffect(() => {
+    if (disabled) return;
     if (uri) {
       getColors(uri, {
         fallback: "#fff",
@@ -38,5 +42,5 @@ export const useImageColors = (uri: string | undefined | null) => {
           console.error("Error getting colors", error);
         });
     }
-  }, [uri, setPrimaryColor]);
+  }, [uri, setPrimaryColor, disabled]);
 };

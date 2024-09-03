@@ -24,7 +24,10 @@ export const ItemPoster: React.FC<Props> = ({
 
   if (item.Type === "Movie" || item.Type === "Series" || item.Type === "BoxSet")
     return (
-      <View className="relative rounded-lg overflow-hidden border border-neutral-900">
+      <View
+        className="relative rounded-lg overflow-hidden border border-neutral-900"
+        {...props}
+      >
         <ItemImage
           style={{
             aspectRatio: "10/15",
@@ -40,7 +43,10 @@ export const ItemPoster: React.FC<Props> = ({
     );
 
   return (
-    <View className="rounded-lg w-full aspect-square overflow-hidden border border-neutral-900">
+    <View
+      className="rounded-lg w-full aspect-square overflow-hidden border border-neutral-900"
+      {...props}
+    >
       <ItemImage className="w-full aspect-square" item={item} />
     </View>
   );
