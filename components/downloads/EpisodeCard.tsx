@@ -23,14 +23,14 @@ interface EpisodeCardProps {
 export const EpisodeCard: React.FC<EpisodeCardProps> = ({ item }) => {
   const { deleteFile } = useFiles();
 
-  const { setCurrentlyPlayingState } = usePlayback();
+  const { startDownloadedFilePlayback } = usePlayback();
 
   const handleOpenFile = useCallback(async () => {
-    setCurrentlyPlayingState({
+    startDownloadedFilePlayback({
       item,
       url: `${FileSystem.documentDirectory}/${item.Id}.mp4`,
     });
-  }, [item, setCurrentlyPlayingState]);
+  }, [item, startDownloadedFilePlayback]);
 
   /**
    * Handles deleting the file with haptic feedback.

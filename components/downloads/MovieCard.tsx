@@ -26,14 +26,14 @@ export const MovieCard: React.FC<MovieCardProps> = ({ item }) => {
   const { deleteFile } = useFiles();
   const [settings] = useSettings();
 
-  const { setCurrentlyPlayingState } = usePlayback();
+  const { startDownloadedFilePlayback } = usePlayback();
 
   const handleOpenFile = useCallback(() => {
-    setCurrentlyPlayingState({
+    startDownloadedFilePlayback({
       item,
       url: `${FileSystem.documentDirectory}/${item.Id}.mp4`,
     });
-  }, [item, setCurrentlyPlayingState]);
+  }, [item, startDownloadedFilePlayback]);
 
   /**
    * Handles deleting the file with haptic feedback.

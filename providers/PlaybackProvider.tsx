@@ -22,7 +22,7 @@ import { getMediaInfoApi } from "@jellyfin/sdk/lib/utils/api";
 import * as Linking from "expo-linking";
 import { useAtom } from "jotai";
 import { debounce } from "lodash";
-import { Alert, Platform } from "react-native";
+import { Alert } from "react-native";
 import { OnProgressData, type VideoRef } from "react-native-video";
 import { apiAtom, userAtom } from "./JellyfinProvider";
 
@@ -48,6 +48,9 @@ interface PlaybackContextType {
   onProgress: (data: OnProgressData) => void;
   setVolume: (volume: number) => void;
   setCurrentlyPlayingState: (
+    currentlyPlaying: CurrentlyPlayingState | null
+  ) => void;
+  startDownloadedFilePlayback: (
     currentlyPlaying: CurrentlyPlayingState | null
   ) => void;
 }
@@ -92,41 +95,85 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
     queryFn: getDeviceId,
   });
 
+  const startDownloadedFilePlayback = useCallback(
+    async (state: CurrentlyPlayingState | null) => {
+      if (!state) {
+        setCurrentlyPlaying(null);
+        setIsPlaying(false);
+        return;
+      }
+
+      setCurrentlyPlaying(state);
+      setIsPlaying(true);
+      if (settings?.openFullScreenVideoPlayerByDefault) {
+        setTimeout(() => {
+          presentFullscreenPlayer();
+        }, 300);
+      }
+    },
+    [settings?.openFullScreenVideoPlayerByDefault]
+  );
+
   const setCurrentlyPlayingState = useCallback(
     async (state: CurrentlyPlayingState | null) => {
-      if (!api) return;
+      try {
+        if (state?.item.Id && user?.Id) {
+          const vlcLink = "vlc://" + state?.url;
+          if (vlcLink && settings?.openInVLC) {
+            Linking.openURL("vlc://" + state?.url || "");
+            return;
+          }
 
-      if (state && state.item.Id && user?.Id) {
-        const vlcLink = "vlc://" + state?.url;
-        if (vlcLink && settings?.openInVLC) {
-          Linking.openURL("vlc://" + state?.url || "");
-          return;
+          const res = await getMediaInfoApi(api!).getPlaybackInfo({
+            itemId: state.item.Id,
+            userId: user.Id,
+          });
+
+          await postCapabilities({
+            api,
+            itemId: state.item.Id,
+            sessionId: res.data.PlaySessionId,
+          });
+
+          setSession(res.data);
+          setCurrentlyPlaying(state);
+          setIsPlaying(true);
+
+          if (settings?.openFullScreenVideoPlayerByDefault) {
+            setTimeout(() => {
+              presentFullscreenPlayer();
+            }, 300);
+          }
+        } else {
+          setCurrentlyPlaying(null);
+          setIsFullscreen(false);
+          setIsPlaying(false);
         }
-
-        const res = await getMediaInfoApi(api).getPlaybackInfo({
-          itemId: state.item.Id,
-          userId: user.Id,
-        });
-
-        await postCapabilities({
-          api,
-          itemId: state.item.Id,
-          sessionId: res.data.PlaySessionId,
-        });
-
-        setSession(res.data);
-        setCurrentlyPlaying(state);
-        setIsPlaying(true);
-
-        if (settings?.openFullScreenVideoPlayerByDefault) {
-          setTimeout(() => {
-            presentFullscreenPlayer();
-          }, 300);
-        }
-      } else {
-        setCurrentlyPlaying(null);
-        setIsFullscreen(false);
-        setIsPlaying(false);
+      } catch (e) {
+        console.error(e);
+        Alert.alert(
+          "Something went wrong",
+          "The item could not be played. Maybe there is no internet connection?",
+          [
+            {
+              style: "destructive",
+              text: "Try force play",
+              onPress: () => {
+                setCurrentlyPlaying(state);
+                setIsPlaying(true);
+                if (settings?.openFullScreenVideoPlayerByDefault) {
+                  setTimeout(() => {
+                    presentFullscreenPlayer();
+                  }, 300);
+                }
+              },
+            },
+            {
+              text: "Ok",
+              style: "default",
+            },
+          ]
+        );
       }
     },
     [settings, user, api]
@@ -320,6 +367,7 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
         stopPlayback,
         presentFullscreenPlayer,
         dismissFullscreenPlayer,
+        startDownloadedFilePlayback,
       }}
     >
       {children}
