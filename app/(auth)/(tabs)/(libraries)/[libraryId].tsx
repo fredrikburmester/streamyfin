@@ -1,14 +1,8 @@
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import { useLocalSearchParams, useNavigation } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import * as ScreenOrientation from "expo-screen-orientation";
 import { useAtom } from "jotai";
-import React, {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useState,
-} from "react";
+import React, { useCallback, useLayoutEffect, useMemo } from "react";
 import { FlatList, useWindowDimensions, View } from "react-native";
 
 import { Text } from "@/components/common/Text";
@@ -30,6 +24,7 @@ import {
   tagsFilterAtom,
   yearFilterAtom,
 } from "@/utils/atoms/filters";
+import { orientationAtom } from "@/utils/atoms/orientation";
 import {
   BaseItemDto,
   BaseItemDtoQueryResult,
@@ -41,7 +36,6 @@ import {
 } from "@jellyfin/sdk/lib/utils/api";
 import { FlashList } from "@shopify/flash-list";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { orientationAtom } from "@/utils/atoms/orientation";
 
 const MemoizedTouchableItemRouter = React.memo(TouchableItemRouter);
 
