@@ -27,6 +27,7 @@ import { getPrimaryImageUrl } from "@/utils/jellyfin/image/getPrimaryImageUrl";
 import { apiAtom } from "@/providers/JellyfinProvider";
 import { getBackdropUrl } from "@/utils/jellyfin/image/getBackdropUrl";
 import { getParentBackdropImageUrl } from "@/utils/jellyfin/image/getParentBackdropImageUrl";
+import { Text } from "./common/Text";
 
 interface Props extends React.ComponentProps<typeof Button> {
   item?: BaseItemDto | null;
@@ -54,6 +55,10 @@ export const PlayButton: React.FC<Props> = ({ item, url, ...props }) => {
   const startColor = useSharedValue(memoizedColor);
   const widthProgress = useSharedValue(0);
   const colorChangeProgress = useSharedValue(0);
+
+  const directStream = useMemo(() => {
+    return url?.includes("m3u8");
+  }, []);
 
   const onPress = async () => {
     if (!url || !item) return;
@@ -254,51 +259,64 @@ export const PlayButton: React.FC<Props> = ({ item, url, ...props }) => {
    */
 
   return (
-    <TouchableOpacity
-      accessibilityLabel="Play button"
-      accessibilityHint="Tap to play the media"
-      onPress={onPress}
-      className="relative"
-      {...props}
-    >
-      <View className="absolute w-full h-full top-0 left-0 rounded-xl z-10 overflow-hidden">
-        <Animated.View
-          style={[
-            animatedPrimaryStyle,
-            animatedWidthStyle,
-            {
-              height: "100%",
-            },
-          ]}
-        />
-      </View>
-
-      <Animated.View
-        style={[animatedAverageStyle]}
-        className="absolute w-full h-full top-0 left-0 rounded-xl"
-      />
-      <View
-        style={{
-          borderWidth: 1,
-          borderColor: colorAtom.primary,
-          borderStyle: "solid",
-        }}
-        className="flex flex-row items-center justify-center bg-transparent rounded-xl z-20 h-12 w-full "
+    <View>
+      <TouchableOpacity
+        accessibilityLabel="Play button"
+        accessibilityHint="Tap to play the media"
+        onPress={onPress}
+        className="relative"
+        {...props}
       >
-        <View className="flex flex-row items-center space-x-2">
-          <Animated.Text style={[animatedTextStyle, { fontWeight: "bold" }]}>
-            {runtimeTicksToMinutes(item?.RunTimeTicks)}
-          </Animated.Text>
-          <Animated.Text style={animatedTextStyle}>
-            <Ionicons name="play-circle" size={24} />
-          </Animated.Text>
-          {client && (
-            <Animated.Text style={animatedTextStyle}>
-              <Feather name="cast" size={22} />
-            </Animated.Text>
-          )}
+        <View className="absolute w-full h-full top-0 left-0 rounded-xl z-10 overflow-hidden">
+          <Animated.View
+            style={[
+              animatedPrimaryStyle,
+              animatedWidthStyle,
+              {
+                height: "100%",
+              },
+            ]}
+          />
         </View>
+
+        <Animated.View
+          style={[animatedAverageStyle]}
+          className="absolute w-full h-full top-0 left-0 rounded-xl"
+        />
+        <View
+          style={{
+            borderWidth: 1,
+            borderColor: colorAtom.primary,
+            borderStyle: "solid",
+          }}
+          className="flex flex-row items-center justify-center bg-transparent rounded-xl z-20 h-12 w-full "
+        >
+          <View className="flex flex-row items-center space-x-2">
+            <Animated.Text style={[animatedTextStyle, { fontWeight: "bold" }]}>
+              {runtimeTicksToMinutes(item?.RunTimeTicks)}
+            </Animated.Text>
+            <Animated.Text style={animatedTextStyle}>
+              <Ionicons name="play-circle" size={24} />
+            </Animated.Text>
+            {client && (
+              <Animated.Text style={animatedTextStyle}>
+                <Feather name="cast" size={22} />
+              </Animated.Text>
+            )}
+          </View>
+        </View>
+      </TouchableOpacity>
+      <View className="mt-2 flex flex-row items-center">
+        <Ionicons
+          name="information-circle"
+          size={12}
+          className=""
+          color={"#9BA1A6"}
+        />
+        <Text className="text-neutral-500 ml-1">
+          {directStream ? "Direct stream" : "Transcoded stream"}
+        </Text>
       </View>
-    </TouchableOpacity>
+    </View>
   );
 };
