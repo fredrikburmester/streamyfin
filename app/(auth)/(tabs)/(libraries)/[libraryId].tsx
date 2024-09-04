@@ -36,6 +36,7 @@ import {
 } from "@jellyfin/sdk/lib/utils/api";
 import { FlashList } from "@shopify/flash-list";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { ItemPoster } from "@/components/posters/ItemPoster";
 
 const MemoizedTouchableItemRouter = React.memo(TouchableItemRouter);
 
@@ -187,7 +188,8 @@ const Page = () => {
             width: "89%",
           }}
         >
-          <MoviePoster item={item} />
+          {/* <MoviePoster item={item} /> */}
+          <ItemPoster item={item} />
           <ItemCardText item={item} />
         </View>
       </MemoizedTouchableItemRouter>
