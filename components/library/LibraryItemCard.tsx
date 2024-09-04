@@ -1,22 +1,20 @@
-import { TouchableOpacityProps, View, ViewProps } from "react-native";
 import { Text } from "@/components/common/Text";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
+import { useSettings } from "@/utils/atoms/settings";
 import { getPrimaryImageUrl } from "@/utils/jellyfin/image/getPrimaryImageUrl";
-import { useAtom } from "jotai";
-import { useEffect, useMemo, useState } from "react";
-import { TouchableItemRouter } from "../common/TouchableItemRouter";
+import { Ionicons } from "@expo/vector-icons";
 import {
   BaseItemDto,
-  BaseItemKind,
   CollectionType,
 } from "@jellyfin/sdk/lib/generated-client/models";
-import { Image } from "expo-image";
-import { getColors, ImageColorsResult } from "react-native-image-colors";
-import { useQuery } from "@tanstack/react-query";
 import { getItemsApi } from "@jellyfin/sdk/lib/utils/api";
-import { sortBy } from "lodash";
-import { useSettings } from "@/utils/atoms/settings";
-import { Ionicons } from "@expo/vector-icons";
+import { useQuery } from "@tanstack/react-query";
+import { Image } from "expo-image";
+import { useAtom } from "jotai";
+import { useEffect, useMemo, useState } from "react";
+import { TouchableOpacityProps, View } from "react-native";
+import { getColors } from "react-native-image-colors";
+import { TouchableItemRouter } from "../common/TouchableItemRouter";
 
 interface Props extends TouchableOpacityProps {
   library: BaseItemDto;
