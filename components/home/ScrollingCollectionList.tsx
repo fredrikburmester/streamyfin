@@ -1,18 +1,18 @@
 import { Text } from "@/components/common/Text";
 import MoviePoster from "@/components/posters/MoviePoster";
+import { useSettings } from "@/utils/atoms/settings";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
+import {
+  useQuery,
+  type QueryFunction,
+  type QueryKey,
+} from "@tanstack/react-query";
 import { View, ViewProps } from "react-native";
 import ContinueWatchingPoster from "../ContinueWatchingPoster";
 import { ItemCardText } from "../ItemCardText";
 import { HorizontalScroll } from "../common/HorrizontalScroll";
 import { TouchableItemRouter } from "../common/TouchableItemRouter";
-import {
-  type QueryKey,
-  useQuery,
-  type QueryFunction,
-} from "@tanstack/react-query";
 import SeriesPoster from "../posters/SeriesPoster";
-import { EpisodePoster } from "../posters/EpisodePoster";
 
 interface Props extends ViewProps {
   title?: string | null;
@@ -32,6 +32,7 @@ export const ScrollingCollectionList: React.FC<Props> = ({
   queryKey,
   ...props
 }) => {
+  const [settings] = useSettings();
   const { data, isLoading } = useQuery({
     queryKey,
     queryFn,
