@@ -52,6 +52,7 @@ type Settings = {
   libraryOptions: LibraryOptions;
   defaultSubtitleLanguage: DefaultLanguageOption | null;
   defaultAudioLanguage: DefaultLanguageOption | null;
+  showHomeTitles: boolean;
 };
 
 /**
@@ -84,6 +85,7 @@ const loadSettings = async (): Promise<Settings> => {
     },
     defaultAudioLanguage: null,
     defaultSubtitleLanguage: null,
+    showHomeTitles: true,
   };
 
   try {

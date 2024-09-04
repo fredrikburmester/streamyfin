@@ -11,7 +11,7 @@ import { FilterButton } from "@/components/filters/FilterButton";
 import { ResetFiltersButton } from "@/components/filters/ResetFiltersButton";
 import { ItemCardText } from "@/components/ItemCardText";
 import { Loader } from "@/components/Loader";
-import MoviePoster from "@/components/posters/MoviePoster";
+import { ItemPoster } from "@/components/posters/ItemPoster";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import {
   genreFilterAtom,
@@ -36,7 +36,6 @@ import {
 } from "@jellyfin/sdk/lib/utils/api";
 import { FlashList } from "@shopify/flash-list";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ItemPoster } from "@/components/posters/ItemPoster";
 
 const MemoizedTouchableItemRouter = React.memo(TouchableItemRouter);
 
