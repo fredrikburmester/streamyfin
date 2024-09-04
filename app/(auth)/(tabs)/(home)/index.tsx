@@ -204,6 +204,7 @@ export default function index() {
               fields: ["PrimaryImageAspectRatio", "Path"],
               imageTypeLimit: 1,
               enableImageTypes: ["Primary", "Backdrop", "Thumb"],
+              includeItemTypes: ["Movie"],
               parentId: movieCollectionId,
             })
           ).data || [],
@@ -220,6 +221,7 @@ export default function index() {
               fields: ["PrimaryImageAspectRatio", "Path"],
               imageTypeLimit: 1,
               enableImageTypes: ["Primary", "Backdrop", "Thumb"],
+              includeItemTypes: ["Series"],
               parentId: tvShowCollectionId,
             })
           ).data || [],

@@ -1,4 +1,6 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { atom } from "jotai";
+import { atomWithStorage, createJSONStorage } from "jotai/utils";
 
 export enum SortByOption {
   Default = "Default",
@@ -65,3 +67,67 @@ export const sortByAtom = atom<SortByOption[]>([SortByOption.Default]);
 export const sortOrderAtom = atom<SortOrderOption[]>([
   SortOrderOption.Ascending,
 ]);
+
+/**
+ * Sort preferences with persistence
+ */
+export interface SortPreference {
+  [libraryId: string]: SortByOption;
+}
+
+export interface SortOrderPreference {
+  [libraryId: string]: SortOrderOption;
+}
+
+const defaultSortPreference: SortPreference = {};
+const defaultSortOrderPreference: SortOrderPreference = {};
+
+export const sortByPreferenceAtom = atomWithStorage<SortPreference>(
+  "sortByPreference",
+  defaultSortPreference,
+  {
+    getItem: async (key) => {
+      const value = await AsyncStorage.getItem(key);
+      return value ? JSON.parse(value) : null;
+    },
+    setItem: async (key, value) => {
+      await AsyncStorage.setItem(key, JSON.stringify(value));
+    },
+    removeItem: async (key) => {
+      await AsyncStorage.removeItem(key);
+    },
+  }
+);
+
+export const sortOrderPreferenceAtom = atomWithStorage<SortOrderPreference>(
+  "sortOrderPreference",
+  defaultSortOrderPreference,
+  {
+    getItem: async (key) => {
+      const value = await AsyncStorage.getItem(key);
+      return value ? JSON.parse(value) : null;
+    },
+    setItem: async (key, value) => {
+      await AsyncStorage.setItem(key, JSON.stringify(value));
+    },
+    removeItem: async (key) => {
+      await AsyncStorage.removeItem(key);
+    },
+  }
+);
+
+// Helper functions to get and set sort preferences
+export const getSortByPreference = (
+  libraryId: string,
+  preferences: SortPreference
+) => {
+  return preferences?.[libraryId] || null;
+};
+
+export const getSortOrderPreference = (
+  libraryId: string,
+  preferences: SortOrderPreference
+) => {
+  return preferences?.[libraryId] || null;
+};
+

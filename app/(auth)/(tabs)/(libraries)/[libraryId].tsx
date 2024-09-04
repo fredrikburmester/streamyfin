@@ -1,8 +1,8 @@
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import { useLocalSearchParams } from "expo-router";
+import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import * as ScreenOrientation from "expo-screen-orientation";
 import { useAtom } from "jotai";
-import React, { useCallback, useLayoutEffect, useMemo } from "react";
+import React, { useCallback, useEffect, useLayoutEffect, useMemo } from "react";
 import { FlatList, useWindowDimensions, View } from "react-native";
 
 import { Text } from "@/components/common/Text";
@@ -15,12 +15,16 @@ import { ItemPoster } from "@/components/posters/ItemPoster";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import {
   genreFilterAtom,
+  getSortByPreference,
+  getSortOrderPreference,
   sortByAtom,
   SortByOption,
+  sortByPreferenceAtom,
   sortOptions,
   sortOrderAtom,
   SortOrderOption,
   sortOrderOptions,
+  sortOrderPreferenceAtom,
   tagsFilterAtom,
   yearFilterAtom,
 } from "@/utils/atoms/filters";
@@ -50,10 +54,57 @@ const Page = () => {
   const [selectedGenres, setSelectedGenres] = useAtom(genreFilterAtom);
   const [selectedYears, setSelectedYears] = useAtom(yearFilterAtom);
   const [selectedTags, setSelectedTags] = useAtom(tagsFilterAtom);
-  const [sortBy, setSortBy] = useAtom(sortByAtom);
-  const [sortOrder, setSortOrder] = useAtom(sortOrderAtom);
+  const [sortBy, _setSortBy] = useAtom(sortByAtom);
+  const [sortOrder, _setSortOrder] = useAtom(sortOrderAtom);
+  const [orientation] = useAtom(orientationAtom);
+  const [sortByPreference, setSortByPreference] = useAtom(sortByPreferenceAtom);
+  const [sortOrderPreference, setOderByPreference] = useAtom(
+    sortOrderPreferenceAtom
+  );
 
-  const [orientation, setOrientation] = useAtom(orientationAtom);
+  useEffect(() => {
+    const sop = getSortOrderPreference(libraryId, sortOrderPreference);
+    if (sop) {
+      console.log("getSortOrderPreference ~", sop, libraryId);
+      _setSortOrder([sop]);
+    } else {
+      _setSortOrder([SortOrderOption.Ascending]);
+    }
+    const obp = getSortByPreference(libraryId, sortByPreference);
+    console.log("getSortByPreference ~", obp, libraryId);
+    if (obp) {
+      _setSortBy([obp]);
+    } else {
+      _setSortBy([SortByOption.SortName]);
+    }
+  }, []);
+
+  const setSortBy = useCallback(
+    (sortBy: SortByOption[]) => {
+      const sop = getSortByPreference(libraryId, sortByPreference);
+      if (sortBy[0] !== sop) {
+        console.log("setSortByPreference ~", sortBy[0], libraryId);
+        setSortByPreference({ ...sortByPreference, [libraryId]: sortBy[0] });
+      }
+      _setSortBy(sortBy);
+    },
+    [libraryId, sortByPreference]
+  );
+
+  const setSortOrder = useCallback(
+    (sortOrder: SortOrderOption[]) => {
+      const sop = getSortOrderPreference(libraryId, sortOrderPreference);
+      if (sortOrder[0] !== sop) {
+        console.log("setSortOrderPreference ~", sortOrder[0], libraryId);
+        setOderByPreference({
+          ...sortOrderPreference,
+          [libraryId]: sortOrder[0],
+        });
+      }
+      _setSortOrder(sortOrder);
+    },
+    [libraryId, sortOrderPreference]
+  );
 
   const getNumberOfColumns = useCallback(() => {
     if (orientation === ScreenOrientation.Orientation.PORTRAIT_UP) return 3;
@@ -62,11 +113,6 @@ const Page = () => {
     if (screenWidth < 1280) return 7;
     return 6;
   }, [screenWidth, orientation]);
-
-  useLayoutEffect(() => {
-    setSortBy([SortByOption.SortName]);
-    setSortOrder([SortOrderOption.Ascending]);
-  }, []);
 
   const { data: library, isLoading: isLibraryLoading } = useQuery({
     queryKey: ["library", libraryId],
