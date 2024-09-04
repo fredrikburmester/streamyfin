@@ -2,7 +2,7 @@ import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import * as Haptics from "expo-haptics";
 import { useRouter, useSegments } from "expo-router";
 import { PropsWithChildren } from "react";
-import { Alert, TouchableOpacity, TouchableOpacityProps } from "react-native";
+import { TouchableOpacity, TouchableOpacityProps } from "react-native";
 
 interface Props extends TouchableOpacityProps {
   item: BaseItemDto;

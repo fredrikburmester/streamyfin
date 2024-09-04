@@ -9,7 +9,6 @@ import {
 } from "@jellyfin/sdk/lib/utils/api";
 import { FlashList } from "@shopify/flash-list";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigation } from "expo-router";
 import { useAtom } from "jotai";
 import { useEffect } from "react";
 import { StyleSheet, View } from "react-native";
