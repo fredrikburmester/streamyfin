@@ -1,8 +1,10 @@
+import { ItemImage } from "@/components/common/ItemImage";
 import { Text } from "@/components/common/Text";
 import { TouchableItemRouter } from "@/components/common/TouchableItemRouter";
 import { FilterButton } from "@/components/filters/FilterButton";
 import { ResetFiltersButton } from "@/components/filters/ResetFiltersButton";
 import { ItemCardText } from "@/components/ItemCardText";
+import { ItemPoster } from "@/components/posters/ItemPoster";
 import MoviePoster from "@/components/posters/MoviePoster";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import {
@@ -195,7 +197,8 @@ const page: React.FC = () => {
             width: "89%",
           }}
         >
-          <MoviePoster item={item} />
+          <ItemPoster item={item} />
+          {/* <MoviePoster item={item} /> */}
           <ItemCardText item={item} />
         </View>
       </MemoizedTouchableItemRouter>

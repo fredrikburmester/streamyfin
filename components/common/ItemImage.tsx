@@ -1,92 +1,82 @@
 import { useImageColors } from "@/hooks/useImageColors";
 import { apiAtom } from "@/providers/JellyfinProvider";
+import { getItemImage } from "@/utils/getItemImage";
+import { Ionicons } from "@expo/vector-icons";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import { Image, ImageProps, ImageSource } from "expo-image";
 import { useAtom } from "jotai";
 import { useMemo } from "react";
+import { View } from "react-native";
 
 interface Props extends ImageProps {
   item: BaseItemDto;
-  variant?: "Backdrop" | "Primary" | "Thumb" | "Logo";
+  variant?:
+    | "Primary"
+    | "Backdrop"
+    | "ParentBackdrop"
+    | "ParentLogo"
+    | "Logo"
+    | "AlbumPrimary"
+    | "SeriesPrimary"
+    | "Screenshot"
+    | "Thumb";
   quality?: number;
   width?: number;
+  useThemeColor?: boolean;
+  onError?: () => void;
 }
 
 export const ItemImage: React.FC<Props> = ({
   item,
-  variant,
+  variant = "Primary",
   quality = 90,
   width = 1000,
+  useThemeColor = false,
+  onError,
   ...props
 }) => {
   const [api] = useAtom(apiAtom);
 
   const source = useMemo(() => {
-    if (!api) return null;
-
-    let tag: string | null | undefined;
-    let blurhash: string | null | undefined;
-    let src: ImageSource | null = null;
-
-    switch (variant) {
-      case "Backdrop":
-        if (item.Type === "Episode") {
-          tag = item.ParentBackdropImageTags?.[0];
-          if (!tag) break;
-          blurhash = item.ImageBlurHashes?.Backdrop?.[tag];
-          src = {
-            uri: `${api.basePath}/Items/${item.ParentBackdropItemId}/Images/Backdrop/0?quality=${quality}&tag=${tag}`,
-            blurhash,
-          };
-          break;
-        }
-
-        tag = item.BackdropImageTags?.[0];
-        if (!tag) break;
-        blurhash = item.ImageBlurHashes?.Backdrop?.[tag];
-        src = {
-          uri: `${api.basePath}/Items/${item.Id}/Images/Backdrop/0?quality=${quality}&tag=${tag}`,
-          blurhash,
-        };
-        break;
-      case "Primary":
-        tag = item.ImageTags?.["Primary"];
-        if (!tag) break;
-        blurhash = item.ImageBlurHashes?.Primary?.[tag];
-
-        src = {
-          uri: `${api.basePath}/Items/${item.Id}/Images/Primary?quality=${quality}&tag=${tag}`,
-          blurhash,
-        };
-        break;
-      case "Thumb":
-        tag = item.ImageTags?.["Thumb"];
-        if (!tag) break;
-        blurhash = item.ImageBlurHashes?.Thumb?.[tag];
-
-        src = {
-          uri: `${api.basePath}/Items/${item.Id}/Images/Backdrop?quality=${quality}&tag=${tag}`,
-          blurhash,
-        };
-        break;
-      default:
-        tag = item.ImageTags?.["Primary"];
-        src = {
-          uri: `${api.basePath}/Items/${item.Id}/Images/Primary?quality=${quality}&tag=${tag}`,
-        };
-        break;
+    if (!api) {
+      onError && onError();
+      return;
     }
+    return getItemImage({
+      item,
+      api,
+      variant,
+      quality,
+      width,
+    });
+  }, [api, item, quality, variant, width]);
 
-    return src;
-  }, [item.ImageTags]);
-
-  useImageColors(source?.uri);
+  // return placeholder icon if no source
+  if (!source?.uri)
+    return (
+      <View
+        {...props}
+        className="flex flex-col items-center justify-center border border-neutral-800 bg-neutral-900"
+      >
+        <Ionicons
+          name="image-outline"
+          size={24}
+          color="white"
+          style={{ opacity: 0.4 }}
+        />
+      </View>
+    );
 
   return (
     <Image
+      cachePolicy={"memory-disk"}
       transition={300}
       placeholder={{
         blurhash: source?.blurhash,
+      }}
+      style={{
+        width: "100%",
+        height: "100%",
       }}
       source={{
         uri: source?.uri,
