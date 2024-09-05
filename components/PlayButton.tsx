@@ -1,5 +1,8 @@
+import { apiAtom } from "@/providers/JellyfinProvider";
 import { usePlayback } from "@/providers/PlaybackProvider";
 import { itemThemeColorAtom } from "@/utils/atoms/primaryColor";
+import { getParentBackdropImageUrl } from "@/utils/jellyfin/image/getParentBackdropImageUrl";
+import { getPrimaryImageUrl } from "@/utils/jellyfin/image/getPrimaryImageUrl";
 import { runtimeTicksToMinutes } from "@/utils/time";
 import { useActionSheet } from "@expo/react-native-action-sheet";
 import { Feather, Ionicons } from "@expo/vector-icons";
@@ -23,10 +26,6 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { Button } from "./Button";
-import { getPrimaryImageUrl } from "@/utils/jellyfin/image/getPrimaryImageUrl";
-import { apiAtom } from "@/providers/JellyfinProvider";
-import { getBackdropUrl } from "@/utils/jellyfin/image/getBackdropUrl";
-import { getParentBackdropImageUrl } from "@/utils/jellyfin/image/getParentBackdropImageUrl";
 import { Text } from "./common/Text";
 
 interface Props extends React.ComponentProps<typeof Button> {
@@ -57,7 +56,7 @@ export const PlayButton: React.FC<Props> = ({ item, url, ...props }) => {
   const colorChangeProgress = useSharedValue(0);
 
   const directStream = useMemo(() => {
-    return url?.includes("m3u8");
+    return !url?.includes("m3u8");
   }, []);
 
   const onPress = async () => {
