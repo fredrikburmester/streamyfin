@@ -7,6 +7,7 @@ import { MediaListSection } from "@/components/medialists/MediaListSection";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import { useSettings } from "@/utils/atoms/settings";
 import { Ionicons } from "@expo/vector-icons";
+import { Api } from "@jellyfin/sdk";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import {
   getItemsApi,
@@ -245,15 +246,20 @@ export default function index() {
       {
         title: "Suggested Episodes",
         queryKey: ["suggestedEpisodes", user?.Id],
-        queryFn: async () =>
-          (
-            await getSuggestionsApi(api).getSuggestions({
-              userId: user?.Id,
-              limit: 10,
-              mediaType: ["Video"],
-              type: ["Episode"],
-            })
-          ).data.Items || [],
+        queryFn: async () => {
+          try {
+            const suggestions = await getSuggestions(api, user.Id);
+            const nextUpPromises = suggestions.map((series) =>
+              getNextUp(api, user.Id, series.Id)
+            );
+            const nextUpResults = await Promise.all(nextUpPromises);
+
+            return nextUpResults.filter((item) => item !== null) || [];
+          } catch (error) {
+            console.error("Error fetching data:", error);
+            return [];
+          }
+        },
         type: "ScrollingCollectionList",
         orientation: "horizontal",
       },
@@ -370,4 +376,31 @@ export default function index() {
       </View>
     </ScrollView>
   );
+}
+
+// Function to get suggestions
+async function getSuggestions(api: Api, userId: string | undefined) {
+  if (!userId) return [];
+  const response = await getSuggestionsApi(api).getSuggestions({
+    userId,
+    limit: 10,
+    mediaType: ["Unknown"],
+    type: ["Series"],
+  });
+  return response.data.Items ?? [];
+}
+
+// Function to get the next up TV show for a series
+async function getNextUp(
+  api: Api,
+  userId: string | undefined,
+  seriesId: string | undefined
+) {
+  if (!userId || !seriesId) return null;
+  const response = await getTvShowsApi(api).getNextUp({
+    userId,
+    seriesId,
+    limit: 1,
+  });
+  return response.data.Items?.[0] ?? null;
 }
