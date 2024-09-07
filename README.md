@@ -90,7 +90,7 @@ We welcome any help to make Streamyfin better. If you'd like to contribute, plea
 
 1. Use node `20`
 2. Install dependencies `bun i`
-3. `Create an expo dev build by running `npx expo run:ios` or `npx expo run:android`.
+3. Create an expo dev build by running `npx expo run:ios` or `npx expo run:android`.
 
 ## Extended chromecast controls
 
