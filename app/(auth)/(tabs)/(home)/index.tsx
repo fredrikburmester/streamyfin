@@ -400,6 +400,7 @@ async function getNextUp(
   const response = await getTvShowsApi(api).getNextUp({
     userId,
     seriesId,
+    limit: 1,
   });
   return response.data.Items?.[0] ?? null;
 }
