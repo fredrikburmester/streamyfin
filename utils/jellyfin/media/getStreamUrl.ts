@@ -25,8 +25,8 @@ export const getStreamUrl = async ({
   userId: string | null | undefined;
   startTimeTicks: number;
   maxStreamingBitrate?: number;
-  sessionData: PlaybackInfoResponse;
-  deviceProfile: any;
+  sessionData?: PlaybackInfoResponse;
+  deviceProfile?: any;
   audioStreamIndex?: number;
   subtitleStreamIndex?: number;
   forceDirectPlay?: boolean;
@@ -72,16 +72,12 @@ export const getStreamUrl = async ({
     throw new Error("No media source");
   }
 
-  if (!sessionData.PlaySessionId) {
-    throw new Error("no PlaySessionId");
-  }
-
   let url: string | null | undefined;
 
   if (mediaSource.SupportsDirectPlay || forceDirectPlay === true) {
     if (item.MediaType === "Video") {
       console.log("Using direct stream for video!");
-      url = `${api.basePath}/Videos/${itemId}/stream.mp4?playSessionId=${sessionData.PlaySessionId}&mediaSourceId=${mediaSource.Id}&static=true&subtitleStreamIndex=${subtitleStreamIndex}&audioStreamIndex=${audioStreamIndex}&deviceId=${api.deviceInfo.id}&api_key=${api.accessToken}`;
+      url = `${api.basePath}/Videos/${itemId}/stream.mp4?playSessionId=${sessionData?.PlaySessionId}&mediaSourceId=${mediaSource.Id}&static=true&subtitleStreamIndex=${subtitleStreamIndex}&audioStreamIndex=${audioStreamIndex}&deviceId=${api.deviceInfo.id}&api_key=${api.accessToken}`;
     } else if (item.MediaType === "Audio") {
       console.log("Using direct stream for audio!");
       const searchParams = new URLSearchParams({
@@ -94,7 +90,9 @@ export const getStreamUrl = async ({
         TranscodingProtocol: "hls",
         AudioCodec: "aac",
         api_key: api.accessToken,
-        PlaySessionId: sessionData.PlaySessionId,
+        PlaySessionId: sessionData?.PlaySessionId
+          ? sessionData.PlaySessionId
+          : "",
         StartTimeTicks: "0",
         EnableRedirection: "true",
         EnableRemoteMedia: "false",

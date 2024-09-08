@@ -1,7 +1,7 @@
 import { Chromecast } from "@/components/Chromecast";
 import { HeaderBackButton } from "@/components/common/HeaderBackButton";
 import { nestedTabPageScreenOptions } from "@/components/stacks/NestedTabPageStack";
-import { Feather } from "@expo/vector-icons";
+import { Feather, Ionicons } from "@expo/vector-icons";
 import { Stack, useRouter } from "expo-router";
 import { Platform, TouchableOpacity, View } from "react-native";
 
@@ -32,6 +32,16 @@ export default function IndexLayout() {
           ),
           headerRight: () => (
             <View className="flex flex-row items-center space-x-2">
+              <TouchableOpacity
+                onPress={() => {
+                  router.push("/(auth)/syncplay");
+                }}
+                style={{
+                  marginRight: 8,
+                }}
+              >
+                <Ionicons name="people" color={"white"} size={22} />
+              </TouchableOpacity>
               <Chromecast />
               <TouchableOpacity
                 onPress={() => {
@@ -56,6 +66,13 @@ export default function IndexLayout() {
         name="settings"
         options={{
           title: "Settings",
+        }}
+      />
+      <Stack.Screen
+        name="syncplay"
+        options={{
+          title: "Syncplay",
+          presentation: "modal",
         }}
       />
       {Object.entries(nestedTabPageScreenOptions).map(([name, options]) => (

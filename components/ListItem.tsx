@@ -1,8 +1,13 @@
 import { PropsWithChildren, ReactNode } from "react";
-import { View, ViewProps } from "react-native";
+import {
+  TouchableOpacity,
+  TouchableOpacityProps,
+  View,
+  ViewProps,
+} from "react-native";
 import { Text } from "./common/Text";
 
-interface Props extends ViewProps {
+interface Props extends TouchableOpacityProps {
   title?: string | null | undefined;
   subTitle?: string | null | undefined;
   children?: ReactNode;
@@ -17,7 +22,7 @@ export const ListItem: React.FC<PropsWithChildren<Props>> = ({
   ...props
 }) => {
   return (
-    <View
+    <TouchableOpacity
       className="flex flex-row items-center justify-between bg-neutral-900 p-4"
       {...props}
     >
@@ -26,6 +31,6 @@ export const ListItem: React.FC<PropsWithChildren<Props>> = ({
         {subTitle && <Text className="text-xs">{subTitle}</Text>}
       </View>
       {iconAfter}
-    </View>
+    </TouchableOpacity>
   );
 };

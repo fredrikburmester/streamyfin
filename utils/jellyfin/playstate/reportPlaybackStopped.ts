@@ -1,6 +1,7 @@
 import { Api } from "@jellyfin/sdk";
 import { AxiosError } from "axios";
 import { getAuthHeaders } from "../jellyfin";
+import { writeToLog } from "@/utils/log";
 
 interface PlaybackStoppedParams {
   api: Api | null | undefined;
@@ -27,17 +28,23 @@ export const reportPlaybackStopped = async ({
   if (!positionTicks || positionTicks === 0) return;
 
   if (!api) {
-    console.error("Missing api");
+    writeToLog("WARN", "Could not report playback stopped due to missing api");
     return;
   }
 
   if (!sessionId) {
-    console.error("Missing sessionId", sessionId);
+    writeToLog(
+      "WARN",
+      "Could not report playback stopped due to missing session id"
+    );
     return;
   }
 
   if (!itemId) {
-    console.error("Missing itemId");
+    writeToLog(
+      "WARN",
+      "Could not report playback progress due to missing item id"
+    );
     return;
   }
 

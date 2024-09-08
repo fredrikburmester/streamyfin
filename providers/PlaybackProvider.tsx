@@ -18,13 +18,21 @@ import {
   BaseItemDto,
   PlaybackInfoResponse,
 } from "@jellyfin/sdk/lib/generated-client/models";
-import { getMediaInfoApi } from "@jellyfin/sdk/lib/utils/api";
+import { getMediaInfoApi, getSyncPlayApi } from "@jellyfin/sdk/lib/utils/api";
 import * as Linking from "expo-linking";
 import { useAtom } from "jotai";
 import { debounce } from "lodash";
 import { Alert } from "react-native";
 import { OnProgressData, type VideoRef } from "react-native-video";
 import { apiAtom, userAtom } from "./JellyfinProvider";
+import {
+  GroupData,
+  GroupJoinedData,
+  PlayQueueData,
+  StateUpdateData,
+} from "@/types/syncplay";
+import { getStreamUrl } from "@/utils/jellyfin/media/getStreamUrl";
+import { getUserItemData } from "@/utils/jellyfin/user-library/getUserItemData";
 
 type CurrentlyPlayingState = {
   url: string;
@@ -115,7 +123,7 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
   );
 
   const setCurrentlyPlayingState = useCallback(
-    async (state: CurrentlyPlayingState | null) => {
+    async (state: CurrentlyPlayingState | null, paused = false) => {
       try {
         if (state?.item.Id && user?.Id) {
           const vlcLink = "vlc://" + state?.url;
@@ -137,7 +145,12 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
 
           setSession(res.data);
           setCurrentlyPlaying(state);
-          setIsPlaying(true);
+
+          if (paused === true) {
+            pauseVideo();
+          } else {
+            playVideo();
+          }
 
           if (settings?.openFullScreenVideoPlayerByDefault) {
             setTimeout(() => {
@@ -268,6 +281,11 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
     setIsFullscreen(false);
   }, []);
 
+  const seek = useCallback((ticks: number) => {
+    const time = ticks / 10000000;
+    videoRef.current?.seek(time);
+  }, []);
+
   useEffect(() => {
     if (!deviceId || !api?.accessToken) return;
 
@@ -321,10 +339,113 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
       const json = JSON.parse(e.data);
       const command = json?.Data?.Command;
 
-      console.log("[WS] ~ ", json);
+      if (json.MessageType === "KeepAlive") {
+        // TODO: ??
+      } else if (json.MessageType === "ForceKeepAlive") {
+        // TODO: ??
+      } else if (json.MessageType === "SyncPlayGroupUpdate") {
+        if (!api) return;
 
-      // On PlayPause
+        const type = json.Data.Type;
+
+        if (type === "StateUpdate") {
+          const data = json.Data.Data as StateUpdateData;
+          console.log("StateUpdate ~", data);
+        } else if (type === "GroupJoined") {
+          const data = json.Data.Data as GroupJoinedData;
+          console.log("GroupJoined ~", data);
+        } else if (type === "PlayQueue") {
+          const data = json.Data.Data as PlayQueueData;
+          console.log("PlayQueue ~", {
+            IsPlaying: data.IsPlaying,
+            StartPositionTicks: data.StartPositionTicks,
+            PlaylistLength: data.Playlist?.length,
+            PlayingItemIndex: data.PlayingItemIndex,
+            Reason: data.Reason,
+          });
+
+          if (data.Reason === "SetCurrentItem") {
+            if (
+              currentlyPlaying?.item.Id ===
+              data.Playlist?.[data.PlayingItemIndex].ItemId
+            ) {
+              console.log("SetCurrentItem ~", json);
+
+              seek(data.StartPositionTicks);
+
+              if (data.IsPlaying) {
+                playVideo();
+              } else {
+                pauseVideo();
+              }
+
+              // getSyncPlayApi(api).syncPlayReady({
+              //   readyRequestDto: {
+              //     IsPlaying: data.IsPlaying,
+              //     PositionTicks: data.StartPositionTicks,
+              //     PlaylistItemId: currentlyPlaying?.item.Id,
+              //     When: new Date().toISOString(),
+              //   },
+              // });
+
+              return;
+            }
+          }
+
+          const itemId = data.Playlist?.[data.PlayingItemIndex].ItemId;
+          if (itemId) {
+            getUserItemData({
+              api,
+              userId: user?.Id,
+              itemId,
+            }).then(async (item) => {
+              if (!item) {
+                Alert.alert("Error", "Could not find item for syncplay");
+                return;
+              }
+
+              const url = await getStreamUrl({
+                api,
+                item,
+                startTimeTicks: data.StartPositionTicks,
+                userId: user?.Id,
+                mediaSourceId: item?.MediaSources?.[0].Id!,
+              });
+
+              if (!url) {
+                Alert.alert("Error", "Could not find stream url for syncplay");
+                return;
+              }
+
+              await setCurrentlyPlayingState(
+                {
+                  item,
+                  url,
+                },
+                true
+              );
+
+              await getSyncPlayApi(api).syncPlayReady({
+                readyRequestDto: {
+                  IsPlaying: data.IsPlaying,
+                  PositionTicks: data.StartPositionTicks,
+                  PlaylistItemId: itemId,
+                  When: new Date().toISOString(),
+                },
+              });
+            });
+          }
+        } else {
+          console.log("[WS] ~ ", json);
+        }
+
+        return;
+      } else {
+        console.log("[WS] ~ ", json);
+      }
+
       if (command === "PlayPause") {
+        // On PlayPause
         console.log("Command ~ PlayPause");
         if (isPlaying) pauseVideo();
         else playVideo();
