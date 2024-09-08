@@ -343,6 +343,12 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
         // TODO: ??
       } else if (json.MessageType === "ForceKeepAlive") {
         // TODO: ??
+      } else if (json.MessageType === "SyncPlayCommand") {
+        console.log("SyncPlayCommand ~", command);
+        if (command === "Stop") {
+          console.log("Command ~ Stop");
+          stopPlayback();
+        }
       } else if (json.MessageType === "SyncPlayGroupUpdate") {
         if (!api) return;
 
@@ -379,14 +385,14 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
                 pauseVideo();
               }
 
-              // getSyncPlayApi(api).syncPlayReady({
-              //   readyRequestDto: {
-              //     IsPlaying: data.IsPlaying,
-              //     PositionTicks: data.StartPositionTicks,
-              //     PlaylistItemId: currentlyPlaying?.item.Id,
-              //     When: new Date().toISOString(),
-              //   },
-              // });
+              getSyncPlayApi(api).syncPlayReady({
+                readyRequestDto: {
+                  IsPlaying: data.IsPlaying,
+                  PositionTicks: data.StartPositionTicks,
+                  PlaylistItemId: currentlyPlaying?.item.Id,
+                  When: new Date().toISOString(),
+                },
+              });
 
               return;
             }

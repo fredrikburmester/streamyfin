@@ -32,8 +32,8 @@ export type SyncPlayCommandData = {
 };
 
 export type StateUpdateData = {
+  State: "Waiting" | "Playing" | "Paused";
   Reason: "Pause" | "Unpause";
-  State: "Waiting" | "Playing";
 };
 
 export type GroupJoinedData = {
