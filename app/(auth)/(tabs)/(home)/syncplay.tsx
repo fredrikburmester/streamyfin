@@ -24,7 +24,11 @@ export default function page() {
       const res = await getSyncPlayApi(api).syncPlayGetGroups();
       return res.data;
     },
-    refetchInterval: 5000,
+    refetchInterval: 1000,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    refetchOnMount: true,
   });
 
   const createGroupMutation = useMutation({

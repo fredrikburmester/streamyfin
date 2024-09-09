@@ -31,6 +31,7 @@ export const CurrentlyPlayingBar: React.FC = () => {
     videoRef,
     presentFullscreenPlayer,
     onProgress,
+    onBuffer,
   } = usePlayback();
 
   const [api] = useAtom(apiAtom);
@@ -182,18 +183,24 @@ export const CurrentlyPlayingBar: React.FC = () => {
                     enable: true,
                     thread: true,
                   }}
+                  onIdle={() => {
+                    console.log("IDLE");
+                  }}
+                  fullscreenAutorotate={true}
+                  onReadyForDisplay={() => {
+                    console.log("READY FOR DISPLAY");
+                  }}
                   onProgress={(e) => onProgress(e)}
                   subtitleStyle={{
                     fontSize: 16,
                   }}
+                  onBuffer={(e) => onBuffer(e.isBuffering)}
                   source={videoSource}
                   onRestoreUserInterfaceForPictureInPictureStop={() => {
                     setTimeout(() => {
                       presentFullscreenPlayer();
                     }, 300);
                   }}
-                  onFullscreenPlayerDidDismiss={() => {}}
-                  onFullscreenPlayerDidPresent={() => {}}
                   onPlaybackStateChanged={(e) => {
                     if (e.isPlaying === true) {
                       playVideo(false);

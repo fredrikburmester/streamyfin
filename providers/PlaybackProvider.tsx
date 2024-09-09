@@ -21,7 +21,7 @@ import {
 import { getMediaInfoApi, getSyncPlayApi } from "@jellyfin/sdk/lib/utils/api";
 import * as Linking from "expo-linking";
 import { useAtom } from "jotai";
-import { debounce } from "lodash";
+import { debounce, isBuffer } from "lodash";
 import { Alert } from "react-native";
 import { OnProgressData, type VideoRef } from "react-native-video";
 import { apiAtom, userAtom } from "./JellyfinProvider";
@@ -43,6 +43,8 @@ interface PlaybackContextType {
   sessionData: PlaybackInfoResponse | null | undefined;
   currentlyPlaying: CurrentlyPlayingState | null;
   videoRef: React.MutableRefObject<VideoRef | null>;
+  onBuffer: (isBuffering: boolean) => void;
+  onReady: () => void;
   isPlaying: boolean;
   isFullscreen: boolean;
   progressTicks: number | null;
@@ -82,6 +84,7 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
   const [progressTicks, setProgressTicks] = useState<number | null>(0);
   const [volume, _setVolume] = useState<number | null>(null);
   const [session, setSession] = useState<PlaybackInfoResponse | null>(null);
+  const [syncplayGroup, setSyncplayGroup] = useState<GroupData | null>(null);
   const [currentlyPlaying, setCurrentlyPlaying] =
     useState<CurrentlyPlayingState | null>(null);
 
@@ -264,6 +267,53 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
     [session?.PlaySessionId, currentlyPlaying?.item.Id, isPlaying, api]
   );
 
+  const onBuffer = useCallback(
+    (isBuffering: boolean) => {
+      console.log("Buffering...", "Playing:", isPlaying);
+      if (
+        isBuffering &&
+        syncplayGroup?.GroupId &&
+        isPlaying === false &&
+        currentlyPlaying?.item.PlaylistItemId
+      ) {
+        console.log("Sending syncplay buffering...");
+        getSyncPlayApi(api!).syncPlayBuffering({
+          bufferRequestDto: {
+            IsPlaying: isPlaying,
+            When: new Date().toISOString(),
+            PositionTicks: progressTicks ? progressTicks : 0,
+            PlaylistItemId: currentlyPlaying?.item.PlaylistItemId,
+          },
+        });
+      }
+    },
+    [
+      isPlaying,
+      syncplayGroup?.GroupId,
+      currentlyPlaying?.item.PlaylistItemId,
+      api,
+    ]
+  );
+
+  const onReady = useCallback(() => {
+    if (syncplayGroup?.GroupId && currentlyPlaying?.item.PlaylistItemId) {
+      getSyncPlayApi(api!).syncPlayReady({
+        readyRequestDto: {
+          When: new Date().toISOString(),
+          PlaylistItemId: currentlyPlaying?.item.PlaylistItemId,
+          IsPlaying: isPlaying,
+          PositionTicks: progressTicks ? progressTicks : 0,
+        },
+      });
+    }
+  }, [
+    syncplayGroup?.GroupId,
+    currentlyPlaying?.item.PlaylistItemId,
+    progressTicks,
+    isPlaying,
+    api,
+  ]);
+
   const onProgress = useCallback(
     debounce((e: OnProgressData) => {
       _onProgress(e);
@@ -287,119 +337,127 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
   }, []);
 
   useEffect(() => {
-    if (!deviceId || !api?.accessToken) return;
+    if (!deviceId || !api?.accessToken || !user?.Id) {
+      console.info("[WS] Waiting for deviceId, accessToken and userId");
+      return;
+    }
 
     const protocol = api?.basePath.includes("https") ? "wss" : "ws";
-
     const url = `${protocol}://${api?.basePath
       .replace("https://", "")
       .replace("http://", "")}/socket?api_key=${
       api?.accessToken
     }&deviceId=${deviceId}`;
 
-    const newWebSocket = new WebSocket(url);
-
+    let ws: WebSocket | null = null;
     let keepAliveInterval: NodeJS.Timeout | null = null;
 
-    newWebSocket.onopen = () => {
-      setIsConnected(true);
-      // Start sending "KeepAlive" message every 30 seconds
-      keepAliveInterval = setInterval(() => {
-        if (newWebSocket.readyState === WebSocket.OPEN) {
-          newWebSocket.send(JSON.stringify({ MessageType: "KeepAlive" }));
+    const connect = () => {
+      ws = new WebSocket(url);
+
+      ws.onopen = () => {
+        setIsConnected(true);
+        keepAliveInterval = setInterval(() => {
+          if (ws && ws.readyState === WebSocket.OPEN) {
+            console.log("⬆︎ KeepAlive...");
+            ws.send(JSON.stringify({ MessageType: "KeepAlive" }));
+          }
+        }, 30000);
+      };
+
+      ws.onerror = (e) => {
+        console.error("WebSocket error:", e);
+        setIsConnected(false);
+      };
+
+      ws.onclose = () => {
+        setIsConnected(false);
+        if (keepAliveInterval) {
+          clearInterval(keepAliveInterval);
         }
-      }, 30000);
+        setTimeout(connect, 5000); // Attempt to reconnect after 5 seconds
+      };
+
+      setWs(ws);
     };
 
-    newWebSocket.onerror = (e) => {
-      console.error("WebSocket error:", e);
-      setIsConnected(false);
-    };
-
-    newWebSocket.onclose = (e) => {
-      if (keepAliveInterval) {
-        clearInterval(keepAliveInterval);
-      }
-    };
-
-    setWs(newWebSocket);
+    connect();
 
     return () => {
+      if (ws) {
+        ws.close();
+      }
       if (keepAliveInterval) {
         clearInterval(keepAliveInterval);
       }
-      newWebSocket.close();
     };
-  }, [api, deviceId, user]);
+  }, [api?.accessToken, deviceId, user]);
 
   useEffect(() => {
-    if (!ws) return;
+    if (!ws || !api) return;
 
     ws.onmessage = (e) => {
       const json = JSON.parse(e.data);
       const command = json?.Data?.Command;
 
       if (json.MessageType === "KeepAlive") {
-        // TODO: ??
+        console.log("⬇︎ KeepAlive...");
       } else if (json.MessageType === "ForceKeepAlive") {
-        // TODO: ??
+        console.log("⬇︎ ForceKeepAlive...");
       } else if (json.MessageType === "SyncPlayCommand") {
-        console.log("SyncPlayCommand ~", command);
-        if (command === "Stop") {
-          console.log("Command ~ Stop");
-          stopPlayback();
+        console.log("SyncPlayCommand ~", command, json.Data);
+        switch (command) {
+          case "Stop":
+            console.log("STOP");
+            stopPlayback();
+            break;
+          case "Pause":
+            console.log("PAUSE");
+            pauseVideo();
+            break;
+          case "Play":
+          case "Unpause":
+            console.log("PLAY");
+            playVideo();
+            break;
+          case "Seek":
+            console.log("SEEK", json.Data.PositionTicks);
+            seek(json.Data.PositionTicks);
+            break;
         }
       } else if (json.MessageType === "SyncPlayGroupUpdate") {
-        if (!api) return;
-
         const type = json.Data.Type;
 
         if (type === "StateUpdate") {
           const data = json.Data.Data as StateUpdateData;
           console.log("StateUpdate ~", data);
         } else if (type === "GroupJoined") {
-          const data = json.Data.Data as GroupJoinedData;
+          const data = json.Data.Data as GroupData;
+          setSyncplayGroup(data);
           console.log("GroupJoined ~", data);
+        } else if (type === "GroupLeft") {
+          console.log("GroupLeft");
+          setSyncplayGroup(null);
         } else if (type === "PlayQueue") {
           const data = json.Data.Data as PlayQueueData;
           console.log("PlayQueue ~", {
             IsPlaying: data.IsPlaying,
-            StartPositionTicks: data.StartPositionTicks,
-            PlaylistLength: data.Playlist?.length,
-            PlayingItemIndex: data.PlayingItemIndex,
             Reason: data.Reason,
           });
 
           if (data.Reason === "SetCurrentItem") {
-            if (
-              currentlyPlaying?.item.Id ===
-              data.Playlist?.[data.PlayingItemIndex].ItemId
-            ) {
-              console.log("SetCurrentItem ~", json);
-
-              seek(data.StartPositionTicks);
-
-              if (data.IsPlaying) {
-                playVideo();
-              } else {
-                pauseVideo();
-              }
-
-              getSyncPlayApi(api).syncPlayReady({
-                readyRequestDto: {
-                  IsPlaying: data.IsPlaying,
-                  PositionTicks: data.StartPositionTicks,
-                  PlaylistItemId: currentlyPlaying?.item.Id,
-                  When: new Date().toISOString(),
-                },
-              });
-
-              return;
-            }
+            console.log("SetCurrentItem ~ ", json);
+            return;
           }
 
-          const itemId = data.Playlist?.[data.PlayingItemIndex].ItemId;
-          if (itemId) {
+          if (data.Reason === "NewPlaylist") {
+            const itemId = data.Playlist?.[data.PlayingItemIndex].ItemId;
+            if (!itemId) {
+              console.error("No itemId found in PlayQueue");
+              return;
+            }
+
+            // Set playback item
             getUserItemData({
               api,
               userId: user?.Id,
@@ -428,14 +486,14 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
                   item,
                   url,
                 },
-                true
+                !data.IsPlaying
               );
 
               await getSyncPlayApi(api).syncPlayReady({
                 readyRequestDto: {
                   IsPlaying: data.IsPlaying,
                   PositionTicks: data.StartPositionTicks,
-                  PlaylistItemId: itemId,
+                  PlaylistItemId: data.Playlist[0].PlaylistItemId,
                   When: new Date().toISOString(),
                 },
               });
@@ -473,16 +531,18 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
         Alert.alert(title, body);
       }
     };
-  }, [ws, stopPlayback, playVideo, pauseVideo]);
+  }, [ws, stopPlayback, playVideo, pauseVideo, setVolume, api, seek]);
 
   return (
     <PlaybackContext.Provider
       value={{
         onProgress,
+        onReady,
         progressTicks,
         setVolume,
         setIsPlaying,
         setIsFullscreen,
+        onBuffer,
         isFullscreen,
         isPlaying,
         currentlyPlaying,
