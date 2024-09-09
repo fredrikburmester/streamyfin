@@ -7,7 +7,13 @@ import {
 import { getItemsApi } from "@jellyfin/sdk/lib/utils/api";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAtom } from "jotai";
-import { Linking, Switch, TouchableOpacity, View } from "react-native";
+import {
+  Linking,
+  Switch,
+  TouchableOpacity,
+  View,
+  ViewProps,
+} from "react-native";
 import * as DropdownMenu from "zeego/dropdown-menu";
 import { Text } from "../common/Text";
 import { Loader } from "../Loader";
@@ -16,7 +22,9 @@ import { useState } from "react";
 import { Button } from "../Button";
 import { MediaToggles } from "./MediaToggles";
 
-export const SettingToggles: React.FC = () => {
+interface Props extends ViewProps {}
+
+export const SettingToggles: React.FC<Props> = ({ ...props }) => {
   const [settings, updateSettings] = useSettings();
 
   const [api] = useAtom(apiAtom);
@@ -49,7 +57,7 @@ export const SettingToggles: React.FC = () => {
   });
 
   return (
-    <View>
+    <View {...props}>
       {/* <View>
         <Text className="text-lg font-bold mb-2">Look and feel</Text>
         <View className="flex flex-col rounded-xl mb-4 overflow-hidden divide-y-2 divide-solid divide-neutral-800 opacity-50">
