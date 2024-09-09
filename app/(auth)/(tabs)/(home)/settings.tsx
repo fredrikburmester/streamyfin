@@ -5,10 +5,12 @@ import { SettingToggles } from "@/components/settings/SettingToggles";
 import { useFiles } from "@/hooks/useFiles";
 import { apiAtom, useJellyfin, userAtom } from "@/providers/JellyfinProvider";
 import { clearLogs, readFromLog } from "@/utils/log";
+import { getQuickConnectApi } from "@jellyfin/sdk/lib/utils/api";
 import { useQuery } from "@tanstack/react-query";
 import * as Haptics from "expo-haptics";
 import { useAtom } from "jotai";
-import { ScrollView, View } from "react-native";
+import { Alert, ScrollView, View } from "react-native";
+import { red } from "react-native-reanimated/lib/typescript/reanimated2/Colors";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function settings() {
@@ -26,6 +28,36 @@ export default function settings() {
 
   const insets = useSafeAreaInsets();
 
+  const openQuickConnectAuthCodeInput = () => {
+    Alert.prompt(
+      "Quick connect",
+      "Enter the code from the Jellyfin app",
+      async (text) => {
+        if (text) {
+          try {
+            const res = await getQuickConnectApi(api!).authorizeQuickConnect({
+              code: text,
+              userId: user?.Id,
+            });
+            console.log(res.status, res.statusText, res.data);
+            if (res.status === 200) {
+              Haptics.notificationAsync(
+                Haptics.NotificationFeedbackType.Success
+              );
+              Alert.alert("Success", "Quick connect authorized");
+            } else {
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+              Alert.alert("Error", "Invalid code");
+            }
+          } catch (e) {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            Alert.alert("Error", "Invalid code");
+          }
+        }
+      }
+    );
+  };
+
   return (
     <ScrollView
       contentContainerStyle={{
@@ -38,10 +70,17 @@ export default function settings() {
         <View>
           <Text className="font-bold text-lg mb-2">Information</Text>
 
-          <View className="flex flex-col rounded-xl mb-4 overflow-hidden border-neutral-800 divide-y-2 divide-solid divide-neutral-800 ">
+          <View className="flex flex-col rounded-xl overflow-hidden border-neutral-800 divide-y-2 divide-solid divide-neutral-800 ">
             <ListItem title="User" subTitle={user?.Name} />
             <ListItem title="Server" subTitle={api?.basePath} />
           </View>
+        </View>
+
+        <View>
+          <Text className="font-bold text-lg mb-2">Quick connect</Text>
+          <Button onPress={openQuickConnectAuthCodeInput} color="black">
+            Authorize
+          </Button>
         </View>
 
         <SettingToggles />
