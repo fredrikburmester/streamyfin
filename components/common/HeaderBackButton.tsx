@@ -1,4 +1,5 @@
 import {
+  Platform,
   TouchableOpacity,
   TouchableOpacityProps,
   View,
@@ -21,7 +22,7 @@ export const HeaderBackButton: React.FC<Props> = ({
 }) => {
   const router = useRouter();
 
-  if (background === "transparent")
+  if (background === "transparent" && Platform.OS !== "android")
     return (
       <BlurView
         {...props}
@@ -52,7 +53,7 @@ export const HeaderBackButton: React.FC<Props> = ({
         className="drop-shadow-2xl"
         name="arrow-back"
         size={24}
-        color="#077DF2"
+        color="white"
       />
     </TouchableOpacity>
   );

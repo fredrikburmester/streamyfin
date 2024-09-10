@@ -278,9 +278,9 @@ export default function search() {
               <HorizontalScroll
                 data={data}
                 renderItem={(item) => (
-                  <TouchableOpacity
+                  <TouchableItemRouter
                     key={item.Id}
-                    onPress={() => router.push(`/series/${item.Id}`)}
+                    item={item}
                     className="flex flex-col w-28"
                   >
                     <SeriesPoster item={item} key={item.Id} />
@@ -290,7 +290,7 @@ export default function search() {
                     <Text className="opacity-50 text-xs">
                       {item.ProductionYear}
                     </Text>
-                  </TouchableOpacity>
+                  </TouchableItemRouter>
                 )}
               />
             )}
@@ -302,14 +302,14 @@ export default function search() {
               <HorizontalScroll
                 data={data}
                 renderItem={(item) => (
-                  <TouchableOpacity
+                  <TouchableItemRouter
+                    item={item}
                     key={item.Id}
-                    onPress={() => router.push(`/items/page?id=${item.Id}`)}
                     className="flex flex-col w-44"
                   >
                     <ContinueWatchingPoster item={item} />
                     <ItemCardText item={item} />
-                  </TouchableOpacity>
+                  </TouchableItemRouter>
                 )}
               />
             )}
@@ -321,16 +321,16 @@ export default function search() {
               <HorizontalScroll
                 data={data}
                 renderItem={(item) => (
-                  <TouchableOpacity
+                  <TouchableItemRouter
                     key={item.Id}
+                    item={item}
                     className="flex flex-col w-28"
-                    onPress={() => router.push(`/collections/${item.Id}`)}
                   >
                     <MoviePoster item={item} key={item.Id} />
                     <Text numberOfLines={2} className="mt-2">
                       {item.Name}
                     </Text>
-                  </TouchableOpacity>
+                  </TouchableItemRouter>
                 )}
               />
             )}

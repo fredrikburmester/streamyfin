@@ -1,5 +1,9 @@
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import { useFocusEffect, useLocalSearchParams } from "expo-router";
+import {
+  useFocusEffect,
+  useLocalSearchParams,
+  useNavigation,
+} from "expo-router";
 import * as ScreenOrientation from "expo-screen-orientation";
 import { useAtom } from "jotai";
 import React, { useCallback, useEffect, useLayoutEffect, useMemo } from "react";
@@ -127,6 +131,13 @@ const Page = () => {
     enabled: !!api && !!user?.Id && !!libraryId,
     staleTime: 60 * 1000,
   });
+
+  const navigation = useNavigation();
+  useEffect(() => {
+    navigation.setOptions({
+      title: library?.Name || "",
+    });
+  }, [library]);
 
   const fetchItems = useCallback(
     async ({
