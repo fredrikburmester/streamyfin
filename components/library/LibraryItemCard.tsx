@@ -125,7 +125,7 @@ export const LibraryItemCard: React.FC<Props> = ({ library, ...props }) => {
             {library.Name}
           </Text>
           {settings?.libraryOptions?.showStats && (
-            <Text className="font-bold text-xs text-neutral-500 text-start px-4 ml-auto">
+            <Text className="font-bold text-xs text-neutral-500 text-start ml-auto">
               {itemsCount} items
             </Text>
           )}
