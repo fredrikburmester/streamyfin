@@ -5,6 +5,7 @@ import { SettingToggles } from "@/components/settings/SettingToggles";
 import { useFiles } from "@/hooks/useFiles";
 import { apiAtom, useJellyfin, userAtom } from "@/providers/JellyfinProvider";
 import { clearLogs, readFromLog } from "@/utils/log";
+import { Ionicons } from "@expo/vector-icons";
 import { getQuickConnectApi } from "@jellyfin/sdk/lib/utils/api";
 import { useQuery } from "@tanstack/react-query";
 import * as Haptics from "expo-haptics";
@@ -12,6 +13,7 @@ import { useAtom } from "jotai";
 import { Alert, ScrollView, View } from "react-native";
 import { red } from "react-native-reanimated/lib/typescript/reanimated2/Colors";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { toast } from "sonner-native";
 
 export default function settings() {
   const { logout } = useJellyfin();
@@ -85,32 +87,49 @@ export default function settings() {
 
         <SettingToggles />
 
-        <View className="flex flex-col space-y-2">
-          <Button color="black" onPress={logout}>
-            Log out
-          </Button>
+        <View>
+          <Text className="font-bold text-lg mb-2">Tests</Text>
           <Button
-            color="red"
-            onPress={async () => {
-              await deleteAllFiles();
-              Haptics.notificationAsync(
-                Haptics.NotificationFeedbackType.Success
-              );
+            onPress={() => {
+              toast.success("Download started", {
+                invert: true,
+              });
             }}
+            color="black"
           >
-            Delete all downloaded files
+            Test toast
           </Button>
-          <Button
-            color="red"
-            onPress={async () => {
-              await clearLogs();
-              Haptics.notificationAsync(
-                Haptics.NotificationFeedbackType.Success
-              );
-            }}
-          >
-            Delete all logs
-          </Button>
+        </View>
+
+        <View>
+          <Text className="font-bold text-lg mb-2">Account and storage</Text>
+          <View className="flex flex-col space-y-2">
+            <Button color="black" onPress={logout}>
+              Log out
+            </Button>
+            <Button
+              color="red"
+              onPress={async () => {
+                await deleteAllFiles();
+                Haptics.notificationAsync(
+                  Haptics.NotificationFeedbackType.Success
+                );
+              }}
+            >
+              Delete all downloaded files
+            </Button>
+            <Button
+              color="red"
+              onPress={async () => {
+                await clearLogs();
+                Haptics.notificationAsync(
+                  Haptics.NotificationFeedbackType.Success
+                );
+              }}
+            >
+              Delete all logs
+            </Button>
+          </View>
         </View>
         <View>
           <Text className="font-bold text-lg mb-2">Logs</Text>
