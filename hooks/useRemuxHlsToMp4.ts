@@ -7,6 +7,7 @@ import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import { runningProcesses } from "@/utils/atoms/downloads";
 import { writeToLog } from "@/utils/log";
 import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner-native";
 
 /**
  * Custom hook for remuxing HLS to MP4 using FFmpeg.
@@ -28,6 +29,10 @@ export const useRemuxHlsToMp4 = (item: BaseItemDto) => {
 
   const startRemuxing = useCallback(
     async (url: string) => {
+      toast.success("Download started", {
+        invert: true,
+      });
+
       const command = `-y -loglevel quiet -thread_queue_size 512 -protocol_whitelist file,http,https,tcp,tls,crypto -multiple_requests 1 -tcp_nodelay 1 -fflags +genpts -i ${url} -c copy -bufsize 50M -max_muxing_queue_size 4096 ${output}`;
 
       writeToLog(
