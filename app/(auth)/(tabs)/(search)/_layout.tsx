@@ -19,6 +19,16 @@ export default function SearchLayout() {
       {Object.entries(nestedTabPageScreenOptions).map(([name, options]) => (
         <Stack.Screen key={name} name={name} options={options} />
       ))}
+      <Stack.Screen
+        name="collections/[collectionId]"
+        options={{
+          title: "",
+          headerShown: true,
+          headerBlurEffect: "prominent",
+          headerTransparent: Platform.OS === "ios" ? true : false,
+          headerShadowVisible: false,
+        }}
+      />
     </Stack>
   );
 }
