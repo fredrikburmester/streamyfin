@@ -28,7 +28,7 @@ export const useImageColors = (
             secondary = colors.muted;
           } else if (colors.platform === "ios") {
             primary = colors.primary;
-            secondary = colors.detail;
+            secondary = colors.secondary;
             average = colors.background;
           }
 

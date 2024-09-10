@@ -226,7 +226,7 @@ export const PlayButton: React.FC<Props> = ({ item, url, ...props }) => {
     backgroundColor: interpolateColor(
       colorChangeProgress.value,
       [0, 1],
-      [startColor.value.average, endColor.value.average]
+      [startColor.value.primary, endColor.value.primary]
     ),
   }));
 
@@ -279,7 +279,7 @@ export const PlayButton: React.FC<Props> = ({ item, url, ...props }) => {
         </View>
 
         <Animated.View
-          style={[animatedAverageStyle]}
+          style={[animatedAverageStyle, { opacity: 0.5 }]}
           className="absolute w-full h-full top-0 left-0 rounded-xl"
         />
         <View
