@@ -19,6 +19,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 import * as Linking from "expo-linking";
 import { orientationAtom } from "@/utils/atoms/orientation";
+import { Toaster } from "sonner-native";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -121,6 +122,7 @@ function Layout() {
                       <Stack.Screen name="+not-found" />
                     </Stack>
                     <CurrentlyPlayingBar />
+                    <Toaster />
                   </ThemeProvider>
                 </PlaybackProvider>
               </JellyfinProvider>
