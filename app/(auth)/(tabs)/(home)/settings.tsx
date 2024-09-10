@@ -31,7 +31,7 @@ export default function settings() {
   const openQuickConnectAuthCodeInput = () => {
     Alert.prompt(
       "Quick connect",
-      "Enter the code from the Jellyfin app",
+      "Enter the quick connect code",
       async (text) => {
         if (text) {
           try {
