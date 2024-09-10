@@ -78,7 +78,7 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
       <View>
         <Text className="text-lg font-bold mb-2">Other</Text>
 
-        <View className="flex flex-col rounded-xl mb-4 overflow-hidden  divide-y-2 divide-solid divide-neutral-800">
+        <View className="flex flex-col rounded-xl overflow-hidden  divide-y-2 divide-solid divide-neutral-800">
           <View className="flex flex-row items-center justify-between bg-neutral-900 p-4">
             <View className="shrink">
               <Text className="font-semibold">Auto rotate</Text>
