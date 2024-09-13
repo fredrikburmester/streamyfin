@@ -84,6 +84,16 @@ export const CurrentlyPlayingBar: React.FC = () => {
     };
   });
 
+  const startPosition = useMemo(
+    () =>
+      currentlyPlaying?.item?.UserData?.PlaybackPositionTicks
+        ? Math.round(
+            currentlyPlaying?.item.UserData.PlaybackPositionTicks / 10000
+          )
+        : 0,
+    [currentlyPlaying?.item]
+  );
+
   const videoSource = useMemo(() => {
     if (!api || !currentlyPlaying || !poster) return null;
     return {
