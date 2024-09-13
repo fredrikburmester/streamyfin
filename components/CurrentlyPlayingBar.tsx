@@ -7,16 +7,19 @@ import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import { useRouter, useSegments } from "expo-router";
 import { useAtom } from "jotai";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Alert, Platform, TouchableOpacity, View } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
+  withDecay,
   withTiming,
 } from "react-native-reanimated";
 import Video from "react-native-video";
 import { Text } from "./common/Text";
 import { Loader } from "./Loader";
+import { Dimensions } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export const CurrentlyPlayingBar: React.FC = () => {
   const segments = useSegments();
@@ -32,78 +35,54 @@ export const CurrentlyPlayingBar: React.FC = () => {
     presentFullscreenPlayer,
     onProgress,
   } = usePlayback();
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   const [api] = useAtom(apiAtom);
 
-  const aBottom = useSharedValue(0);
-  const aPadding = useSharedValue(0);
-  const aHeight = useSharedValue(100);
-  const router = useRouter();
-  const animatedOuterStyle = useAnimatedStyle(() => {
+  const [size, setSize] = useState<"full" | "small">("small");
+
+  const screenHeight = Dimensions.get("window").height;
+  const screenWiidth = Dimensions.get("window").width;
+
+  const backgroundValues = useSharedValue({
+    bottom: 70,
+    height: 80,
+    padding: 0,
+    width: screenWiidth - 100,
+    left: 50,
+  });
+
+  const videoValues = useSharedValue({
+    bottom: 90,
+    height: 70,
+    width: 125,
+    left: 16,
+  });
+
+  const buttonsValues = useSharedValue({
+    bottom: 90,
+    opacity: 1,
+    right: 16,
+  });
+
+  const animatedButtonStyle = useAnimatedStyle(() => {
     return {
-      bottom: withTiming(aBottom.value, { duration: 500 }),
-      height: withTiming(aHeight.value, { duration: 500 }),
-      padding: withTiming(aPadding.value, { duration: 500 }),
+      bottom: withTiming(buttonsValues.value.bottom, { duration: 500 }),
+      opacity: withTiming(buttonsValues.value.opacity, { duration: 500 }),
+      right: withTiming(buttonsValues.value.right, { duration: 500 }),
     };
   });
 
-  const aPaddingBottom = useSharedValue(30);
-  const aPaddingInner = useSharedValue(12);
-  const aBorderRadiusBottom = useSharedValue(12);
-  const animatedInnerStyle = useAnimatedStyle(() => {
+  const animatedBackgroundStyle = useAnimatedStyle(() => {
     return {
-      padding: withTiming(aPaddingInner.value, { duration: 500 }),
-      paddingBottom: withTiming(aPaddingBottom.value, { duration: 500 }),
-      borderBottomLeftRadius: withTiming(aBorderRadiusBottom.value, {
-        duration: 500,
-      }),
-      borderBottomRightRadius: withTiming(aBorderRadiusBottom.value, {
-        duration: 500,
-      }),
+      bottom: withTiming(backgroundValues.value.bottom, { duration: 500 }),
+      width: withTiming(backgroundValues.value.width, { duration: 500 }),
+      height: withTiming(backgroundValues.value.height, { duration: 500 }),
+      padding: withTiming(backgroundValues.value.padding, { duration: 500 }),
+      left: withTiming(backgroundValues.value.left, { duration: 500 }),
     };
   });
-
-  const from = useMemo(() => segments[2], [segments]);
-
-  useEffect(() => {
-    if (segments.find((s) => s.includes("tabs"))) {
-      // Tab screen - i.e. home
-      aBottom.value = Platform.OS === "ios" ? 78 : 50;
-      aHeight.value = 80;
-      aPadding.value = 8;
-      aPaddingBottom.value = 8;
-      aPaddingInner.value = 8;
-    } else {
-      // Inside a normal screen
-      aBottom.value = Platform.OS === "ios" ? 0 : 0;
-      aHeight.value = Platform.OS === "ios" ? 110 : 80;
-      aPadding.value = Platform.OS === "ios" ? 0 : 8;
-      aPaddingInner.value = Platform.OS === "ios" ? 12 : 8;
-      aPaddingBottom.value = Platform.OS === "ios" ? 40 : 12;
-    }
-  }, [segments]);
-
-  const startPosition = useMemo(
-    () =>
-      currentlyPlaying?.item?.UserData?.PlaybackPositionTicks
-        ? Math.round(
-            currentlyPlaying?.item.UserData.PlaybackPositionTicks / 10000
-          )
-        : 0,
-    [currentlyPlaying?.item]
-  );
-
-  const poster = useMemo(() => {
-    if (currentlyPlaying?.item.Type === "Audio")
-      return `${api?.basePath}/Items/${currentlyPlaying.item.AlbumId}/Images/Primary?tag=${currentlyPlaying.item.AlbumPrimaryImageTag}&quality=90&maxHeight=200&maxWidth=200`;
-    else
-      return getBackdropUrl({
-        api,
-        item: currentlyPlaying?.item,
-        quality: 70,
-        width: 200,
-      });
-  }, [currentlyPlaying?.item.Id, api]);
 
   const videoSource = useMemo(() => {
     if (!api || !currentlyPlaying || !poster) return null;
@@ -128,179 +107,184 @@ export const CurrentlyPlayingBar: React.FC = () => {
     };
   }, [currentlyPlaying, startPosition, api, poster]);
 
+  const animatedVideoStyle = useAnimatedStyle(() => {
+    return {
+      height: withTiming(videoValues.value.height, { duration: 500 }),
+      width: withTiming(videoValues.value.width, { duration: 500 }),
+      bottom: withTiming(videoValues.value.bottom, { duration: 500 }),
+      left: withTiming(videoValues.value.left, { duration: 500 }),
+    };
+  });
+
+  const animatedValues = useSharedValue({
+    paddingBottom: 0,
+    paddingInner: 0,
+    borderRadiusBottom: 0,
+  });
+
+  useEffect(() => {
+    if (size === "full") {
+      backgroundValues.value = {
+        bottom: 0,
+        height: screenHeight,
+        padding: 0,
+        width: screenWiidth,
+        left: 0,
+      };
+      buttonsValues.value = {
+        bottom: screenHeight - insets.top - 38,
+        opacity: 1,
+        right: 16,
+      };
+      videoValues.value = {
+        bottom: 0,
+        height: screenHeight,
+        width: screenWiidth,
+        left: 0,
+      };
+    } else {
+      backgroundValues.value = {
+        bottom: 70,
+        height: 80,
+        padding: 0,
+        width: screenWiidth - 16,
+        left: 8,
+      };
+      buttonsValues.value = {
+        bottom: 90,
+        opacity: 1,
+        right: 16,
+      };
+      videoValues.value = {
+        bottom: 78,
+        height: 64,
+        width: 113,
+        left: 16,
+      };
+    }
+  }, [size, screenHeight, insets]);
+
   if (!api || !currentlyPlaying) return null;
 
   return (
-    <Animated.View
-      style={[animatedOuterStyle]}
-      className="absolute left-0 w-screen"
-    >
-      <BlurView
-        intensity={Platform.OS === "android" ? 60 : 100}
-        experimentalBlurMethod={Platform.OS === "android" ? "none" : undefined}
-        className={`h-full w-full rounded-xl overflow-hidden ${
-          Platform.OS === "android" && "bg-black"
-        }`}
+    <>
+      <Animated.View
+        className={`bg-black rounded-lg absolute`}
+        style={[animatedBackgroundStyle]}
+      ></Animated.View>
+
+      <Animated.View
+        className={`flex flex-row items-center z-10`}
+        style={[
+          { position: "absolute", borderWidth: 1, borderColor: "blue" },
+          animatedButtonStyle,
+        ]}
       >
-        <Animated.View
-          style={[
-            { padding: 8, borderTopLeftRadius: 12, borderTopEndRadius: 12 },
-            animatedInnerStyle,
-          ]}
-          className="h-full w-full  flex flex-row items-center justify-between overflow-hidden"
+        <TouchableOpacity
+          onPress={() => {
+            if (size === "small") setSize("full");
+            else setSize("small");
+          }}
+          className="aspect-square rounded flex flex-col items-center justify-center p-2"
         >
-          <View className="flex flex-row items-center space-x-4 shrink">
-            <TouchableOpacity
-              onPress={() => {
-                videoRef.current?.presentFullscreenPlayer();
+          <Ionicons name="expand" size={24} color="white" />
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => {
+            stopPlayback();
+          }}
+          className="aspect-square rounded flex flex-col items-center justify-center p-2"
+        >
+          <Ionicons name="close" size={24} color="white" />
+        </TouchableOpacity>
+      </Animated.View>
+
+      <Animated.View
+        style={[animatedVideoStyle]}
+        className={` rounded-md absolute overflow-hidden flex flex-col items-center justify-center pointer-events-none z-0`}
+      >
+        <View className="">
+          {videoSource && (
+            <Video
+              ref={videoRef}
+              allowsExternalPlayback
+              style={{ width: "100%", height: "100%" }}
+              playWhenInactive={true}
+              playInBackground={true}
+              showNotificationControls={true}
+              ignoreSilentSwitch="ignore"
+              controls={false}
+              pictureInPicture={true}
+              debug={{
+                enable: true,
+                thread: true,
               }}
-              className={`relative h-full bg-neutral-800 rounded-md overflow-hidden
-                ${
-                  currentlyPlaying.item?.Type === "Audio"
-                    ? "aspect-square"
-                    : "aspect-video"
+              onProgress={(e) => onProgress(e)}
+              subtitleStyle={{
+                fontSize: 16,
+              }}
+              source={videoSource}
+              onRestoreUserInterfaceForPictureInPictureStop={() => {
+                setTimeout(() => {
+                  presentFullscreenPlayer();
+                }, 300);
+              }}
+              onFullscreenPlayerDidDismiss={() => {}}
+              onFullscreenPlayerDidPresent={() => {}}
+              onPlaybackStateChanged={(e) => {
+                if (e.isPlaying === true) {
+                  playVideo(false);
+                } else if (e.isPlaying === false) {
+                  pauseVideo(false);
                 }
-                `}
-            >
-              {videoSource && (
-                <Video
-                  ref={videoRef}
-                  allowsExternalPlayback
-                  style={{ width: "100%", height: "100%" }}
-                  playWhenInactive={true}
-                  playInBackground={true}
-                  showNotificationControls={true}
-                  ignoreSilentSwitch="ignore"
-                  controls={false}
-                  pictureInPicture={true}
-                  poster={
-                    poster && currentlyPlaying.item?.Type === "Audio"
-                      ? poster
-                      : undefined
-                  }
-                  debug={{
-                    enable: true,
-                    thread: true,
-                  }}
-                  onProgress={(e) => onProgress(e)}
-                  subtitleStyle={{
-                    fontSize: 16,
-                  }}
-                  source={videoSource}
-                  onRestoreUserInterfaceForPictureInPictureStop={() => {
-                    setTimeout(() => {
-                      presentFullscreenPlayer();
-                    }, 300);
-                  }}
-                  onFullscreenPlayerDidDismiss={() => {}}
-                  onFullscreenPlayerDidPresent={() => {}}
-                  onPlaybackStateChanged={(e) => {
-                    if (e.isPlaying === true) {
-                      playVideo(false);
-                    } else if (e.isPlaying === false) {
-                      pauseVideo(false);
-                    }
-                  }}
-                  onVolumeChange={(e) => {
-                    setVolume(e.volume);
-                  }}
-                  progressUpdateInterval={4000}
-                  onError={(e) => {
-                    console.log(e);
-                    writeToLog(
-                      "ERROR",
-                      "Video playback error: " + JSON.stringify(e)
-                    );
-                    Alert.alert("Error", "Cannot play this video file.");
-                    setIsPlaying(false);
-                    // setCurrentlyPlaying(null);
-                  }}
-                  renderLoader={
-                    currentlyPlaying.item?.Type !== "Audio" && (
-                      <View className="flex flex-col items-center justify-center h-full">
-                        <Loader />
-                      </View>
-                    )
-                  }
-                />
-              )}
-            </TouchableOpacity>
-            <View className="shrink text-xs">
-              <TouchableOpacity
-                onPress={() => {
-                  if (currentlyPlaying.item?.Type === "Audio") {
-                    router.push(
-                      // @ts-ignore
-                      `/(auth)/(tabs)/${from}/albums/${currentlyPlaying.item.AlbumId}`
-                    );
-                  } else {
-                    router.push(
-                      // @ts-ignore
-                      `/(auth)/(tabs)/${from}/items/page?id=${currentlyPlaying.item?.Id}`
-                    );
-                  }
-                }}
-              >
-                <Text>{currentlyPlaying.item?.Name}</Text>
-              </TouchableOpacity>
-              {currentlyPlaying.item?.Type === "Episode" && (
-                <TouchableOpacity
-                  onPress={() => {
-                    router.push(
-                      // @ts-ignore
-                      `/(auth)/(tabs)/${from}/series/${currentlyPlaying.item.SeriesId}`
-                    );
-                  }}
-                  className="text-xs opacity-50"
-                >
-                  <Text>{currentlyPlaying.item.SeriesName}</Text>
-                </TouchableOpacity>
-              )}
-              {currentlyPlaying.item?.Type === "Movie" && (
-                <View>
-                  <Text className="text-xs opacity-50">
-                    {currentlyPlaying.item?.ProductionYear}
-                  </Text>
-                </View>
-              )}
-              {currentlyPlaying.item?.Type === "Audio" && (
-                <TouchableOpacity
-                  onPress={() => {
-                    router.push(`/albums/${currentlyPlaying.item?.AlbumId}`);
-                  }}
-                >
-                  <Text className="text-xs opacity-50">
-                    {currentlyPlaying.item?.Album}
-                  </Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          </View>
-          <View className="flex flex-row items-center space-x-2">
-            <TouchableOpacity
-              onPress={() => {
-                if (isPlaying) pauseVideo();
-                else playVideo();
               }}
-              className="aspect-square rounded flex flex-col items-center justify-center p-2"
-            >
-              {isPlaying ? (
-                <Ionicons name="pause" size={24} color="white" />
-              ) : (
-                <Ionicons name="play" size={24} color="white" />
-              )}
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => {
-                stopPlayback();
+              onVolumeChange={(e) => {
+                setVolume(e.volume);
               }}
-              className="aspect-square rounded flex flex-col items-center justify-center p-2"
-            >
-              <Ionicons name="close" size={24} color="white" />
-            </TouchableOpacity>
-          </View>
-        </Animated.View>
-      </BlurView>
-    </Animated.View>
+              progressUpdateInterval={4000}
+              onError={(e) => {
+                console.log(e);
+                writeToLog(
+                  "ERROR",
+                  "Video playback error: " + JSON.stringify(e)
+                );
+                Alert.alert("Error", "Cannot play this video file.");
+                setIsPlaying(false);
+                // setCurrentlyPlaying(null);
+              }}
+              renderLoader={
+                currentlyPlaying.item?.Type !== "Audio" && (
+                  <View className="flex flex-col items-center justify-center h-full">
+                    <Loader />
+                  </View>
+                )
+              }
+            />
+          )}
+        </View>
+      </Animated.View>
+
+      {/* <Animated.View
+        style={[
+          {
+            height: "100%",
+            width: "100%",
+            display: "flex",
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            overflow: "hidden",
+          },
+          animatedInnerStyle,
+        ]}
+      >
+        
+        <View
+          className={`flex flex-row w-full h-full items-center space-x-4 shrink bg-neutral-800 rounded-lg p-2`}
+        >
+         
+        </View>
+      </Animated.View> */}
+    </>
   );
 };
