@@ -7,7 +7,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import { useRouter, useSegments } from "expo-router";
 import { useAtom } from "jotai";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Alert, Platform, TouchableOpacity, View } from "react-native";
 import Animated, {
   useAnimatedStyle,
@@ -46,6 +46,8 @@ export const CurrentlyPlayingBar: React.FC = () => {
 
   const screenHeight = Dimensions.get("window").height;
   const screenWiidth = Dimensions.get("window").width;
+
+  const from = useMemo(() => segments[2], [segments]);
 
   const backgroundValues = useSharedValue({
     bottom: 70,
@@ -176,6 +178,12 @@ export const CurrentlyPlayingBar: React.FC = () => {
         width: screenWiidth,
         left: 0,
       };
+      textValues.value = {
+        bottom: 78,
+        height: 64,
+        left: 16,
+        width: 140,
+      };
     } else {
       backgroundValues.value = {
         bottom: 70,
@@ -207,6 +215,7 @@ export const CurrentlyPlayingBar: React.FC = () => {
   const progress = useSharedValue(0);
   const min = useSharedValue(0);
   const max = useSharedValue(currentlyPlaying?.item.RunTimeTicks || 0);
+  const sliding = useRef(false);
 
   useEffect(() => {
     max.value = currentlyPlaying?.item.RunTimeTicks || 0;
@@ -324,7 +333,9 @@ export const CurrentlyPlayingBar: React.FC = () => {
               thread: true,
             }}
             onProgress={(e) => {
+              if (sliding.current === true) return;
               onProgress(e);
+              progress.value = e.currentTime * 10000000;
             }}
             subtitleStyle={{
               fontSize: 16,
@@ -384,10 +395,16 @@ export const CurrentlyPlayingBar: React.FC = () => {
               bubbleTextColor: "#000",
               heartbeatColor: "#999",
             }}
+            onSlidingStart={() => {
+              sliding.current = true;
+            }}
             onSlidingComplete={(val) => {
               const tick = Math.floor(val);
-              console.log(tick);
-              videoRef.current?.seek(tick);
+              videoRef.current?.seek(tick / 10000000);
+              sliding.current = false;
+            }}
+            onValueChange={(val) => {
+              const tick = Math.floor(val);
               progress.value = tick;
             }}
             containerStyle={{
