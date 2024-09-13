@@ -221,12 +221,57 @@ export const CurrentlyPlayingBar: React.FC = () => {
         style={[animatedBackgroundStyle]}
       ></Animated.View>
 
-      <Animated.View
-        className={`border border-red-600 absolute`}
-        style={[animatedTextStyle]}
-      >
-        <Text>{currentlyPlaying.item.Name}</Text>
-        <Text>{currentlyPlaying.item.Name}</Text>
+      <Animated.View className={` absolute`} style={[animatedTextStyle]}>
+        <View className="shrink text-xs flex flex-col justify-center h-full">
+          <TouchableOpacity
+            onPress={() => {
+              if (currentlyPlaying.item?.Type === "Audio") {
+                router.push(
+                  // @ts-ignore
+                  `/(auth)/(tabs)/${from}/albums/${currentlyPlaying.item.AlbumId}`
+                );
+              } else {
+                router.push(
+                  // @ts-ignore
+                  `/(auth)/(tabs)/${from}/items/page?id=${currentlyPlaying.item?.Id}`
+                );
+              }
+            }}
+          >
+            <Text>{currentlyPlaying.item?.Name}</Text>
+          </TouchableOpacity>
+          {currentlyPlaying.item?.Type === "Episode" && (
+            <TouchableOpacity
+              onPress={() => {
+                router.push(
+                  // @ts-ignore
+                  `/(auth)/(tabs)/${from}/series/${currentlyPlaying.item.SeriesId}`
+                );
+              }}
+              className="text-xs opacity-50"
+            >
+              <Text>{currentlyPlaying.item.SeriesName}</Text>
+            </TouchableOpacity>
+          )}
+          {currentlyPlaying.item?.Type === "Movie" && (
+            <View>
+              <Text className="text-xs opacity-50">
+                {currentlyPlaying.item?.ProductionYear}
+              </Text>
+            </View>
+          )}
+          {currentlyPlaying.item?.Type === "Audio" && (
+            <TouchableOpacity
+              onPress={() => {
+                router.push(`/albums/${currentlyPlaying.item?.AlbumId}`);
+              }}
+            >
+              <Text className="text-xs opacity-50">
+                {currentlyPlaying.item?.Album}
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </Animated.View>
 
       <Animated.View
