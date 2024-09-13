@@ -226,6 +226,7 @@ export const CurrentlyPlayingBar: React.FC = () => {
         style={[animatedTextStyle]}
       >
         <Text>{currentlyPlaying.item.Name}</Text>
+        <Text>{currentlyPlaying.item.Name}</Text>
       </Animated.View>
 
       <Animated.View
