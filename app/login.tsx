@@ -44,6 +44,27 @@ const Login: React.FC = () => {
 
   useEffect(() => {
     (async () => {
+      // add a test that checks if the url contains http/https
+      if (_apiUrl.startsWith("http") || _apiUrl.startsWith("https")) {
+        {
+          setServer({
+            address: _apiUrl,
+          });
+        }
+      } else {
+        //check if url requires ssl
+        // use curl to see if https is required
+        // if not use http
+        // if yes use https
+        const test = fetch("http://jellyfin.oakgrove.site/web/#/home.html")
+          .then((response) => console.log(response))
+          .catch((error) => console.error(error));
+
+        const test2 = fetch("https://jellyfin.oakgrove.site/web/#/home.html")
+          .then((response) => console.log(response))
+          .catch((error) => console.error(error));
+      }
+
       if (_apiUrl) {
         setServer({
           address: _apiUrl,
