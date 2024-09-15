@@ -217,13 +217,15 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
   );
 
   const stopPlayback = useCallback(async () => {
+    const id = currentlyPlaying?.item?.Id;
+    setCurrentlyPlayingState(null);
+
     await reportPlaybackStopped({
       api,
-      itemId: currentlyPlaying?.item?.Id,
+      itemId: id,
       sessionId: session?.PlaySessionId,
       positionTicks: progressTicks ? progressTicks : 0,
     });
-    setCurrentlyPlayingState(null);
   }, [currentlyPlaying?.item.Id, session?.PlaySessionId, progressTicks, api]);
 
   const setIsPlaying = useCallback(

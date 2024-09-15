@@ -3,16 +3,19 @@ import { usePlayback } from "@/providers/PlaybackProvider";
 import { getBackdropUrl } from "@/utils/jellyfin/image/getBackdropUrl";
 import { getAuthHeaders } from "@/utils/jellyfin/jellyfin";
 import { writeToLog } from "@/utils/log";
-import { runtimeTicksToMinutes, runtimeTicksToSeconds } from "@/utils/time";
+import { runtimeTicksToSeconds } from "@/utils/time";
 import { Ionicons } from "@expo/vector-icons";
-import { BlurView } from "expo-blur";
+import { Api } from "@jellyfin/sdk";
+import { getItemsApi } from "@jellyfin/sdk/lib/utils/api";
+import { useQuery } from "@tanstack/react-query";
+import { Image } from "expo-image";
 import { useRouter, useSegments } from "expo-router";
 import { useAtom } from "jotai";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   Dimensions,
+  Platform,
   Pressable,
   TouchableOpacity,
   View,
@@ -22,19 +25,15 @@ import "react-native-gesture-handler";
 import Animated, {
   SharedValue,
   useAnimatedStyle,
-  useDerivedValue,
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Video from "react-native-video";
 import { Text } from "./common/Text";
-import { Loader } from "./Loader";
-import { Image } from "expo-image";
-import { Api } from "@jellyfin/sdk";
-import { useQuery } from "@tanstack/react-query";
-import { getItemsApi } from "@jellyfin/sdk/lib/utils/api";
 import { itemRouter } from "./common/TouchableItemRouter";
+import { Loader } from "./Loader";
+import * as NavigationBar from "expo-navigation-bar";
 
 export const CurrentlyPlayingBar: React.FC = () => {
   const {
@@ -344,6 +343,19 @@ export const CurrentlyPlayingBar: React.FC = () => {
     return !!nextItem;
   }, [nextItem]);
 
+  useEffect(() => {
+    if (Platform.OS === "android") {
+      if (currentlyPlaying) NavigationBar.setVisibilityAsync("hidden");
+      else NavigationBar.setVisibilityAsync("visible");
+    }
+
+    return () => {
+      if (Platform.OS === "android") {
+        NavigationBar.setVisibilityAsync("visible");
+      }
+    };
+  }, [currentlyPlaying]);
+
   if (!api || !currentlyPlaying) return null;
 
   return (
@@ -619,8 +631,8 @@ export const CurrentlyPlayingBar: React.FC = () => {
                   }
                   const { x, y, url } = trickPlayUrl;
 
-                  const tileWidth = 200;
-                  const tileHeight = 200 / trickplayInfo.aspectRatio!;
+                  const tileWidth = 150;
+                  const tileHeight = 150 / trickplayInfo.aspectRatio!;
                   return (
                     <View
                       style={{
@@ -633,9 +645,9 @@ export const CurrentlyPlayingBar: React.FC = () => {
                     >
                       <Image
                         style={{
-                          width: 200 * trickplayInfo?.data.TileWidth!,
+                          width: 150 * trickplayInfo?.data.TileWidth!,
                           height:
-                            (200 / trickplayInfo.aspectRatio!) *
+                            (150 / trickplayInfo.aspectRatio!) *
                             trickplayInfo?.data.TileHeight!,
                           transform: [
                             { translateX: -x * tileWidth },
