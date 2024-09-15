@@ -1,4 +1,5 @@
 import { useAdjacentEpisodes } from "@/hooks/useAdjacentEpisodes";
+import { useControlsVisibility } from "@/hooks/useControlsVisibility";
 import { useNavigationBarVisibility } from "@/hooks/useNavigationBarVisibility";
 import { useTrickplay } from "@/hooks/useTrickplay";
 import { apiAtom } from "@/providers/JellyfinProvider";
@@ -6,8 +7,10 @@ import { usePlayback } from "@/providers/PlaybackProvider";
 import { getBackdropUrl } from "@/utils/jellyfin/image/getBackdropUrl";
 import { getAuthHeaders } from "@/utils/jellyfin/jellyfin";
 import { writeToLog } from "@/utils/log";
+import { secondsToTicks } from "@/utils/secondsToTicks";
 import { runtimeTicksToSeconds } from "@/utils/time";
 import { Ionicons } from "@expo/vector-icons";
+import { useQuery } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import { useRouter, useSegments } from "expo-router";
 import { useAtom } from "jotai";
@@ -31,8 +34,6 @@ import Video from "react-native-video";
 import { Text } from "./common/Text";
 import { itemRouter } from "./common/TouchableItemRouter";
 import { Loader } from "./Loader";
-import { useQuery } from "@tanstack/react-query";
-import { secondsToTicks } from "@/utils/secondsToTicks";
 
 export const CurrentlyPlayingBar: React.FC = () => {
   const {
@@ -44,17 +45,20 @@ export const CurrentlyPlayingBar: React.FC = () => {
     setIsPlaying,
     isPlaying,
     videoRef,
-    presentFullscreenPlayer,
     progressTicks,
     onProgress,
     isBuffering: _isBuffering,
     setIsBuffering,
   } = usePlayback();
+
+  useNavigationBarVisibility(isPlaying);
+
   const insets = useSafeAreaInsets();
   const segments = useSegments();
   const router = useRouter();
 
-  useNavigationBarVisibility(isPlaying);
+  const { trickPlayUrl, calculateTrickplayUrl, trickplayInfo } =
+    useTrickplay(currentlyPlaying);
 
   const [api] = useAtom(apiAtom);
 
@@ -65,30 +69,21 @@ export const CurrentlyPlayingBar: React.FC = () => {
   const screenHeight = Dimensions.get("window").height;
   const screenWidth = Dimensions.get("window").width;
 
-  const controlsOpacity = useSharedValue(1);
-
   const progress = useSharedValue(progressTicks || 0);
   const min = useSharedValue(0);
   const max = useSharedValue(currentlyPlaying?.item.RunTimeTicks || 0);
   const sliding = useRef(false);
   const localIsBuffering = useSharedValue(false);
-  // const hideControlsTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const toggleIgnoreSafeArea = () => {
     setIgnoreSafeArea((prev) => !prev);
   };
 
-  const showControls = () => {
-    controlsOpacity.value = 1;
-  };
-
-  const hideControls = () => {
-    controlsOpacity.value = 0;
-  };
+  const { isVisible, showControls, hideControls } = useControlsVisibility(3000);
 
   const animatedControlsStyle = useAnimatedStyle(() => {
     return {
-      opacity: withTiming(controlsOpacity.value > 0 ? 1 : 0, {
+      opacity: withTiming(isVisible ? 1 : 0, {
         duration: 300,
       }),
     };
@@ -133,32 +128,6 @@ export const CurrentlyPlayingBar: React.FC = () => {
     };
   }, [currentlyPlaying, startPosition, api, poster]);
 
-  const showControlsAndResetTimer = () => {
-    showControls();
-    // resetHideControlsTimer();
-  };
-
-  // const resetHideControlsTimer = () => {
-  //   if (hideControlsTimerRef.current) {
-  //     clearTimeout(hideControlsTimerRef.current);
-  //   }
-  //   hideControlsTimerRef.current = setTimeout(() => {
-  //     hideControls();
-  //   }, 3000);
-  // };
-
-  // useEffect(() => {
-  //   if (controlsOpacity.value > 0) {
-  //     resetHideControlsTimer();
-  //   }
-
-  //   return () => {
-  //     if (hideControlsTimerRef.current) {
-  //       clearTimeout(hideControlsTimerRef.current);
-  //     }
-  //   };
-  // }, [controlsOpacity.value]);
-
   useEffect(() => {
     max.value = currentlyPlaying?.item.RunTimeTicks || 0;
   }, [currentlyPlaying?.item.RunTimeTicks]);
@@ -185,7 +154,7 @@ export const CurrentlyPlayingBar: React.FC = () => {
   const animatedVideoContainerStyle = useAnimatedStyle(() => {
     return {
       opacity: withTiming(
-        controlsOpacity.value > 0 || localIsBuffering.value === true ? 0.5 : 1,
+        isVisible || localIsBuffering.value === true ? 0.5 : 1,
         {
           duration: 300,
         }
@@ -193,34 +162,7 @@ export const CurrentlyPlayingBar: React.FC = () => {
     };
   });
 
-  const trickplayInfo = useMemo(() => {
-    if (!currentlyPlaying?.item.Id || !currentlyPlaying?.item.Trickplay) {
-      return null;
-    }
-
-    const mediaSourceId = currentlyPlaying.item.Id;
-    const trickplayData = currentlyPlaying.item.Trickplay[mediaSourceId];
-
-    if (!trickplayData) {
-      return null;
-    }
-
-    // Get the first available resolution
-    const firstResolution = Object.keys(trickplayData)[0];
-    return firstResolution
-      ? {
-          resolution: firstResolution,
-          aspectRatio:
-            trickplayData[firstResolution].Width! /
-            trickplayData[firstResolution].Height!,
-          data: trickplayData[firstResolution],
-        }
-      : null;
-  }, [currentlyPlaying]);
-
-  const { trickPlayUrl, calculateTrickplayUrl } = useTrickplay();
   const { previousItem, nextItem } = useAdjacentEpisodes({
-    api,
     currentlyPlaying,
   });
 
@@ -232,7 +174,6 @@ export const CurrentlyPlayingBar: React.FC = () => {
         return null;
       }
 
-      console.log("Getting intro timestamps");
       const res = await api?.axiosInstance.get(
         `${api.basePath}/Episode/${currentlyPlaying.item.Id}/IntroTimestamps`,
         {
@@ -263,11 +204,7 @@ export const CurrentlyPlayingBar: React.FC = () => {
       progress.value > showButtonAt && progress.value < hideButtonAt;
     return {
       opacity: withTiming(
-        localIsBuffering.value === false &&
-          controlsOpacity.value > 0 &&
-          showButton
-          ? 1
-          : 0,
+        localIsBuffering.value === false && isVisible && showButton ? 1 : 0,
         {
           duration: 300,
         }
@@ -281,371 +218,369 @@ export const CurrentlyPlayingBar: React.FC = () => {
   }, [introTimestamps]);
 
   useEffect(() => {
-    console.log({ introTimestamps });
-  }, [introTimestamps]);
+    showControls();
+  }, [currentlyPlaying]);
 
   if (!api || !currentlyPlaying) return null;
 
   return (
-    <View style={{ width: screenWidth, height: screenHeight }}>
-      <View style={{ width: "100%", height: "100%", backgroundColor: "black" }}>
-        <Animated.View
-          style={[
-            {
-              position: "absolute",
-              top: insets.top,
-              right: insets.right + 20,
-              height: 70,
-              zIndex: 10,
-            },
-            animatedControlsStyle,
-          ]}
+    <View
+      style={{
+        width: screenWidth,
+        height: screenHeight,
+        backgroundColor: "black",
+      }}
+    >
+      <Animated.View
+        style={[
+          {
+            position: "absolute",
+            top: insets.top,
+            right: insets.right + 20,
+            height: 70,
+            zIndex: 10,
+          },
+          animatedControlsStyle,
+        ]}
+      >
+        <View className="flex flex-row items-center h-full">
+          <TouchableOpacity
+            onPress={() => {
+              if (!isVisible) return;
+              toggleIgnoreSafeArea();
+            }}
+            className="aspect-square rounded flex flex-col items-center justify-center p-2"
+          >
+            <Ionicons
+              name={ignoreSafeArea ? "contract-outline" : "expand"}
+              size={24}
+              color="white"
+            />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => {
+              if (!isVisible) return;
+              stopPlayback();
+            }}
+            className="aspect-square rounded flex flex-col items-center justify-center p-2"
+          >
+            <Ionicons name="close" size={24} color="white" />
+          </TouchableOpacity>
+        </View>
+      </Animated.View>
+
+      <Animated.View
+        style={[
+          {
+            position: "absolute",
+            bottom: insets.bottom + 8 * 7,
+            right: insets.right + 32,
+            zIndex: 10,
+          },
+          animatedIntroSkipperStyle,
+        ]}
+      >
+        <View className="flex flex-row items-center h-full">
+          <TouchableOpacity
+            onPress={() => {
+              if (!isVisible) return;
+              skipIntro();
+            }}
+            className="flex flex-col items-center justify-center px-2 py-1.5 bg-purple-600 rounded-full"
+          >
+            <Text>Skip intro</Text>
+          </TouchableOpacity>
+        </View>
+      </Animated.View>
+
+      <Animated.View style={[videoContainerStyle, animatedVideoContainerStyle]}>
+        <Pressable
+          onPress={() => {
+            if (isVisible) {
+              hideControls();
+            } else {
+              showControls();
+            }
+          }}
+          style={{
+            width: "100%",
+            height: "100%",
+          }}
         >
-          <View className="flex flex-row items-center h-full">
-            <TouchableOpacity
-              onPress={() => {
-                if (controlsOpacity.value === 0) return;
-                toggleIgnoreSafeArea();
+          {videoSource && (
+            <Video
+              ref={videoRef}
+              allowsExternalPlayback
+              style={{
+                width: "100%",
+                height: "100%",
               }}
-              className="aspect-square rounded flex flex-col items-center justify-center p-2"
+              resizeMode="contain"
+              playWhenInactive={true}
+              playInBackground={true}
+              showNotificationControls={true}
+              ignoreSilentSwitch="ignore"
+              controls={false}
+              pictureInPicture={true}
+              onProgress={(e) => {
+                if (e.playableDuration === 0) {
+                  setIsBuffering(true);
+                  localIsBuffering.value = true;
+                } else {
+                  setIsBuffering(false);
+                  localIsBuffering.value = false;
+                }
+
+                if (sliding.current === true) return;
+                onProgress(e);
+                progress.value = e.currentTime * 10000000;
+              }}
+              subtitleStyle={{
+                fontSize: 16,
+              }}
+              source={videoSource}
+              onPlaybackStateChanged={(e) => {
+                if (e.isPlaying === true) {
+                  playVideo(false);
+                } else if (e.isPlaying === false) {
+                  pauseVideo(false);
+                }
+              }}
+              onVolumeChange={(e) => {
+                setVolume(e.volume);
+              }}
+              progressUpdateInterval={1000}
+              onError={(e) => {
+                console.log(e);
+                writeToLog(
+                  "ERROR",
+                  "Video playback error: " + JSON.stringify(e)
+                );
+                Alert.alert("Error", "Cannot play this video file.");
+                setIsPlaying(false);
+              }}
+              renderLoader={
+                <View className="absolute w-screen h-screen flex flex-col items-center justify-center">
+                  <Loader />
+                </View>
+              }
+            />
+          )}
+        </Pressable>
+      </Animated.View>
+
+      <Animated.View
+        style={[
+          {
+            position: "absolute",
+            bottom: insets.bottom + 8,
+            left: insets.left + 32,
+            width: screenWidth - insets.left - insets.right - 64,
+            borderRadius: 100,
+          },
+          animatedControlsStyle,
+        ]}
+      >
+        <View className="shrink flex flex-col justify-center h-full mb-2">
+          <Text className="font-bold">{currentlyPlaying.item?.Name}</Text>
+          {currentlyPlaying.item?.Type === "Episode" && (
+            <Text className="opacity-50">
+              {currentlyPlaying.item.SeriesName}
+            </Text>
+          )}
+          {currentlyPlaying.item?.Type === "Movie" && (
+            <Text className="text-xs opacity-50">
+              {currentlyPlaying.item?.ProductionYear}
+            </Text>
+          )}
+          {currentlyPlaying.item?.Type === "Audio" && (
+            <Text className="text-xs opacity-50">
+              {currentlyPlaying.item?.Album}
+            </Text>
+          )}
+        </View>
+        <View className="flex flex-row items-center space-x-6 rounded-full py-1.5 pl-4 pr-4 z-10 bg-neutral-800">
+          <View className="flex flex-row items-center space-x-2">
+            <TouchableOpacity
+              disabled={!previousItem}
+              style={{
+                opacity: !previousItem ? 0.5 : 1,
+              }}
+              onPress={() => {
+                if (!isVisible) return;
+                if (!previousItem || !from) return;
+                const url = itemRouter(previousItem, from);
+                stopPlayback();
+                // @ts-ignore
+                router.push(url);
+              }}
+            >
+              <Ionicons name="play-skip-back" size={18} color="white" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={async () => {
+                if (!isVisible) return;
+                const curr = await videoRef.current?.getCurrentPosition();
+                if (!curr) return;
+                videoRef.current?.seek(Math.max(0, curr - 15));
+                showControls();
+              }}
             >
               <Ionicons
-                name={ignoreSafeArea ? "contract-outline" : "expand"}
+                name="refresh-outline"
+                size={22}
+                color="white"
+                style={{
+                  transform: [{ scaleY: -1 }, { rotate: "180deg" }],
+                }}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => {
+                if (!isVisible) return;
+                if (isPlaying) pauseVideo();
+                else playVideo();
+                showControls();
+              }}
+            >
+              <Ionicons
+                name={isPlaying ? "pause" : "play"}
                 size={24}
                 color="white"
               />
             </TouchableOpacity>
             <TouchableOpacity
-              onPress={() => {
-                if (controlsOpacity.value === 0) return;
-                stopPlayback();
+              onPress={async () => {
+                if (!isVisible) return;
+                const curr = await videoRef.current?.getCurrentPosition();
+                if (!curr) return;
+                videoRef.current?.seek(Math.max(0, curr + 15));
+                showControls();
               }}
-              className="aspect-square rounded flex flex-col items-center justify-center p-2"
             >
-              <Ionicons name="close" size={24} color="white" />
+              <Ionicons name="refresh-outline" size={22} color="white" />
             </TouchableOpacity>
-          </View>
-        </Animated.View>
-
-        <Animated.View
-          style={[
-            {
-              position: "absolute",
-              bottom: insets.bottom + 8 * 7,
-              right: insets.right + 32,
-              zIndex: 10,
-            },
-            animatedIntroSkipperStyle,
-          ]}
-        >
-          <View className="flex flex-row items-center h-full">
             <TouchableOpacity
-              onPress={() => {
-                if (controlsOpacity.value === 0) return;
-                skipIntro();
+              disabled={!nextItem}
+              style={{
+                opacity: !nextItem ? 0.5 : 1,
               }}
-              className="flex flex-col items-center justify-center px-2 py-1.5 bg-purple-600 rounded-full"
+              onPress={() => {
+                if (!isVisible) return;
+                if (!nextItem || !from) return;
+                const url = itemRouter(nextItem, from);
+                stopPlayback();
+                // @ts-ignore
+                router.push(url);
+              }}
             >
-              <Text>Skip intro</Text>
+              <Ionicons name="play-skip-forward" size={18} color="white" />
             </TouchableOpacity>
           </View>
-        </Animated.View>
+          <View className="flex flex-col w-full shrink">
+            <Slider
+              theme={{
+                maximumTrackTintColor: "rgba(255,255,255,0.2)",
+                minimumTrackTintColor: "#fff",
+                cacheTrackTintColor: "#333",
+                bubbleBackgroundColor: "#fff",
+                bubbleTextColor: "#000",
+                heartbeatColor: "#999",
+              }}
+              onSlidingStart={() => {
+                if (!isVisible) return;
+                sliding.current = true;
+              }}
+              onSlidingComplete={(val) => {
+                if (!isVisible) return;
+                const tick = Math.floor(val);
+                videoRef.current?.seek(tick / 10000000);
+                sliding.current = false;
+              }}
+              onValueChange={(val) => {
+                if (!isVisible) return;
+                const tick = Math.floor(val);
+                progress.value = tick;
+                calculateTrickplayUrl(progress);
+                showControls();
+              }}
+              containerStyle={{
+                borderRadius: 100,
+              }}
+              renderBubble={() => {
+                if (!trickPlayUrl || !trickplayInfo) {
+                  return null;
+                }
+                const { x, y, url } = trickPlayUrl;
 
-        <Animated.View
-          style={[videoContainerStyle, animatedVideoContainerStyle]}
-        >
-          <Pressable
-            onPress={() => {
-              if (controlsOpacity.value > 0) {
-                hideControls();
-              } else {
-                showControlsAndResetTimer();
-              }
-            }}
-            style={{
-              width: "100%",
-              height: "100%",
-            }}
-          >
-            {videoSource && (
-              <Video
-                ref={videoRef}
-                allowsExternalPlayback
-                style={{
-                  width: "100%",
-                  height: "100%",
-                }}
-                resizeMode="contain"
-                playWhenInactive={true}
-                playInBackground={true}
-                showNotificationControls={true}
-                ignoreSilentSwitch="ignore"
-                controls={false}
-                pictureInPicture={true}
-                onProgress={(e) => {
-                  // Set buffering state
-                  if (e.playableDuration === 0) {
-                    setIsBuffering(true);
-                    localIsBuffering.value = true;
-                  } else {
-                    setIsBuffering(false);
-                    localIsBuffering.value = false;
-                  }
-
-                  if (sliding.current === true) return;
-                  onProgress(e);
-                  progress.value = e.currentTime * 10000000;
-                }}
-                subtitleStyle={{
-                  fontSize: 16,
-                }}
-                source={videoSource}
-                onFullscreenPlayerDidDismiss={() => {}}
-                onFullscreenPlayerDidPresent={() => {}}
-                onPlaybackStateChanged={(e) => {
-                  if (e.isPlaying === true) {
-                    playVideo(false);
-                  } else if (e.isPlaying === false) {
-                    pauseVideo(false);
-                  }
-                }}
-                onVolumeChange={(e) => {
-                  setVolume(e.volume);
-                }}
-                progressUpdateInterval={1000}
-                onError={(e) => {
-                  console.log(e);
-                  writeToLog(
-                    "ERROR",
-                    "Video playback error: " + JSON.stringify(e)
-                  );
-                  Alert.alert("Error", "Cannot play this video file.");
-                  setIsPlaying(false);
-                }}
-              />
-            )}
-          </Pressable>
-        </Animated.View>
-
-        <Animated.View
-          style={[
-            {
-              position: "absolute",
-              bottom: insets.bottom + 8,
-              left: insets.left + 32,
-              width: screenWidth - insets.left - insets.right - 64,
-              borderRadius: 100,
-            },
-            animatedControlsStyle,
-          ]}
-        >
-          <View className="shrink flex flex-col justify-center h-full mb-2">
-            <Text className="font-bold">{currentlyPlaying.item?.Name}</Text>
-            {currentlyPlaying.item?.Type === "Episode" && (
-              <Text className="opacity-50">
-                {currentlyPlaying.item.SeriesName}
-              </Text>
-            )}
-            {currentlyPlaying.item?.Type === "Movie" && (
-              <Text className="text-xs opacity-50">
-                {currentlyPlaying.item?.ProductionYear}
-              </Text>
-            )}
-            {currentlyPlaying.item?.Type === "Audio" && (
-              <Text className="text-xs opacity-50">
-                {currentlyPlaying.item?.Album}
-              </Text>
-            )}
-          </View>
-          <View className="flex flex-row items-center space-x-6 rounded-full py-1.5 pl-4 pr-4 z-10 bg-neutral-800">
-            <View className="flex flex-row items-center space-x-2">
-              <TouchableOpacity
-                disabled={!previousItem}
-                style={{
-                  opacity: !previousItem ? 0.5 : 1,
-                }}
-                onPress={() => {
-                  if (controlsOpacity.value === 0) return;
-                  if (!previousItem || !from) return;
-                  const url = itemRouter(previousItem, from);
-                  stopPlayback();
-                  // @ts-ignore
-                  router.push(url);
-                }}
-              >
-                <Ionicons name="play-skip-back" size={18} color="white" />
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={async () => {
-                  if (controlsOpacity.value === 0) return;
-                  const curr = await videoRef.current?.getCurrentPosition();
-                  if (!curr) return;
-                  videoRef.current?.seek(Math.max(0, curr - 15));
-                  // resetHideControlsTimer();
-                }}
-              >
-                <Ionicons
-                  name="refresh-outline"
-                  size={22}
-                  color="white"
-                  style={{
-                    transform: [{ scaleY: -1 }, { rotate: "180deg" }],
-                  }}
-                />
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => {
-                  if (controlsOpacity.value === 0) return;
-                  if (isPlaying) pauseVideo();
-                  else playVideo();
-                  // resetHideControlsTimer();
-                }}
-              >
-                <Ionicons
-                  name={isPlaying ? "pause" : "play"}
-                  size={24}
-                  color="white"
-                />
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={async () => {
-                  if (controlsOpacity.value === 0) return;
-                  const curr = await videoRef.current?.getCurrentPosition();
-                  if (!curr) return;
-                  videoRef.current?.seek(Math.max(0, curr + 15));
-                  // resetHideControlsTimer();
-                }}
-              >
-                <Ionicons name="refresh-outline" size={22} color="white" />
-              </TouchableOpacity>
-              <TouchableOpacity
-                disabled={!nextItem}
-                style={{
-                  opacity: !nextItem ? 0.5 : 1,
-                }}
-                onPress={() => {
-                  if (controlsOpacity.value === 0) return;
-                  if (!nextItem || !from) return;
-                  const url = itemRouter(nextItem, from);
-                  stopPlayback();
-                  // @ts-ignore
-                  router.push(url);
-                }}
-              >
-                <Ionicons name="play-skip-forward" size={18} color="white" />
-              </TouchableOpacity>
-            </View>
-            <View className="flex flex-col w-full shrink">
-              <Slider
-                theme={{
-                  maximumTrackTintColor: "rgba(255,255,255,0.2)",
-                  minimumTrackTintColor: "#fff",
-                  cacheTrackTintColor: "#333",
-                  bubbleBackgroundColor: "#fff",
-                  bubbleTextColor: "#000",
-                  heartbeatColor: "#999",
-                }}
-                onSlidingStart={() => {
-                  if (controlsOpacity.value === 0) return;
-                  sliding.current = true;
-                }}
-                onSlidingComplete={(val) => {
-                  if (controlsOpacity.value === 0) return;
-                  const tick = Math.floor(val);
-                  videoRef.current?.seek(tick / 10000000);
-                  sliding.current = false;
-                }}
-                onValueChange={(val) => {
-                  if (controlsOpacity.value === 0) return;
-                  const tick = Math.floor(val);
-                  progress.value = tick;
-                  calculateTrickplayUrl(
-                    trickplayInfo,
-                    progress,
-                    api,
-                    currentlyPlaying.item.Id!
-                  );
-
-                  // resetHideControlsTimer();
-                }}
-                containerStyle={{
-                  borderRadius: 100,
-                }}
-                renderBubble={() => {
-                  if (!trickPlayUrl || !trickplayInfo) {
-                    return null;
-                  }
-                  const { x, y, url } = trickPlayUrl;
-
-                  const tileWidth = 150;
-                  const tileHeight = 150 / trickplayInfo.aspectRatio!;
-                  return (
-                    <View
+                const tileWidth = 150;
+                const tileHeight = 150 / trickplayInfo.aspectRatio!;
+                return (
+                  <View
+                    style={{
+                      width: tileWidth,
+                      height: tileHeight,
+                      marginLeft: -tileWidth / 4,
+                      marginTop: -tileHeight / 4 - 60,
+                    }}
+                    className=" bg-neutral-800 overflow-hidden"
+                  >
+                    <Image
                       style={{
-                        width: tileWidth,
-                        height: tileHeight,
-                        marginLeft: -tileWidth / 4,
-                        marginTop: -tileHeight / 4 - 60,
+                        width: 150 * trickplayInfo?.data.TileWidth!,
+                        height:
+                          (150 / trickplayInfo.aspectRatio!) *
+                          trickplayInfo?.data.TileHeight!,
+                        transform: [
+                          { translateX: -x * tileWidth },
+                          { translateY: -y * tileHeight },
+                        ],
                       }}
-                      className=" bg-neutral-800 overflow-hidden"
-                    >
-                      <Image
-                        style={{
-                          width: 150 * trickplayInfo?.data.TileWidth!,
-                          height:
-                            (150 / trickplayInfo.aspectRatio!) *
-                            trickplayInfo?.data.TileHeight!,
-                          transform: [
-                            { translateX: -x * tileWidth },
-                            { translateY: -y * tileHeight },
-                          ],
-                        }}
-                        source={{ uri: url }}
-                        contentFit="cover"
-                      />
-                    </View>
-                  );
-                }}
-                sliderHeight={8}
-                thumbWidth={0}
-                progress={progress}
-                minimumValue={min}
-                maximumValue={max}
-              />
-              <View className="flex flex-row items-center justify-between">
-                <Text className="text-[10px] text-neutral-400">
-                  {runtimeTicksToSeconds(progress.value)}
-                </Text>
-                <Text className="text-[10px] text-neutral-400">
-                  -{runtimeTicksToSeconds(max.value - progress.value)}
-                </Text>
-              </View>
+                      source={{ uri: url }}
+                      contentFit="cover"
+                    />
+                  </View>
+                );
+              }}
+              sliderHeight={8}
+              thumbWidth={0}
+              progress={progress}
+              minimumValue={min}
+              maximumValue={max}
+            />
+            <View className="flex flex-row items-center justify-between">
+              <Text className="text-[10px] text-neutral-400">
+                {runtimeTicksToSeconds(progress.value)}
+              </Text>
+              <Text className="text-[10px] text-neutral-400">
+                -{runtimeTicksToSeconds(max.value - progress.value)}
+              </Text>
             </View>
           </View>
-        </Animated.View>
+        </View>
+      </Animated.View>
 
-        <Animated.View
-          pointerEvents="none"
-          style={[
-            {
-              position: "absolute" as const,
-              top: 0,
-              bottom: 0,
-              left: ignoreSafeArea ? 0 : insets.left,
-              right: ignoreSafeArea ? 0 : insets.right,
-              width: ignoreSafeArea
-                ? screenWidth
-                : screenWidth - (insets.left + insets.right),
-              justifyContent: "center",
-              alignItems: "center",
-              zIndex: 10,
-            },
-            animatedLoaderStyle,
-          ]}
-        >
-          <Loader />
-        </Animated.View>
-      </View>
+      <Animated.View
+        pointerEvents="none"
+        style={[
+          {
+            position: "absolute" as const,
+            top: 0,
+            bottom: 0,
+            left: ignoreSafeArea ? 0 : insets.left,
+            right: ignoreSafeArea ? 0 : insets.right,
+            width: ignoreSafeArea
+              ? screenWidth
+              : screenWidth - (insets.left + insets.right),
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 10,
+          },
+          animatedLoaderStyle,
+        ]}
+      >
+        <Loader />
+      </Animated.View>
     </View>
   );
 };

@@ -1,19 +1,25 @@
 // hooks/useTrickplay.ts
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { Api } from "@jellyfin/sdk";
 import { SharedValue } from "react-native-reanimated";
+import { CurrentlyPlayingState } from "@/providers/PlaybackProvider";
+import { useAtom } from "jotai";
+import { apiAtom } from "@/providers/JellyfinProvider";
+
+interface TrickplayData {
+  Interval?: number;
+  TileWidth?: number;
+  TileHeight?: number;
+  Height?: number;
+  Width?: number;
+  ThumbnailCount?: number;
+}
 
 interface TrickplayInfo {
-  data: {
-    Interval?: number;
-    TileWidth?: number;
-    TileHeight?: number;
-    Height?: number;
-    Width?: number;
-    ThumbnailCount?: number;
-  };
-  resolution?: string;
+  resolution: string;
+  aspectRatio: number;
+  data: TrickplayData;
 }
 
 interface TrickplayUrl {
@@ -22,33 +28,47 @@ interface TrickplayUrl {
   url: string;
 }
 
-export const useTrickplay = () => {
+export const useTrickplay = (
+  currentlyPlaying?: CurrentlyPlayingState | null
+) => {
+  const [api] = useAtom(apiAtom);
   const [trickPlayUrl, setTrickPlayUrl] = useState<TrickplayUrl | null>(null);
 
+  const trickplayInfo = useMemo(() => {
+    if (!currentlyPlaying?.item.Id || !currentlyPlaying?.item.Trickplay) {
+      return null;
+    }
+
+    const mediaSourceId = currentlyPlaying.item.Id;
+    const trickplayData = currentlyPlaying.item.Trickplay[mediaSourceId];
+
+    if (!trickplayData) {
+      return null;
+    }
+
+    // Get the first available resolution
+    const firstResolution = Object.keys(trickplayData)[0];
+    return firstResolution
+      ? {
+          resolution: firstResolution,
+          aspectRatio:
+            trickplayData[firstResolution].Width! /
+            trickplayData[firstResolution].Height!,
+          data: trickplayData[firstResolution],
+        }
+      : null;
+  }, [currentlyPlaying]);
+
   const calculateTrickplayUrl = useCallback(
-    (
-      info: TrickplayInfo | null,
-      progress: SharedValue<number>,
-      api: Api | null,
-      id: string
-    ) => {
-      if (!info || !id || !api) {
+    (progress: SharedValue<number>) => {
+      if (!trickplayInfo || !api || !currentlyPlaying?.item.Id) {
         return null;
       }
 
-      const { data, resolution } = info;
-      const { Interval, TileWidth, TileHeight, Height, Width, ThumbnailCount } =
-        data;
+      const { data, resolution } = trickplayInfo;
+      const { Interval, TileWidth, TileHeight } = data;
 
-      if (
-        !Interval ||
-        !TileWidth ||
-        !TileHeight ||
-        !Height ||
-        !Width ||
-        !ThumbnailCount ||
-        !resolution
-      ) {
+      if (!Interval || !TileWidth || !TileHeight || !resolution) {
         throw new Error("Invalid trickplay data");
       }
 
@@ -67,14 +87,14 @@ export const useTrickplay = () => {
       const newTrickPlayUrl = {
         x: rowInTile,
         y: colInTile,
-        url: `${api.basePath}/Videos/${id}/Trickplay/${resolution}/${tileIndex}.jpg?api_key=${api.accessToken}`,
+        url: `${api.basePath}/Videos/${currentlyPlaying.item.Id}/Trickplay/${resolution}/${tileIndex}.jpg?api_key=${api.accessToken}`,
       };
 
       setTrickPlayUrl(newTrickPlayUrl);
       return newTrickPlayUrl;
     },
-    []
+    [trickplayInfo, currentlyPlaying, api]
   );
 
-  return { trickPlayUrl, calculateTrickplayUrl };
+  return { trickPlayUrl, calculateTrickplayUrl, trickplayInfo };
 };
