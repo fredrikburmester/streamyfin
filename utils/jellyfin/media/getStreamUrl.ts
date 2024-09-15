@@ -104,7 +104,6 @@ export const getStreamUrl = async ({
       }/Audio/${itemId}/universal?${searchParams.toString()}`;
     }
   } else if (mediaSource.TranscodingUrl) {
-    console.log("Using transcoded stream!");
     url = `${api.basePath}${mediaSource.TranscodingUrl}`;
   }
 

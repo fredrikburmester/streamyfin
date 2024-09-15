@@ -45,7 +45,6 @@ export const AudioTrackSelector: React.FC<Props> = ({
     }
     const index = source.DefaultAudioStreamIndex;
     if (index !== undefined && index !== null) {
-      console.log("DefaultAudioStreamIndex", index);
       onChange(index);
       return;
     }
