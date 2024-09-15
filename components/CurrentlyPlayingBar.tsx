@@ -6,10 +6,11 @@ import { writeToLog } from "@/utils/log";
 import { runtimeTicksToMinutes, runtimeTicksToSeconds } from "@/utils/time";
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
-import { useSegments } from "expo-router";
+import { useRouter, useSegments } from "expo-router";
 import { useAtom } from "jotai";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   Dimensions,
   Pressable,
@@ -19,7 +20,9 @@ import {
 import { Slider } from "react-native-awesome-slider";
 import "react-native-gesture-handler";
 import Animated, {
+  SharedValue,
   useAnimatedStyle,
+  useDerivedValue,
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
@@ -27,9 +30,13 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Video from "react-native-video";
 import { Text } from "./common/Text";
 import { Loader } from "./Loader";
+import { Image } from "expo-image";
+import { Api } from "@jellyfin/sdk";
+import { useQuery } from "@tanstack/react-query";
+import { getItemsApi } from "@jellyfin/sdk/lib/utils/api";
+import { itemRouter } from "./common/TouchableItemRouter";
 
 export const CurrentlyPlayingBar: React.FC = () => {
-  const segments = useSegments();
   const {
     currentlyPlaying,
     pauseVideo,
@@ -40,11 +47,18 @@ export const CurrentlyPlayingBar: React.FC = () => {
     isPlaying,
     videoRef,
     presentFullscreenPlayer,
+    progressTicks,
     onProgress,
+    isBuffering: _isBuffering,
+    setIsBuffering,
   } = usePlayback();
   const insets = useSafeAreaInsets();
+  const segments = useSegments();
+  const router = useRouter();
 
   const [api] = useAtom(apiAtom);
+
+  const from = useMemo(() => segments[2], [segments]);
 
   const [ignoreSafeArea, setIgnoreSafeArea] = useState(false);
 
@@ -52,29 +66,31 @@ export const CurrentlyPlayingBar: React.FC = () => {
   const screenWidth = Dimensions.get("window").width;
 
   const controlsOpacity = useSharedValue(1);
-  const progress = useSharedValue(0);
+
+  const progress = useSharedValue(progressTicks || 0);
   const min = useSharedValue(0);
   const max = useSharedValue(currentlyPlaying?.item.RunTimeTicks || 0);
   const sliding = useRef(false);
-  const hideControlsTimerRef = useRef<NodeJS.Timeout | null>(null);
-
-  const from = useMemo(() => segments[2] || "(home)", [segments]);
+  const localIsBuffering = useSharedValue(false);
+  // const hideControlsTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const toggleIgnoreSafeArea = () => {
     setIgnoreSafeArea((prev) => !prev);
   };
 
   const showControls = () => {
-    controlsOpacity.value = withTiming(1, { duration: 300 });
+    controlsOpacity.value = 1;
   };
 
   const hideControls = () => {
-    controlsOpacity.value = withTiming(0, { duration: 300 });
+    controlsOpacity.value = 0;
   };
 
   const animatedControlsStyle = useAnimatedStyle(() => {
     return {
-      opacity: controlsOpacity.value,
+      opacity: withTiming(controlsOpacity.value > 0 ? 1 : 0, {
+        duration: 300,
+      }),
     };
   });
 
@@ -119,29 +135,29 @@ export const CurrentlyPlayingBar: React.FC = () => {
 
   const showControlsAndResetTimer = () => {
     showControls();
-    resetHideControlsTimer();
+    // resetHideControlsTimer();
   };
 
-  const resetHideControlsTimer = () => {
-    if (hideControlsTimerRef.current) {
-      clearTimeout(hideControlsTimerRef.current);
-    }
-    hideControlsTimerRef.current = setTimeout(() => {
-      hideControls();
-    }, 3000);
-  };
+  // const resetHideControlsTimer = () => {
+  //   if (hideControlsTimerRef.current) {
+  //     clearTimeout(hideControlsTimerRef.current);
+  //   }
+  //   hideControlsTimerRef.current = setTimeout(() => {
+  //     hideControls();
+  //   }, 3000);
+  // };
 
-  useEffect(() => {
-    if (controlsOpacity.value > 0) {
-      resetHideControlsTimer();
-    }
+  // useEffect(() => {
+  //   if (controlsOpacity.value > 0) {
+  //     resetHideControlsTimer();
+  //   }
 
-    return () => {
-      if (hideControlsTimerRef.current) {
-        clearTimeout(hideControlsTimerRef.current);
-      }
-    };
-  }, [controlsOpacity.value]);
+  //   return () => {
+  //     if (hideControlsTimerRef.current) {
+  //       clearTimeout(hideControlsTimerRef.current);
+  //     }
+  //   };
+  // }, [controlsOpacity.value]);
 
   useEffect(() => {
     max.value = currentlyPlaying?.item.RunTimeTicks || 0;
@@ -158,24 +174,181 @@ export const CurrentlyPlayingBar: React.FC = () => {
       : screenWidth - (insets.left + insets.right),
   };
 
+  const animatedLoaderStyle = useAnimatedStyle(() => {
+    return {
+      opacity: withTiming(localIsBuffering.value === true ? 1 : 0, {
+        duration: 300,
+      }),
+    };
+  });
+
+  const animatedVideoContainerStyle = useAnimatedStyle(() => {
+    return {
+      opacity: withTiming(
+        controlsOpacity.value > 0 || localIsBuffering.value === true ? 0.5 : 1,
+        {
+          duration: 300,
+        }
+      ),
+    };
+  });
+
+  const trickplayInfo = useMemo(() => {
+    if (!currentlyPlaying?.item.Id || !currentlyPlaying?.item.Trickplay) {
+      return null;
+    }
+
+    const mediaSourceId = currentlyPlaying.item.Id;
+    const trickplayData = currentlyPlaying.item.Trickplay[mediaSourceId];
+
+    if (!trickplayData) {
+      return null;
+    }
+
+    // Get the first available resolution
+    const firstResolution = Object.keys(trickplayData)[0];
+    return firstResolution
+      ? {
+          resolution: firstResolution,
+          aspectRatio:
+            trickplayData[firstResolution].Width! /
+            trickplayData[firstResolution].Height!,
+          data: trickplayData[firstResolution],
+        }
+      : null;
+  }, [currentlyPlaying]);
+
+  const [trickPlayUrl, _setTrickPlayUrl] = useState<{
+    x: number;
+    y: number;
+    url: string;
+  } | null>(null);
+
+  const setTrickplayUrl = (
+    info: typeof trickplayInfo | null,
+    progress: SharedValue<number>,
+    api: Api,
+    id: string
+  ) => {
+    if (!info || !id || !api) {
+      return null;
+    }
+
+    const { data, resolution } = info;
+    const { Interval, TileWidth, TileHeight, Height, Width, ThumbnailCount } =
+      data;
+
+    if (
+      !Interval ||
+      !TileWidth ||
+      !TileHeight ||
+      !Height ||
+      !Width ||
+      !ThumbnailCount ||
+      !resolution
+    ) {
+      throw new Error("Invalid trickplay data");
+    }
+
+    const currentSecond = Math.max(0, Math.floor(progress.value / 10000000)); // Convert ticks to seconds
+
+    const cols = TileWidth;
+    const rows = TileHeight;
+    const imagesPerTile = cols * rows;
+    const imageIndex = Math.floor(currentSecond / (Interval / 1000)); // Interval is in ms
+    const tileIndex = Math.floor(imageIndex / imagesPerTile);
+
+    const positionInTile = imageIndex % imagesPerTile;
+    const rowInTile = Math.floor(positionInTile / cols);
+    const colInTile = positionInTile % cols;
+
+    const res = {
+      x: rowInTile,
+      y: colInTile,
+      url: `${api.basePath}/Videos/${id}/Trickplay/${resolution}/${tileIndex}.jpg?api_key=${api.accessToken}`,
+    };
+
+    _setTrickPlayUrl(res);
+  };
+
+  const { data: previousItem } = useQuery({
+    queryKey: [
+      "previousItem",
+      currentlyPlaying?.item.ParentId,
+      currentlyPlaying?.item.IndexNumber,
+    ],
+    queryFn: async () => {
+      if (
+        !api ||
+        !currentlyPlaying?.item.ParentId ||
+        currentlyPlaying?.item.IndexNumber === undefined ||
+        currentlyPlaying?.item.IndexNumber === null ||
+        currentlyPlaying.item.IndexNumber - 2 < 0
+      ) {
+        console.log("No previous item");
+        return null;
+      }
+
+      const res = await getItemsApi(api).getItems({
+        parentId: currentlyPlaying.item.ParentId!,
+        startIndex: currentlyPlaying.item.IndexNumber! - 2,
+        limit: 1,
+      });
+
+      console.log(
+        "Prev: ",
+        res.data.Items?.map((i) => i.Name)
+      );
+      return res.data.Items?.[0];
+    },
+    enabled: currentlyPlaying?.item.Type === "Episode",
+  });
+
+  const { data: nextItem } = useQuery({
+    queryKey: [
+      "nextItem",
+      currentlyPlaying?.item.ParentId,
+      currentlyPlaying?.item.IndexNumber,
+    ],
+    queryFn: async () => {
+      if (
+        !api ||
+        !currentlyPlaying?.item.ParentId ||
+        currentlyPlaying?.item.IndexNumber === undefined ||
+        currentlyPlaying?.item.IndexNumber === null
+      ) {
+        console.log("No next item");
+        return null;
+      }
+
+      const res = await getItemsApi(api).getItems({
+        parentId: currentlyPlaying.item.ParentId!,
+        startIndex: currentlyPlaying.item.IndexNumber!,
+        limit: 1,
+      });
+
+      console.log(
+        "Next: ",
+        res.data.Items?.map((i) => i.Name)
+      );
+      return res.data.Items?.[0];
+    },
+    enabled: currentlyPlaying?.item.Type === "Episode",
+  });
+
+  const prevButtonEnabled = useMemo(() => {
+    return !!previousItem;
+  }, [previousItem]);
+
+  const nextButtonEnabled = useMemo(() => {
+    return !!nextItem;
+  }, [nextItem]);
+
   if (!api || !currentlyPlaying) return null;
 
   return (
     <View style={{ width: screenWidth, height: screenHeight }}>
       <View style={{ width: "100%", height: "100%", backgroundColor: "black" }}>
-        <View
-          style={[
-            {
-              position: "absolute",
-              bottom: insets.bottom + 40,
-              left: 32 + insets.left,
-              height: 64,
-              width: 140,
-              zIndex: 10,
-            },
-          ]}
-        ></View>
-
         <Animated.View
           style={[
             {
@@ -214,7 +387,9 @@ export const CurrentlyPlayingBar: React.FC = () => {
           </View>
         </Animated.View>
 
-        <View style={videoContainerStyle}>
+        <Animated.View
+          style={[videoContainerStyle, animatedVideoContainerStyle]}
+        >
           <Pressable
             onPress={() => {
               if (controlsOpacity.value > 0) {
@@ -223,7 +398,10 @@ export const CurrentlyPlayingBar: React.FC = () => {
                 showControlsAndResetTimer();
               }
             }}
-            style={{ width: "100%", height: "100%" }}
+            style={{
+              width: "100%",
+              height: "100%",
+            }}
           >
             {videoSource && (
               <Video
@@ -240,11 +418,16 @@ export const CurrentlyPlayingBar: React.FC = () => {
                 ignoreSilentSwitch="ignore"
                 controls={false}
                 pictureInPicture={true}
-                debug={{
-                  enable: true,
-                  thread: true,
-                }}
                 onProgress={(e) => {
+                  // Set buffering state
+                  if (e.playableDuration === 0) {
+                    setIsBuffering(true);
+                    localIsBuffering.value = true;
+                  } else {
+                    setIsBuffering(false);
+                    localIsBuffering.value = false;
+                  }
+
                   if (sliding.current === true) return;
                   onProgress(e);
                   progress.value = e.currentTime * 10000000;
@@ -270,7 +453,7 @@ export const CurrentlyPlayingBar: React.FC = () => {
                 onVolumeChange={(e) => {
                   setVolume(e.volume);
                 }}
-                progressUpdateInterval={4000}
+                progressUpdateInterval={1000}
                 onError={(e) => {
                   console.log(e);
                   writeToLog(
@@ -280,17 +463,10 @@ export const CurrentlyPlayingBar: React.FC = () => {
                   Alert.alert("Error", "Cannot play this video file.");
                   setIsPlaying(false);
                 }}
-                renderLoader={
-                  currentlyPlaying.item?.Type !== "Audio" && (
-                    <View className="flex flex-col items-center justify-center h-full">
-                      <Loader />
-                    </View>
-                  )
-                }
               />
             )}
           </Pressable>
-        </View>
+        </Animated.View>
 
         <Animated.View
           style={[
@@ -322,19 +498,32 @@ export const CurrentlyPlayingBar: React.FC = () => {
               </Text>
             )}
           </View>
-          <BlurView
-            intensity={100}
-            className="flex flex-row items-center space-x-6 rounded-full py-1.5 pl-4 pr-4 z-10 overflow-hidden"
-          >
+          <View className="flex flex-row items-center space-x-6 rounded-full py-1.5 pl-4 pr-4 z-10 bg-neutral-800">
             <View className="flex flex-row items-center space-x-2">
-              <Ionicons name="play-skip-back" size={18} color="white" />
+              <TouchableOpacity
+                disabled={prevButtonEnabled === false}
+                style={{
+                  opacity: prevButtonEnabled === false ? 0.5 : 1,
+                }}
+                onPress={() => {
+                  if (controlsOpacity.value === 0) return;
+                  if (prevButtonEnabled === false) return;
+                  if (!previousItem || !from) return;
+                  const url = itemRouter(previousItem, from);
+                  stopPlayback();
+                  // @ts-ignore
+                  router.push(url);
+                }}
+              >
+                <Ionicons name="play-skip-back" size={18} color="white" />
+              </TouchableOpacity>
               <TouchableOpacity
                 onPress={async () => {
                   if (controlsOpacity.value === 0) return;
                   const curr = await videoRef.current?.getCurrentPosition();
                   if (!curr) return;
                   videoRef.current?.seek(Math.max(0, curr - 15));
-                  resetHideControlsTimer();
+                  // resetHideControlsTimer();
                 }}
               >
                 <Ionicons
@@ -351,7 +540,7 @@ export const CurrentlyPlayingBar: React.FC = () => {
                   if (controlsOpacity.value === 0) return;
                   if (isPlaying) pauseVideo();
                   else playVideo();
-                  resetHideControlsTimer();
+                  // resetHideControlsTimer();
                 }}
               >
                 <Ionicons
@@ -366,12 +555,28 @@ export const CurrentlyPlayingBar: React.FC = () => {
                   const curr = await videoRef.current?.getCurrentPosition();
                   if (!curr) return;
                   videoRef.current?.seek(Math.max(0, curr + 15));
-                  resetHideControlsTimer();
+                  // resetHideControlsTimer();
                 }}
               >
                 <Ionicons name="refresh-outline" size={22} color="white" />
               </TouchableOpacity>
-              <Ionicons name="play-skip-forward" size={18} color="white" />
+              <TouchableOpacity
+                disabled={nextButtonEnabled === false}
+                style={{
+                  opacity: nextButtonEnabled === false ? 0.5 : 1,
+                }}
+                onPress={() => {
+                  if (controlsOpacity.value === 0) return;
+                  if (nextButtonEnabled === false) return;
+                  if (!nextItem || !from) return;
+                  const url = itemRouter(nextItem, from);
+                  stopPlayback();
+                  // @ts-ignore
+                  router.push(url);
+                }}
+              >
+                <Ionicons name="play-skip-forward" size={18} color="white" />
+              </TouchableOpacity>
             </View>
             <View className="flex flex-col w-full shrink">
               <Slider
@@ -397,12 +602,52 @@ export const CurrentlyPlayingBar: React.FC = () => {
                   if (controlsOpacity.value === 0) return;
                   const tick = Math.floor(val);
                   progress.value = tick;
-                  resetHideControlsTimer();
+                  setTrickplayUrl(
+                    trickplayInfo,
+                    progress,
+                    api,
+                    currentlyPlaying.item.Id!
+                  );
+                  // resetHideControlsTimer();
                 }}
                 containerStyle={{
                   borderRadius: 100,
                 }}
-                bubble={(s) => runtimeTicksToMinutes(s)}
+                renderBubble={() => {
+                  if (!trickPlayUrl || !trickplayInfo) {
+                    return null;
+                  }
+                  const { x, y, url } = trickPlayUrl;
+
+                  const tileWidth = 200;
+                  const tileHeight = 200 / trickplayInfo.aspectRatio!;
+                  return (
+                    <View
+                      style={{
+                        width: tileWidth,
+                        height: tileHeight,
+                        marginLeft: -tileWidth / 4,
+                        marginTop: -tileHeight / 4 - 60,
+                      }}
+                      className=" bg-neutral-800 overflow-hidden"
+                    >
+                      <Image
+                        style={{
+                          width: 200 * trickplayInfo?.data.TileWidth!,
+                          height:
+                            (200 / trickplayInfo.aspectRatio!) *
+                            trickplayInfo?.data.TileHeight!,
+                          transform: [
+                            { translateX: -x * tileWidth },
+                            { translateY: -y * tileHeight },
+                          ],
+                        }}
+                        source={{ uri: url }}
+                        contentFit="cover"
+                      />
+                    </View>
+                  );
+                }}
                 sliderHeight={8}
                 thumbWidth={0}
                 progress={progress}
@@ -418,7 +663,29 @@ export const CurrentlyPlayingBar: React.FC = () => {
                 </Text>
               </View>
             </View>
-          </BlurView>
+          </View>
+        </Animated.View>
+
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            {
+              position: "absolute" as const,
+              top: 0,
+              bottom: 0,
+              left: ignoreSafeArea ? 0 : insets.left,
+              right: ignoreSafeArea ? 0 : insets.right,
+              width: ignoreSafeArea
+                ? screenWidth
+                : screenWidth - (insets.left + insets.right),
+              justifyContent: "center",
+              alignItems: "center",
+              zIndex: 10,
+            },
+            animatedLoaderStyle,
+          ]}
+        >
+          <Loader />
         </Animated.View>
       </View>
     </View>

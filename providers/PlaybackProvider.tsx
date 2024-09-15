@@ -45,6 +45,8 @@ interface PlaybackContextType {
   dismissFullscreenPlayer: () => void;
   setIsFullscreen: (isFullscreen: boolean) => void;
   setIsPlaying: (isPlaying: boolean) => void;
+  isBuffering: boolean;
+  setIsBuffering: (val: boolean) => void;
   onProgress: (data: OnProgressData) => void;
   setVolume: (volume: number) => void;
   setCurrentlyPlayingState: (
@@ -70,6 +72,7 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
   const previousVolume = useRef<number | null>(null);
 
   const [isPlaying, _setIsPlaying] = useState<boolean>(false);
+  const [isBuffering, setIsBuffering] = useState<boolean>(false);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [progressTicks, setProgressTicks] = useState<number | null>(0);
   const [volume, _setVolume] = useState<number | null>(null);
@@ -254,7 +257,7 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
   const onProgress = useCallback(
     debounce((e: OnProgressData) => {
       _onProgress(e);
-    }, 1000),
+    }, 500),
     [_onProgress]
   );
 
@@ -352,6 +355,8 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
     <PlaybackContext.Provider
       value={{
         onProgress,
+        isBuffering,
+        setIsBuffering,
         progressTicks,
         setVolume,
         setIsPlaying,

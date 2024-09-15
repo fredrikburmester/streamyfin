@@ -57,7 +57,7 @@ export const PlayButton: React.FC<Props> = ({ item, url, ...props }) => {
 
   const directStream = useMemo(() => {
     return !url?.includes("m3u8");
-  }, []);
+  }, [url]);
 
   const onPress = async () => {
     if (!url || !item) return;

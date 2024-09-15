@@ -8,6 +8,42 @@ interface Props extends TouchableOpacityProps {
   item: BaseItemDto;
 }
 
+export const itemRouter = (item: BaseItemDto, from: string) => {
+  if (item.Type === "Series") {
+    return `/(auth)/(tabs)/${from}/series/${item.Id}`;
+  }
+
+  if (item.Type === "MusicAlbum") {
+    return `/(auth)/(tabs)/${from}/albums/${item.Id}`;
+  }
+
+  if (item.Type === "Audio") {
+    return `/(auth)/(tabs)/${from}/albums/${item.AlbumId}`;
+  }
+
+  if (item.Type === "MusicArtist") {
+    return `/(auth)/(tabs)/${from}/artists/${item.Id}`;
+  }
+
+  if (item.Type === "Person") {
+    return `/(auth)/(tabs)/${from}/actors/${item.Id}`;
+  }
+
+  if (item.Type === "BoxSet") {
+    return `/(auth)/(tabs)/${from}/collections/${item.Id}`;
+  }
+
+  if (item.Type === "UserView") {
+    return `/(auth)/(tabs)/${from}/collections/${item.Id}`;
+  }
+
+  if (item.Type === "CollectionFolder") {
+    return `/(auth)/(tabs)/(libraries)/${item.Id}`;
+  }
+
+  return `/(auth)/(tabs)/${from}/items/page?id=${item.Id}`;
+};
+
 export const TouchableItemRouter: React.FC<PropsWithChildren<Props>> = ({
   item,
   children,
@@ -23,54 +59,9 @@ export const TouchableItemRouter: React.FC<PropsWithChildren<Props>> = ({
       <TouchableOpacity
         onPress={() => {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-
-          if (item.Type === "Series") {
-            router.push(`/(auth)/(tabs)/${from}/series/${item.Id}`);
-            return;
-          }
-
-          if (item.Type === "MusicAlbum") {
-            router.push(`/(auth)/(tabs)/${from}/albums/${item.Id}`);
-            return;
-          }
-
-          if (item.Type === "Audio") {
-            router.push(`/(auth)/(tabs)/${from}/albums/${item.AlbumId}`);
-            return;
-          }
-
-          if (item.Type === "MusicArtist") {
-            router.push(`/(auth)/(tabs)/${from}/artists/${item.Id}`);
-            return;
-          }
-
-          if (item.Type === "Person") {
-            router.push(`/(auth)/(tabs)/${from}/actors/${item.Id}`);
-            return;
-          }
-
-          if (item.Type === "BoxSet") {
-            router.push(`/(auth)/(tabs)/${from}/collections/${item.Id}`);
-            return;
-          }
-
-          if (item.Type === "UserView") {
-            router.push(`/(auth)/(tabs)/${from}/collections/${item.Id}`);
-            return;
-          }
-
-          if (item.Type === "CollectionFolder") {
-            router.push(`/(auth)/(tabs)/(libraries)/${item.Id}`);
-            return;
-          }
-
-          // Same as default
-          // if (item.Type === "Episode") {
-          //   router.push(`/items/${item.Id}`);
-          //   return;
-          // }
-
-          router.push(`/(auth)/(tabs)/${from}/items/page?id=${item.Id}`);
+          const url = itemRouter(item, from);
+          // @ts-ignore
+          router.push(url);
         }}
         {...props}
       >
