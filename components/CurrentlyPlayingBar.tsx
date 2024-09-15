@@ -400,11 +400,6 @@ export const CurrentlyPlayingBar: React.FC = () => {
                   fontSize: 16,
                 }}
                 source={videoSource}
-                onRestoreUserInterfaceForPictureInPictureStop={() => {
-                  setTimeout(() => {
-                    presentFullscreenPlayer();
-                  }, 300);
-                }}
                 onFullscreenPlayerDidDismiss={() => {}}
                 onFullscreenPlayerDidPresent={() => {}}
                 onPlaybackStateChanged={(e) => {
