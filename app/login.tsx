@@ -44,27 +44,8 @@ const Login: React.FC = () => {
 
   useEffect(() => {
     (async () => {
-      // add a test that checks if the url contains http/https
-      if (_apiUrl.startsWith("http") || _apiUrl.startsWith("https")) {
-        {
-          setServer({
-            address: _apiUrl,
-          });
-        }
-      } else {
-        //check if url requires ssl
-        // use curl to see if https is required
-        // if not use http
-        // if yes use https
-        const test = fetch("http://jellyfin.oakgrove.site/web/#/home.html")
-          .then((response) => console.log(response))
-          .catch((error) => console.error(error));
-
-        const test2 = fetch("https://jellyfin.oakgrove.site/web/#/home.html")
-          .then((response) => console.log(response))
-          .catch((error) => console.error(error));
-      }
-
+      // we might re-use the checkUrl function here to check the url as well
+      // however, I don't think it should be necessary for now
       if (_apiUrl) {
         setServer({
           address: _apiUrl,
@@ -99,12 +80,35 @@ const Login: React.FC = () => {
       setLoading(false);
     }
   };
-
-  const handleConnect = (url: string) => {
-    if (!url.startsWith("http")) {
-      Alert.alert("Error", "URL needs to start with http or https.");
-      return;
+  async function checkUrl(url: string) {
+    // remove trailing / so we don't double add double / in my checker
+    if (url.endsWith("/")) {
+      url = url.slice(0, -1);
     }
+
+    if( await fetch("https://" + url + "/web/#/home.html", {mode: 'cors'}).then((response) => {
+      return response.status;
+    }).catch((error) => {
+      console.log(error)
+    }) === 200) {
+      return "https://"+url
+    } else if (await fetch("http://" + url + "/web/#/home.html", {redirect: "manual"}).then((response) => {
+      return response.status;
+    }).catch((error) => {
+      console.log(error)
+    }) === 200) {
+      return "http://"+url
+    }
+    return undefined;
+  }
+  
+  const handleConnect = async (url: string) => {
+    if (!url.startsWith("http")) {
+      const result = await checkUrl(url);
+      if (result === undefined) return;
+      url = result;
+    }
+    console.log(url);
     setServer({ address: url.trim() });
   };
 
@@ -239,11 +243,8 @@ const Login: React.FC = () => {
               textContentType="URL"
               maxLength={500}
             />
-            <Text className="opacity-30">
-              Server URL requires http or https
-            </Text>
           </View>
-          <Button onPress={() => handleConnect(serverURL)} className="mb-2">
+          <Button onPress={ async () => await handleConnect(serverURL)} className="mb-2">
             Connect
           </Button>
         </View>
@@ -253,3 +254,4 @@ const Login: React.FC = () => {
 };
 
 export default Login;
+
