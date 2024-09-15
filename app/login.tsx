@@ -92,7 +92,7 @@ const Login: React.FC = () => {
       console.log(error)
     }) === 200) {
       return "https://"+url
-    } else if (await fetch("http://" + url + "/web/#/home.html", {redirect: "manual"}).then((response) => {
+    } else if (await fetch("http://" + url + "/web/#/home.html", {mode: 'cors'}).then((response) => {
       return response.status;
     }).catch((error) => {
       console.log(error)
