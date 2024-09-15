@@ -26,7 +26,7 @@ import { Alert } from "react-native";
 import { OnProgressData, type VideoRef } from "react-native-video";
 import { apiAtom, userAtom } from "./JellyfinProvider";
 
-type CurrentlyPlayingState = {
+export type CurrentlyPlayingState = {
   url: string;
   item: BaseItemDto;
 };

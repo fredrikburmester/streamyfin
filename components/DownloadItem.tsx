@@ -126,7 +126,6 @@ export const DownloadItem: React.FC<DownloadProps> = ({ item, ...props }) => {
 
     if (mediaSource.SupportsDirectPlay) {
       if (item.MediaType === "Video") {
-        console.log("Using direct stream for video!");
         url = `${api.basePath}/Videos/${item.Id}/stream.mp4?mediaSourceId=${item.Id}&static=true&mediaSourceId=${mediaSource.Id}&deviceId=${api.deviceInfo.id}&api_key=${api.accessToken}`;
       } else if (item.MediaType === "Audio") {
         console.log("Using direct stream for audio!");
@@ -149,7 +148,6 @@ export const DownloadItem: React.FC<DownloadProps> = ({ item, ...props }) => {
         }/universal?${searchParams.toString()}`;
       }
     } else if (mediaSource.TranscodingUrl) {
-      console.log("Using transcoded stream!");
       url = `${api.basePath}${mediaSource.TranscodingUrl}`;
     }
 

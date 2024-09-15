@@ -1,3 +1,6 @@
+import { useAdjacentEpisodes } from "@/hooks/useAdjacentEpisodes";
+import { useNavigationBarVisibility } from "@/hooks/useNavigationBarVisibility";
+import { useTrickplay } from "@/hooks/useTrickplay";
 import { apiAtom } from "@/providers/JellyfinProvider";
 import { usePlayback } from "@/providers/PlaybackProvider";
 import { getBackdropUrl } from "@/utils/jellyfin/image/getBackdropUrl";
@@ -5,17 +8,13 @@ import { getAuthHeaders } from "@/utils/jellyfin/jellyfin";
 import { writeToLog } from "@/utils/log";
 import { runtimeTicksToSeconds } from "@/utils/time";
 import { Ionicons } from "@expo/vector-icons";
-import { Api } from "@jellyfin/sdk";
-import { getItemsApi } from "@jellyfin/sdk/lib/utils/api";
-import { useQuery } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import { useRouter, useSegments } from "expo-router";
 import { useAtom } from "jotai";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
   Dimensions,
-  Platform,
   Pressable,
   TouchableOpacity,
   View,
@@ -23,7 +22,6 @@ import {
 import { Slider } from "react-native-awesome-slider";
 import "react-native-gesture-handler";
 import Animated, {
-  SharedValue,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
@@ -33,7 +31,8 @@ import Video from "react-native-video";
 import { Text } from "./common/Text";
 import { itemRouter } from "./common/TouchableItemRouter";
 import { Loader } from "./Loader";
-import * as NavigationBar from "expo-navigation-bar";
+import { useQuery } from "@tanstack/react-query";
+import { secondsToTicks } from "@/utils/secondsToTicks";
 
 export const CurrentlyPlayingBar: React.FC = () => {
   const {
@@ -54,6 +53,8 @@ export const CurrentlyPlayingBar: React.FC = () => {
   const insets = useSafeAreaInsets();
   const segments = useSegments();
   const router = useRouter();
+
+  useNavigationBarVisibility(isPlaying);
 
   const [api] = useAtom(apiAtom);
 
@@ -217,144 +218,71 @@ export const CurrentlyPlayingBar: React.FC = () => {
       : null;
   }, [currentlyPlaying]);
 
-  const [trickPlayUrl, _setTrickPlayUrl] = useState<{
-    x: number;
-    y: number;
-    url: string;
-  } | null>(null);
+  const { trickPlayUrl, calculateTrickplayUrl } = useTrickplay();
+  const { previousItem, nextItem } = useAdjacentEpisodes({
+    api,
+    currentlyPlaying,
+  });
 
-  const setTrickplayUrl = (
-    info: typeof trickplayInfo | null,
-    progress: SharedValue<number>,
-    api: Api,
-    id: string
-  ) => {
-    if (!info || !id || !api) {
-      return null;
-    }
+  const { data: introTimestamps } = useQuery({
+    queryKey: ["introTimestamps", currentlyPlaying?.item.Id],
+    queryFn: async () => {
+      if (!currentlyPlaying?.item.Id) {
+        console.log("No item id");
+        return null;
+      }
 
-    const { data, resolution } = info;
-    const { Interval, TileWidth, TileHeight, Height, Width, ThumbnailCount } =
-      data;
+      console.log("Getting intro timestamps");
+      const res = await api?.axiosInstance.get(
+        `${api.basePath}/Episode/${currentlyPlaying.item.Id}/IntroTimestamps`,
+        {
+          headers: getAuthHeaders(api),
+        }
+      );
 
-    if (
-      !Interval ||
-      !TileWidth ||
-      !TileHeight ||
-      !Height ||
-      !Width ||
-      !ThumbnailCount ||
-      !resolution
-    ) {
-      throw new Error("Invalid trickplay data");
-    }
+      if (res?.status !== 200) {
+        return null;
+      }
 
-    const currentSecond = Math.max(0, Math.floor(progress.value / 10000000)); // Convert ticks to seconds
+      return res?.data as {
+        EpisodeId: string;
+        HideSkipPromptAt: number;
+        IntroEnd: number;
+        IntroStart: number;
+        ShowSkipPromptAt: number;
+        Valid: boolean;
+      };
+    },
+    enabled: !!currentlyPlaying?.item.Id,
+  });
 
-    const cols = TileWidth;
-    const rows = TileHeight;
-    const imagesPerTile = cols * rows;
-    const imageIndex = Math.floor(currentSecond / (Interval / 1000)); // Interval is in ms
-    const tileIndex = Math.floor(imageIndex / imagesPerTile);
-
-    const positionInTile = imageIndex % imagesPerTile;
-    const rowInTile = Math.floor(positionInTile / cols);
-    const colInTile = positionInTile % cols;
-
-    const res = {
-      x: rowInTile,
-      y: colInTile,
-      url: `${api.basePath}/Videos/${id}/Trickplay/${resolution}/${tileIndex}.jpg?api_key=${api.accessToken}`,
+  const animatedIntroSkipperStyle = useAnimatedStyle(() => {
+    const showButtonAt = secondsToTicks(introTimestamps?.ShowSkipPromptAt || 0);
+    const hideButtonAt = secondsToTicks(introTimestamps?.HideSkipPromptAt || 0);
+    const showButton =
+      progress.value > showButtonAt && progress.value < hideButtonAt;
+    return {
+      opacity: withTiming(
+        localIsBuffering.value === false &&
+          controlsOpacity.value > 0 &&
+          showButton
+          ? 1
+          : 0,
+        {
+          duration: 300,
+        }
+      ),
     };
-
-    _setTrickPlayUrl(res);
-  };
-
-  const { data: previousItem } = useQuery({
-    queryKey: [
-      "previousItem",
-      currentlyPlaying?.item.ParentId,
-      currentlyPlaying?.item.IndexNumber,
-    ],
-    queryFn: async () => {
-      if (
-        !api ||
-        !currentlyPlaying?.item.ParentId ||
-        currentlyPlaying?.item.IndexNumber === undefined ||
-        currentlyPlaying?.item.IndexNumber === null ||
-        currentlyPlaying.item.IndexNumber - 2 < 0
-      ) {
-        console.log("No previous item");
-        return null;
-      }
-
-      const res = await getItemsApi(api).getItems({
-        parentId: currentlyPlaying.item.ParentId!,
-        startIndex: currentlyPlaying.item.IndexNumber! - 2,
-        limit: 1,
-      });
-
-      console.log(
-        "Prev: ",
-        res.data.Items?.map((i) => i.Name)
-      );
-      return res.data.Items?.[0];
-    },
-    enabled: currentlyPlaying?.item.Type === "Episode",
   });
 
-  const { data: nextItem } = useQuery({
-    queryKey: [
-      "nextItem",
-      currentlyPlaying?.item.ParentId,
-      currentlyPlaying?.item.IndexNumber,
-    ],
-    queryFn: async () => {
-      if (
-        !api ||
-        !currentlyPlaying?.item.ParentId ||
-        currentlyPlaying?.item.IndexNumber === undefined ||
-        currentlyPlaying?.item.IndexNumber === null
-      ) {
-        console.log("No next item");
-        return null;
-      }
-
-      const res = await getItemsApi(api).getItems({
-        parentId: currentlyPlaying.item.ParentId!,
-        startIndex: currentlyPlaying.item.IndexNumber!,
-        limit: 1,
-      });
-
-      console.log(
-        "Next: ",
-        res.data.Items?.map((i) => i.Name)
-      );
-      return res.data.Items?.[0];
-    },
-    enabled: currentlyPlaying?.item.Type === "Episode",
-  });
-
-  const prevButtonEnabled = useMemo(() => {
-    return !!previousItem;
-  }, [previousItem]);
-
-  const nextButtonEnabled = useMemo(() => {
-    return !!nextItem;
-  }, [nextItem]);
+  const skipIntro = useCallback(async () => {
+    if (!introTimestamps) return;
+    videoRef.current?.seek(introTimestamps.IntroEnd);
+  }, [introTimestamps]);
 
   useEffect(() => {
-    if (Platform.OS === "android") {
-      if (currentlyPlaying) NavigationBar.setVisibilityAsync("hidden");
-      else NavigationBar.setVisibilityAsync("visible");
-    }
-
-    return () => {
-      if (Platform.OS === "android") {
-        NavigationBar.setVisibilityAsync("visible");
-      }
-    };
-  }, [currentlyPlaying]);
+    console.log({ introTimestamps });
+  }, [introTimestamps]);
 
   if (!api || !currentlyPlaying) return null;
 
@@ -395,6 +323,30 @@ export const CurrentlyPlayingBar: React.FC = () => {
               className="aspect-square rounded flex flex-col items-center justify-center p-2"
             >
               <Ionicons name="close" size={24} color="white" />
+            </TouchableOpacity>
+          </View>
+        </Animated.View>
+
+        <Animated.View
+          style={[
+            {
+              position: "absolute",
+              bottom: insets.bottom + 8 * 7,
+              right: insets.right + 32,
+              zIndex: 10,
+            },
+            animatedIntroSkipperStyle,
+          ]}
+        >
+          <View className="flex flex-row items-center h-full">
+            <TouchableOpacity
+              onPress={() => {
+                if (controlsOpacity.value === 0) return;
+                skipIntro();
+              }}
+              className="flex flex-col items-center justify-center px-2 py-1.5 bg-purple-600 rounded-full"
+            >
+              <Text>Skip intro</Text>
             </TouchableOpacity>
           </View>
         </Animated.View>
@@ -513,13 +465,12 @@ export const CurrentlyPlayingBar: React.FC = () => {
           <View className="flex flex-row items-center space-x-6 rounded-full py-1.5 pl-4 pr-4 z-10 bg-neutral-800">
             <View className="flex flex-row items-center space-x-2">
               <TouchableOpacity
-                disabled={prevButtonEnabled === false}
+                disabled={!previousItem}
                 style={{
-                  opacity: prevButtonEnabled === false ? 0.5 : 1,
+                  opacity: !previousItem ? 0.5 : 1,
                 }}
                 onPress={() => {
                   if (controlsOpacity.value === 0) return;
-                  if (prevButtonEnabled === false) return;
                   if (!previousItem || !from) return;
                   const url = itemRouter(previousItem, from);
                   stopPlayback();
@@ -573,13 +524,12 @@ export const CurrentlyPlayingBar: React.FC = () => {
                 <Ionicons name="refresh-outline" size={22} color="white" />
               </TouchableOpacity>
               <TouchableOpacity
-                disabled={nextButtonEnabled === false}
+                disabled={!nextItem}
                 style={{
-                  opacity: nextButtonEnabled === false ? 0.5 : 1,
+                  opacity: !nextItem ? 0.5 : 1,
                 }}
                 onPress={() => {
                   if (controlsOpacity.value === 0) return;
-                  if (nextButtonEnabled === false) return;
                   if (!nextItem || !from) return;
                   const url = itemRouter(nextItem, from);
                   stopPlayback();
@@ -614,12 +564,13 @@ export const CurrentlyPlayingBar: React.FC = () => {
                   if (controlsOpacity.value === 0) return;
                   const tick = Math.floor(val);
                   progress.value = tick;
-                  setTrickplayUrl(
+                  calculateTrickplayUrl(
                     trickplayInfo,
                     progress,
                     api,
                     currentlyPlaying.item.Id!
                   );
+
                   // resetHideControlsTimer();
                 }}
                 containerStyle={{
