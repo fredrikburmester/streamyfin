@@ -103,13 +103,17 @@ const Login: React.FC = () => {
   }
   
   const handleConnect = async (url: string) => {
+    url = url.trim();
     if (!url.startsWith("http")) {
       const result = await checkUrl(url);
-      if (result === undefined) return;
+      if (result === undefined){
+        Alert.alert("Invalid URL", "Please enter a valid URL");
+        return;
+      } 
       url = result;
     }
     console.log(url);
-    setServer({ address: url.trim() });
+    setServer({ address: url });
   };
 
   const handleQuickConnect = async () => {
