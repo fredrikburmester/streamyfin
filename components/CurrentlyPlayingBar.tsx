@@ -74,6 +74,7 @@ export const CurrentlyPlayingBar: React.FC = () => {
   const max = useSharedValue(currentlyPlaying?.item.RunTimeTicks || 0);
   const sliding = useRef(false);
   const localIsBuffering = useSharedValue(false);
+  const cacheProgress = useSharedValue(0);
 
   const toggleIgnoreSafeArea = () => {
     setIgnoreSafeArea((prev) => !prev);
@@ -333,7 +334,8 @@ export const CurrentlyPlayingBar: React.FC = () => {
 
                 if (sliding.current === true) return;
                 onProgress(e);
-                progress.value = e.currentTime * 10000000;
+                progress.value = secondsToTicks(e.currentTime);
+                cacheProgress.value = secondsToTicks(e.playableDuration);
               }}
               subtitleStyle={{
                 fontSize: 16,
@@ -482,11 +484,12 @@ export const CurrentlyPlayingBar: React.FC = () => {
               theme={{
                 maximumTrackTintColor: "rgba(255,255,255,0.2)",
                 minimumTrackTintColor: "#fff",
-                cacheTrackTintColor: "#333",
+                cacheTrackTintColor: "rgba(255,255,255,0.3)",
                 bubbleBackgroundColor: "#fff",
                 bubbleTextColor: "#000",
                 heartbeatColor: "#999",
               }}
+              cache={cacheProgress}
               onSlidingStart={() => {
                 if (!isVisible) return;
                 sliding.current = true;
