@@ -3,16 +3,18 @@ import { getItemsApi } from "@jellyfin/sdk/lib/utils/api/items-api";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client";
 import { useQuery } from "@tanstack/react-query";
 import { CurrentlyPlayingState } from "@/providers/PlaybackProvider";
+import { useAtom } from "jotai";
+import { apiAtom } from "@/providers/JellyfinProvider";
 
 interface AdjacentEpisodesProps {
-  api: Api | null;
   currentlyPlaying?: CurrentlyPlayingState | null;
 }
 
 export const useAdjacentEpisodes = ({
-  api,
   currentlyPlaying,
 }: AdjacentEpisodesProps) => {
+  const [api] = useAtom(apiAtom);
+
   const { data: previousItem } = useQuery({
     queryKey: [
       "previousItem",
