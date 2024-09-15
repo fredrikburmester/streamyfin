@@ -1,13 +1,17 @@
+import { CurrentlyPlayingBar } from "@/components/CurrentlyPlayingBar";
 import { ItemContent } from "@/components/ItemContent";
-import { useLocalSearchParams } from "expo-router";
-import React, { useMemo } from "react";
+import { Stack, useLocalSearchParams } from "expo-router";
+import React from "react";
 
 const Page: React.FC = () => {
   const { id } = useLocalSearchParams() as { id: string };
 
-  const memoizedContent = useMemo(() => <ItemContent id={id} />, [id]);
-
-  return memoizedContent;
+  return (
+    <>
+      <Stack.Screen options={{ autoHideHomeIndicator: true }} />
+      <ItemContent id={id} />
+    </>
+  );
 };
 
-export default React.memo(Page);
+export default Page;

@@ -107,7 +107,12 @@ function Layout() {
                 <PlaybackProvider>
                   <StatusBar style="light" backgroundColor="#000" />
                   <ThemeProvider value={DarkTheme}>
-                    <Stack initialRouteName="/home">
+                    <Stack
+                      initialRouteName="/home"
+                      screenOptions={{
+                        autoHideHomeIndicator: true,
+                      }}
+                    >
                       <Stack.Screen
                         name="(auth)/(tabs)"
                         options={{
