@@ -6,7 +6,7 @@ import { writeToLog } from "@/utils/log";
 import { runtimeTicksToMinutes, runtimeTicksToSeconds } from "@/utils/time";
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
-import { useRouter, useSegments } from "expo-router";
+import { useSegments } from "expo-router";
 import { useAtom } from "jotai";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -19,8 +19,6 @@ import {
 import { Slider } from "react-native-awesome-slider";
 import "react-native-gesture-handler";
 import Animated, {
-  interpolate,
-  interpolateColor,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
@@ -29,11 +27,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Video from "react-native-video";
 import { Text } from "./common/Text";
 import { Loader } from "./Loader";
-
-const PADDING = 8;
-const BAR_HEIGHT = 70;
-const CONTENT_HEIGHT = BAR_HEIGHT - PADDING * 2;
-const COLORS = ["#262626", "#000000"];
 
 export const CurrentlyPlayingBar: React.FC = () => {
   const segments = useSegments();
@@ -49,118 +42,27 @@ export const CurrentlyPlayingBar: React.FC = () => {
     presentFullscreenPlayer,
     onProgress,
   } = usePlayback();
-  const router = useRouter();
   const insets = useSafeAreaInsets();
 
   const [api] = useAtom(apiAtom);
 
-  const [size, setSize] = useState<"full" | "small">("small");
-  const animationProgress = useSharedValue(0);
-  const controlsOpacity = useSharedValue(1);
+  const [ignoreSafeArea, setIgnoreSafeArea] = useState(false);
 
   const screenHeight = Dimensions.get("window").height;
-  const screenWiidth = Dimensions.get("window").width;
+  const screenWidth = Dimensions.get("window").width;
 
-  const BOTTOM_HEIGHT = useMemo(() => insets.bottom + 48, [insets.bottom]);
-  const from = useMemo(() => segments[2], [segments]);
+  const controlsOpacity = useSharedValue(1);
+  const progress = useSharedValue(0);
+  const min = useSharedValue(0);
+  const max = useSharedValue(currentlyPlaying?.item.RunTimeTicks || 0);
+  const sliding = useRef(false);
+  const hideControlsTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const animatedBackgroundStyle = useAnimatedStyle(() => {
-    const progress = animationProgress.value;
-    return {
-      bottom: interpolate(progress, [0, 1], [BOTTOM_HEIGHT, 0]),
-      width: interpolate(
-        progress,
-        [0, 1],
-        [screenWiidth - PADDING * 2 - insets.left - insets.right, screenWiidth]
-      ),
-      height: interpolate(progress, [0, 1], [BAR_HEIGHT, screenHeight]),
-      padding: interpolate(progress, [0, 1], [PADDING, 0]),
-      left: interpolate(progress, [0, 1], [insets.left + PADDING, 0]),
-    };
-  });
+  const from = useMemo(() => segments[2] || "(home)", [segments]);
 
-  const animatedTextStyle = useAnimatedStyle(() => {
-    const progress = animationProgress.value;
-    return {
-      bottom: interpolate(
-        progress,
-        [0, 1],
-        [BOTTOM_HEIGHT, insets.bottom + PADDING * 5]
-      ),
-      left: interpolate(
-        progress,
-        [0, 1],
-        [
-          (CONTENT_HEIGHT * 16) / 9 + 16 + 8 + insets.left,
-          PADDING * 4 + insets.left,
-        ]
-      ),
-      height: interpolate(progress, [0, 1], [BAR_HEIGHT, 64]),
-      width: interpolate(progress, [0, 1], [140, 140]),
-    };
-  });
-
-  const animatedButtonStyle = useAnimatedStyle(() => {
-    const progress = animationProgress.value;
-    return {
-      bottom: interpolate(
-        progress,
-        [0, 1],
-        [BOTTOM_HEIGHT, screenHeight - insets.top - insets.bottom - PADDING * 5]
-      ),
-      right: interpolate(
-        progress,
-        [0, 1],
-        [16 + insets.right, 16 + insets.right + PADDING]
-      ),
-      height: interpolate(progress, [0, 1], [BAR_HEIGHT, BAR_HEIGHT]),
-    };
-  });
-
-  const animatedVideoStyle = useAnimatedStyle(() => {
-    const progress = animationProgress.value;
-    return {
-      bottom: interpolate(progress, [0, 1], [BOTTOM_HEIGHT + PADDING, 0]),
-      height: interpolate(progress, [0, 1], [CONTENT_HEIGHT, screenHeight]),
-      width: interpolate(
-        progress,
-        [0, 1],
-        [(CONTENT_HEIGHT * 16) / 9, screenWiidth - insets.right - insets.left]
-      ),
-      left: interpolate(
-        progress,
-        [0, 1],
-        [PADDING * 2 + insets.left, insets.left]
-      ),
-      opacity:
-        size === "small"
-          ? 1
-          : interpolate(
-              controlsOpacity.value,
-              [0, 1],
-              [1, 0.5] // 100% opacity when controls are hidden, 50% when visible
-            ),
-    };
-  });
-
-  const animatedColorStyle = useAnimatedStyle(() => {
-    const progress = animationProgress.value;
-    return {
-      backgroundColor: interpolateColor(
-        progress,
-        [0, 1],
-        [COLORS[0], COLORS[1]]
-      ),
-    };
-  });
-
-  const animatedSliderStyle = useAnimatedStyle(() => {
-    const progress = animationProgress.value;
-    return {
-      opacity: interpolate(progress, [0, 0.1], [0, 1]),
-      display: progress > 0 ? "flex" : "none",
-    };
-  });
+  const toggleIgnoreSafeArea = () => {
+    setIgnoreSafeArea((prev) => !prev);
+  };
 
   const showControls = () => {
     controlsOpacity.value = withTiming(1, { duration: 300 });
@@ -175,26 +77,6 @@ export const CurrentlyPlayingBar: React.FC = () => {
       opacity: controlsOpacity.value,
     };
   });
-
-  // const PAN_GESTURE_EXTENT = screenHeight * 4; // Adjust this value as needed
-  // const panGesture = Gesture.Pan()
-  //   .onStart(() => {
-  //     animationProgress.value = size === "small" ? 0 : 1;
-  //   })
-  //   .onUpdate((event) => {
-  //     const delta = -event.translationY / PAN_GESTURE_EXTENT;
-  //     const newProgress = animationProgress.value + delta;
-  //     animationProgress.value = Math.max(0, Math.min(1, newProgress));
-  //   })
-  //   .onEnd(() => {
-  //     if (animationProgress.value > 0.5) {
-  //       animationProgress.value = withTiming(1, { duration: 300 });
-  //       size = "full";
-  //     } else {
-  //       animationProgress.value = withTiming(0, { duration: 300 });
-  //       size = "small";
-  //     }
-  //   });
 
   const poster = useMemo(() => {
     if (currentlyPlaying?.item.Type === "Audio")
@@ -226,122 +108,18 @@ export const CurrentlyPlayingBar: React.FC = () => {
       startPosition,
       headers: getAuthHeaders(api),
       metadata: {
-        artist: currentlyPlaying.item?.AlbumArtist
-          ? currentlyPlaying.item?.AlbumArtist
-          : undefined,
+        artist: currentlyPlaying.item?.AlbumArtist ?? undefined,
         title: currentlyPlaying.item?.Name || "Unknown",
-        description: currentlyPlaying.item?.Overview
-          ? currentlyPlaying.item?.Overview
-          : undefined,
+        description: currentlyPlaying.item?.Overview ?? undefined,
         imageUri: poster,
-        subtitle: currentlyPlaying.item?.Album
-          ? currentlyPlaying.item?.Album
-          : undefined,
+        subtitle: currentlyPlaying.item?.Album ?? undefined, // Change here
       },
     };
   }, [currentlyPlaying, startPosition, api, poster]);
 
-  // useEffect(() => {
-  //   const BOTTOM_HEIGHT = insets.bottom + 48;
-
-  //   backgroundValues.value = {
-  //     bottom: interpolate(animationProgress.value, [0, 1], [BOTTOM_HEIGHT, 0]),
-  //     height: interpolate(
-  //       animationProgress.value,
-  //       [0, 1],
-  //       [BAR_HEIGHT, screenHeight]
-  //     ),
-  //     padding: interpolate(animationProgress.value, [0, 1], [PADDING, 0]),
-  //     width: interpolate(
-  //       animationProgress.value,
-  //       [0, 1],
-  //       [screenWiidth - PADDING * 2, screenWiidth]
-  //     ),
-  //     left: interpolate(animationProgress.value, [0, 1], [8, 0]),
-  //   };
-
-  //   buttonsValues.value = {
-  //     bottom: interpolate(
-  //       animationProgress.value,
-  //       [0, 1],
-  //       [BOTTOM_HEIGHT, screenHeight - insets.top - 48]
-  //     ),
-  //     right: interpolate(
-  //       animationProgress.value,
-  //       [0, 1],
-  //       [16, 16 + insets.right]
-  //     ),
-  //     height: interpolate(
-  //       animationProgress.value,
-  //       [0, 1],
-  //       [BAR_HEIGHT, BAR_HEIGHT]
-  //     ),
-  //   };
-
-  //   videoValues.value = {
-  //     bottom: interpolate(
-  //       animationProgress.value,
-  //       [0, 1],
-  //       [BOTTOM_HEIGHT + PADDING, 0]
-  //     ),
-  //     height: interpolate(
-  //       animationProgress.value,
-  //       [0, 1],
-  //       [CONTENT_HEIGHT, screenHeight]
-  //     ),
-  //     width: interpolate(
-  //       animationProgress.value,
-  //       [0, 1],
-  //       [(CONTENT_HEIGHT * 16) / 9, screenWiidth - insets.right - insets.left]
-  //     ),
-  //     left: interpolate(animationProgress.value, [0, 1], [16, insets.left]),
-  //   };
-
-  //   textValues.value = {
-  //     bottom: interpolate(
-  //       animationProgress.value,
-  //       [0, 1],
-  //       [BOTTOM_HEIGHT, BOTTOM_HEIGHT]
-  //     ),
-  //     height: interpolate(animationProgress.value, [0, 1], [BAR_HEIGHT, 64]),
-  //     left: interpolate(
-  //       animationProgress.value,
-  //       [0, 1],
-  //       [(CONTENT_HEIGHT * 16) / 9 + 16 + 8, PADDING * 2 + insets.left]
-  //     ),
-  //     width: interpolate(animationProgress.value, [0, 1], [140, 140]),
-  //   };
-
-  //   colorProgress.value = withTiming(animationProgress.value, {
-  //     duration: 500,
-  //   });
-  // }, [
-  //   animationProgress.value,
-  //   screenHeight,
-  //   screenWiidth,
-  //   insets.bottom,
-  //   insets.top,
-  //   insets.right,
-  //   insets.left,
-  //   controlsVisible,
-  // ]);
-
-  const progress = useSharedValue(0);
-  const min = useSharedValue(0);
-  const max = useSharedValue(currentlyPlaying?.item.RunTimeTicks || 0);
-  const sliding = useRef(false);
-
-  useEffect(() => {
-    max.value = currentlyPlaying?.item.RunTimeTicks || 0;
-  }, [currentlyPlaying?.item.RunTimeTicks]);
-
-  const hideControlsTimerRef = useRef<NodeJS.Timeout | null>(null);
-
   const showControlsAndResetTimer = () => {
     showControls();
-    if (size === "full") {
-      resetHideControlsTimer();
-    }
+    resetHideControlsTimer();
   };
 
   const resetHideControlsTimer = () => {
@@ -354,7 +132,7 @@ export const CurrentlyPlayingBar: React.FC = () => {
   };
 
   useEffect(() => {
-    if (size === "full" && controlsOpacity.value > 0) {
+    if (controlsOpacity.value > 0) {
       resetHideControlsTimer();
     }
 
@@ -363,112 +141,70 @@ export const CurrentlyPlayingBar: React.FC = () => {
         clearTimeout(hideControlsTimerRef.current);
       }
     };
-  }, [controlsOpacity.value, size]);
+  }, [controlsOpacity.value]);
+
+  useEffect(() => {
+    max.value = currentlyPlaying?.item.RunTimeTicks || 0;
+  }, [currentlyPlaying?.item.RunTimeTicks]);
+
+  const videoContainerStyle = {
+    position: "absolute" as const,
+    top: 0,
+    bottom: 0,
+    left: ignoreSafeArea ? 0 : insets.left,
+    right: ignoreSafeArea ? 0 : insets.right,
+    width: ignoreSafeArea
+      ? screenWidth
+      : screenWidth - (insets.left + insets.right),
+  };
 
   if (!api || !currentlyPlaying) return null;
 
   return (
-    <View>
-      <View>
-        <Animated.View
-          className={`rounded-lg absolute`}
-          style={[animatedBackgroundStyle, animatedColorStyle]}
-        ></Animated.View>
+    <View style={{ width: screenWidth, height: screenHeight }}>
+      <View style={{ width: "100%", height: "100%", backgroundColor: "black" }}>
+        <View
+          style={[
+            {
+              position: "absolute",
+              bottom: insets.bottom + 40,
+              left: 32 + insets.left,
+              height: 64,
+              width: 140,
+              zIndex: 10,
+            },
+          ]}
+        ></View>
 
         <Animated.View
-          className={`absolute z-10`}
-          style={[animatedTextStyle, animatedControlsStyle]}
-        >
-          <View className="shrink flex flex-col justify-center h-full">
-            <TouchableOpacity
-              onPress={() => {
-                if (currentlyPlaying.item?.Type === "Audio") {
-                  router.push(
-                    // @ts-ignore
-                    `/(auth)/(tabs)/${from}/albums/${currentlyPlaying.item.AlbumId}`
-                  );
-                } else {
-                  router.push(
-                    // @ts-ignore
-                    `/(auth)/(tabs)/${from}/items/page?id=${currentlyPlaying.item?.Id}`
-                  );
-                }
-              }}
-            >
-              <Text className="text-xs">{currentlyPlaying.item?.Name}</Text>
-            </TouchableOpacity>
-            {currentlyPlaying.item?.Type === "Episode" && (
-              <TouchableOpacity
-                onPress={() => {
-                  router.push(
-                    // @ts-ignore
-                    `/(auth)/(tabs)/${from}/series/${currentlyPlaying.item.SeriesId}`
-                  );
-                }}
-              >
-                <Text className="text-xs opacity-50">
-                  {currentlyPlaying.item.SeriesName}
-                </Text>
-              </TouchableOpacity>
-            )}
-            {currentlyPlaying.item?.Type === "Movie" && (
-              <Text className="text-xs opacity-50">
-                {currentlyPlaying.item?.ProductionYear}
-              </Text>
-            )}
-            {currentlyPlaying.item?.Type === "Audio" && (
-              <TouchableOpacity
-                onPress={() => {
-                  router.push(`/albums/${currentlyPlaying.item?.AlbumId}`);
-                }}
-              >
-                <Text className="text-xs opacity-50">
-                  {currentlyPlaying.item?.Album}
-                </Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        </Animated.View>
-
-        <Animated.View
-          className={`absolute z-10`}
-          style={[animatedButtonStyle, animatedControlsStyle]}
+          style={[
+            {
+              position: "absolute",
+              top: insets.top,
+              right: insets.right + 20,
+              height: 70,
+              zIndex: 10,
+            },
+            animatedControlsStyle,
+          ]}
         >
           <View className="flex flex-row items-center h-full">
             <TouchableOpacity
               onPress={() => {
-                if (size === "small") {
-                  animationProgress.value = withTiming(1, { duration: 300 });
-                  setSize("full");
-                  hideControls();
-                } else {
-                  animationProgress.value = withTiming(0, { duration: 300 });
-                  setSize("small");
-                  showControls();
-                }
-              }}
-              className="aspect-square rounded flex flex-col items-center justify-center p-2"
-            >
-              <Ionicons name="expand" size={20} color="white" />
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => {
-                if (isPlaying) {
-                  pauseVideo();
-                } else {
-                  playVideo();
-                }
+                if (controlsOpacity.value === 0) return;
+                toggleIgnoreSafeArea();
               }}
               className="aspect-square rounded flex flex-col items-center justify-center p-2"
             >
               <Ionicons
-                name={isPlaying ? "pause" : "play"}
+                name={ignoreSafeArea ? "contract-outline" : "expand"}
                 size={24}
                 color="white"
               />
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => {
+                if (controlsOpacity.value === 0) return;
                 stopPlayback();
               }}
               className="aspect-square rounded flex flex-col items-center justify-center p-2"
@@ -478,20 +214,16 @@ export const CurrentlyPlayingBar: React.FC = () => {
           </View>
         </Animated.View>
 
-        <Animated.View
-          style={[animatedVideoStyle]}
-          className={` rounded-md absolute overflow-hidden flex flex-col items-center justify-center pointer-events-none z-0 object-contain`}
-        >
+        <View style={videoContainerStyle}>
           <Pressable
             onPress={() => {
-              if (size === "small") return;
               if (controlsOpacity.value > 0) {
                 hideControls();
               } else {
                 showControlsAndResetTimer();
               }
             }}
-            className="w-full h-full"
+            style={{ width: "100%", height: "100%" }}
           >
             {videoSource && (
               <Video
@@ -547,7 +279,6 @@ export const CurrentlyPlayingBar: React.FC = () => {
                   );
                   Alert.alert("Error", "Cannot play this video file.");
                   setIsPlaying(false);
-                  // setCurrentlyPlaying(null);
                 }}
                 renderLoader={
                   currentlyPlaying.item?.Type !== "Audio" && (
@@ -559,29 +290,47 @@ export const CurrentlyPlayingBar: React.FC = () => {
               />
             )}
           </Pressable>
-        </Animated.View>
+        </View>
 
         <Animated.View
           style={[
             {
-              borderRadius: 100,
               position: "absolute",
               bottom: insets.bottom + 8,
-              left: insets.left + PADDING * 4,
-              width: screenWiidth - insets.left - insets.right - PADDING * 8,
+              left: insets.left + 32,
+              width: screenWidth - insets.left - insets.right - 64,
+              borderRadius: 100,
             },
-            animatedSliderStyle,
             animatedControlsStyle,
           ]}
         >
+          <View className="shrink flex flex-col justify-center h-full mb-2">
+            <Text className="font-bold">{currentlyPlaying.item?.Name}</Text>
+            {currentlyPlaying.item?.Type === "Episode" && (
+              <Text className="opacity-50">
+                {currentlyPlaying.item.SeriesName}
+              </Text>
+            )}
+            {currentlyPlaying.item?.Type === "Movie" && (
+              <Text className="text-xs opacity-50">
+                {currentlyPlaying.item?.ProductionYear}
+              </Text>
+            )}
+            {currentlyPlaying.item?.Type === "Audio" && (
+              <Text className="text-xs opacity-50">
+                {currentlyPlaying.item?.Album}
+              </Text>
+            )}
+          </View>
           <BlurView
             intensity={100}
-            className="flex flex-row bg-neutral-800 items-center space-x-6 rounded-full py-1.5 pl-4 pr-4 z-10 overflow-hidden"
+            className="flex flex-row items-center space-x-6 rounded-full py-1.5 pl-4 pr-4 z-10 overflow-hidden"
           >
             <View className="flex flex-row items-center space-x-2">
               <Ionicons name="play-skip-back" size={18} color="white" />
               <TouchableOpacity
                 onPress={async () => {
+                  if (controlsOpacity.value === 0) return;
                   const curr = await videoRef.current?.getCurrentPosition();
                   if (!curr) return;
                   videoRef.current?.seek(Math.max(0, curr - 15));
@@ -599,6 +348,7 @@ export const CurrentlyPlayingBar: React.FC = () => {
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => {
+                  if (controlsOpacity.value === 0) return;
                   if (isPlaying) pauseVideo();
                   else playVideo();
                   resetHideControlsTimer();
@@ -612,6 +362,7 @@ export const CurrentlyPlayingBar: React.FC = () => {
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={async () => {
+                  if (controlsOpacity.value === 0) return;
                   const curr = await videoRef.current?.getCurrentPosition();
                   if (!curr) return;
                   videoRef.current?.seek(Math.max(0, curr + 15));
@@ -633,14 +384,17 @@ export const CurrentlyPlayingBar: React.FC = () => {
                   heartbeatColor: "#999",
                 }}
                 onSlidingStart={() => {
+                  if (controlsOpacity.value === 0) return;
                   sliding.current = true;
                 }}
                 onSlidingComplete={(val) => {
+                  if (controlsOpacity.value === 0) return;
                   const tick = Math.floor(val);
                   videoRef.current?.seek(tick / 10000000);
                   sliding.current = false;
                 }}
                 onValueChange={(val) => {
+                  if (controlsOpacity.value === 0) return;
                   const tick = Math.floor(val);
                   progress.value = tick;
                   resetHideControlsTimer();
@@ -655,9 +409,14 @@ export const CurrentlyPlayingBar: React.FC = () => {
                 minimumValue={min}
                 maximumValue={max}
               />
-              <Text className="text-[10px] text-neutral-500">
-                {runtimeTicksToSeconds(progress.value)}
-              </Text>
+              <View className="flex flex-row items-center justify-between">
+                <Text className="text-[10px] text-neutral-400">
+                  {runtimeTicksToSeconds(progress.value)}
+                </Text>
+                <Text className="text-[10px] text-neutral-400">
+                  -{runtimeTicksToSeconds(max.value - progress.value)}
+                </Text>
+              </View>
             </View>
           </BlurView>
         </Animated.View>
