@@ -86,13 +86,13 @@ const Login: React.FC = () => {
       url = url.slice(0, -1);
     }
 
-    if( await fetch("https://" + url + "/web/#/home.html", {mode: 'cors'}).then((response) => {
+    if( await fetch("https://" + url + "/System/Info/Public", {mode: 'cors'}).then((response) => {
       return response.status;
     }).catch((error) => {
       console.log(error)
     }) === 200) {
       return "https://"+url
-    } else if (await fetch("http://" + url + "/web/#/home.html", {mode: 'cors'}).then((response) => {
+    } else if (await fetch("http://" + url + "/System/Info/Public", {mode: 'cors'}).then((response) => {
       return response.status;
     }).catch((error) => {
       console.log(error)
