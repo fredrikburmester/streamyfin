@@ -254,7 +254,6 @@ export const CurrentlyPlayingBar: React.FC = () => {
    */
   useEffect(() => {
     if (!currentlyPlaying) {
-      // Reset all local state and shared values
       progress.value = 0;
       min.value = 0;
       max.value = 0;
@@ -262,27 +261,24 @@ export const CurrentlyPlayingBar: React.FC = () => {
       localIsBuffering.value = false;
       sliding.current = false;
       hideControls();
-
-      resetOrientation();
     } else {
-      // Initialize or update values based on the new currentlyPlaying item
       progress.value =
         currentlyPlaying.item?.UserData?.PlaybackPositionTicks || 0;
       max.value = currentlyPlaying.item.RunTimeTicks || 0;
       showControls();
+    }
+  }, [currentlyPlaying]);
+
+  useEffect(() => {
+    if (!currentlyPlaying) {
+      resetOrientation();
+    } else {
       setOrientation(
         settings?.defaultVideoOrientation ||
-          ScreenOrientation.OrientationLock.LANDSCAPE_LEFT
+          ScreenOrientation.OrientationLock.DEFAULT
       );
     }
-
-    // Cleanup function
-    return () => {
-      // Cancel any subscriptions or timers if you have any
-      // clearTimeout(timerId);
-      // unsubscribe();
-    };
-  }, [currentlyPlaying, settings]);
+  }, [settings, currentlyPlaying]);
 
   if (!api || !currentlyPlaying) return null;
 
