@@ -39,10 +39,6 @@ export const useAdjacentEpisodes = ({
         limit: 1,
       });
 
-      console.log(
-        "Prev: ",
-        res.data.Items?.map((i) => i.Name)
-      );
       return res.data.Items?.[0] || null;
     },
     enabled: currentlyPlaying?.item.Type === "Episode",
@@ -71,10 +67,6 @@ export const useAdjacentEpisodes = ({
         limit: 1,
       });
 
-      console.log(
-        "Next: ",
-        res.data.Items?.map((i) => i.Name)
-      );
       return res.data.Items?.[0] || null;
     },
     enabled: currentlyPlaying?.item.Type === "Episode",

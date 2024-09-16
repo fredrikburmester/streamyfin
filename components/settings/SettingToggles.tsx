@@ -2,6 +2,7 @@ import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import {
   DefaultLanguageOption,
   DownloadOptions,
+  ScreenOrientationEnum,
   useSettings,
 } from "@/utils/atoms/settings";
 import { getItemsApi } from "@jellyfin/sdk/lib/utils/api";
@@ -21,6 +22,7 @@ import { Input } from "../common/Input";
 import { useState } from "react";
 import { Button } from "../Button";
 import { MediaToggles } from "./MediaToggles";
+import * as ScreenOrientation from "expo-screen-orientation";
 
 interface Props extends ViewProps {}
 
@@ -56,6 +58,8 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
     staleTime: 0,
   });
 
+  if (!settings) return null;
+
   return (
     <View {...props}>
       {/* <View>
@@ -88,7 +92,7 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
               </Text>
             </View>
             <Switch
-              value={settings?.autoRotate}
+              value={settings.autoRotate}
               onValueChange={(value) => updateSettings({ autoRotate: value })}
             />
           </View>
@@ -102,7 +106,7 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
               </Text>
             </View>
             <Switch
-              value={settings?.openFullScreenVideoPlayerByDefault}
+              value={settings.openFullScreenVideoPlayerByDefault}
               onValueChange={(value) =>
                 updateSettings({ openFullScreenVideoPlayerByDefault: value })
               }
@@ -118,7 +122,7 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
               </Text>
             </View>
             <Switch
-              value={settings?.openInVLC}
+              value={settings.openInVLC}
               onValueChange={(value) => {
                 updateSettings({ openInVLC: value, forceDirectPlay: value });
               }}
@@ -141,13 +145,13 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
                 </TouchableOpacity>
               </View>
               <Switch
-                value={settings?.usePopularPlugin}
+                value={settings.usePopularPlugin}
                 onValueChange={(value) =>
                   updateSettings({ usePopularPlugin: value })
                 }
               />
             </View>
-            {settings?.usePopularPlugin && (
+            {settings.usePopularPlugin && (
               <View className="flex flex-col py-2 bg-neutral-900">
                 {mediaListCollections?.map((mlc) => (
                   <View
@@ -158,9 +162,7 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
                       <Text className="font-semibold">{mlc.Name}</Text>
                     </View>
                     <Switch
-                      value={settings?.mediaListCollectionIds?.includes(
-                        mlc.Id!
-                      )}
+                      value={settings.mediaListCollectionIds?.includes(mlc.Id!)}
                       onValueChange={(value) => {
                         if (!settings.mediaListCollectionIds) {
                           updateSettings({
@@ -171,11 +173,11 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
 
                         updateSettings({
                           mediaListCollectionIds:
-                            settings?.mediaListCollectionIds.includes(mlc.Id!)
-                              ? settings?.mediaListCollectionIds.filter(
+                            settings.mediaListCollectionIds.includes(mlc.Id!)
+                              ? settings.mediaListCollectionIds.filter(
                                   (id) => id !== mlc.Id
                                 )
-                              : [...settings?.mediaListCollectionIds, mlc.Id!],
+                              : [...settings.mediaListCollectionIds, mlc.Id!],
                         });
                       }}
                     />
@@ -206,7 +208,7 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
               </Text>
             </View>
             <Switch
-              value={settings?.forceDirectPlay}
+              value={settings.forceDirectPlay}
               onValueChange={(value) =>
                 updateSettings({ forceDirectPlay: value })
               }
@@ -216,7 +218,7 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
           <View
             className={`
         flex flex-row items-center space-x-2 justify-between bg-neutral-900 p-4
-        ${settings?.forceDirectPlay ? "opacity-50 select-none" : ""}
+        ${settings.forceDirectPlay ? "opacity-50 select-none" : ""}
       `}
           >
             <View className="flex flex-col shrink">
@@ -229,7 +231,7 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
             <DropdownMenu.Root>
               <DropdownMenu.Trigger>
                 <TouchableOpacity className="bg-neutral-800 rounded-lg border-neutral-900 border px-3 py-2 flex flex-row items-center justify-between">
-                  <Text>{settings?.deviceProfile}</Text>
+                  <Text>{settings.deviceProfile}</Text>
                 </TouchableOpacity>
               </DropdownMenu.Trigger>
               <DropdownMenu.Content
@@ -272,8 +274,108 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
           <View className="flex flex-col">
             <View
               className={`
-            flex flex-row items-center space-x-2 justify-between bg-neutral-900 p-4
-          `}
+                flex flex-row items-center space-x-2 justify-between bg-neutral-900 p-4
+              `}
+            >
+              <View className="flex flex-col shrink">
+                <Text className="font-semibold">Video orientation</Text>
+                <Text className="text-xs opacity-50">
+                  Set the full screen video player orientation.
+                </Text>
+              </View>
+              <DropdownMenu.Root>
+                <DropdownMenu.Trigger>
+                  <TouchableOpacity className="bg-neutral-800 rounded-lg border-neutral-900 border px-3 py-2 flex flex-row items-center justify-between">
+                    <Text>
+                      {ScreenOrientationEnum[settings.defaultVideoOrientation]}
+                    </Text>
+                  </TouchableOpacity>
+                </DropdownMenu.Trigger>
+                <DropdownMenu.Content
+                  loop={true}
+                  side="bottom"
+                  align="start"
+                  alignOffset={0}
+                  avoidCollisions={true}
+                  collisionPadding={8}
+                  sideOffset={8}
+                >
+                  <DropdownMenu.Label>Orientation</DropdownMenu.Label>
+                  <DropdownMenu.Item
+                    key="1"
+                    onSelect={() => {
+                      updateSettings({
+                        defaultVideoOrientation:
+                          ScreenOrientation.OrientationLock.DEFAULT,
+                      });
+                    }}
+                  >
+                    <DropdownMenu.ItemTitle>
+                      {
+                        ScreenOrientationEnum[
+                          ScreenOrientation.OrientationLock.DEFAULT
+                        ]
+                      }
+                    </DropdownMenu.ItemTitle>
+                  </DropdownMenu.Item>
+                  <DropdownMenu.Item
+                    key="2"
+                    onSelect={() => {
+                      updateSettings({
+                        defaultVideoOrientation:
+                          ScreenOrientation.OrientationLock.PORTRAIT_UP,
+                      });
+                    }}
+                  >
+                    <DropdownMenu.ItemTitle>
+                      {
+                        ScreenOrientationEnum[
+                          ScreenOrientation.OrientationLock.PORTRAIT_UP
+                        ]
+                      }
+                    </DropdownMenu.ItemTitle>
+                  </DropdownMenu.Item>
+                  <DropdownMenu.Item
+                    key="3"
+                    onSelect={() => {
+                      updateSettings({
+                        defaultVideoOrientation:
+                          ScreenOrientation.OrientationLock.LANDSCAPE_LEFT,
+                      });
+                    }}
+                  >
+                    <DropdownMenu.ItemTitle>
+                      {
+                        ScreenOrientationEnum[
+                          ScreenOrientation.OrientationLock.LANDSCAPE_LEFT
+                        ]
+                      }
+                    </DropdownMenu.ItemTitle>
+                  </DropdownMenu.Item>
+                  <DropdownMenu.Item
+                    key="4"
+                    onSelect={() => {
+                      updateSettings({
+                        defaultVideoOrientation:
+                          ScreenOrientation.OrientationLock.LANDSCAPE_RIGHT,
+                      });
+                    }}
+                  >
+                    <DropdownMenu.ItemTitle>
+                      {
+                        ScreenOrientationEnum[
+                          ScreenOrientation.OrientationLock.LANDSCAPE_RIGHT
+                        ]
+                      }
+                    </DropdownMenu.ItemTitle>
+                  </DropdownMenu.Item>
+                </DropdownMenu.Content>
+              </DropdownMenu.Root>
+            </View>
+            <View
+              className={`
+                flex flex-row items-center space-x-2 justify-between bg-neutral-900 p-4
+              `}
             >
               <View className="flex flex-col shrink">
                 <Text className="font-semibold">Search engine</Text>
@@ -284,7 +386,7 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
               <DropdownMenu.Root>
                 <DropdownMenu.Trigger>
                   <TouchableOpacity className="bg-neutral-800 rounded-lg border-neutral-900 border px-3 py-2 flex flex-row items-center justify-between">
-                    <Text>{settings?.searchEngine}</Text>
+                    <Text>{settings.searchEngine}</Text>
                   </TouchableOpacity>
                 </DropdownMenu.Trigger>
                 <DropdownMenu.Content
@@ -318,7 +420,7 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
                 </DropdownMenu.Content>
               </DropdownMenu.Root>
             </View>
-            {settings?.searchEngine === "Marlin" && (
+            {settings.searchEngine === "Marlin" && (
               <View className="flex flex-col bg-neutral-900 px-4 pb-4">
                 <>
                   <View className="flex flex-row items-center space-x-2">
@@ -346,7 +448,7 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
                   </View>
 
                   <Text className="text-neutral-500 mt-2">
-                    {settings?.marlinServerUrl}
+                    {settings.marlinServerUrl}
                   </Text>
                 </>
               </View>
