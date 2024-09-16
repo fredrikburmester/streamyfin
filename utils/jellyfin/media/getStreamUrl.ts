@@ -5,6 +5,7 @@ import {
   MediaSourceInfo,
   PlaybackInfoResponse,
 } from "@jellyfin/sdk/lib/generated-client/models";
+import { getAuthHeaders } from "../jellyfin";
 
 export const getStreamUrl = async ({
   api,
@@ -15,7 +16,7 @@ export const getStreamUrl = async ({
   sessionData,
   deviceProfile = ios,
   audioStreamIndex = 0,
-  subtitleStreamIndex = 0,
+  subtitleStreamIndex = undefined,
   forceDirectPlay = false,
   height,
   mediaSourceId,
@@ -39,6 +40,9 @@ export const getStreamUrl = async ({
 
   const itemId = item.Id;
 
+  /**
+   * Build the stream URL for videos
+   */
   const response = await api.axiosInstance.post(
     `${api.basePath}/Items/${itemId}/PlaybackInfo`,
     {
@@ -58,9 +62,7 @@ export const getStreamUrl = async ({
       EnableMpegtsM2TsMode: false,
     },
     {
-      headers: {
-        Authorization: `MediaBrowser DeviceId="${api.deviceInfo.id}", Token="${api.accessToken}"`,
-      },
+      headers: getAuthHeaders(api),
     }
   );
 
@@ -80,10 +82,8 @@ export const getStreamUrl = async ({
 
   if (mediaSource.SupportsDirectPlay || forceDirectPlay === true) {
     if (item.MediaType === "Video") {
-      console.log("Using direct stream for video!");
       url = `${api.basePath}/Videos/${itemId}/stream.mp4?playSessionId=${sessionData.PlaySessionId}&mediaSourceId=${mediaSource.Id}&static=true&subtitleStreamIndex=${subtitleStreamIndex}&audioStreamIndex=${audioStreamIndex}&deviceId=${api.deviceInfo.id}&api_key=${api.accessToken}`;
     } else if (item.MediaType === "Audio") {
-      console.log("Using direct stream for audio!");
       const searchParams = new URLSearchParams({
         UserId: userId,
         DeviceId: api.deviceInfo.id,

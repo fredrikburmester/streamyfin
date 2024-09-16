@@ -4,6 +4,7 @@ import { useNavigationBarVisibility } from "@/hooks/useNavigationBarVisibility";
 import { useTrickplay } from "@/hooks/useTrickplay";
 import { apiAtom } from "@/providers/JellyfinProvider";
 import { usePlayback } from "@/providers/PlaybackProvider";
+import { parseM3U8ForSubtitles } from "@/utils/hls/parseM3U8ForSubtitles";
 import { getBackdropUrl } from "@/utils/jellyfin/image/getBackdropUrl";
 import { getAuthHeaders } from "@/utils/jellyfin/jellyfin";
 import { writeToLog } from "@/utils/log";
@@ -34,6 +35,16 @@ import Video from "react-native-video";
 import { Text } from "./common/Text";
 import { itemRouter } from "./common/TouchableItemRouter";
 import { Loader } from "./Loader";
+import * as ScreenOrientation from "expo-screen-orientation";
+import { useSettings } from "@/utils/atoms/settings";
+
+async function setOrientation(orientation: ScreenOrientation.OrientationLock) {
+  await ScreenOrientation.lockAsync(orientation);
+}
+
+async function resetOrientation() {
+  await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.DEFAULT);
+}
 
 export const CurrentlyPlayingBar: React.FC = () => {
   const {
@@ -45,13 +56,14 @@ export const CurrentlyPlayingBar: React.FC = () => {
     setIsPlaying,
     isPlaying,
     videoRef,
-    progressTicks,
     onProgress,
     isBuffering: _isBuffering,
     setIsBuffering,
   } = usePlayback();
 
   useNavigationBarVisibility(isPlaying);
+
+  const [settings] = useSettings();
 
   const insets = useSafeAreaInsets();
   const segments = useSegments();
@@ -69,7 +81,7 @@ export const CurrentlyPlayingBar: React.FC = () => {
   const screenHeight = Dimensions.get("window").height;
   const screenWidth = Dimensions.get("window").width;
 
-  const progress = useSharedValue(progressTicks || 0);
+  const progress = useSharedValue(0);
   const min = useSharedValue(0);
   const max = useSharedValue(currentlyPlaying?.item.RunTimeTicks || 0);
   const sliding = useRef(false);
@@ -222,6 +234,56 @@ export const CurrentlyPlayingBar: React.FC = () => {
     showControls();
   }, [currentlyPlaying]);
 
+  const { data: subtitleTracks } = useQuery({
+    queryKey: ["subtitleTracks", currentlyPlaying?.url],
+    queryFn: async () => {
+      if (!currentlyPlaying?.url) {
+        console.log("No item url");
+        return null;
+      }
+
+      const tracks = await parseM3U8ForSubtitles(currentlyPlaying.url);
+
+      console.log("Subtitle tracks", tracks);
+      return tracks;
+    },
+  });
+
+  /**
+   * This should clean up all values if curentlyPlaying sets to null or changes
+   */
+  useEffect(() => {
+    if (!currentlyPlaying) {
+      // Reset all local state and shared values
+      progress.value = 0;
+      min.value = 0;
+      max.value = 0;
+      cacheProgress.value = 0;
+      localIsBuffering.value = false;
+      sliding.current = false;
+      hideControls();
+
+      resetOrientation();
+    } else {
+      // Initialize or update values based on the new currentlyPlaying item
+      progress.value =
+        currentlyPlaying.item?.UserData?.PlaybackPositionTicks || 0;
+      max.value = currentlyPlaying.item.RunTimeTicks || 0;
+      showControls();
+      setOrientation(
+        settings?.defaultVideoOrientation ||
+          ScreenOrientation.OrientationLock.LANDSCAPE_LEFT
+      );
+    }
+
+    // Cleanup function
+    return () => {
+      // Cancel any subscriptions or timers if you have any
+      // clearTimeout(timerId);
+      // unsubscribe();
+    };
+  }, [currentlyPlaying, settings]);
+
   if (!api || !currentlyPlaying) return null;
 
   return (
@@ -232,68 +294,6 @@ export const CurrentlyPlayingBar: React.FC = () => {
         backgroundColor: "black",
       }}
     >
-      <Animated.View
-        style={[
-          {
-            position: "absolute",
-            top: insets.top,
-            right: insets.right + 20,
-            height: 70,
-            zIndex: 10,
-          },
-          animatedControlsStyle,
-        ]}
-      >
-        <View className="flex flex-row items-center h-full">
-          <TouchableOpacity
-            onPress={() => {
-              if (!isVisible) return;
-              toggleIgnoreSafeArea();
-            }}
-            className="aspect-square rounded flex flex-col items-center justify-center p-2"
-          >
-            <Ionicons
-              name={ignoreSafeArea ? "contract-outline" : "expand"}
-              size={24}
-              color="white"
-            />
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => {
-              if (!isVisible) return;
-              stopPlayback();
-            }}
-            className="aspect-square rounded flex flex-col items-center justify-center p-2"
-          >
-            <Ionicons name="close" size={24} color="white" />
-          </TouchableOpacity>
-        </View>
-      </Animated.View>
-
-      <Animated.View
-        style={[
-          {
-            position: "absolute",
-            bottom: insets.bottom + 8 * 7,
-            right: insets.right + 32,
-            zIndex: 10,
-          },
-          animatedIntroSkipperStyle,
-        ]}
-      >
-        <View className="flex flex-row items-center h-full">
-          <TouchableOpacity
-            onPress={() => {
-              if (!isVisible) return;
-              skipIntro();
-            }}
-            className="flex flex-col items-center justify-center px-2 py-1.5 bg-purple-600 rounded-full"
-          >
-            <Text>Skip intro</Text>
-          </TouchableOpacity>
-        </View>
-      </Animated.View>
-
       <Animated.View style={[videoContainerStyle, animatedVideoContainerStyle]}>
         <Pressable
           onPress={() => {
@@ -340,6 +340,15 @@ export const CurrentlyPlayingBar: React.FC = () => {
               subtitleStyle={{
                 fontSize: 16,
               }}
+              onTextTracks={(e) => {
+                console.log("onTextTracks ~", e.textTracks);
+              }}
+              onTextTrackDataChanged={(e) => {
+                console.log("onTextTrackDataChanged ~", e);
+              }}
+              onVideoTracks={(e) => {
+                console.log("onVideoTracks ~", e.videoTracks);
+              }}
               source={videoSource}
               onPlaybackStateChanged={(e) => {
                 if (e.isPlaying === true) {
@@ -362,13 +371,97 @@ export const CurrentlyPlayingBar: React.FC = () => {
                 setIsPlaying(false);
               }}
               renderLoader={
-                <View className="absolute w-screen h-screen flex flex-col items-center justify-center">
+                <View
+                  pointerEvents="none"
+                  className="absolute w-screen h-screen top-0 left-0 items-center justify-center"
+                >
                   <Loader />
                 </View>
               }
             />
           )}
         </Pressable>
+      </Animated.View>
+
+      <Animated.View
+        pointerEvents="none"
+        style={[
+          {
+            position: "absolute" as const,
+            top: 0,
+            bottom: 0,
+            left: ignoreSafeArea ? 0 : insets.left,
+            right: ignoreSafeArea ? 0 : insets.right,
+            width: ignoreSafeArea
+              ? screenWidth
+              : screenWidth - (insets.left + insets.right),
+            justifyContent: "center",
+            alignItems: "center",
+          },
+          animatedLoaderStyle,
+        ]}
+      >
+        <Loader />
+      </Animated.View>
+
+      <Animated.View
+        style={[
+          {
+            position: "absolute",
+            bottom: insets.bottom + 8 * 7,
+            right: insets.right + 32,
+          },
+          animatedIntroSkipperStyle,
+        ]}
+      >
+        <View className="flex flex-row items-center h-full">
+          <TouchableOpacity
+            onPress={() => {
+              if (!isVisible) return;
+              skipIntro();
+            }}
+            className="flex flex-col items-center justify-center px-2 py-1.5 bg-purple-600 rounded-full"
+          >
+            <Text>Skip intro</Text>
+          </TouchableOpacity>
+        </View>
+      </Animated.View>
+
+      <Animated.View
+        style={[
+          {
+            position: "absolute",
+            top: insets.top,
+            right: insets.right + 20,
+            height: 70,
+          },
+          animatedControlsStyle,
+        ]}
+      >
+        <View className="flex flex-row items-center h-full">
+          <TouchableOpacity
+            onPress={() => {
+              if (!isVisible) return;
+              toggleIgnoreSafeArea();
+            }}
+            className="aspect-square rounded flex flex-col items-center justify-center p-2"
+          >
+            <Ionicons
+              name={ignoreSafeArea ? "contract-outline" : "expand"}
+              size={24}
+              color="white"
+            />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => {
+              if (!isVisible) return;
+              stopPlayback();
+            }}
+            className="aspect-square rounded flex flex-col items-center justify-center p-2"
+          >
+            <Ionicons name="close" size={24} color="white" />
+          </TouchableOpacity>
+        </View>
       </Animated.View>
 
       <Animated.View
@@ -401,7 +494,7 @@ export const CurrentlyPlayingBar: React.FC = () => {
             </Text>
           )}
         </View>
-        <View className="flex flex-row items-center space-x-6 rounded-full py-1.5 pl-4 pr-4 z-10 bg-neutral-800">
+        <View className="flex flex-row items-center space-x-6 rounded-full py-1.5 pl-4 pr-4 bg-neutral-800">
           <View className="flex flex-row items-center space-x-2">
             <TouchableOpacity
               disabled={!previousItem}
@@ -561,28 +654,6 @@ export const CurrentlyPlayingBar: React.FC = () => {
             </View>
           </View>
         </View>
-      </Animated.View>
-
-      <Animated.View
-        pointerEvents="none"
-        style={[
-          {
-            position: "absolute" as const,
-            top: 0,
-            bottom: 0,
-            left: ignoreSafeArea ? 0 : insets.left,
-            right: ignoreSafeArea ? 0 : insets.right,
-            width: ignoreSafeArea
-              ? screenWidth
-              : screenWidth - (insets.left + insets.right),
-            justifyContent: "center",
-            alignItems: "center",
-            zIndex: 10,
-          },
-          animatedLoaderStyle,
-        ]}
-      >
-        <Loader />
       </Animated.View>
     </View>
   );

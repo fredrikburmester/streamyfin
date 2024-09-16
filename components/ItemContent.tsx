@@ -56,7 +56,7 @@ export const ItemContent: React.FC<{ id: string }> = React.memo(({ id }) => {
     useState<MediaSourceInfo | null>(null);
   const [selectedAudioStream, setSelectedAudioStream] = useState<number>(-1);
   const [selectedSubtitleStream, setSelectedSubtitleStream] =
-    useState<number>(0);
+    useState<number>(-1);
   const [maxBitrate, setMaxBitrate] = useState<Bitrate>({
     key: "Max",
     value: undefined,

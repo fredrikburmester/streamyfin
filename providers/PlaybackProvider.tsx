@@ -25,6 +25,10 @@ import { debounce } from "lodash";
 import { Alert } from "react-native";
 import { OnProgressData, type VideoRef } from "react-native-video";
 import { apiAtom, userAtom } from "./JellyfinProvider";
+import {
+  parseM3U8ForSubtitles,
+  SubtitleTrack,
+} from "@/utils/hls/parseM3U8ForSubtitles";
 
 export type CurrentlyPlayingState = {
   url: string;
@@ -55,6 +59,7 @@ interface PlaybackContextType {
   startDownloadedFilePlayback: (
     currentlyPlaying: CurrentlyPlayingState | null
   ) => void;
+  subtitles: SubtitleTrack[];
 }
 
 const PlaybackContext = createContext<PlaybackContextType | null>(null);
@@ -77,6 +82,7 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
   const [progressTicks, setProgressTicks] = useState<number | null>(0);
   const [volume, _setVolume] = useState<number | null>(null);
   const [session, setSession] = useState<PlaybackInfoResponse | null>(null);
+  const [subtitles, setSubtitles] = useState<SubtitleTrack[]>([]);
   const [currentlyPlaying, setCurrentlyPlaying] =
     useState<CurrentlyPlayingState | null>(null);
 
@@ -141,12 +147,6 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
           setSession(res.data);
           setCurrentlyPlaying(state);
           setIsPlaying(true);
-
-          if (settings?.openFullScreenVideoPlayerByDefault) {
-            setTimeout(() => {
-              presentFullscreenPlayer();
-            }, 300);
-          }
         } else {
           setCurrentlyPlaying(null);
           setIsFullscreen(false);
@@ -164,11 +164,6 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
               onPress: () => {
                 setCurrentlyPlaying(state);
                 setIsPlaying(true);
-                if (settings?.openFullScreenVideoPlayerByDefault) {
-                  setTimeout(() => {
-                    presentFullscreenPlayer();
-                  }, 300);
-                }
               },
             },
             {
@@ -375,6 +370,7 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
         presentFullscreenPlayer,
         dismissFullscreenPlayer,
         startDownloadedFilePlayback,
+        subtitles,
       }}
     >
       {children}

@@ -1,12 +1,29 @@
 import { atom, useAtom } from "jotai";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect } from "react";
+import * as ScreenOrientation from "expo-screen-orientation";
 
 export type DownloadQuality = "original" | "high" | "low";
 
 export type DownloadOption = {
   label: string;
   value: DownloadQuality;
+};
+
+export const ScreenOrientationEnum: Record<
+  ScreenOrientation.OrientationLock,
+  string
+> = {
+  [ScreenOrientation.OrientationLock.DEFAULT]: "Default",
+  [ScreenOrientation.OrientationLock.ALL]: "All",
+  [ScreenOrientation.OrientationLock.PORTRAIT]: "Portrait",
+  [ScreenOrientation.OrientationLock.PORTRAIT_UP]: "Portrait Up",
+  [ScreenOrientation.OrientationLock.PORTRAIT_DOWN]: "Portrait Down",
+  [ScreenOrientation.OrientationLock.LANDSCAPE]: "Landscape",
+  [ScreenOrientation.OrientationLock.LANDSCAPE_LEFT]: "Landscape Left",
+  [ScreenOrientation.OrientationLock.LANDSCAPE_RIGHT]: "Landscape Right",
+  [ScreenOrientation.OrientationLock.OTHER]: "Other",
+  [ScreenOrientation.OrientationLock.UNKNOWN]: "Unknown",
 };
 
 export const DownloadOptions: DownloadOption[] = [
@@ -53,6 +70,7 @@ type Settings = {
   defaultSubtitleLanguage: DefaultLanguageOption | null;
   defaultAudioLanguage: DefaultLanguageOption | null;
   showHomeTitles: boolean;
+  defaultVideoOrientation: ScreenOrientation.OrientationLock;
 };
 
 /**
@@ -86,6 +104,7 @@ const loadSettings = async (): Promise<Settings> => {
     defaultAudioLanguage: null,
     defaultSubtitleLanguage: null,
     showHomeTitles: true,
+    defaultVideoOrientation: ScreenOrientation.OrientationLock.DEFAULT,
   };
 
   try {
