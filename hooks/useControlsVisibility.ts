@@ -2,7 +2,9 @@ import { useRef, useCallback, useState, useEffect } from "react";
 
 export const useControlsVisibility = (timeout: number = 3000) => {
   const [isVisible, setIsVisible] = useState(true);
-  const hideControlsTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const hideControlsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
 
   const showControls = useCallback(() => {
     setIsVisible(true);
@@ -19,6 +21,14 @@ export const useControlsVisibility = (timeout: number = 3000) => {
     if (hideControlsTimerRef.current) {
       clearTimeout(hideControlsTimerRef.current);
     }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (hideControlsTimerRef.current) {
+        clearTimeout(hideControlsTimerRef.current);
+      }
+    };
   }, []);
 
   return { isVisible, showControls, hideControls };
