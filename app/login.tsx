@@ -3,6 +3,8 @@ import { Input } from "@/components/common/Input";
 import { Text } from "@/components/common/Text";
 import { apiAtom, useJellyfin } from "@/providers/JellyfinProvider";
 import { Ionicons } from "@expo/vector-icons";
+import { PublicSystemInfo } from "@jellyfin/sdk/lib/generated-client";
+import { getSystemApi } from "@jellyfin/sdk/lib/utils/api";
 import { useLocalSearchParams } from "expo-router";
 import { useAtom } from "jotai";
 import React, { useEffect, useState } from "react";
@@ -33,6 +35,7 @@ const Login: React.FC = () => {
   } = params as { apiUrl: string; username: string; password: string };
 
   const [serverURL, setServerURL] = useState<string>(_apiUrl);
+  const [serverName, setServerName] = useState<string>("");
   const [error, setError] = useState<string>("");
   const [credentials, setCredentials] = useState<{
     username: string;
@@ -117,6 +120,8 @@ const Login: React.FC = () => {
           });
           clearTimeout(timeoutId);
           if (response.ok) {
+            const data = (await response.json()) as PublicSystemInfo;
+            setServerName(data.ServerName || "");
             return `${protocol}${url}`;
           }
         } catch (e) {
@@ -194,7 +199,9 @@ const Login: React.FC = () => {
             <View></View>
             <View>
               <View className="mb-4">
-                <Text className="text-3xl font-bold mb-2">Streamyfin</Text>
+                <Text className="text-3xl font-bold mb-1">
+                  {serverName || "Streamyfin"}
+                </Text>
                 <Text className="text-neutral-500 mb-2">
                   Server: {api.basePath}
                 </Text>
@@ -218,9 +225,6 @@ const Login: React.FC = () => {
 
               <View className="flex flex-col space-y-2">
                 <Text className="text-2xl font-bold">Log in</Text>
-                <Text className="text-neutral-500">
-                  Log in to any user account
-                </Text>
                 <Input
                   placeholder="Username"
                   onChangeText={(text) =>
