@@ -273,47 +273,47 @@ export default function index() {
     mediaListCollections,
   ]);
 
-  // if (isConnected === false) {
-  //   return (
-  //     <View className="flex flex-col items-center justify-center h-full -mt-6 px-8">
-  //       <Text className="text-3xl font-bold mb-2">No Internet</Text>
-  //       <Text className="text-center opacity-70">
-  //         No worries, you can still watch{"\n"}downloaded content.
-  //       </Text>
-  //       <View className="mt-4">
-  //         <Button
-  //           color="purple"
-  //           onPress={() => router.push("/(auth)/downloads")}
-  //           justify="center"
-  //           iconRight={
-  //             <Ionicons name="arrow-forward" size={20} color="white" />
-  //           }
-  //         >
-  //           Go to downloads
-  //         </Button>
-  //         <Button
-  //           color="black"
-  //           onPress={() => {
-  //             checkConnection();
-  //           }}
-  //           justify="center"
-  //           className="mt-2"
-  //           iconRight={
-  //             loadingRetry ? null : (
-  //               <Ionicons name="refresh" size={20} color="white" />
-  //             )
-  //           }
-  //         >
-  //           {loadingRetry ? (
-  //             <ActivityIndicator size={"small"} color={"white"} />
-  //           ) : (
-  //             "Retry"
-  //           )}
-  //         </Button>
-  //       </View>
-  //     </View>
-  //   );
-  // }
+  if (isConnected === false) {
+    return (
+      <View className="flex flex-col items-center justify-center h-full -mt-6 px-8">
+        <Text className="text-3xl font-bold mb-2">No Internet</Text>
+        <Text className="text-center opacity-70">
+          No worries, you can still watch{"\n"}downloaded content.
+        </Text>
+        <View className="mt-4">
+          <Button
+            color="purple"
+            onPress={() => router.push("/(auth)/downloads")}
+            justify="center"
+            iconRight={
+              <Ionicons name="arrow-forward" size={20} color="white" />
+            }
+          >
+            Go to downloads
+          </Button>
+          <Button
+            color="black"
+            onPress={() => {
+              checkConnection();
+            }}
+            justify="center"
+            className="mt-2"
+            iconRight={
+              loadingRetry ? null : (
+                <Ionicons name="refresh" size={20} color="white" />
+              )
+            }
+          >
+            {loadingRetry ? (
+              <ActivityIndicator size={"small"} color={"white"} />
+            ) : (
+              "Retry"
+            )}
+          </Button>
+        </View>
+      </View>
+    );
+  }
 
   const insets = useSafeAreaInsets();
 

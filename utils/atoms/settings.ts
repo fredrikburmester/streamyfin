@@ -57,7 +57,6 @@ export type DefaultLanguageOption = {
 type Settings = {
   autoRotate?: boolean;
   forceLandscapeInVideoPlayer?: boolean;
-  openFullScreenVideoPlayerByDefault?: boolean;
   usePopularPlugin?: boolean;
   deviceProfile?: "Expo" | "Native" | "Old";
   forceDirectPlay?: boolean;
@@ -85,7 +84,6 @@ const loadSettings = async (): Promise<Settings> => {
   const defaultValues: Settings = {
     autoRotate: true,
     forceLandscapeInVideoPlayer: false,
-    openFullScreenVideoPlayerByDefault: false,
     usePopularPlugin: false,
     deviceProfile: "Expo",
     forceDirectPlay: false,

@@ -1,23 +1,29 @@
-import { useRef, useCallback, useState, useEffect } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  runOnJS,
+  useAnimatedReaction,
+  useSharedValue,
+} from "react-native-reanimated";
 
 export const useControlsVisibility = (timeout: number = 3000) => {
-  const [isVisible, setIsVisible] = useState(true);
+  const opacity = useSharedValue(1);
+
   const hideControlsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null
   );
 
   const showControls = useCallback(() => {
-    setIsVisible(true);
+    opacity.value = 1;
     if (hideControlsTimerRef.current) {
       clearTimeout(hideControlsTimerRef.current);
     }
     hideControlsTimerRef.current = setTimeout(() => {
-      setIsVisible(false);
+      opacity.value = 0;
     }, timeout);
   }, [timeout]);
 
   const hideControls = useCallback(() => {
-    setIsVisible(false);
+    opacity.value = 0;
     if (hideControlsTimerRef.current) {
       clearTimeout(hideControlsTimerRef.current);
     }
@@ -31,5 +37,5 @@ export const useControlsVisibility = (timeout: number = 3000) => {
     };
   }, []);
 
-  return { isVisible, showControls, hideControls };
+  return { opacity, showControls, hideControls };
 };

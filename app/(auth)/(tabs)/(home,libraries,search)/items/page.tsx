@@ -1,4 +1,3 @@
-import { CurrentlyPlayingBar } from "@/components/CurrentlyPlayingBar";
 import { ItemContent } from "@/components/ItemContent";
 import { Stack, useLocalSearchParams } from "expo-router";
 import React from "react";
