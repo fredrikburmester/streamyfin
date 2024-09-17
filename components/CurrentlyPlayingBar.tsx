@@ -1,6 +1,5 @@
 import { useAdjacentEpisodes } from "@/hooks/useAdjacentEpisodes";
 import { useControlsVisibility } from "@/hooks/useControlsVisibility";
-import { useNavigationBarVisibility } from "@/hooks/useNavigationBarVisibility";
 import { useTrickplay } from "@/hooks/useTrickplay";
 import { apiAtom } from "@/providers/JellyfinProvider";
 import { usePlayback } from "@/providers/PlaybackProvider";
@@ -32,7 +31,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Video from "react-native-video";
+import Video, { OnProgressData } from "react-native-video";
 import { Text } from "./common/Text";
 import { itemRouter } from "./common/TouchableItemRouter";
 import { Loader } from "./Loader";
@@ -60,25 +59,19 @@ export const CurrentlyPlayingBar: React.FC = () => {
     setIsBuffering,
   } = usePlayback();
 
-  useNavigationBarVisibility(isPlaying);
-
   const [settings] = useSettings();
-
+  const [api] = useAtom(apiAtom);
   const insets = useSafeAreaInsets();
   const segments = useSegments();
   const router = useRouter();
 
   const { trickPlayUrl, calculateTrickplayUrl, trickplayInfo } =
     useTrickplay(currentlyPlaying);
-
-  const [api] = useAtom(apiAtom);
-
-  const from = useMemo(() => segments[2], [segments]);
+  const { previousItem, nextItem } = useAdjacentEpisodes({ currentlyPlaying });
+  const { isVisible, showControls, hideControls } = useControlsVisibility(3000);
 
   const [ignoreSafeArea, setIgnoreSafeArea] = useState(false);
-
-  const screenHeight = Dimensions.get("window").height;
-  const screenWidth = Dimensions.get("window").width;
+  const from = useMemo(() => segments[2], [segments]);
 
   const progress = useSharedValue(0);
   const min = useSharedValue(0);
@@ -87,44 +80,33 @@ export const CurrentlyPlayingBar: React.FC = () => {
   const localIsBuffering = useSharedValue(false);
   const cacheProgress = useSharedValue(0);
 
-  const toggleIgnoreSafeArea = () => {
+  const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
+
+  const toggleIgnoreSafeArea = useCallback(() => {
     setIgnoreSafeArea((prev) => !prev);
-  };
+  }, []);
 
-  const { isVisible, showControls, hideControls } = useControlsVisibility(3000);
-
-  const animatedControlsStyle = useAnimatedStyle(() => {
-    return {
-      opacity: withTiming(isVisible ? 1 : 0, {
-        duration: 300,
-      }),
-    };
-  });
+  const handleToggleControlsPress = useCallback(() => {
+    isVisible ? hideControls() : showControls();
+  }, [isVisible, hideControls, showControls]);
 
   const poster = useMemo(() => {
-    if (currentlyPlaying?.item.Type === "Audio")
-      return `${api?.basePath}/Items/${currentlyPlaying.item.AlbumId}/Images/Primary?tag=${currentlyPlaying.item.AlbumPrimaryImageTag}&quality=90&maxHeight=200&maxWidth=200`;
-    else
-      return getBackdropUrl({
-        api,
-        item: currentlyPlaying?.item,
-        quality: 70,
-        width: 200,
-      });
-  }, [currentlyPlaying?.item.Id, api]);
-
-  const startPosition = useMemo(
-    () =>
-      currentlyPlaying?.item?.UserData?.PlaybackPositionTicks
-        ? Math.round(
-            currentlyPlaying?.item.UserData.PlaybackPositionTicks / 10000
-          )
-        : 0,
-    [currentlyPlaying?.item]
-  );
+    if (!currentlyPlaying?.item || !api) return "";
+    return currentlyPlaying.item.Type === "Audio"
+      ? `${api.basePath}/Items/${currentlyPlaying.item.AlbumId}/Images/Primary?tag=${currentlyPlaying.item.AlbumPrimaryImageTag}&quality=90&maxHeight=200&maxWidth=200`
+      : getBackdropUrl({
+          api,
+          item: currentlyPlaying.item,
+          quality: 70,
+          width: 200,
+        });
+  }, [currentlyPlaying?.item, api]);
 
   const videoSource = useMemo(() => {
     if (!api || !currentlyPlaying || !poster) return null;
+    const startPosition = currentlyPlaying.item?.UserData?.PlaybackPositionTicks
+      ? Math.round(currentlyPlaying.item.UserData.PlaybackPositionTicks / 10000)
+      : 0;
     return {
       uri: currentlyPlaying.url,
       isNetwork: true,
@@ -138,48 +120,47 @@ export const CurrentlyPlayingBar: React.FC = () => {
         subtitle: currentlyPlaying.item?.Album ?? undefined, // Change here
       },
     };
-  }, [currentlyPlaying, startPosition, api, poster]);
+  }, [currentlyPlaying, api, poster]);
 
   useEffect(() => {
     max.value = currentlyPlaying?.item.RunTimeTicks || 0;
   }, [currentlyPlaying?.item.RunTimeTicks]);
 
-  const videoContainerStyle = useMemo(
-    () => ({
-      position: "absolute" as const,
-      top: 0,
-      bottom: 0,
-      left: ignoreSafeArea ? 0 : insets.left,
-      right: ignoreSafeArea ? 0 : insets.right,
-      width: ignoreSafeArea
-        ? screenWidth
-        : screenWidth - (insets.left + insets.right),
-    }),
-    [ignoreSafeArea, insets, screenWidth]
-  );
+  useEffect(() => {
+    if (!currentlyPlaying) {
+      resetOrientation();
+      progress.value = 0;
+      min.value = 0;
+      max.value = 0;
+      cacheProgress.value = 0;
+      localIsBuffering.value = false;
+      sliding.current = false;
+      hideControls();
+    } else {
+      setOrientation(
+        settings?.defaultVideoOrientation ||
+          ScreenOrientation.OrientationLock.DEFAULT
+      );
+      progress.value =
+        currentlyPlaying.item?.UserData?.PlaybackPositionTicks || 0;
+      max.value = currentlyPlaying.item.RunTimeTicks || 0;
+      showControls();
+    }
+  }, [currentlyPlaying, settings]);
 
-  const animatedLoaderStyle = useAnimatedStyle(() => {
-    return {
-      opacity: withTiming(localIsBuffering.value === true ? 1 : 0, {
+  const animatedStyles = {
+    controls: useAnimatedStyle(() => ({
+      opacity: withTiming(isVisible ? 1 : 0, { duration: 300 }),
+    })),
+    videoContainer: useAnimatedStyle(() => ({
+      opacity: withTiming(isVisible || localIsBuffering.value ? 0.5 : 1, {
         duration: 300,
       }),
-    };
-  });
-
-  const animatedVideoContainerStyle = useAnimatedStyle(() => {
-    return {
-      opacity: withTiming(
-        isVisible || localIsBuffering.value === true ? 0.5 : 1,
-        {
-          duration: 300,
-        }
-      ),
-    };
-  });
-
-  const { previousItem, nextItem } = useAdjacentEpisodes({
-    currentlyPlaying,
-  });
+    })),
+    loader: useAnimatedStyle(() => ({
+      opacity: withTiming(localIsBuffering.value ? 1 : 0, { duration: 300 }),
+    })),
+  };
 
   const { data: introTimestamps } = useQuery({
     queryKey: ["introTimestamps", currentlyPlaying?.item.Id],
@@ -236,44 +217,88 @@ export const CurrentlyPlayingBar: React.FC = () => {
     }
   }, [introTimestamps]);
 
-  /**
-   * This should clean up all values if curentlyPlaying sets to null or changes
-   */
-  useEffect(() => {
-    if (!currentlyPlaying) {
-      progress.value = 0;
-      min.value = 0;
-      max.value = 0;
-      cacheProgress.value = 0;
-      localIsBuffering.value = false;
+  const handleVideoProgress = useCallback(
+    (e: OnProgressData) => {
+      if (e.playableDuration === 0) {
+        setIsBuffering(true);
+        localIsBuffering.value = true;
+      } else {
+        setIsBuffering(false);
+        localIsBuffering.value = false;
+      }
+
+      if (sliding.current) return;
+      onProgress(e);
+      progress.value = secondsToTicks(e.currentTime);
+      cacheProgress.value = secondsToTicks(e.playableDuration);
+    },
+    [onProgress, setIsBuffering]
+  );
+
+  const handleVideoError = useCallback(
+    (e: any) => {
+      console.log(e);
+      writeToLog("ERROR", "Video playback error: " + JSON.stringify(e));
+      Alert.alert("Error", "Cannot play this video file.");
+      setIsPlaying(false);
+    },
+    [setIsPlaying]
+  );
+
+  const handleSkipBackward = useCallback(async () => {
+    try {
+      const curr = await videoRef.current?.getCurrentPosition();
+      if (curr !== undefined) {
+        videoRef.current?.seek(Math.max(0, curr - 15));
+        showControls();
+      }
+    } catch (error) {
+      writeToLog("ERROR", "Error seeking video backwards", error);
+    }
+  }, [videoRef, showControls]);
+
+  const handleSkipForward = useCallback(async () => {
+    try {
+      const curr = await videoRef.current?.getCurrentPosition();
+      if (curr !== undefined) {
+        videoRef.current?.seek(Math.max(0, curr + 15));
+        showControls();
+      }
+    } catch (error) {
+      writeToLog("ERROR", "Error seeking video forwards", error);
+    }
+  }, [videoRef, showControls]);
+
+  const handlePlayPause = useCallback(() => {
+    if (isPlaying) pauseVideo();
+    else playVideo();
+    showControls();
+  }, [isPlaying, pauseVideo, playVideo, showControls]);
+
+  const handleSliderStart = useCallback(() => {
+    sliding.current = true;
+  }, []);
+
+  const handleSliderComplete = useCallback(
+    (val: number) => {
+      const tick = Math.floor(val);
+      videoRef.current?.seek(tick / 10000000);
       sliding.current = false;
-      hideControls();
-    } else {
-      progress.value =
-        currentlyPlaying.item?.UserData?.PlaybackPositionTicks || 0;
-      max.value = currentlyPlaying.item.RunTimeTicks || 0;
-      showControls();
-    }
-  }, [currentlyPlaying]);
+    },
+    [videoRef]
+  );
 
-  useEffect(() => {
-    if (!currentlyPlaying) {
-      resetOrientation();
-    } else {
-      setOrientation(
-        settings?.defaultVideoOrientation ||
-          ScreenOrientation.OrientationLock.DEFAULT
-      );
-    }
-  }, [settings, currentlyPlaying]);
-
-  const handleToggleControlsPress = useCallback(() => {
-    if (isVisible) {
-      hideControls();
-    } else {
+  const handleSliderChange = useCallback(
+    (val: number) => {
+      const tick = Math.floor(val);
+      progress.value = tick;
+      calculateTrickplayUrl(progress);
       showControls();
-    }
-  }, [isVisible, hideControls, showControls]);
+    },
+    [progress, calculateTrickplayUrl, showControls]
+  );
+
+  if (!api || !currentlyPlaying) return null;
 
   if (!api || !currentlyPlaying) return null;
 
@@ -285,7 +310,21 @@ export const CurrentlyPlayingBar: React.FC = () => {
         backgroundColor: "black",
       }}
     >
-      <Animated.View style={[videoContainerStyle, animatedVideoContainerStyle]}>
+      <Animated.View
+        style={[
+          {
+            position: "absolute",
+            top: 0,
+            bottom: 0,
+            left: ignoreSafeArea ? 0 : insets.left,
+            right: ignoreSafeArea ? 0 : insets.right,
+            width: ignoreSafeArea
+              ? screenWidth
+              : screenWidth - (insets.left + insets.right),
+          },
+          animatedStyles.videoContainer,
+        ]}
+      >
         <Pressable
           onPress={handleToggleControlsPress}
           style={{
@@ -308,31 +347,9 @@ export const CurrentlyPlayingBar: React.FC = () => {
               ignoreSilentSwitch="ignore"
               controls={false}
               pictureInPicture={true}
-              onProgress={(e) => {
-                if (e.playableDuration === 0) {
-                  setIsBuffering(true);
-                  localIsBuffering.value = true;
-                } else {
-                  setIsBuffering(false);
-                  localIsBuffering.value = false;
-                }
-
-                if (sliding.current === true) return;
-                onProgress(e);
-                progress.value = secondsToTicks(e.currentTime);
-                cacheProgress.value = secondsToTicks(e.playableDuration);
-              }}
+              onProgress={handleVideoProgress}
               subtitleStyle={{
                 fontSize: 16,
-              }}
-              onTextTracks={(e) => {
-                console.log("onTextTracks ~", e.textTracks);
-              }}
-              onTextTrackDataChanged={(e) => {
-                console.log("onTextTrackDataChanged ~", e);
-              }}
-              onVideoTracks={(e) => {
-                console.log("onVideoTracks ~", e.videoTracks);
               }}
               source={videoSource}
               onPlaybackStateChanged={(e) => {
@@ -346,15 +363,7 @@ export const CurrentlyPlayingBar: React.FC = () => {
                 setVolume(e.volume);
               }}
               progressUpdateInterval={1000}
-              onError={(e) => {
-                console.log(e);
-                writeToLog(
-                  "ERROR",
-                  "Video playback error: " + JSON.stringify(e)
-                );
-                Alert.alert("Error", "Cannot play this video file.");
-                setIsPlaying(false);
-              }}
+              onError={handleVideoError}
               renderLoader={
                 <View
                   pointerEvents="none"
@@ -383,7 +392,7 @@ export const CurrentlyPlayingBar: React.FC = () => {
             justifyContent: "center",
             alignItems: "center",
           },
-          animatedLoaderStyle,
+          animatedStyles.loader,
         ]}
       >
         <Loader />
@@ -420,7 +429,7 @@ export const CurrentlyPlayingBar: React.FC = () => {
             right: insets.right + 20,
             height: 70,
           },
-          animatedControlsStyle,
+          animatedStyles.controls,
         ]}
       >
         <View className="flex flex-row items-center h-full">
@@ -458,7 +467,7 @@ export const CurrentlyPlayingBar: React.FC = () => {
             width: screenWidth - insets.left - insets.right - 64,
             borderRadius: 100,
           },
-          animatedControlsStyle,
+          animatedStyles.controls,
         ]}
       >
         <View className="shrink flex flex-col justify-center h-full mb-2">
@@ -498,17 +507,7 @@ export const CurrentlyPlayingBar: React.FC = () => {
             </TouchableOpacity>
             <TouchableOpacity
               disabled={!isVisible}
-              onPress={async () => {
-                try {
-                  const curr = await videoRef.current?.getCurrentPosition();
-                  if (curr !== undefined) {
-                    videoRef.current?.seek(Math.max(0, curr - 15));
-                    showControls();
-                  }
-                } catch (error) {
-                  writeToLog("ERROR", "Error seeking video backwards", error);
-                }
-              }}
+              onPress={handleSkipBackward}
             >
               <Ionicons
                 name="refresh-outline"
@@ -519,34 +518,14 @@ export const CurrentlyPlayingBar: React.FC = () => {
                 }}
               />
             </TouchableOpacity>
-            <TouchableOpacity
-              disabled={!isVisible}
-              onPress={() => {
-                if (isPlaying) pauseVideo();
-                else playVideo();
-                showControls();
-              }}
-            >
+            <TouchableOpacity disabled={!isVisible} onPress={handlePlayPause}>
               <Ionicons
                 name={isPlaying ? "pause" : "play"}
                 size={24}
                 color="white"
               />
             </TouchableOpacity>
-            <TouchableOpacity
-              disabled={!isVisible}
-              onPress={async () => {
-                try {
-                  const curr = await videoRef.current?.getCurrentPosition();
-                  if (curr !== undefined) {
-                    await videoRef.current?.seek(Math.max(0, curr + 15));
-                    showControls();
-                  }
-                } catch (error) {
-                  writeToLog("ERROR", "Error seeking video forwards", error);
-                }
-              }}
-            >
+            <TouchableOpacity disabled={!isVisible} onPress={handleSkipForward}>
               <Ionicons name="refresh-outline" size={22} color="white" />
             </TouchableOpacity>
             <TouchableOpacity
@@ -577,20 +556,9 @@ export const CurrentlyPlayingBar: React.FC = () => {
                 heartbeatColor: "#999",
               }}
               cache={cacheProgress}
-              onSlidingStart={() => {
-                sliding.current = true;
-              }}
-              onSlidingComplete={(val) => {
-                const tick = Math.floor(val);
-                videoRef.current?.seek(tick / 10000000);
-                sliding.current = false;
-              }}
-              onValueChange={(val) => {
-                const tick = Math.floor(val);
-                progress.value = tick;
-                calculateTrickplayUrl(progress);
-                showControls();
-              }}
+              onSlidingStart={handleSliderStart}
+              onSlidingComplete={handleSliderComplete}
+              onValueChange={handleSliderChange}
               containerStyle={{
                 borderRadius: 100,
               }}
