@@ -1,4 +1,4 @@
-import { CurrentlyPlayingBar } from "@/components/CurrentlyPlayingBar";
+import { FullScreenVideoPlayer } from "@/components/FullScreenVideoPlayer";
 import { JellyfinProvider } from "@/providers/JellyfinProvider";
 import { JobQueueProvider } from "@/providers/JobQueueProvider";
 import { PlaybackProvider } from "@/providers/PlaybackProvider";
@@ -126,7 +126,7 @@ function Layout() {
                       />
                       <Stack.Screen name="+not-found" />
                     </Stack>
-                    <CurrentlyPlayingBar />
+                    <FullScreenVideoPlayer />
                     <Toaster />
                   </ThemeProvider>
                 </PlaybackProvider>

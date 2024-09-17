@@ -97,22 +97,6 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
             />
           </View>
 
-          <View className="flex flex-row items-center justify-between bg-neutral-900 p-4">
-            <View className="shrink">
-              <Text className="font-semibold">Start videos in fullscreen</Text>
-              <Text className="text-xs opacity-50">
-                Clicking a video will start it in fullscreen mode, instead of
-                inline.
-              </Text>
-            </View>
-            <Switch
-              value={settings.openFullScreenVideoPlayerByDefault}
-              onValueChange={(value) =>
-                updateSettings({ openFullScreenVideoPlayerByDefault: value })
-              }
-            />
-          </View>
-
           <View className="flex flex-row space-x-2 items-center justify-between bg-neutral-900 p-4">
             <View className="flex flex-col shrink">
               <Text className="font-semibold">Use external player (VLC)</Text>

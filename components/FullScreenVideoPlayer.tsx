@@ -18,6 +18,8 @@ import { useAtom } from "jotai";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
+  AppState,
+  AppStateStatus,
   Dimensions,
   Pressable,
   TouchableOpacity,
@@ -26,6 +28,7 @@ import {
 import { Slider } from "react-native-awesome-slider";
 import "react-native-gesture-handler";
 import Animated, {
+  runOnJS,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
@@ -35,6 +38,7 @@ import Video, { OnProgressData } from "react-native-video";
 import { Text } from "./common/Text";
 import { itemRouter } from "./common/TouchableItemRouter";
 import { Loader } from "./Loader";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
 
 async function setOrientation(orientation: ScreenOrientation.OrientationLock) {
   await ScreenOrientation.lockAsync(orientation);
@@ -44,7 +48,7 @@ async function resetOrientation() {
   await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.DEFAULT);
 }
 
-export const CurrentlyPlayingBar: React.FC = () => {
+export const FullScreenVideoPlayer: React.FC = () => {
   const {
     currentlyPlaying,
     pauseVideo,
@@ -68,7 +72,8 @@ export const CurrentlyPlayingBar: React.FC = () => {
   const { trickPlayUrl, calculateTrickplayUrl, trickplayInfo } =
     useTrickplay(currentlyPlaying);
   const { previousItem, nextItem } = useAdjacentEpisodes({ currentlyPlaying });
-  const { isVisible, showControls, hideControls } = useControlsVisibility(3000);
+  const { showControls, hideControls, opacity } = useControlsVisibility(3000);
+  const [isInteractive, setIsInteractive] = useState(true);
 
   const [ignoreSafeArea, setIgnoreSafeArea] = useState(false);
   const from = useMemo(() => segments[2], [segments]);
@@ -81,14 +86,6 @@ export const CurrentlyPlayingBar: React.FC = () => {
   const cacheProgress = useSharedValue(0);
 
   const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
-
-  const toggleIgnoreSafeArea = useCallback(() => {
-    setIgnoreSafeArea((prev) => !prev);
-  }, []);
-
-  const handleToggleControlsPress = useCallback(() => {
-    isVisible ? hideControls() : showControls();
-  }, [isVisible, hideControls, showControls]);
 
   const poster = useMemo(() => {
     if (!currentlyPlaying?.item || !api) return "";
@@ -123,6 +120,26 @@ export const CurrentlyPlayingBar: React.FC = () => {
   }, [currentlyPlaying, api, poster]);
 
   useEffect(() => {
+    const handleAppStateChange = (nextAppState: AppStateStatus) => {
+      if (nextAppState === "active") {
+        setIsInteractive(true);
+        showControls();
+      } else {
+        setIsInteractive(false);
+      }
+    };
+
+    const subscription = AppState.addEventListener(
+      "change",
+      handleAppStateChange
+    );
+
+    return () => {
+      subscription.remove();
+    };
+  }, [showControls]);
+
+  useEffect(() => {
     max.value = currentlyPlaying?.item.RunTimeTicks || 0;
   }, [currentlyPlaying?.item.RunTimeTicks]);
 
@@ -150,12 +167,15 @@ export const CurrentlyPlayingBar: React.FC = () => {
 
   const animatedStyles = {
     controls: useAnimatedStyle(() => ({
-      opacity: withTiming(isVisible ? 1 : 0, { duration: 300 }),
+      opacity: withTiming(opacity.value, { duration: 300 }),
     })),
     videoContainer: useAnimatedStyle(() => ({
-      opacity: withTiming(isVisible || localIsBuffering.value ? 0.5 : 1, {
-        duration: 300,
-      }),
+      opacity: withTiming(
+        opacity.value === 1 || localIsBuffering.value ? 0.5 : 1,
+        {
+          duration: 300,
+        }
+      ),
     })),
     loader: useAnimatedStyle(() => ({
       opacity: withTiming(localIsBuffering.value ? 1 : 0, { duration: 300 }),
@@ -200,13 +220,27 @@ export const CurrentlyPlayingBar: React.FC = () => {
       progress.value > showButtonAt && progress.value < hideButtonAt;
     return {
       opacity: withTiming(
-        localIsBuffering.value === false && isVisible && showButton ? 1 : 0,
+        localIsBuffering.value === false && opacity.value === 1 && showButton
+          ? 1
+          : 0,
         {
           duration: 300,
         }
       ),
     };
   });
+
+  const toggleIgnoreSafeArea = useCallback(() => {
+    setIgnoreSafeArea((prev) => !prev);
+  }, []);
+
+  const handleToggleControlsPress = useCallback(() => {
+    if (opacity.value === 1) {
+      hideControls();
+    } else {
+      showControls();
+    }
+  }, [opacity.value, hideControls, showControls]);
 
   const skipIntro = useCallback(async () => {
     if (!introTimestamps || !videoRef.current) return;
@@ -298,7 +332,67 @@ export const CurrentlyPlayingBar: React.FC = () => {
     [progress, calculateTrickplayUrl, showControls]
   );
 
-  if (!api || !currentlyPlaying) return null;
+  const handleGoToPreviousItem = useCallback(() => {
+    if (!previousItem || !from) return;
+    const url = itemRouter(previousItem, from);
+    stopPlayback();
+    // @ts-ignore
+    router.push(url);
+  }, [previousItem, from, stopPlayback, router]);
+
+  const handleGoToNextItem = useCallback(() => {
+    if (!nextItem || !from) return;
+    const url = itemRouter(nextItem, from);
+    stopPlayback();
+    // @ts-ignore
+    router.push(url);
+  }, [nextItem, from, stopPlayback, router]);
+
+  const videoTap = Gesture.Tap().onBegin(() => {
+    runOnJS(handleToggleControlsPress)();
+  });
+
+  const toggleIgnoreSafeAreaGesture = Gesture.Tap()
+    .enabled(opacity.value !== 0)
+    .onStart(() => {
+      runOnJS(toggleIgnoreSafeArea)();
+    });
+
+  const playPauseGesture = Gesture.Tap()
+    .enabled(opacity.value !== 0)
+    .onStart(() => {
+      runOnJS(handlePlayPause)();
+    });
+
+  const goToPreviouItemGesture = Gesture.Tap()
+    .enabled(opacity.value !== 0)
+    .onStart(() => {
+      runOnJS(handleGoToPreviousItem)();
+    });
+
+  const goToNextItemGesture = Gesture.Tap()
+    .enabled(opacity.value !== 0)
+    .onStart(() => {
+      runOnJS(handleGoToNextItem)();
+    });
+
+  const skipBackwardGesture = Gesture.Tap()
+    .enabled(opacity.value !== 0)
+    .onStart(() => {
+      runOnJS(handleSkipBackward)();
+    });
+
+  const skipForwardGesture = Gesture.Tap()
+    .enabled(opacity.value !== 0)
+    .onStart(() => {
+      runOnJS(handleSkipForward)();
+    });
+
+  const skipIntroGesture = Gesture.Tap()
+    .enabled(opacity.value !== 0)
+    .onStart(() => {
+      runOnJS(skipIntro)();
+    });
 
   if (!api || !currentlyPlaying) return null;
 
@@ -310,72 +404,74 @@ export const CurrentlyPlayingBar: React.FC = () => {
         backgroundColor: "black",
       }}
     >
-      <Animated.View
-        style={[
-          {
-            position: "absolute",
-            top: 0,
-            bottom: 0,
-            left: ignoreSafeArea ? 0 : insets.left,
-            right: ignoreSafeArea ? 0 : insets.right,
-            width: ignoreSafeArea
-              ? screenWidth
-              : screenWidth - (insets.left + insets.right),
-          },
-          animatedStyles.videoContainer,
-        ]}
-      >
-        <Pressable
-          onPress={handleToggleControlsPress}
-          style={{
-            width: "100%",
-            height: "100%",
-          }}
+      <GestureDetector gesture={videoTap}>
+        <Animated.View
+          style={[
+            {
+              position: "absolute",
+              top: 0,
+              bottom: 0,
+              left: ignoreSafeArea ? 0 : insets.left,
+              right: ignoreSafeArea ? 0 : insets.right,
+              width: ignoreSafeArea
+                ? screenWidth
+                : screenWidth - (insets.left + insets.right),
+            },
+            animatedStyles.videoContainer,
+          ]}
         >
-          {videoSource && (
-            <Video
-              ref={videoRef}
-              allowsExternalPlayback
-              style={{
-                width: "100%",
-                height: "100%",
-              }}
-              resizeMode="contain"
-              playWhenInactive={true}
-              playInBackground={true}
-              showNotificationControls={true}
-              ignoreSilentSwitch="ignore"
-              controls={false}
-              pictureInPicture={true}
-              onProgress={handleVideoProgress}
-              subtitleStyle={{
-                fontSize: 16,
-              }}
-              source={videoSource}
-              onPlaybackStateChanged={(e) => {
-                if (e.isPlaying === true) {
-                  playVideo(false);
-                } else if (e.isPlaying === false) {
-                  pauseVideo(false);
-                }
-              }}
-              onVolumeChange={(e) => {
-                setVolume(e.volume);
-              }}
-              progressUpdateInterval={1000}
-              onError={handleVideoError}
-              renderLoader={
-                <View
-                  pointerEvents="none"
-                  className="absolute w-screen h-screen top-0 left-0 items-center justify-center"
-                >
-                  <Loader />
-                </View>
-              }
-            />
-          )}
-        </Pressable>
-      </Animated.View>
+          <View
+            style={{
+              width: "100%",
+              height: "100%",
+            }}
+          >
+            {videoSource && (
+              <Video
+                ref={videoRef}
+                allowsExternalPlayback
+                style={{
+                  width: "100%",
+                  height: "100%",
+                }}
+                resizeMode="contain"
+                playWhenInactive={true}
+                playInBackground={true}
+                showNotificationControls={true}
+                ignoreSilentSwitch="ignore"
+                controls={false}
+                pictureInPicture={true}
+                onProgress={handleVideoProgress}
+                subtitleStyle={{
+                  fontSize: 16,
+                }}
+                source={videoSource}
+                onPlaybackStateChanged={(e) => {
+                  if (e.isPlaying === true) {
+                    playVideo(false);
+                  } else if (e.isPlaying === false) {
+                    pauseVideo(false);
+                  }
+                }}
+                onBuffer={(e) => {
+                  if (e.isBuffering) {
+                    setIsBuffering(true);
+                    localIsBuffering.value = true;
+                  }
+                }}
+                onRestoreUserInterfaceForPictureInPictureStop={() => {
+                  showControls();
+                }}
+                onVolumeChange={(e) => {
+                  setVolume(e.volume);
+                }}
+                progressUpdateInterval={1000}
+                onError={handleVideoError}
+              />
+            )}
+          </View>
+        </Animated.View>
+      </GestureDetector>
 
       <Animated.View
         pointerEvents="none"
@@ -402,21 +498,18 @@ export const CurrentlyPlayingBar: React.FC = () => {
         style={[
           {
             position: "absolute",
-            bottom: insets.bottom + 8 * 7,
+            bottom: insets.bottom + 8 * 8,
             right: insets.right + 32,
+            zIndex: 10,
           },
           animatedIntroSkipperStyle,
         ]}
       >
         <View className="flex flex-row items-center h-full">
-          <TouchableOpacity
-            disabled={!isVisible}
-            onPress={() => {
-              skipIntro();
-            }}
-            className="flex flex-col items-center justify-center px-2 py-1.5 bg-purple-600 rounded-full"
-          >
-            <Text>Skip intro</Text>
+          <TouchableOpacity className="flex flex-col items-center justify-center px-2 py-1.5 bg-purple-600 rounded-full">
+            <GestureDetector gesture={skipIntroGesture}>
+              <Text>Skip intro</Text>
+            </GestureDetector>
           </TouchableOpacity>
         </View>
       </Animated.View>
@@ -433,21 +526,17 @@ export const CurrentlyPlayingBar: React.FC = () => {
         ]}
       >
         <View className="flex flex-row items-center h-full">
+          <GestureDetector gesture={toggleIgnoreSafeAreaGesture}>
+            <TouchableOpacity className="aspect-square rounded flex flex-col items-center justify-center p-2">
+              <Ionicons
+                name={ignoreSafeArea ? "contract-outline" : "expand"}
+                size={24}
+                color="white"
+              />
+            </TouchableOpacity>
+          </GestureDetector>
+
           <TouchableOpacity
-            disabled={!isVisible}
-            onPress={() => {
-              toggleIgnoreSafeArea();
-            }}
-            className="aspect-square rounded flex flex-col items-center justify-center p-2"
-          >
-            <Ionicons
-              name={ignoreSafeArea ? "contract-outline" : "expand"}
-              size={24}
-              color="white"
-            />
-          </TouchableOpacity>
-          <TouchableOpacity
-            disabled={!isVisible}
             onPress={() => {
               stopPlayback();
             }}
@@ -488,65 +577,56 @@ export const CurrentlyPlayingBar: React.FC = () => {
             </Text>
           )}
         </View>
-        <View className="flex flex-row items-center space-x-6 rounded-full py-1.5 pl-4 pr-4 bg-neutral-800">
+        <View className="flex flex-row items-center space-x-6 rounded-full py-2 pl-4 pr-4 bg-neutral-800">
           <View className="flex flex-row items-center space-x-2">
             <TouchableOpacity
-              disabled={!previousItem || !isVisible || !from}
               style={{
                 opacity: !previousItem ? 0.5 : 1,
               }}
-              onPress={() => {
-                if (!previousItem || !from) return;
-                const url = itemRouter(previousItem, from);
-                stopPlayback();
-                // @ts-ignore
-                router.push(url);
-              }}
             >
-              <Ionicons name="play-skip-back" size={18} color="white" />
+              <GestureDetector gesture={goToPreviouItemGesture}>
+                <Ionicons name="play-skip-back" size={20} color="white" />
+              </GestureDetector>
+            </TouchableOpacity>
+            <TouchableOpacity>
+              <GestureDetector gesture={skipBackwardGesture}>
+                <Ionicons
+                  name="refresh-outline"
+                  size={24}
+                  color="white"
+                  style={{
+                    transform: [{ scaleY: -1 }, { rotate: "180deg" }],
+                  }}
+                />
+              </GestureDetector>
+            </TouchableOpacity>
+            <TouchableOpacity>
+              <GestureDetector gesture={playPauseGesture}>
+                <Ionicons
+                  name={isPlaying ? "pause" : "play"}
+                  size={26}
+                  color="white"
+                />
+              </GestureDetector>
+            </TouchableOpacity>
+            <TouchableOpacity>
+              <GestureDetector gesture={skipForwardGesture}>
+                <Ionicons name="refresh-outline" size={24} color="white" />
+              </GestureDetector>
             </TouchableOpacity>
             <TouchableOpacity
-              disabled={!isVisible}
-              onPress={handleSkipBackward}
-            >
-              <Ionicons
-                name="refresh-outline"
-                size={22}
-                color="white"
-                style={{
-                  transform: [{ scaleY: -1 }, { rotate: "180deg" }],
-                }}
-              />
-            </TouchableOpacity>
-            <TouchableOpacity disabled={!isVisible} onPress={handlePlayPause}>
-              <Ionicons
-                name={isPlaying ? "pause" : "play"}
-                size={24}
-                color="white"
-              />
-            </TouchableOpacity>
-            <TouchableOpacity disabled={!isVisible} onPress={handleSkipForward}>
-              <Ionicons name="refresh-outline" size={22} color="white" />
-            </TouchableOpacity>
-            <TouchableOpacity
-              disabled={!nextItem || !isVisible || !from}
               style={{
                 opacity: !nextItem ? 0.5 : 1,
               }}
-              onPress={() => {
-                if (!nextItem || !from) return;
-                const url = itemRouter(nextItem, from);
-                stopPlayback();
-                // @ts-ignore
-                router.push(url);
-              }}
             >
-              <Ionicons name="play-skip-forward" size={18} color="white" />
+              <GestureDetector gesture={goToNextItemGesture}>
+                <Ionicons name="play-skip-forward" size={20} color="white" />
+              </GestureDetector>
             </TouchableOpacity>
           </View>
           <View className="flex flex-col w-full shrink">
             <Slider
-              disable={!isVisible}
+              disable={opacity.value === 0}
               theme={{
                 maximumTrackTintColor: "rgba(255,255,255,0.2)",
                 minimumTrackTintColor: "#fff",
@@ -577,6 +657,7 @@ export const CurrentlyPlayingBar: React.FC = () => {
                       height: tileHeight,
                       marginLeft: -tileWidth / 4,
                       marginTop: -tileHeight / 4 - 60,
+                      marginBottom: 10,
                     }}
                     className=" bg-neutral-800 overflow-hidden"
                   >
@@ -597,17 +678,17 @@ export const CurrentlyPlayingBar: React.FC = () => {
                   </View>
                 );
               }}
-              sliderHeight={8}
+              sliderHeight={10}
               thumbWidth={0}
               progress={progress}
               minimumValue={min}
               maximumValue={max}
             />
-            <View className="flex flex-row items-center justify-between">
-              <Text className="text-[10px] text-neutral-400">
+            <View className="flex flex-row items-center justify-between -mb-0.5">
+              <Text className="text-[12px] text-neutral-400">
                 {runtimeTicksToSeconds(progress.value)}
               </Text>
-              <Text className="text-[10px] text-neutral-400">
+              <Text className="text-[12px] text-neutral-400">
                 -{runtimeTicksToSeconds(max.value - progress.value)}
               </Text>
             </View>
