@@ -44,6 +44,8 @@ const Login: React.FC = () => {
 
   useEffect(() => {
     (async () => {
+      // we might re-use the checkUrl function here to check the url as well
+      // however, I don't think it should be necessary for now
       if (_apiUrl) {
         setServer({
           address: _apiUrl,
@@ -79,12 +81,91 @@ const Login: React.FC = () => {
     }
   };
 
-  const handleConnect = (url: string) => {
-    if (!url.startsWith("http")) {
-      Alert.alert("Error", "URL needs to start with http or https.");
+  const [loadingServerCheck, setLoadingServerCheck] = useState<boolean>(false);
+
+  /**
+   * Checks the availability and validity of a Jellyfin server URL.
+   *
+   * This function attempts to connect to a Jellyfin server using the provided URL.
+   * It tries both HTTPS and HTTP protocols, with a timeout to handle long 404 responses.
+   *
+   * @param {string} url - The base URL of the Jellyfin server to check.
+   * @returns {Promise<string | undefined>} A Promise that resolves to:
+   *   - The full URL (including protocol) if a valid Jellyfin server is found.
+   *   - undefined if no valid server is found at the given URL.
+   *
+   * Side effects:
+   * - Sets loadingServerCheck state to true at the beginning and false at the end.
+   * - Logs errors and timeout information to the console.
+   */
+  async function checkUrl(url: string) {
+    url = url.endsWith("/") ? url.slice(0, -1) : url;
+    setLoadingServerCheck(true);
+
+    const protocols = ["https://", "http://"];
+    const timeout = 2000; // 2 seconds timeout for long 404 responses
+
+    try {
+      for (const protocol of protocols) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+        try {
+          const response = await fetch(`${protocol}${url}/System/Info/Public`, {
+            mode: "cors",
+            signal: controller.signal,
+          });
+          clearTimeout(timeoutId);
+          if (response.ok) {
+            return `${protocol}${url}`;
+          }
+        } catch (e) {
+          const error = e as Error;
+          if (error.name === "AbortError") {
+            console.log(`Request to ${protocol}${url} timed out`);
+          } else {
+            console.error(`Error checking ${protocol}${url}:`, error);
+          }
+        }
+      }
+      return undefined;
+    } finally {
+      setLoadingServerCheck(false);
+    }
+  }
+
+  /**
+   * Handles the connection attempt to a Jellyfin server.
+   *
+   * This function trims the input URL, checks its validity using the `checkUrl` function,
+   * and sets the server address if a valid connection is established.
+   *
+   * @param {string} url - The URL of the Jellyfin server to connect to.
+   *
+   * @returns {Promise<void>}
+   *
+   * Side effects:
+   * - Calls `checkUrl` to validate the server URL.
+   * - Shows an alert if the connection fails.
+   * - Sets the server address using `setServer` if the connection is successful.
+   *
+   */
+  const handleConnect = async (url: string) => {
+    url = url.trim();
+
+    const result = await checkUrl(
+      url.startsWith("http") ? new URL(url).host : url
+    );
+
+    if (result === undefined) {
+      Alert.alert(
+        "Connection failed",
+        "Could not connect to the server. Please check the URL and your network connection."
+      );
       return;
     }
-    setServer({ address: url.trim() });
+
+    setServer({ address: result });
   };
 
   const handleQuickConnect = async () => {
@@ -121,7 +202,6 @@ const Login: React.FC = () => {
                   color="black"
                   onPress={() => {
                     removeServer();
-                    setServerURL("");
                   }}
                   justify="between"
                   iconLeft={
@@ -218,11 +298,13 @@ const Login: React.FC = () => {
               textContentType="URL"
               maxLength={500}
             />
-            <Text className="opacity-30">
-              Server URL requires http or https
-            </Text>
           </View>
-          <Button onPress={() => handleConnect(serverURL)} className="mb-2">
+          <Button
+            loading={loadingServerCheck}
+            disabled={loadingServerCheck}
+            onPress={async () => await handleConnect(serverURL)}
+            className="mb-2"
+          >
             Connect
           </Button>
         </View>
