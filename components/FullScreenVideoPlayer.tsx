@@ -21,12 +21,12 @@ import {
   AppState,
   AppStateStatus,
   Dimensions,
-  Pressable,
   TouchableOpacity,
   View,
 } from "react-native";
 import { Slider } from "react-native-awesome-slider";
 import "react-native-gesture-handler";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
   runOnJS,
   useAnimatedStyle,
@@ -38,7 +38,6 @@ import Video, { OnProgressData } from "react-native-video";
 import { Text } from "./common/Text";
 import { itemRouter } from "./common/TouchableItemRouter";
 import { Loader } from "./Loader";
-import { Gesture, GestureDetector } from "react-native-gesture-handler";
 
 async function setOrientation(orientation: ScreenOrientation.OrientationLock) {
   await ScreenOrientation.lockAsync(orientation);
