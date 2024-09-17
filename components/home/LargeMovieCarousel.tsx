@@ -4,25 +4,29 @@ import { getBackdropUrl } from "@/utils/jellyfin/image/getBackdropUrl";
 import { getLogoImageUrlById } from "@/utils/jellyfin/image/getLogoImageUrlById";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import { getItemsApi } from "@jellyfin/sdk/lib/utils/api";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Image } from "expo-image";
-import { useRouter } from "expo-router";
 import { useAtom } from "jotai";
-import React, { useMemo } from "react";
-import { Dimensions, View, ViewProps } from "react-native";
-import { useSharedValue } from "react-native-reanimated";
+import React, { useCallback, useMemo } from "react";
+import { Dimensions, TouchableOpacity, View, ViewProps } from "react-native";
+import Animated, {
+  runOnJS,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
 import Carousel, {
   ICarouselInstance,
   Pagination,
 } from "react-native-reanimated-carousel";
-import { TouchableItemRouter } from "../common/TouchableItemRouter";
+import { itemRouter, TouchableItemRouter } from "../common/TouchableItemRouter";
 import { Loader } from "../Loader";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import { useRouter, useSegments } from "expo-router";
+import * as Haptics from "expo-haptics";
 
 interface Props extends ViewProps {}
 
 export const LargeMovieCarousel: React.FC<Props> = ({ ...props }) => {
-  const router = useRouter();
-  const queryClient = useQueryClient();
   const [settings] = useSettings();
 
   const ref = React.useRef<ICarouselInstance>(null);
@@ -122,7 +126,7 @@ export const LargeMovieCarousel: React.FC<Props> = ({ ...props }) => {
 
 const RenderItem: React.FC<{ item: BaseItemDto }> = ({ item }) => {
   const [api] = useAtom(apiAtom);
-
+  const router = useRouter();
   const screenWidth = Dimensions.get("screen").width;
 
   const uri = useMemo(() => {
@@ -141,11 +145,41 @@ const RenderItem: React.FC<{ item: BaseItemDto }> = ({ item }) => {
     return getLogoImageUrlById({ api, item, height: 100 });
   }, [item]);
 
+  const segments = useSegments();
+  const from = segments[2];
+
+  const opacity = useSharedValue(1);
+
+  const handleRoute = useCallback(() => {
+    if (!from) return;
+    const url = itemRouter(item, from);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    // @ts-ignore
+    if (url) router.push(url);
+  }, [item, from]);
+
+  const tap = Gesture.Tap()
+    .maxDuration(2000)
+    .onBegin(() => {
+      opacity.value = withTiming(0.5, { duration: 100 });
+    })
+    .onEnd(() => {
+      runOnJS(handleRoute)();
+    })
+    .onFinalize(() => {
+      opacity.value = withTiming(1, { duration: 100 });
+    });
+
   if (!uri || !logoUri) return null;
 
   return (
-    <TouchableItemRouter item={item}>
-      <View className="px-4">
+    <GestureDetector gesture={tap}>
+      <Animated.View
+        style={{
+          opacity: opacity,
+        }}
+        className="px-4"
+      >
         <View className="relative flex justify-center rounded-2xl overflow-hidden border border-neutral-800">
           <Image
             source={{
@@ -171,7 +205,7 @@ const RenderItem: React.FC<{ item: BaseItemDto }> = ({ item }) => {
             />
           </View>
         </View>
-      </View>
-    </TouchableItemRouter>
+      </Animated.View>
+    </GestureDetector>
   );
 };
