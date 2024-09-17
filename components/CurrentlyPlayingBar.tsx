@@ -4,7 +4,7 @@ import { useNavigationBarVisibility } from "@/hooks/useNavigationBarVisibility";
 import { useTrickplay } from "@/hooks/useTrickplay";
 import { apiAtom } from "@/providers/JellyfinProvider";
 import { usePlayback } from "@/providers/PlaybackProvider";
-import { parseM3U8ForSubtitles } from "@/utils/hls/parseM3U8ForSubtitles";
+import { useSettings } from "@/utils/atoms/settings";
 import { getBackdropUrl } from "@/utils/jellyfin/image/getBackdropUrl";
 import { getAuthHeaders } from "@/utils/jellyfin/jellyfin";
 import { writeToLog } from "@/utils/log";
@@ -14,6 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import { useRouter, useSegments } from "expo-router";
+import * as ScreenOrientation from "expo-screen-orientation";
 import { useAtom } from "jotai";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -35,8 +36,6 @@ import Video from "react-native-video";
 import { Text } from "./common/Text";
 import { itemRouter } from "./common/TouchableItemRouter";
 import { Loader } from "./Loader";
-import * as ScreenOrientation from "expo-screen-orientation";
-import { useSettings } from "@/utils/atoms/settings";
 
 async function setOrientation(orientation: ScreenOrientation.OrientationLock) {
   await ScreenOrientation.lockAsync(orientation);
@@ -145,16 +144,19 @@ export const CurrentlyPlayingBar: React.FC = () => {
     max.value = currentlyPlaying?.item.RunTimeTicks || 0;
   }, [currentlyPlaying?.item.RunTimeTicks]);
 
-  const videoContainerStyle = {
-    position: "absolute" as const,
-    top: 0,
-    bottom: 0,
-    left: ignoreSafeArea ? 0 : insets.left,
-    right: ignoreSafeArea ? 0 : insets.right,
-    width: ignoreSafeArea
-      ? screenWidth
-      : screenWidth - (insets.left + insets.right),
-  };
+  const videoContainerStyle = useMemo(
+    () => ({
+      position: "absolute" as const,
+      top: 0,
+      bottom: 0,
+      left: ignoreSafeArea ? 0 : insets.left,
+      right: ignoreSafeArea ? 0 : insets.right,
+      width: ignoreSafeArea
+        ? screenWidth
+        : screenWidth - (insets.left + insets.right),
+    }),
+    [ignoreSafeArea, insets, screenWidth]
+  );
 
   const animatedLoaderStyle = useAnimatedStyle(() => {
     return {
@@ -226,28 +228,13 @@ export const CurrentlyPlayingBar: React.FC = () => {
   });
 
   const skipIntro = useCallback(async () => {
-    if (!introTimestamps) return;
-    videoRef.current?.seek(introTimestamps.IntroEnd);
+    if (!introTimestamps || !videoRef.current) return;
+    try {
+      videoRef.current.seek(introTimestamps.IntroEnd);
+    } catch (error) {
+      writeToLog("ERROR", "Error skipping intro", error);
+    }
   }, [introTimestamps]);
-
-  useEffect(() => {
-    showControls();
-  }, [currentlyPlaying]);
-
-  const { data: subtitleTracks } = useQuery({
-    queryKey: ["subtitleTracks", currentlyPlaying?.url],
-    queryFn: async () => {
-      if (!currentlyPlaying?.url) {
-        console.log("No item url");
-        return null;
-      }
-
-      const tracks = await parseM3U8ForSubtitles(currentlyPlaying.url);
-
-      console.log("Subtitle tracks", tracks);
-      return tracks;
-    },
-  });
 
   /**
    * This should clean up all values if curentlyPlaying sets to null or changes
@@ -280,6 +267,14 @@ export const CurrentlyPlayingBar: React.FC = () => {
     }
   }, [settings, currentlyPlaying]);
 
+  const handleToggleControlsPress = useCallback(() => {
+    if (isVisible) {
+      hideControls();
+    } else {
+      showControls();
+    }
+  }, [isVisible, hideControls, showControls]);
+
   if (!api || !currentlyPlaying) return null;
 
   return (
@@ -292,13 +287,7 @@ export const CurrentlyPlayingBar: React.FC = () => {
     >
       <Animated.View style={[videoContainerStyle, animatedVideoContainerStyle]}>
         <Pressable
-          onPress={() => {
-            if (isVisible) {
-              hideControls();
-            } else {
-              showControls();
-            }
-          }}
+          onPress={handleToggleControlsPress}
           style={{
             width: "100%",
             height: "100%",
@@ -412,8 +401,8 @@ export const CurrentlyPlayingBar: React.FC = () => {
       >
         <View className="flex flex-row items-center h-full">
           <TouchableOpacity
+            disabled={!isVisible}
             onPress={() => {
-              if (!isVisible) return;
               skipIntro();
             }}
             className="flex flex-col items-center justify-center px-2 py-1.5 bg-purple-600 rounded-full"
@@ -436,8 +425,8 @@ export const CurrentlyPlayingBar: React.FC = () => {
       >
         <View className="flex flex-row items-center h-full">
           <TouchableOpacity
+            disabled={!isVisible}
             onPress={() => {
-              if (!isVisible) return;
               toggleIgnoreSafeArea();
             }}
             className="aspect-square rounded flex flex-col items-center justify-center p-2"
@@ -449,8 +438,8 @@ export const CurrentlyPlayingBar: React.FC = () => {
             />
           </TouchableOpacity>
           <TouchableOpacity
+            disabled={!isVisible}
             onPress={() => {
-              if (!isVisible) return;
               stopPlayback();
             }}
             className="aspect-square rounded flex flex-col items-center justify-center p-2"
@@ -493,12 +482,11 @@ export const CurrentlyPlayingBar: React.FC = () => {
         <View className="flex flex-row items-center space-x-6 rounded-full py-1.5 pl-4 pr-4 bg-neutral-800">
           <View className="flex flex-row items-center space-x-2">
             <TouchableOpacity
-              disabled={!previousItem}
+              disabled={!previousItem || !isVisible || !from}
               style={{
                 opacity: !previousItem ? 0.5 : 1,
               }}
               onPress={() => {
-                if (!isVisible) return;
                 if (!previousItem || !from) return;
                 const url = itemRouter(previousItem, from);
                 stopPlayback();
@@ -509,12 +497,17 @@ export const CurrentlyPlayingBar: React.FC = () => {
               <Ionicons name="play-skip-back" size={18} color="white" />
             </TouchableOpacity>
             <TouchableOpacity
+              disabled={!isVisible}
               onPress={async () => {
-                if (!isVisible) return;
-                const curr = await videoRef.current?.getCurrentPosition();
-                if (!curr) return;
-                videoRef.current?.seek(Math.max(0, curr - 15));
-                showControls();
+                try {
+                  const curr = await videoRef.current?.getCurrentPosition();
+                  if (curr !== undefined) {
+                    videoRef.current?.seek(Math.max(0, curr - 15));
+                    showControls();
+                  }
+                } catch (error) {
+                  writeToLog("ERROR", "Error seeking video backwards", error);
+                }
               }}
             >
               <Ionicons
@@ -527,8 +520,8 @@ export const CurrentlyPlayingBar: React.FC = () => {
               />
             </TouchableOpacity>
             <TouchableOpacity
+              disabled={!isVisible}
               onPress={() => {
-                if (!isVisible) return;
                 if (isPlaying) pauseVideo();
                 else playVideo();
                 showControls();
@@ -541,23 +534,27 @@ export const CurrentlyPlayingBar: React.FC = () => {
               />
             </TouchableOpacity>
             <TouchableOpacity
+              disabled={!isVisible}
               onPress={async () => {
-                if (!isVisible) return;
-                const curr = await videoRef.current?.getCurrentPosition();
-                if (!curr) return;
-                videoRef.current?.seek(Math.max(0, curr + 15));
-                showControls();
+                try {
+                  const curr = await videoRef.current?.getCurrentPosition();
+                  if (curr !== undefined) {
+                    await videoRef.current?.seek(Math.max(0, curr + 15));
+                    showControls();
+                  }
+                } catch (error) {
+                  writeToLog("ERROR", "Error seeking video forwards", error);
+                }
               }}
             >
               <Ionicons name="refresh-outline" size={22} color="white" />
             </TouchableOpacity>
             <TouchableOpacity
-              disabled={!nextItem}
+              disabled={!nextItem || !isVisible || !from}
               style={{
                 opacity: !nextItem ? 0.5 : 1,
               }}
               onPress={() => {
-                if (!isVisible) return;
                 if (!nextItem || !from) return;
                 const url = itemRouter(nextItem, from);
                 stopPlayback();
@@ -570,6 +567,7 @@ export const CurrentlyPlayingBar: React.FC = () => {
           </View>
           <View className="flex flex-col w-full shrink">
             <Slider
+              disable={!isVisible}
               theme={{
                 maximumTrackTintColor: "rgba(255,255,255,0.2)",
                 minimumTrackTintColor: "#fff",
@@ -580,17 +578,14 @@ export const CurrentlyPlayingBar: React.FC = () => {
               }}
               cache={cacheProgress}
               onSlidingStart={() => {
-                if (!isVisible) return;
                 sliding.current = true;
               }}
               onSlidingComplete={(val) => {
-                if (!isVisible) return;
                 const tick = Math.floor(val);
                 videoRef.current?.seek(tick / 10000000);
                 sliding.current = false;
               }}
               onValueChange={(val) => {
-                if (!isVisible) return;
                 const tick = Math.floor(val);
                 progress.value = tick;
                 calculateTrickplayUrl(progress);
