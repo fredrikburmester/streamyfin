@@ -12,7 +12,7 @@ import { runtimeTicksToSeconds } from "@/utils/time";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { Image } from "expo-image";
-import { useRouter, useSegments } from "expo-router";
+import { useNavigation, useRouter, useSegments } from "expo-router";
 import * as ScreenOrientation from "expo-screen-orientation";
 import { useAtom } from "jotai";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -20,7 +20,9 @@ import {
   Alert,
   AppState,
   AppStateStatus,
+  BackHandler,
   Dimensions,
+  Platform,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -38,8 +40,13 @@ import Video, { OnProgressData } from "react-native-video";
 import { Text } from "./common/Text";
 import { itemRouter } from "./common/TouchableItemRouter";
 import { Loader } from "./Loader";
+import * as NavigationBar from "expo-navigation-bar";
+import { setStatusBarHidden, StatusBar } from "expo-status-bar";
+import orientationToOrientationLock from "@/utils/OrientationLockConverter";
+import { BlurView } from "expo-blur";
+import { PlatformBlurView } from "./PlatformBlurView";
 
-async function setOrientation(orientation: ScreenOrientation.OrientationLock) {
+async function lockOrientation(orientation: ScreenOrientation.OrientationLock) {
   await ScreenOrientation.lockAsync(orientation);
 }
 
@@ -73,6 +80,9 @@ export const FullScreenVideoPlayer: React.FC = () => {
   const { previousItem, nextItem } = useAdjacentEpisodes({ currentlyPlaying });
   const { showControls, hideControls, opacity } = useControlsVisibility(3000);
   const [isInteractive, setIsInteractive] = useState(true);
+  const [orientation, setOrientation] = useState(
+    ScreenOrientation.OrientationLock.UNKNOWN
+  );
 
   const [ignoreSafeArea, setIgnoreSafeArea] = useState(false);
   const from = useMemo(() => segments[2], [segments]);
@@ -83,6 +93,34 @@ export const FullScreenVideoPlayer: React.FC = () => {
   const sliding = useRef(false);
   const localIsBuffering = useSharedValue(false);
   const cacheProgress = useSharedValue(0);
+  const [isStatusBarHidden, setIsStatusBarHidden] = useState(false);
+
+  useEffect(() => {
+    const backAction = () => {
+      if (currentlyPlaying) {
+        // Your custom back action here
+        console.log("onback");
+        Alert.alert("Hold on!", "Are you sure you want to exit?", [
+          {
+            text: "Cancel",
+            onPress: () => null,
+            style: "cancel",
+          },
+          { text: "Yes", onPress: () => stopPlayback() },
+        ]);
+
+        return true;
+      }
+      return false;
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      backAction
+    );
+
+    return () => backHandler.remove();
+  }, [currentlyPlaying]);
 
   const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
@@ -152,8 +190,12 @@ export const FullScreenVideoPlayer: React.FC = () => {
       localIsBuffering.value = false;
       sliding.current = false;
       hideControls();
+      setStatusBarHidden(false);
+      // NavigationBar.setVisibilityAsync("visible")
     } else {
-      setOrientation(
+      setStatusBarHidden(true);
+      // NavigationBar.setVisibilityAsync("hidden")
+      lockOrientation(
         settings?.defaultVideoOrientation ||
           ScreenOrientation.OrientationLock.DEFAULT
       );
@@ -163,6 +205,30 @@ export const FullScreenVideoPlayer: React.FC = () => {
       showControls();
     }
   }, [currentlyPlaying, settings]);
+
+  /**
+   * Event listener for orientation
+   */
+  useEffect(() => {
+    const subscription = ScreenOrientation.addOrientationChangeListener(
+      (event) => {
+        setOrientation(
+          orientationToOrientationLock(event.orientationInfo.orientation)
+        );
+      }
+    );
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
+  const isLandscape = useMemo(() => {
+    return orientation === ScreenOrientation.OrientationLock.LANDSCAPE_LEFT ||
+      orientation === ScreenOrientation.OrientationLock.LANDSCAPE_RIGHT
+      ? true
+      : false;
+  }, [orientation]);
 
   const animatedStyles = {
     controls: useAnimatedStyle(() => ({
@@ -219,9 +285,13 @@ export const FullScreenVideoPlayer: React.FC = () => {
       progress.value > showButtonAt && progress.value < hideButtonAt;
     return {
       opacity: withTiming(
-        localIsBuffering.value === false && opacity.value === 1 && showButton
-          ? 1
-          : 0,
+        localIsBuffering.value === false && showButton ? 1 : 0,
+        {
+          duration: 300,
+        }
+      ),
+      bottom: withTiming(
+        opacity.value === 0 ? insets.bottom + 8 : isLandscape ? 85 : 140,
         {
           duration: 300,
         }
@@ -387,11 +457,9 @@ export const FullScreenVideoPlayer: React.FC = () => {
       runOnJS(handleSkipForward)();
     });
 
-  const skipIntroGesture = Gesture.Tap()
-    .enabled(opacity.value !== 0)
-    .onStart(() => {
-      runOnJS(skipIntro)();
-    });
+  const skipIntroGesture = Gesture.Tap().onStart(() => {
+    runOnJS(skipIntro)();
+  });
 
   if (!api || !currentlyPlaying) return null;
 
@@ -403,6 +471,7 @@ export const FullScreenVideoPlayer: React.FC = () => {
         backgroundColor: "black",
       }}
     >
+      <StatusBar hidden={isStatusBarHidden} />
       <GestureDetector gesture={videoTap}>
         <Animated.View
           style={[
@@ -433,7 +502,7 @@ export const FullScreenVideoPlayer: React.FC = () => {
                   width: "100%",
                   height: "100%",
                 }}
-                resizeMode="contain"
+                resizeMode={ignoreSafeArea ? "cover" : "contain"}
                 playWhenInactive={true}
                 playInBackground={true}
                 showNotificationControls={true}
@@ -453,7 +522,8 @@ export const FullScreenVideoPlayer: React.FC = () => {
                   }
                 }}
                 onBuffer={(e) => {
-                  if (e.isBuffering) {
+                  if (e.isBuffering && !isPlaying) {
+                    console.log("Buffering...");
                     setIsBuffering(true);
                     localIsBuffering.value = true;
                   }
@@ -498,51 +568,56 @@ export const FullScreenVideoPlayer: React.FC = () => {
           {
             position: "absolute",
             bottom: insets.bottom + 8 * 8,
-            right: insets.right + 32,
+            right: isLandscape ? insets.right + 32 : insets.right + 16,
             zIndex: 10,
           },
           animatedIntroSkipperStyle,
         ]}
       >
         <View className="flex flex-row items-center h-full">
-          <TouchableOpacity className="flex flex-col items-center justify-center px-2 py-1.5 bg-purple-600 rounded-full">
+          <TouchableOpacity className="flex flex-col items-center justify-center px-3 py-2 bg-purple-600 rounded-full">
             <GestureDetector gesture={skipIntroGesture}>
-              <Text>Skip intro</Text>
+              <Text className="font-semibold">Skip intro</Text>
             </GestureDetector>
           </TouchableOpacity>
         </View>
       </Animated.View>
 
       <Animated.View
+        pointerEvents={opacity.value === 0 ? "none" : "auto"}
         style={[
           {
             position: "absolute",
             top: insets.top,
-            right: insets.right + 20,
+            right: isLandscape ? insets.right + 32 : insets.right + 8,
             height: 70,
           },
           animatedStyles.controls,
         ]}
       >
-        <View className="flex flex-row items-center h-full">
+        <View className="flex flex-row items-center h-full space-x-2">
           <GestureDetector gesture={toggleIgnoreSafeAreaGesture}>
-            <TouchableOpacity className="aspect-square rounded flex flex-col items-center justify-center p-2">
-              <Ionicons
-                name={ignoreSafeArea ? "contract-outline" : "expand"}
-                size={24}
-                color="white"
-              />
-            </TouchableOpacity>
+            <PlatformBlurView className="rounded-xl overflow-hidden">
+              <TouchableOpacity className="aspect-square flex flex-col items-center justify-center p-2">
+                <Ionicons
+                  name={ignoreSafeArea ? "contract-outline" : "expand"}
+                  size={24}
+                  color="white"
+                />
+              </TouchableOpacity>
+            </PlatformBlurView>
           </GestureDetector>
 
-          <TouchableOpacity
-            onPress={() => {
-              stopPlayback();
-            }}
-            className="aspect-square rounded flex flex-col items-center justify-center p-2"
-          >
-            <Ionicons name="close" size={24} color="white" />
-          </TouchableOpacity>
+          <PlatformBlurView className="rounded-xl overflow-hidden">
+            <TouchableOpacity
+              onPress={() => {
+                stopPlayback();
+              }}
+              className="aspect-square  flex flex-col items-center justify-center p-2"
+            >
+              <Ionicons name="close" size={24} color="white" />
+            </TouchableOpacity>
+          </PlatformBlurView>
         </View>
       </Animated.View>
 
@@ -551,9 +626,10 @@ export const FullScreenVideoPlayer: React.FC = () => {
           {
             position: "absolute",
             bottom: insets.bottom + 8,
-            left: insets.left + 32,
-            width: screenWidth - insets.left - insets.right - 64,
-            borderRadius: 100,
+            left: isLandscape ? insets.left + 32 : insets.left + 16,
+            width: isLandscape
+              ? screenWidth - insets.left - insets.right - 64
+              : screenWidth - insets.left - insets.right - 32,
           },
           animatedStyles.controls,
         ]}
@@ -576,22 +652,29 @@ export const FullScreenVideoPlayer: React.FC = () => {
             </Text>
           )}
         </View>
-        <View className="flex flex-row items-center space-x-6 rounded-full py-2 pl-4 pr-4 bg-neutral-800">
-          <View className="flex flex-row items-center space-x-2">
+        <View
+          className={`flex ${
+            isLandscape
+              ? "flex-row space-x-6 py-2 px-4 rounded-full"
+              : "flex-col-reverse py-4 px-4 rounded-2xl"
+          } 
+          items-center  bg-neutral-800`}
+        >
+          <View className="flex flex-row items-center space-x-4">
             <TouchableOpacity
               style={{
                 opacity: !previousItem ? 0.5 : 1,
               }}
             >
               <GestureDetector gesture={goToPreviouItemGesture}>
-                <Ionicons name="play-skip-back" size={20} color="white" />
+                <Ionicons name="play-skip-back" size={24} color="white" />
               </GestureDetector>
             </TouchableOpacity>
             <TouchableOpacity>
               <GestureDetector gesture={skipBackwardGesture}>
                 <Ionicons
                   name="refresh-outline"
-                  size={24}
+                  size={26}
                   color="white"
                   style={{
                     transform: [{ scaleY: -1 }, { rotate: "180deg" }],
@@ -603,14 +686,14 @@ export const FullScreenVideoPlayer: React.FC = () => {
               <GestureDetector gesture={playPauseGesture}>
                 <Ionicons
                   name={isPlaying ? "pause" : "play"}
-                  size={26}
+                  size={30}
                   color="white"
                 />
               </GestureDetector>
             </TouchableOpacity>
             <TouchableOpacity>
               <GestureDetector gesture={skipForwardGesture}>
-                <Ionicons name="refresh-outline" size={24} color="white" />
+                <Ionicons name="refresh-outline" size={26} color="white" />
               </GestureDetector>
             </TouchableOpacity>
             <TouchableOpacity
@@ -619,11 +702,15 @@ export const FullScreenVideoPlayer: React.FC = () => {
               }}
             >
               <GestureDetector gesture={goToNextItemGesture}>
-                <Ionicons name="play-skip-forward" size={20} color="white" />
+                <Ionicons name="play-skip-forward" size={24} color="white" />
               </GestureDetector>
             </TouchableOpacity>
           </View>
-          <View className="flex flex-col w-full shrink">
+          <View
+            className={`flex flex-col w-full shrink
+              ${""}
+            `}
+          >
             <Slider
               disable={opacity.value === 0}
               theme={{
@@ -652,15 +739,19 @@ export const FullScreenVideoPlayer: React.FC = () => {
                 return (
                   <View
                     style={{
+                      position: "absolute",
+                      bottom: 0,
+                      left: 0,
                       width: tileWidth,
                       height: tileHeight,
                       marginLeft: -tileWidth / 4,
                       marginTop: -tileHeight / 4 - 60,
-                      marginBottom: 10,
+                      zIndex: 10,
                     }}
                     className=" bg-neutral-800 overflow-hidden"
                   >
                     <Image
+                      cachePolicy={"memory-disk"}
                       style={{
                         width: 150 * trickplayInfo?.data.TileWidth!,
                         height:
@@ -683,7 +774,7 @@ export const FullScreenVideoPlayer: React.FC = () => {
               minimumValue={min}
               maximumValue={max}
             />
-            <View className="flex flex-row items-center justify-between -mb-0.5">
+            <View className="flex flex-row items-center justify-between mt-0.5">
               <Text className="text-[12px] text-neutral-400">
                 {runtimeTicksToSeconds(progress.value)}
               </Text>
