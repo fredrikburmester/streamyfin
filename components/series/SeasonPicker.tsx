@@ -15,6 +15,7 @@ import { getTvShowsApi } from "@jellyfin/sdk/lib/utils/api";
 import { getUserItemData } from "@/utils/jellyfin/user-library/getUserItemData";
 import { Image } from "expo-image";
 import { getLogoImageUrlById } from "@/utils/jellyfin/image/getLogoImageUrlById";
+import { TouchableItemRouter } from "../common/TouchableItemRouter";
 
 type Props = {
   item: BaseItemDto;
@@ -192,11 +193,9 @@ export const SeasonPicker: React.FC<Props> = ({ item, initialSeasonIndex }) => {
           </View>
         ) : (
           episodes?.map((e: BaseItemDto) => (
-            <TouchableOpacity
+            <TouchableItemRouter
+              item={e}
               key={e.Id}
-              onPress={() => {
-                router.push(`/(auth)/items/page?id=${e.Id}`);
-              }}
               className="flex flex-col mb-4"
             >
               <View className="flex flex-row items-center mb-2">
@@ -229,7 +228,7 @@ export const SeasonPicker: React.FC<Props> = ({ item, initialSeasonIndex }) => {
               >
                 {e.Overview}
               </Text>
-            </TouchableOpacity>
+            </TouchableItemRouter>
           ))
         )}
       </View>

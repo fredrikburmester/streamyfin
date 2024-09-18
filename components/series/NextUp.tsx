@@ -10,6 +10,7 @@ import { HorizontalScroll } from "../common/HorrizontalScroll";
 import { Text } from "../common/Text";
 import ContinueWatchingPoster from "../ContinueWatchingPoster";
 import { ItemCardText } from "../ItemCardText";
+import { TouchableItemRouter } from "../common/TouchableItemRouter";
 
 export const NextUp: React.FC<{ seriesId: string }> = ({ seriesId }) => {
   const [user] = useAtom(userAtom);
@@ -46,16 +47,14 @@ export const NextUp: React.FC<{ seriesId: string }> = ({ seriesId }) => {
       <HorizontalScroll
         data={items}
         renderItem={(item, index) => (
-          <TouchableOpacity
-            onPress={() => {
-              router.push(`/(auth)/items/page?id=${item.Id}`);
-            }}
+          <TouchableItemRouter
+            item={item}
             key={item.Id}
             className="flex flex-col w-44"
           >
             <ContinueWatchingPoster item={item} useEpisodePoster />
             <ItemCardText item={item} />
-          </TouchableOpacity>
+          </TouchableItemRouter>
         )}
       />
     </View>
