@@ -1,33 +1,8 @@
-import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
-import {
-  DefaultLanguageOption,
-  DownloadOptions,
-  useSettings,
-} from "@/utils/atoms/settings";
-import { getItemsApi } from "@jellyfin/sdk/lib/utils/api";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useAtom } from "jotai";
-import {
-  Linking,
-  Switch,
-  TouchableOpacity,
-  View,
-  ViewProps,
-} from "react-native";
+import { useSettings } from "@/utils/atoms/settings";
+import { TouchableOpacity, View, ViewProps } from "react-native";
 import * as DropdownMenu from "zeego/dropdown-menu";
 import { Text } from "../common/Text";
-import { Loader } from "../Loader";
-import { Input } from "../common/Input";
-import { useState } from "react";
-import { Button } from "../Button";
-
-const LANGUAGES: DefaultLanguageOption[] = [
-  { label: "eng", value: "eng" },
-  {
-    label: "sv",
-    value: "sv",
-  },
-];
+import { LANGUAGES } from "@/constants/Languages";
 
 interface Props extends ViewProps {}
 
