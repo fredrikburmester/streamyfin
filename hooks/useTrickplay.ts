@@ -1,6 +1,6 @@
 // hooks/useTrickplay.ts
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useRef } from "react";
 import { Api } from "@jellyfin/sdk";
 import { SharedValue } from "react-native-reanimated";
 import { CurrentlyPlayingState } from "@/providers/PlaybackProvider";
@@ -33,6 +33,8 @@ export const useTrickplay = (
 ) => {
   const [api] = useAtom(apiAtom);
   const [trickPlayUrl, setTrickPlayUrl] = useState<TrickplayUrl | null>(null);
+  const lastCalculationTime = useRef(0);
+  const throttleDelay = 100; // 200ms throttle
 
   const trickplayInfo = useMemo(() => {
     if (!currentlyPlaying?.item.Id || !currentlyPlaying?.item.Trickplay) {
@@ -61,6 +63,12 @@ export const useTrickplay = (
 
   const calculateTrickplayUrl = useCallback(
     (progress: SharedValue<number>) => {
+      const now = Date.now();
+      if (now - lastCalculationTime.current < throttleDelay) {
+        return null;
+      }
+      lastCalculationTime.current = now;
+
       if (!trickplayInfo || !api || !currentlyPlaying?.item.Id) {
         return null;
       }
