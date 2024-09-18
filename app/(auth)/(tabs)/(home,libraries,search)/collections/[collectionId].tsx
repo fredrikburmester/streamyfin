@@ -34,8 +34,6 @@ import { useAtom } from "jotai";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { FlatList, View } from "react-native";
 
-const MemoizedTouchableItemRouter = React.memo(TouchableItemRouter);
-
 const page: React.FC = () => {
   const searchParams = useLocalSearchParams();
   const { collectionId } = searchParams as { collectionId: string };
@@ -169,7 +167,7 @@ const page: React.FC = () => {
 
   const renderItem = useCallback(
     ({ item, index }: { item: BaseItemDto; index: number }) => (
-      <MemoizedTouchableItemRouter
+      <TouchableItemRouter
         key={item.Id}
         style={{
           width: "100%",
@@ -193,7 +191,7 @@ const page: React.FC = () => {
           {/* <MoviePoster item={item} /> */}
           <ItemCardText item={item} />
         </View>
-      </MemoizedTouchableItemRouter>
+      </TouchableItemRouter>
     ),
     [orientation]
   );
