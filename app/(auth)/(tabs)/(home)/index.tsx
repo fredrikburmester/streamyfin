@@ -347,7 +347,7 @@ export default function index() {
           paddingLeft: insets.left,
           paddingRight: insets.right,
         }}
-        className="flex flex-col pt-4 pb-24 gap-y-4"
+        className="flex flex-col pt-4 pb-24 gap-y-2"
       >
         <LargeMovieCarousel />
 
