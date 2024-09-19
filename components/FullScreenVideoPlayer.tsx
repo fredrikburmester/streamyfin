@@ -74,8 +74,6 @@ export const FullScreenVideoPlayer: React.FC = () => {
   const { trickPlayUrl, calculateTrickplayUrl, trickplayInfo } =
     useTrickplay(currentlyPlaying);
   const { previousItem, nextItem } = useAdjacentEpisodes({ currentlyPlaying });
-  // const { showControls, hideControls, opacity } = useControlsVisibility(3000);
-  const [isInteractive, setIsInteractive] = useState(true);
   const [orientation, setOrientation] = useState(
     ScreenOrientation.OrientationLock.UNKNOWN
   );
@@ -89,7 +87,7 @@ export const FullScreenVideoPlayer: React.FC = () => {
   const min = useSharedValue(0);
   const max = useSharedValue(currentlyPlaying?.item.RunTimeTicks || 0);
   const sliding = useRef(false);
-  const localIsBuffering = useSharedValue(false);
+  const localIsBuffering = useSharedValue(true);
   const cacheProgress = useSharedValue(0);
   const [isStatusBarHidden, setIsStatusBarHidden] = useState(false);
 
@@ -165,26 +163,6 @@ export const FullScreenVideoPlayer: React.FC = () => {
   }, [currentlyPlaying, api, poster]);
 
   useEffect(() => {
-    const handleAppStateChange = (nextAppState: AppStateStatus) => {
-      if (nextAppState === "active") {
-        setIsInteractive(true);
-        showControls();
-      } else {
-        setIsInteractive(false);
-      }
-    };
-
-    const subscription = AppState.addEventListener(
-      "change",
-      handleAppStateChange
-    );
-
-    return () => {
-      subscription.remove();
-    };
-  }, [showControls]);
-
-  useEffect(() => {
     max.value = currentlyPlaying?.item.RunTimeTicks || 0;
   }, [currentlyPlaying?.item.RunTimeTicks]);
 
@@ -251,7 +229,10 @@ export const FullScreenVideoPlayer: React.FC = () => {
       ),
     })),
     loader: useAnimatedStyle(() => ({
-      opacity: withTiming(localIsBuffering.value ? 1 : 0, { duration: 300 }),
+      opacity: withTiming(
+        localIsBuffering.value === true || progress.value === 0 ? 1 : 0,
+        { duration: 300 }
+      ),
     })),
   };
 
@@ -293,7 +274,9 @@ export const FullScreenVideoPlayer: React.FC = () => {
       progress.value > showButtonAt && progress.value < hideButtonAt;
     return {
       opacity: withTiming(
-        localIsBuffering.value === false && showButton ? 1 : 0,
+        localIsBuffering.value === false && showButton && progress.value !== 0
+          ? 1
+          : 0,
         {
           duration: 300,
         }
@@ -539,7 +522,7 @@ export const FullScreenVideoPlayer: React.FC = () => {
                   }
                 }}
                 onBuffer={(e) => {
-                  if (e.isBuffering && !isPlaying) {
+                  if (e.isBuffering) {
                     console.log("Buffering...");
                     setIsBuffering(true);
                     localIsBuffering.value = true;
@@ -551,6 +534,14 @@ export const FullScreenVideoPlayer: React.FC = () => {
                 onVolumeChange={(e) => {
                   setVolume(e.volume);
                 }}
+                fullscreen={false}
+                onLoadStart={() => {
+                  localIsBuffering.value = true;
+                }}
+                onLoad={() => {
+                  localIsBuffering.value = true
+                }}
+                
                 progressUpdateInterval={1000}
                 onError={handleVideoError}
               />
@@ -614,27 +605,22 @@ export const FullScreenVideoPlayer: React.FC = () => {
       >
         <View className="flex flex-row items-center h-full space-x-2 z-10">
           <GestureDetector gesture={toggleIgnoreSafeAreaGesture}>
-            <View className="rounded-xl overflow-hidden">
-              <TouchableOpacity className="aspect-square flex flex-col items-center justify-center p-2">
-                <Ionicons
-                  name={ignoreSafeArea ? "contract-outline" : "expand"}
-                  size={24}
-                  color="white"
-                />
-              </TouchableOpacity>
-            </View>
-          </GestureDetector>
-
-          <View className="rounded-xl overflow-hidden">
-            <TouchableOpacity
-              onPress={() => {
-                stopPlayback();
-              }}
-              className="aspect-square  flex flex-col items-center justify-center p-2"
-            >
-              <Ionicons name="close" size={24} color="white" />
+            <TouchableOpacity className="aspect-square flex flex-col bg-neutral-800 rounded-xl items-center justify-center p-2">
+              <Ionicons
+                name={ignoreSafeArea ? "contract-outline" : "expand"}
+                size={24}
+                color="white"
+              />
             </TouchableOpacity>
-          </View>
+          </GestureDetector>
+          <TouchableOpacity
+            onPress={() => {
+              stopPlayback();
+            }}
+            className="aspect-square bg-neutral-800 rounded-xl flex flex-col items-center justify-center p-2"
+          >
+            <Ionicons name="close" size={24} color="white" />
+          </TouchableOpacity>
         </View>
       </Animated.View>
 
