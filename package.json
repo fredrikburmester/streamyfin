@@ -50,6 +50,7 @@
     "expo-status-bar": "~1.12.1",
     "expo-system-ui": "~3.0.7",
     "expo-updates": "~0.25.24",
+    "expo-video": "^1.2.6",
     "expo-web-browser": "~13.0.3",
     "ffmpeg-kit-react-native": "^6.0.2",
     "jotai": "^2.9.3",
@@ -93,5 +94,12 @@
     "react-test-renderer": "18.2.0",
     "typescript": "~5.3.3"
   },
-  "private": true
+  "private": true,
+  "expo": {
+    "doctor": {
+      "reactNativeDirectoryCheck": {
+        "enabled": true
+      }
+    }
+  }
 }

@@ -82,9 +82,11 @@
         "expo-build-properties",
         {
           "ios": {
+            "newArchEnabled": true,
             "deploymentTarget": "14.0"
           },
           "android": {
+            "newArchEnabled": true,
             "android": {
               "compileSdkVersion": 34,
               "targetSdkVersion": 34,
@@ -111,7 +113,8 @@
         {
           "motionPermission": "Allow Streamyfin to access your device motion for landscape video watching."
         }
-      ]
+      ],
+      "expo-video"
     ],
     "experiments": {
       "typedRoutes": true

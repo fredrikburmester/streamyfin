@@ -29,6 +29,7 @@ import {
   parseM3U8ForSubtitles,
   SubtitleTrack,
 } from "@/utils/hls/parseM3U8ForSubtitles";
+import { useVideoPlayer, VideoPlayer } from "expo-video";
 
 export type CurrentlyPlayingState = {
   url: string;
@@ -40,14 +41,10 @@ interface PlaybackContextType {
   currentlyPlaying: CurrentlyPlayingState | null;
   videoRef: React.MutableRefObject<VideoRef | null>;
   isPlaying: boolean;
-  isFullscreen: boolean;
   progressTicks: number | null;
   playVideo: (triggerRef?: boolean) => void;
   pauseVideo: (triggerRef?: boolean) => void;
   stopPlayback: () => void;
-  presentFullscreenPlayer: () => void;
-  dismissFullscreenPlayer: () => void;
-  setIsFullscreen: (isFullscreen: boolean) => void;
   setIsPlaying: (isPlaying: boolean) => void;
   isBuffering: boolean;
   setIsBuffering: (val: boolean) => void;
@@ -60,6 +57,7 @@ interface PlaybackContextType {
     currentlyPlaying: CurrentlyPlayingState | null
   ) => void;
   subtitles: SubtitleTrack[];
+  player: VideoPlayer;
 }
 
 const PlaybackContext = createContext<PlaybackContextType | null>(null);
@@ -71,13 +69,12 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
   const [user] = useAtom(userAtom);
 
   const videoRef = useRef<VideoRef | null>(null);
+  const previousVolume = useRef<number | null>(null);
 
   const [settings] = useSettings();
 
-  const previousVolume = useRef<number | null>(null);
-
   const [isPlaying, _setIsPlaying] = useState<boolean>(false);
-  const [isBuffering, setIsBuffering] = useState<boolean>(false);
+  const [isBuffering, setIsBuffering] = useState<boolean>(true);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [progressTicks, setProgressTicks] = useState<number | null>(0);
   const [volume, _setVolume] = useState<number | null>(null);
@@ -98,6 +95,10 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
     },
     [_setVolume]
   );
+
+  const player = useVideoPlayer(currentlyPlaying?.url || null, () => {
+    if (player) player.play();
+  });
 
   const { data: deviceId } = useQuery({
     queryKey: ["deviceId", api],
@@ -175,7 +176,7 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
   const playVideo = useCallback(
     (triggerRef: boolean = true) => {
       if (triggerRef === true) {
-        videoRef.current?.resume();
+        player.play();
       }
       _setIsPlaying(true);
       reportPlaybackProgress({
@@ -192,7 +193,7 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
   const pauseVideo = useCallback(
     (triggerRef: boolean = true) => {
       if (triggerRef === true) {
-        videoRef.current?.pause();
+        player.pause();
       }
       _setIsPlaying(false);
       reportPlaybackProgress({
@@ -252,16 +253,6 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
     }, 500),
     [_onProgress]
   );
-
-  const presentFullscreenPlayer = useCallback(() => {
-    videoRef.current?.presentFullscreenPlayer();
-    setIsFullscreen(true);
-  }, []);
-
-  const dismissFullscreenPlayer = useCallback(() => {
-    videoRef.current?.dismissFullscreenPlayer();
-    setIsFullscreen(false);
-  }, []);
 
   useEffect(() => {
     if (!deviceId || !api?.accessToken) return;
@@ -346,14 +337,13 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
   return (
     <PlaybackContext.Provider
       value={{
+        player,
         onProgress,
         isBuffering,
         setIsBuffering,
         progressTicks,
         setVolume,
         setIsPlaying,
-        setIsFullscreen,
-        isFullscreen,
         isPlaying,
         currentlyPlaying,
         sessionData: session,
@@ -362,8 +352,6 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
         setCurrentlyPlayingState,
         pauseVideo,
         stopPlayback,
-        presentFullscreenPlayer,
-        dismissFullscreenPlayer,
         startDownloadedFilePlayback,
         subtitles,
       }}

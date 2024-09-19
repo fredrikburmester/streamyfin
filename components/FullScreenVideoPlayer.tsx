@@ -5,7 +5,7 @@ import { apiAtom } from "@/providers/JellyfinProvider";
 import { usePlayback } from "@/providers/PlaybackProvider";
 import { useSettings } from "@/utils/atoms/settings";
 import { getBackdropUrl } from "@/utils/jellyfin/image/getBackdropUrl";
-import { getAuthHeaders } from "@/utils/jellyfin/jellyfin";
+import { getAuthHeaders, isBaseItemDto } from "@/utils/jellyfin/jellyfin";
 import { writeToLog } from "@/utils/log";
 import orientationToOrientationLock from "@/utils/OrientationLockConverter";
 import { secondsToTicks } from "@/utils/secondsToTicks";
@@ -32,6 +32,7 @@ import "react-native-gesture-handler";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
   runOnJS,
+  useAnimatedReaction,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
@@ -41,6 +42,7 @@ import Video, { OnProgressData } from "react-native-video";
 import { Text } from "./common/Text";
 import { itemRouter } from "./common/TouchableItemRouter";
 import { Loader } from "./Loader";
+import { useVideoPlayer, VideoView } from "expo-video";
 
 async function lockOrientation(orientation: ScreenOrientation.OrientationLock) {
   await ScreenOrientation.lockAsync(orientation);
@@ -59,10 +61,10 @@ export const FullScreenVideoPlayer: React.FC = () => {
     setVolume,
     setIsPlaying,
     isPlaying,
-    videoRef,
     onProgress,
-    isBuffering: _isBuffering,
+    isBuffering,
     setIsBuffering,
+    player,
   } = usePlayback();
 
   const [settings] = useSettings();
@@ -70,6 +72,8 @@ export const FullScreenVideoPlayer: React.FC = () => {
   const insets = useSafeAreaInsets();
   const segments = useSegments();
   const router = useRouter();
+
+  const firstLoad = useRef(true);
 
   const { trickPlayUrl, calculateTrickplayUrl, trickplayInfo } =
     useTrickplay(currentlyPlaying);
@@ -90,6 +94,24 @@ export const FullScreenVideoPlayer: React.FC = () => {
   const localIsBuffering = useSharedValue(true);
   const cacheProgress = useSharedValue(0);
   const [isStatusBarHidden, setIsStatusBarHidden] = useState(false);
+  const [progressState, _setProgressState] = useState(0);
+
+  const setProgressState = useCallback(
+    (value: number) => {
+      if (sliding.current === true) return;
+      _setProgressState(value);
+    },
+    [sliding.current]
+  );
+
+  useAnimatedReaction(
+    () => {
+      return progress.value;
+    },
+    (progress) => {
+      runOnJS(setProgressState)(progress);
+    }
+  );
 
   const hideControls = useCallback(() => {
     "worklet";
@@ -104,8 +126,6 @@ export const FullScreenVideoPlayer: React.FC = () => {
   useEffect(() => {
     const backAction = () => {
       if (currentlyPlaying) {
-        // Your custom back action here
-        console.log("onback");
         Alert.alert("Hold on!", "Are you sure you want to exit?", [
           {
             text: "Cancel",
@@ -163,8 +183,60 @@ export const FullScreenVideoPlayer: React.FC = () => {
   }, [currentlyPlaying, api, poster]);
 
   useEffect(() => {
+    const subscription = player.addListener("playingChange", (isPlaying) => {
+      setIsPlaying(isPlaying);
+    });
+
+    const subscription2 = player.addListener("statusChange", (status) => {
+      if (status === "error") {
+        console.log("player.addListener ~ error");
+        Alert.alert("Error", "An error occurred while playing the video.");
+      }
+      if (status === "readyToPlay") {
+        console.log("player.addListener ~ readyToPlay");
+        localIsBuffering.value = false;
+        setIsBuffering(false);
+        if (firstLoad.current === true) {
+          playVideo();
+          firstLoad.current = false;
+        }
+      }
+      if (status === "loading") {
+        localIsBuffering.value = true;
+        setIsBuffering(true);
+      }
+      if (status === "idle") {
+        console.log("player.addListener ~ idle");
+      }
+    });
+
+    return () => {
+      subscription.remove();
+      subscription2.remove();
+    };
+  }, [player, setIsBuffering]);
+
+  useEffect(() => {
     max.value = currentlyPlaying?.item.RunTimeTicks || 0;
   }, [currentlyPlaying?.item.RunTimeTicks]);
+
+  useEffect(() => {
+    if (!player) return;
+
+    const interval = setInterval(async () => {
+      try {
+        if (sliding.current === true) return;
+        if (player.playing === true) {
+          const time = secondsToTicks(player.currentTime);
+          progress.value = time;
+        }
+      } catch (error) {
+        console.error("Error getting current time:", error);
+      }
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, [player, sliding.current]);
 
   useEffect(() => {
     if (!currentlyPlaying) {
@@ -173,14 +245,11 @@ export const FullScreenVideoPlayer: React.FC = () => {
       min.value = 0;
       max.value = 0;
       cacheProgress.value = 0;
-      localIsBuffering.value = false;
       sliding.current = false;
       hideControls();
       setStatusBarHidden(false);
-      // NavigationBar.setVisibilityAsync("visible")
     } else {
       setStatusBarHidden(true);
-      // NavigationBar.setVisibilityAsync("hidden")
       lockOrientation(
         settings?.defaultVideoOrientation ||
           ScreenOrientation.OrientationLock.DEFAULT
@@ -229,10 +298,9 @@ export const FullScreenVideoPlayer: React.FC = () => {
       ),
     })),
     loader: useAnimatedStyle(() => ({
-      opacity: withTiming(
-        localIsBuffering.value === true || progress.value === 0 ? 1 : 0,
-        { duration: 300 }
-      ),
+      opacity: withTiming(localIsBuffering.value === true ? 1 : 0, {
+        duration: 300,
+      }),
     })),
   };
 
@@ -303,31 +371,13 @@ export const FullScreenVideoPlayer: React.FC = () => {
   }, [opacity.value, hideControls, showControls]);
 
   const skipIntro = useCallback(async () => {
-    if (!introTimestamps || !videoRef.current) return;
+    if (!introTimestamps || !player) return;
     try {
-      videoRef.current.seek(introTimestamps.IntroEnd);
+      player.currentTime = introTimestamps.IntroEnd;
     } catch (error) {
       writeToLog("ERROR", "Error skipping intro", error);
     }
   }, [introTimestamps]);
-
-  const handleVideoProgress = useCallback(
-    (e: OnProgressData) => {
-      if (e.playableDuration === 0) {
-        setIsBuffering(true);
-        localIsBuffering.value = true;
-      } else {
-        setIsBuffering(false);
-        localIsBuffering.value = false;
-      }
-
-      if (sliding.current) return;
-      onProgress(e);
-      progress.value = secondsToTicks(e.currentTime);
-      cacheProgress.value = secondsToTicks(e.playableDuration);
-    },
-    [onProgress, setIsBuffering]
-  );
 
   const handleVideoError = useCallback(
     (e: any) => {
@@ -341,27 +391,27 @@ export const FullScreenVideoPlayer: React.FC = () => {
 
   const handleSkipBackward = useCallback(async () => {
     try {
-      const curr = await videoRef.current?.getCurrentPosition();
+      const curr = player.currentTime;
       if (curr !== undefined) {
-        videoRef.current?.seek(Math.max(0, curr - 15));
+        player.currentTime = Math.max(0, curr - 15);
         showControls();
       }
     } catch (error) {
       writeToLog("ERROR", "Error seeking video backwards", error);
     }
-  }, [videoRef, showControls]);
+  }, [player, showControls]);
 
   const handleSkipForward = useCallback(async () => {
     try {
-      const curr = await videoRef.current?.getCurrentPosition();
+      const curr = player.currentTime;
       if (curr !== undefined) {
-        videoRef.current?.seek(Math.max(0, curr + 15));
+        player.currentTime = Math.max(0, curr + 15);
         showControls();
       }
     } catch (error) {
       writeToLog("ERROR", "Error seeking video forwards", error);
     }
-  }, [videoRef, showControls]);
+  }, [player, showControls]);
 
   const handlePlayPause = useCallback(() => {
     console.log("handlePlayPause");
@@ -379,19 +429,19 @@ export const FullScreenVideoPlayer: React.FC = () => {
     (val: number) => {
       if (opacity.value === 0) return;
       const tick = Math.floor(val);
-      videoRef.current?.seek(tick / 10000000);
+      player.currentTime = tick / 10000000;
       sliding.current = false;
     },
-    [videoRef]
+    [player]
   );
 
   const handleSliderChange = useCallback(
     (val: number) => {
       if (opacity.value === 0) return;
+      sliding.current = true;
       const tick = Math.floor(val);
       progress.value = tick;
       calculateTrickplayUrl(progress);
-      showControls();
     },
     [progress, calculateTrickplayUrl, showControls]
   );
@@ -495,55 +545,16 @@ export const FullScreenVideoPlayer: React.FC = () => {
             }}
           >
             {videoSource && (
-              <Video
-                ref={videoRef}
-                allowsExternalPlayback
+              <VideoView
                 style={{
                   width: "100%",
                   height: "100%",
                 }}
-                resizeMode={ignoreSafeArea ? "cover" : "contain"}
-                playWhenInactive={true}
-                playInBackground={true}
-                showNotificationControls={true}
-                ignoreSilentSwitch="ignore"
-                controls={false}
-                pictureInPicture={true}
-                onProgress={handleVideoProgress}
-                subtitleStyle={{
-                  fontSize: 16,
-                }}
-                source={videoSource}
-                onPlaybackStateChanged={(e) => {
-                  if (e.isPlaying === true) {
-                    playVideo(false);
-                  } else if (e.isPlaying === false) {
-                    pauseVideo(false);
-                  }
-                }}
-                onBuffer={(e) => {
-                  if (e.isBuffering) {
-                    console.log("Buffering...");
-                    setIsBuffering(true);
-                    localIsBuffering.value = true;
-                  }
-                }}
-                onRestoreUserInterfaceForPictureInPictureStop={() => {
-                  showControls();
-                }}
-                onVolumeChange={(e) => {
-                  setVolume(e.volume);
-                }}
-                fullscreen={false}
-                onLoadStart={() => {
-                  localIsBuffering.value = true;
-                }}
-                onLoad={() => {
-                  localIsBuffering.value = true
-                }}
-                
-                progressUpdateInterval={1000}
-                onError={handleVideoError}
+                player={player}
+                allowsFullscreen
+                nativeControls={false}
+                allowsPictureInPicture
+                contentFit={ignoreSafeArea ? "cover" : "contain"}
               />
             )}
           </View>
@@ -778,10 +789,13 @@ export const FullScreenVideoPlayer: React.FC = () => {
             />
             <View className="flex flex-row items-center justify-between mt-0.5">
               <Text className="text-[12px] text-neutral-400">
-                {runtimeTicksToSeconds(progress.value)}
+                {runtimeTicksToSeconds(progressState)}
               </Text>
               <Text className="text-[12px] text-neutral-400">
-                -{runtimeTicksToSeconds(max.value - progress.value)}
+                -
+                {runtimeTicksToSeconds(
+                  (currentlyPlaying?.item.RunTimeTicks || 0) - progressState
+                )}
               </Text>
             </View>
           </View>
