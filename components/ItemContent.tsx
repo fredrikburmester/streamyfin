@@ -43,6 +43,7 @@ import { Chromecast } from "./Chromecast";
 import { ItemHeader } from "./ItemHeader";
 import { Loader } from "./Loader";
 import { MediaSourceSelector } from "./MediaSourceSelector";
+import { MoreMoviesWithActor } from "./MoreMoviesWithActor";
 
 export const ItemContent: React.FC<{ id: string }> = React.memo(({ id }) => {
   const [api] = useAtom(apiAtom);
@@ -361,6 +362,19 @@ export const ItemContent: React.FC<{ id: string }> = React.memo(({ id }) => {
           <OverviewText text={item?.Overview} className="px-4 mb-4" />
 
           <CastAndCrew item={item} className="mb-4" loading={loading} />
+
+          {item?.People && item.People.length > 0 && (
+            <View className="mb-4">
+              {item.People.slice(0, 3).map((person) => (
+                <MoreMoviesWithActor
+                  currentItem={item}
+                  key={person.Id}
+                  actorId={person.Id!}
+                  className="mb-4"
+                />
+              ))}
+            </View>
+          )}
 
           {item?.Type === "Episode" && (
             <CurrentSeries item={item} className="mb-4" />
