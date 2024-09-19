@@ -7,13 +7,15 @@ import { useSettings } from "@/utils/atoms/settings";
 import { getBackdropUrl } from "@/utils/jellyfin/image/getBackdropUrl";
 import { getAuthHeaders } from "@/utils/jellyfin/jellyfin";
 import { writeToLog } from "@/utils/log";
+import orientationToOrientationLock from "@/utils/OrientationLockConverter";
 import { secondsToTicks } from "@/utils/secondsToTicks";
 import { runtimeTicksToSeconds } from "@/utils/time";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { Image } from "expo-image";
-import { useNavigation, useRouter, useSegments } from "expo-router";
+import { useRouter, useSegments } from "expo-router";
 import * as ScreenOrientation from "expo-screen-orientation";
+import { setStatusBarHidden, StatusBar } from "expo-status-bar";
 import { useAtom } from "jotai";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -22,7 +24,6 @@ import {
   AppStateStatus,
   BackHandler,
   Dimensions,
-  Platform,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -40,11 +41,6 @@ import Video, { OnProgressData } from "react-native-video";
 import { Text } from "./common/Text";
 import { itemRouter } from "./common/TouchableItemRouter";
 import { Loader } from "./Loader";
-import * as NavigationBar from "expo-navigation-bar";
-import { setStatusBarHidden, StatusBar } from "expo-status-bar";
-import orientationToOrientationLock from "@/utils/OrientationLockConverter";
-import { BlurView } from "expo-blur";
-import { PlatformBlurView } from "./PlatformBlurView";
 
 async function lockOrientation(orientation: ScreenOrientation.OrientationLock) {
   await ScreenOrientation.lockAsync(orientation);
@@ -78,11 +74,13 @@ export const FullScreenVideoPlayer: React.FC = () => {
   const { trickPlayUrl, calculateTrickplayUrl, trickplayInfo } =
     useTrickplay(currentlyPlaying);
   const { previousItem, nextItem } = useAdjacentEpisodes({ currentlyPlaying });
-  const { showControls, hideControls, opacity } = useControlsVisibility(3000);
+  // const { showControls, hideControls, opacity } = useControlsVisibility(3000);
   const [isInteractive, setIsInteractive] = useState(true);
   const [orientation, setOrientation] = useState(
     ScreenOrientation.OrientationLock.UNKNOWN
   );
+
+  const opacity = useSharedValue(1);
 
   const [ignoreSafeArea, setIgnoreSafeArea] = useState(false);
   const from = useMemo(() => segments[2], [segments]);
@@ -94,6 +92,16 @@ export const FullScreenVideoPlayer: React.FC = () => {
   const localIsBuffering = useSharedValue(false);
   const cacheProgress = useSharedValue(0);
   const [isStatusBarHidden, setIsStatusBarHidden] = useState(false);
+
+  const hideControls = useCallback(() => {
+    "worklet";
+    opacity.value = 0;
+  }, [opacity]);
+
+  const showControls = useCallback(() => {
+    "worklet";
+    opacity.value = 1;
+  }, [opacity]);
 
   useEffect(() => {
     const backAction = () => {
@@ -373,17 +381,20 @@ export const FullScreenVideoPlayer: React.FC = () => {
   }, [videoRef, showControls]);
 
   const handlePlayPause = useCallback(() => {
+    console.log("handlePlayPause");
     if (isPlaying) pauseVideo();
     else playVideo();
     showControls();
   }, [isPlaying, pauseVideo, playVideo, showControls]);
 
   const handleSliderStart = useCallback(() => {
+    if (opacity.value === 0) return;
     sliding.current = true;
   }, []);
 
   const handleSliderComplete = useCallback(
     (val: number) => {
+      if (opacity.value === 0) return;
       const tick = Math.floor(val);
       videoRef.current?.seek(tick / 10000000);
       sliding.current = false;
@@ -393,6 +404,7 @@ export const FullScreenVideoPlayer: React.FC = () => {
 
   const handleSliderChange = useCallback(
     (val: number) => {
+      if (opacity.value === 0) return;
       const tick = Math.floor(val);
       progress.value = tick;
       calculateTrickplayUrl(progress);
@@ -428,9 +440,14 @@ export const FullScreenVideoPlayer: React.FC = () => {
     });
 
   const playPauseGesture = Gesture.Tap()
-    .enabled(opacity.value !== 0)
+    .onBegin(() => {
+      console.log("playPauseGesture ~", opacity.value);
+    })
     .onStart(() => {
       runOnJS(handlePlayPause)();
+    })
+    .onFinalize(() => {
+      if (opacity.value === 0) opacity.value = 1;
     });
 
   const goToPreviouItemGesture = Gesture.Tap()
@@ -595,9 +612,9 @@ export const FullScreenVideoPlayer: React.FC = () => {
           animatedStyles.controls,
         ]}
       >
-        <View className="flex flex-row items-center h-full space-x-2">
+        <View className="flex flex-row items-center h-full space-x-2 z-10">
           <GestureDetector gesture={toggleIgnoreSafeAreaGesture}>
-            <PlatformBlurView className="rounded-xl overflow-hidden">
+            <View className="rounded-xl overflow-hidden">
               <TouchableOpacity className="aspect-square flex flex-col items-center justify-center p-2">
                 <Ionicons
                   name={ignoreSafeArea ? "contract-outline" : "expand"}
@@ -605,10 +622,10 @@ export const FullScreenVideoPlayer: React.FC = () => {
                   color="white"
                 />
               </TouchableOpacity>
-            </PlatformBlurView>
+            </View>
           </GestureDetector>
 
-          <PlatformBlurView className="rounded-xl overflow-hidden">
+          <View className="rounded-xl overflow-hidden">
             <TouchableOpacity
               onPress={() => {
                 stopPlayback();
@@ -617,7 +634,7 @@ export const FullScreenVideoPlayer: React.FC = () => {
             >
               <Ionicons name="close" size={24} color="white" />
             </TouchableOpacity>
-          </PlatformBlurView>
+          </View>
         </View>
       </Animated.View>
 
@@ -712,7 +729,6 @@ export const FullScreenVideoPlayer: React.FC = () => {
             `}
           >
             <Slider
-              disable={opacity.value === 0}
               theme={{
                 maximumTrackTintColor: "rgba(255,255,255,0.2)",
                 minimumTrackTintColor: "#fff",
