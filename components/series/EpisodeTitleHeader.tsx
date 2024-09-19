@@ -12,7 +12,9 @@ export const EpisodeTitleHeader: React.FC<Props> = ({ item, ...props }) => {
 
   return (
     <View {...props}>
-      <Text className="font-bold text-2xl">{item?.Name}</Text>
+      <Text className="font-bold text-2xl" selectable>
+        {item?.Name}
+      </Text>
       <View className="flex flex-row items-center mb-1">
         <TouchableOpacity
           onPress={() => {
