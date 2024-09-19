@@ -7,6 +7,7 @@ import { useEffect, useMemo } from "react";
 import { TouchableOpacity, View } from "react-native";
 import * as DropdownMenu from "zeego/dropdown-menu";
 import { Text } from "./common/Text";
+import { convertBitsToMegabitsOrGigabits } from "@/utils/bToMb";
 
 interface Props extends React.ComponentProps<typeof View> {
   item: BaseItemDto;
@@ -78,7 +79,9 @@ export const MediaSourceSelector: React.FC<Props> = ({
               }}
             >
               <DropdownMenu.ItemTitle>
-                {name(source.Name)}
+                {`${name(source.Name)} - ${convertBitsToMegabitsOrGigabits(
+                  source.Size
+                )}`}
               </DropdownMenu.ItemTitle>
             </DropdownMenu.Item>
           ))}
