@@ -10,6 +10,8 @@ import { ScrollView, TouchableOpacity, View, ViewProps } from "react-native";
 import { Text } from "./common/Text";
 import { ItemCardText } from "./ItemCardText";
 import { Loader } from "./Loader";
+import { HorizontalScroll } from "./common/HorrizontalScroll";
+import { TouchableItemRouter } from "./common/TouchableItemRouter";
 
 interface SimilarItemsProps extends ViewProps {
   itemId?: string | null;
@@ -46,29 +48,24 @@ export const SimilarItems: React.FC<SimilarItemsProps> = ({
   return (
     <View {...props}>
       <Text className="px-4 text-lg font-bold mb-2">Similar items</Text>
-      {isLoading ? (
-        <View className="my-12">
-          <Loader />
-        </View>
-      ) : (
-        <ScrollView horizontal>
-          <View className="px-4 flex flex-row gap-x-2">
-            {movies.map((item) => (
-              <TouchableOpacity
-                key={item.Id}
-                onPress={() => router.push(`/items/page?id=${item.Id}`)}
-                className="flex flex-col w-32"
-              >
-                <MoviePoster item={item} />
-                <ItemCardText item={item} />
-              </TouchableOpacity>
-            ))}
-          </View>
-        </ScrollView>
-      )}
-      {movies.length === 0 && (
-        <Text className="px-4 text-neutral-500">No similar items</Text>
-      )}
+      <HorizontalScroll
+        data={movies}
+        loading={isLoading}
+        height={247}
+        noItemsText="No similar items found"
+        renderItem={(item: BaseItemDto, idx: number) => (
+          <TouchableItemRouter
+            key={idx}
+            item={item}
+            className="flex flex-col w-28"
+          >
+            <View>
+              <MoviePoster item={item} />
+              <ItemCardText item={item} />
+            </View>
+          </TouchableItemRouter>
+        )}
+      />
     </View>
   );
 };
