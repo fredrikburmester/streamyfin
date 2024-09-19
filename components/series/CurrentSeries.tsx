@@ -21,11 +21,12 @@ export const CurrentSeries: React.FC<Props> = ({ item, ...props }) => {
       <Text className="text-lg font-bold mb-2 px-4">Series</Text>
       <HorizontalScroll
         data={[item]}
+        height={247}
         renderItem={(item, index) => (
           <TouchableOpacity
             key={item.Id}
             onPress={() => router.push(`/series/${item.SeriesId}`)}
-            className="flex flex-col space-y-2 w-32"
+            className="flex flex-col space-y-2 w-28"
           >
             <Poster
               item={item}
