@@ -173,7 +173,6 @@ export const FullScreenVideoPlayer: React.FC = () => {
       min.value = 0;
       max.value = 0;
       cacheProgress.value = 0;
-      localIsBuffering.value = false;
       sliding.current = false;
       hideControls();
       setStatusBarHidden(false);
@@ -539,9 +538,8 @@ export const FullScreenVideoPlayer: React.FC = () => {
                   localIsBuffering.value = true;
                 }}
                 onLoad={() => {
-                  localIsBuffering.value = true
+                  localIsBuffering.value = true;
                 }}
-                
                 progressUpdateInterval={1000}
                 onError={handleVideoError}
               />
