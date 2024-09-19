@@ -22,6 +22,7 @@ interface HorizontalScrollProps<T>
   height?: number;
   loading?: boolean;
   extraData?: any;
+  noItemsText?: string;
 }
 
 export const HorizontalScroll = forwardRef<
@@ -38,6 +39,7 @@ export const HorizontalScroll = forwardRef<
       loading = false,
       height = 164,
       extraData,
+      noItemsText,
       ...props
     }: HorizontalScrollProps<T>,
     ref: React.ForwardedRef<HorizontalScrollRef>
@@ -91,7 +93,9 @@ export const HorizontalScroll = forwardRef<
         }}
         ListEmptyComponent={() => (
           <View className="flex-1 justify-center items-center">
-            <Text className="text-center text-gray-500">No data available</Text>
+            <Text className="text-center text-gray-500">
+              {noItemsText || "No data available"}
+            </Text>
           </View>
         )}
         {...props}

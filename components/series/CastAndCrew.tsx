@@ -25,6 +25,7 @@ export const CastAndCrew: React.FC<Props> = ({ item, loading, ...props }) => {
       <Text className="text-lg font-bold mb-2 px-4">Cast & Crew</Text>
       <HorizontalScroll
         loading={loading}
+        height={247}
         data={item?.People || []}
         renderItem={(item, index) => (
           <TouchableOpacity
@@ -32,7 +33,7 @@ export const CastAndCrew: React.FC<Props> = ({ item, loading, ...props }) => {
               router.push(`/actors/${item.Id}`);
             }}
             key={item.Id}
-            className="flex flex-col w-32"
+            className="flex flex-col w-28"
           >
             <Poster item={item} url={getPrimaryImageUrl({ api, item })} />
             <Text className="mt-2">{item.Name}</Text>
