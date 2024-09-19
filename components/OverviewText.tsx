@@ -19,7 +19,7 @@ export const OverviewText: React.FC<Props> = ({
 
   return (
     <View className="flex flex-col" {...props}>
-      <Text className="text-xl font-bold mb-2">Overview</Text>
+      <Text className="text-lg font-bold mb-2">Overview</Text>
       <TouchableOpacity
         onPress={() =>
           setLimit((prev) =>
