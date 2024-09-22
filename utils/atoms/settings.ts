@@ -70,6 +70,8 @@ type Settings = {
   defaultAudioLanguage: DefaultLanguageOption | null;
   showHomeTitles: boolean;
   defaultVideoOrientation: ScreenOrientation.OrientationLock;
+  forwardSkipTime: number;
+  rewindSkipTime: number;
 };
 
 /**
@@ -103,6 +105,8 @@ const loadSettings = async (): Promise<Settings> => {
     defaultSubtitleLanguage: null,
     showHomeTitles: true,
     defaultVideoOrientation: ScreenOrientation.OrientationLock.DEFAULT,
+    forwardSkipTime: 30,
+    rewindSkipTime: 10,
   };
 
   try {
