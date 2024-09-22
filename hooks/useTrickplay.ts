@@ -34,7 +34,7 @@ export const useTrickplay = (
   const [api] = useAtom(apiAtom);
   const [trickPlayUrl, setTrickPlayUrl] = useState<TrickplayUrl | null>(null);
   const lastCalculationTime = useRef(0);
-  const throttleDelay = 100; // 200ms throttle
+  const throttleDelay = 200; // 200ms throttle
 
   const trickplayInfo = useMemo(() => {
     if (!currentlyPlaying?.item.Id || !currentlyPlaying?.item.Trickplay) {
@@ -62,7 +62,7 @@ export const useTrickplay = (
   }, [currentlyPlaying]);
 
   const calculateTrickplayUrl = useCallback(
-    (progress: SharedValue<number>) => {
+    (progress: number) => {
       const now = Date.now();
       if (now - lastCalculationTime.current < throttleDelay) {
         return null;
@@ -80,7 +80,7 @@ export const useTrickplay = (
         throw new Error("Invalid trickplay data");
       }
 
-      const currentSecond = Math.max(0, Math.floor(progress.value / 10000000));
+      const currentSecond = Math.max(0, Math.floor(progress / 10000000));
 
       const cols = TileWidth;
       const rows = TileHeight;
