@@ -144,7 +144,7 @@ export const MediaToggles: React.FC<Props> = ({ ...props }) => {
             >
               <Text>-</Text>
             </TouchableOpacity>
-            <Text className="bg-neutral-800 first-letter:px-3 py-2 flex items-center justify-center">
+            <Text className="w-12 h-8 bg-neutral-800 first-letter:px-3 py-2 flex items-center justify-center">
               {settings.forwardSkipTime}s
             </Text>
             <TouchableOpacity
@@ -182,7 +182,7 @@ export const MediaToggles: React.FC<Props> = ({ ...props }) => {
             >
               <Text>-</Text>
             </TouchableOpacity>
-            <Text className="bg-neutral-800 first-letter:px-3 py-2 flex items-center justify-center">
+            <Text className="w-12 h-8 bg-neutral-800 first-letter:px-3 py-2 flex items-center justify-center">
               {settings.rewindSkipTime}s
             </Text>
             <TouchableOpacity
