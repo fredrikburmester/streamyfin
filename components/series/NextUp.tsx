@@ -49,7 +49,7 @@ export const NextUp: React.FC<{ seriesId: string }> = ({ seriesId }) => {
         renderItem={(item, index) => (
           <TouchableItemRouter
             item={item}
-            key={item.Id}
+            key={index}
             className="flex flex-col w-44"
           >
             <ContinueWatchingPoster item={item} useEpisodePoster />
