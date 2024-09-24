@@ -27,6 +27,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { Button } from "./Button";
 import { Text } from "./common/Text";
+import { useRouter } from "expo-router";
 
 interface Props extends React.ComponentProps<typeof Button> {
   item?: BaseItemDto | null;
@@ -44,6 +45,8 @@ export const PlayButton: React.FC<Props> = ({ item, url, ...props }) => {
 
   const [colorAtom] = useAtom(itemThemeColorAtom);
   const [api] = useAtom(apiAtom);
+
+  const router = useRouter();
 
   const memoizedItem = useMemo(() => item, [item?.Id]); // Memoize the item
   const memoizedColor = useMemo(() => colorAtom, [colorAtom]); // Memoize the color
@@ -63,6 +66,7 @@ export const PlayButton: React.FC<Props> = ({ item, url, ...props }) => {
     if (!url || !item) return;
     if (!client) {
       setCurrentlyPlayingState({ item, url });
+      router.push("/play");
       return;
     }
     const options = ["Chromecast", "Device", "Cancel"];
@@ -159,7 +163,9 @@ export const PlayButton: React.FC<Props> = ({ item, url, ...props }) => {
             });
             break;
           case 1:
+            console.log("Device");
             setCurrentlyPlayingState({ item, url });
+            router.push("/play");
             break;
           case cancelButtonIndex:
             break;
