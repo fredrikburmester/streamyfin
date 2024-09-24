@@ -87,19 +87,17 @@ export default function settings() {
 
         <SettingToggles />
 
-        {/* <View>
+        <View>
           <Text className="font-bold text-lg mb-2">Tests</Text>
           <Button
             onPress={() => {
-              toast.success("Download started", {
-                invert: true,
-              });
+              toast.success("Download started");
             }}
             color="black"
           >
             Test toast
           </Button>
-        </View> */}
+        </View>
 
         <View>
           <Text className="font-bold text-lg mb-2">Account and storage</Text>
