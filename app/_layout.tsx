@@ -121,12 +121,16 @@ function Layout() {
                         }}
                       />
                       <Stack.Screen
+                        name="(auth)/play"
+                        options={{ headerShown: false, title: "" }}
+                      />
+                      <Stack.Screen
                         name="login"
                         options={{ headerShown: false, title: "Login" }}
                       />
                       <Stack.Screen name="+not-found" />
                     </Stack>
-                    <FullScreenVideoPlayer />
+                    {/* <FullScreenVideoPlayer /> */}
                     <Toaster />
                   </ThemeProvider>
                 </PlaybackProvider>

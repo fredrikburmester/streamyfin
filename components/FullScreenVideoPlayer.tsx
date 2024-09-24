@@ -45,6 +45,9 @@ import {
   ticksToSeconds,
 } from "@/utils/time";
 
+const windowDimensions = Dimensions.get("window");
+const screenDimensions = Dimensions.get("screen");
+
 export const FullScreenVideoPlayer: React.FC = () => {
   const {
     currentlyPlaying,
@@ -85,7 +88,20 @@ export const FullScreenVideoPlayer: React.FC = () => {
   const min = useSharedValue(0);
   const max = useSharedValue(currentlyPlaying?.item.RunTimeTicks || 0);
 
-  const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
+  const [dimensions, setDimensions] = useState({
+    window: windowDimensions,
+    screen: screenDimensions,
+  });
+
+  useEffect(() => {
+    const subscription = Dimensions.addEventListener(
+      "change",
+      ({ window, screen }) => {
+        setDimensions({ window, screen });
+      }
+    );
+    return () => subscription?.remove();
+  });
 
   const from = useMemo(() => segments[2], [segments]);
 
@@ -123,7 +139,13 @@ export const FullScreenVideoPlayer: React.FC = () => {
             onPress: () => null,
             style: "cancel",
           },
-          { text: "Yes", onPress: () => stopPlayback() },
+          {
+            text: "Yes",
+            onPress: () => {
+              stopPlayback();
+              router.back();
+            },
+          },
         ]);
         return true;
       }
@@ -136,7 +158,7 @@ export const FullScreenVideoPlayer: React.FC = () => {
     );
 
     return () => backHandler.remove();
-  }, [currentlyPlaying, stopPlayback]);
+  }, [currentlyPlaying, stopPlayback, router]);
 
   const [orientation, setOrientation] = useState(
     ScreenOrientation.OrientationLock.UNKNOWN
@@ -153,6 +175,10 @@ export const FullScreenVideoPlayer: React.FC = () => {
         );
       }
     );
+
+    ScreenOrientation.getOrientationAsync().then((orientation) => {
+      setOrientation(orientationToOrientationLock(orientation));
+    });
 
     return () => {
       subscription.remove();
@@ -199,25 +225,13 @@ export const FullScreenVideoPlayer: React.FC = () => {
   }, [currentlyPlaying, api, poster]);
 
   useEffect(() => {
-    if (!currentlyPlaying) {
-      ScreenOrientation.unlockAsync();
-      progress.value = 0;
-      max.value = 0;
-      setShowControls(true);
-      setIsStatusBarHidden(false);
-      isSeeking.value = false;
-    } else {
-      setIsStatusBarHidden(true);
-      ScreenOrientation.lockAsync(
-        settings?.defaultVideoOrientation ||
-          ScreenOrientation.OrientationLock.DEFAULT
-      );
+    if (currentlyPlaying) {
       progress.value =
         currentlyPlaying.item?.UserData?.PlaybackPositionTicks || 0;
       max.value = currentlyPlaying.item.RunTimeTicks || 0;
       setShowControls(true);
     }
-  }, [currentlyPlaying, settings]);
+  }, [currentlyPlaying]);
 
   const toggleControls = () => setShowControls(!showControls);
 
@@ -243,10 +257,10 @@ export const FullScreenVideoPlayer: React.FC = () => {
     [setIsPlaying]
   );
 
-  const handlePlayPause = () => {
+  const handlePlayPause = useCallback(() => {
     if (isPlaying) pauseVideo();
     else playVideo();
-  };
+  }, [isPlaying, pauseVideo, playVideo]);
 
   const handleSliderComplete = (value: number) => {
     progress.value = value;
@@ -287,25 +301,25 @@ export const FullScreenVideoPlayer: React.FC = () => {
     }
   }, [settings]);
 
-  const handleGoToPreviousItem = () => {
+  const handleGoToPreviousItem = useCallback(() => {
     if (!previousItem || !from) return;
     const url = itemRouter(previousItem, from);
     stopPlayback();
     // @ts-ignore
     router.push(url);
-  };
+  }, [previousItem, from, stopPlayback, router]);
 
-  const handleGoToNextItem = () => {
+  const handleGoToNextItem = useCallback(() => {
     if (!nextItem || !from) return;
     const url = itemRouter(nextItem, from);
     stopPlayback();
     // @ts-ignore
     router.push(url);
-  };
+  }, [nextItem, from, stopPlayback, router]);
 
-  const toggleIgnoreSafeArea = () => {
-    setIgnoreSafeArea(!ignoreSafeArea);
-  };
+  const toggleIgnoreSafeArea = useCallback(() => {
+    setIgnoreSafeArea((prev) => !prev);
+  }, []);
 
   const { data: introTimestamps } = useQuery({
     queryKey: ["introTimestamps", currentlyPlaying?.item.Id],
@@ -338,27 +352,26 @@ export const FullScreenVideoPlayer: React.FC = () => {
     enabled: !!currentlyPlaying?.item.Id,
   });
 
-  const skipIntro = async () => {
+  const skipIntro = useCallback(async () => {
     if (!introTimestamps || !videoRef.current) return;
     try {
       videoRef.current.seek(introTimestamps.IntroEnd);
     } catch (error) {
       writeToLog("ERROR", "Error skipping intro", error);
     }
-  };
+  }, [introTimestamps]);
 
   if (!currentlyPlaying) return null;
 
   return (
     <View
       style={{
-        width: screenWidth,
-        height: screenHeight,
+        width: dimensions.window.width,
+        height: dimensions.window.height,
         backgroundColor: "black",
       }}
     >
-      <StatusBar hidden={isStatusBarHidden} />
-      <TouchableOpacity
+      <Pressable
         onPress={toggleControls}
         style={[
           {
@@ -368,8 +381,8 @@ export const FullScreenVideoPlayer: React.FC = () => {
             left: ignoreSafeArea ? 0 : insets.left,
             right: ignoreSafeArea ? 0 : insets.right,
             width: ignoreSafeArea
-              ? screenWidth
-              : screenWidth - (insets.left + insets.right),
+              ? dimensions.window.width
+              : dimensions.window.width - (insets.left + insets.right),
           },
         ]}
       >
@@ -388,12 +401,28 @@ export const FullScreenVideoPlayer: React.FC = () => {
             fullscreen={false}
           />
         )}
-      </TouchableOpacity>
+      </Pressable>
+
+      {(showControls || isBuffering) && (
+        <View
+          pointerEvents="none"
+          style={[
+            {
+              top: 0,
+              left: 0,
+              position: "absolute",
+              width: dimensions.window.width,
+              height: dimensions.window.height,
+            },
+          ]}
+          className="  bg-black/50 z-0"
+        ></View>
+      )}
 
       {isBuffering && (
         <View
           pointerEvents="none"
-          className="fixed top-0 brightness-50 bg-black/50 left-0 w-screen h-screen flex flex-col items-center justify-center"
+          className="fixed top-0 left-0 w-screen h-screen flex flex-col items-center justify-center"
         >
           <Loader />
         </View>
@@ -409,10 +438,9 @@ export const FullScreenVideoPlayer: React.FC = () => {
                 bottom: isLandscape ? insets.bottom + 26 : insets.bottom + 70,
                 right: isLandscape ? insets.right + 32 : insets.right + 16,
                 height: 70,
-                zIndex: 10,
               },
             ]}
-            className=""
+            className="z-10"
           >
             <TouchableOpacity
               onPress={skipIntro}
@@ -430,8 +458,9 @@ export const FullScreenVideoPlayer: React.FC = () => {
               {
                 position: "absolute",
                 top: insets.top,
-                right: isLandscape ? insets.right + 32 : insets.right + 8,
+                right: isLandscape ? insets.right + 32 : insets.right + 16,
                 height: 70,
+                zIndex: 10,
               },
             ]}
             className="flex flex-row items-center space-x-2 z-10"
@@ -447,7 +476,10 @@ export const FullScreenVideoPlayer: React.FC = () => {
               />
             </TouchableOpacity>
             <TouchableOpacity
-              onPress={stopPlayback}
+              onPress={() => {
+                stopPlayback();
+                router.back();
+              }}
               className="aspect-square flex flex-col bg-neutral-800 rounded-xl items-center justify-center p-2"
             >
               <Ionicons name="close" size={24} color="white" />
@@ -461,8 +493,8 @@ export const FullScreenVideoPlayer: React.FC = () => {
                 bottom: insets.bottom + 8,
                 left: isLandscape ? insets.left + 32 : insets.left + 16,
                 width: isLandscape
-                  ? screenWidth - insets.left - insets.right - 64
-                  : screenWidth - insets.left - insets.right - 32,
+                  ? dimensions.window.width - insets.left - insets.right - 64
+                  : dimensions.window.width - insets.left - insets.right - 32,
               },
             ]}
           >
