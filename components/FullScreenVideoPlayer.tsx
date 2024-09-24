@@ -44,6 +44,8 @@ import {
   runtimeTicksToSeconds,
   ticksToSeconds,
 } from "@/utils/time";
+import { useIntroSkipper } from "@/hooks/useIntroSkipper";
+import { useCreditSkipper } from "@/hooks/useCreditSkipper";
 
 const windowDimensions = Dimensions.get("window");
 const screenDimensions = Dimensions.get("screen");
@@ -114,6 +116,18 @@ export const FullScreenVideoPlayer: React.FC = () => {
       setRemainingTime(remaining);
     },
     []
+  );
+
+  const { showSkipButton, skipIntro } = useIntroSkipper(
+    currentlyPlaying?.item.Id,
+    currentTime,
+    videoRef
+  );
+
+  const { showSkipCreditButton, skipCredit } = useCreditSkipper(
+    currentlyPlaying?.item.Id,
+    currentTime,
+    videoRef
   );
 
   useAnimatedReaction(
@@ -321,46 +335,6 @@ export const FullScreenVideoPlayer: React.FC = () => {
     setIgnoreSafeArea((prev) => !prev);
   }, []);
 
-  const { data: introTimestamps } = useQuery({
-    queryKey: ["introTimestamps", currentlyPlaying?.item.Id],
-    queryFn: async () => {
-      if (!currentlyPlaying?.item.Id) {
-        console.log("No item id");
-        return null;
-      }
-
-      const res = await api?.axiosInstance.get(
-        `${api.basePath}/Episode/${currentlyPlaying.item.Id}/IntroTimestamps`,
-        {
-          headers: getAuthHeaders(api),
-        }
-      );
-
-      if (res?.status !== 200) {
-        return null;
-      }
-
-      return res?.data as {
-        EpisodeId: string;
-        HideSkipPromptAt: number;
-        IntroEnd: number;
-        IntroStart: number;
-        ShowSkipPromptAt: number;
-        Valid: boolean;
-      };
-    },
-    enabled: !!currentlyPlaying?.item.Id,
-  });
-
-  const skipIntro = useCallback(async () => {
-    if (!introTimestamps || !videoRef.current) return;
-    try {
-      videoRef.current.seek(introTimestamps.IntroEnd);
-    } catch (error) {
-      writeToLog("ERROR", "Error skipping intro", error);
-    }
-  }, [introTimestamps]);
-
   if (!currentlyPlaying) return null;
 
   return (
@@ -428,28 +402,47 @@ export const FullScreenVideoPlayer: React.FC = () => {
         </View>
       )}
 
-      {introTimestamps &&
-        currentTime > introTimestamps.ShowSkipPromptAt &&
-        currentTime < introTimestamps.HideSkipPromptAt && (
-          <View
-            style={[
-              {
-                position: "absolute",
-                bottom: isLandscape ? insets.bottom + 26 : insets.bottom + 70,
-                right: isLandscape ? insets.right + 32 : insets.right + 16,
-                height: 70,
-              },
-            ]}
-            className="z-10"
+      {showSkipButton && (
+        <View
+          style={[
+            {
+              position: "absolute",
+              bottom: isLandscape ? insets.bottom + 26 : insets.bottom + 70,
+              right: isLandscape ? insets.right + 32 : insets.right + 16,
+              height: 70,
+            },
+          ]}
+          className="z-10"
+        >
+          <TouchableOpacity
+            onPress={skipIntro}
+            className="bg-purple-600 rounded-full px-2.5 py-2 font-semibold"
           >
-            <TouchableOpacity
-              onPress={skipIntro}
-              className="bg-purple-600 rounded-full p-2"
-            >
-              <Text className="text-white">Skip Intro</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+            <Text className="text-white">Skip Intro</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {showSkipCreditButton && (
+        <View
+          style={[
+            {
+              position: "absolute",
+              bottom: isLandscape ? insets.bottom + 26 : insets.bottom + 70,
+              right: isLandscape ? insets.right + 32 : insets.right + 16,
+              height: 70,
+            },
+          ]}
+          className="z-10"
+        >
+          <TouchableOpacity
+            onPress={skipCredit}
+            className="bg-purple-600 rounded-full px-2.5 py-2 font-semibold"
+          >
+            <Text className="text-white">Skip Credits</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {showControls && (
         <>
