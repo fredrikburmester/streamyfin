@@ -26,6 +26,7 @@ export default function IndexLayout() {
               onPress={() => {
                 router.push("/(auth)/downloads");
               }}
+              className="p-2"
             >
               <Feather name="download" color={"white"} size={22} />
             </TouchableOpacity>
@@ -37,10 +38,9 @@ export default function IndexLayout() {
                 onPress={() => {
                   router.push("/(auth)/settings");
                 }}
+                className="p-2 "
               >
-                <View className="h-10 aspect-square flex items-center justify-center rounded">
-                  <Feather name="settings" color={"white"} size={22} />
-                </View>
+                <Feather name="settings" color={"white"} size={22} />
               </TouchableOpacity>
             </View>
           ),
