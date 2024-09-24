@@ -131,7 +131,19 @@ function Layout() {
                       <Stack.Screen name="+not-found" />
                     </Stack>
                     {/* <FullScreenVideoPlayer /> */}
-                    <Toaster />
+                    <Toaster
+                      duration={2000}
+                      toastOptions={{
+                        style: {
+                          backgroundColor: "#262626",
+                          borderColor: "#363639",
+                          borderWidth: 1,
+                        },
+                        titleStyle: {
+                          color: "white",
+                        },
+                      }}
+                    />
                   </ThemeProvider>
                 </PlaybackProvider>
               </JellyfinProvider>
