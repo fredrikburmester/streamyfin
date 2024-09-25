@@ -10,6 +10,7 @@ import { Text } from "../common/Text";
 import { useFiles } from "@/hooks/useFiles";
 import { useSettings } from "@/utils/atoms/settings";
 import { usePlayback } from "@/providers/PlaybackProvider";
+import { useRouter } from "expo-router";
 
 interface EpisodeCardProps {
   item: BaseItemDto;
@@ -22,6 +23,7 @@ interface EpisodeCardProps {
  */
 export const EpisodeCard: React.FC<EpisodeCardProps> = ({ item }) => {
   const { deleteFile } = useFiles();
+  const router = useRouter();
 
   const { startDownloadedFilePlayback } = usePlayback();
 
@@ -30,6 +32,7 @@ export const EpisodeCard: React.FC<EpisodeCardProps> = ({ item }) => {
       item,
       url: `${FileSystem.documentDirectory}/${item.Id}.mp4`,
     });
+    router.push("/play");
   }, [item, startDownloadedFilePlayback]);
 
   /**
