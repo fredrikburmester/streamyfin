@@ -157,43 +157,34 @@ export default function index() {
     if (!api || !user?.Id) return [];
 
     const ss: Section[] = [
-      {
-        title: "Continue Watching",
-        queryKey: ["resumeItems", user.Id],
-        queryFn: async () =>
-          (
-            await getItemsApi(api).getResumeItems({
-              userId: user.Id,
-              enableImageTypes: ["Primary", "Backdrop", "Thumb"],
-            })
-          ).data.Items || [],
-        type: "ScrollingCollectionList",
-        orientation: "horizontal",
-      },
-      {
-        title: "Next Up",
-        queryKey: ["nextUp-all", user?.Id],
-        queryFn: async () =>
-          (
-            await getTvShowsApi(api).getNextUp({
-              userId: user?.Id,
-              fields: ["MediaSourceCount"],
-              limit: 20,
-              enableImageTypes: ["Primary", "Backdrop", "Thumb"],
-            })
-          ).data.Items || [],
-        type: "ScrollingCollectionList",
-        orientation: "horizontal",
-      },
-      ...(mediaListCollections?.map(
-        (ml) =>
-          ({
-            title: ml.Name || "",
-            queryKey: ["mediaList", ml.Id],
-            queryFn: async () => ml,
-            type: "MediaListSection",
-          } as MediaListSection)
-      ) || []),
+      // {
+      //   title: "Continue Watching",
+      //   queryKey: ["resumeItems", user.Id],
+      //   queryFn: async () =>
+      //     (
+      //       await getItemsApi(api).getResumeItems({
+      //         userId: user.Id,
+      //         enableImageTypes: ["Primary", "Backdrop", "Thumb"],
+      //       })
+      //     ).data.Items || [],
+      //   type: "ScrollingCollectionList",
+      //   orientation: "horizontal",
+      // },
+      // {
+      //   title: "Next Up",
+      //   queryKey: ["nextUp-all", user?.Id],
+      //   queryFn: async () =>
+      //     (
+      //       await getTvShowsApi(api).getNextUp({
+      //         userId: user?.Id,
+      //         fields: ["MediaSourceCount"],
+      //         limit: 20,
+      //         enableImageTypes: ["Primary", "Backdrop", "Thumb"],
+      //       })
+      //     ).data.Items || [],
+      //   type: "ScrollingCollectionList",
+      //   orientation: "horizontal",
+      // },
       {
         title: "Recently Added in Movies",
         queryKey: ["recentlyAddedInMovies", user?.Id, movieCollectionId],
@@ -228,6 +219,15 @@ export default function index() {
           ).data || [],
         type: "ScrollingCollectionList",
       },
+      ...(mediaListCollections?.map(
+        (ml) =>
+          ({
+            title: ml.Name || "",
+            queryKey: ["mediaList", ml.Id],
+            queryFn: async () => ml,
+            type: "MediaListSection",
+          } as MediaListSection)
+      ) || []),
       {
         title: "Suggested Movies",
         queryKey: ["suggestedMovies", user?.Id],
@@ -317,7 +317,7 @@ export default function index() {
 
   const insets = useSafeAreaInsets();
 
-  if (e1 || e2)
+  if (e1 || e2 || !api)
     return (
       <View className="flex flex-col items-center justify-center h-full -mt-6">
         <Text className="text-3xl font-bold mb-2">Oops!</Text>
@@ -341,39 +341,69 @@ export default function index() {
       refreshControl={
         <RefreshControl refreshing={loading} onRefresh={refetch} />
       }
+      key={"home"}
+      contentContainerStyle={{
+        paddingLeft: insets.left,
+        paddingRight: insets.right,
+      }}
+      className="flex flex-col space-y-4 mb-20"
     >
-      <View
-        style={{
-          paddingLeft: insets.left,
-          paddingRight: insets.right,
-        }}
-        className="flex flex-col pt-4 pb-24 gap-y-2"
-      >
-        <LargeMovieCarousel />
+      <LargeMovieCarousel />
 
-        {sections.map((section, index) => {
-          if (section.type === "ScrollingCollectionList") {
-            return (
-              <ScrollingCollectionList
-                key={index}
-                title={section.title}
-                queryKey={section.queryKey}
-                queryFn={section.queryFn}
-                orientation={section.orientation}
-              />
-            );
-          } else if (section.type === "MediaListSection") {
-            return (
-              <MediaListSection
-                key={index}
-                queryKey={section.queryKey}
-                queryFn={section.queryFn}
-              />
-            );
-          }
-          return null;
-        })}
-      </View>
+      <ScrollingCollectionList
+        key="nextUp"
+        title={"Next Up"}
+        queryKey={["nextUp-all", user?.Id]}
+        queryFn={async () =>
+          (
+            await getTvShowsApi(api).getNextUp({
+              userId: user?.Id,
+              fields: ["MediaSourceCount"],
+              limit: 20,
+              enableImageTypes: ["Primary", "Backdrop", "Thumb"],
+            })
+          ).data.Items|| []
+        }
+        orientation={"horizontal"}
+      />
+
+      <ScrollingCollectionList
+        key="continueWatching"
+        title={"Continue Watching"}
+        queryKey={["continueWatching", user?.Id]}
+        queryFn={async () =>
+          (
+            await getItemsApi(api).getResumeItems({
+              userId: user?.Id,
+              enableImageTypes: ["Primary", "Backdrop", "Thumb"],
+            })
+          ).data.Items || []
+        }
+        orientation={"horizontal"}
+      />
+
+      {sections.map((section, index) => {
+        if (section.type === "ScrollingCollectionList") {
+          return (
+            <ScrollingCollectionList
+              key={index}
+              title={section.title}
+              queryKey={section.queryKey}
+              queryFn={section.queryFn}
+              orientation={section.orientation}
+            />
+          );
+        } else if (section.type === "MediaListSection") {
+          return (
+            <MediaListSection
+              key={index}
+              queryKey={section.queryKey}
+              queryFn={section.queryFn}
+            />
+          );
+        }
+        return null;
+      })}
     </ScrollView>
   );
 }

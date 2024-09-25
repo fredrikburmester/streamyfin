@@ -84,13 +84,7 @@ export const LargeMovieCarousel: React.FC<Props> = ({ ...props }) => {
 
   const width = Dimensions.get("screen").width;
 
-  if (l1 || l2)
-    return (
-      <View className="h-[242px] flex items-center justify-center">
-        <Loader />
-      </View>
-    );
-
+  if (l1 || l2) return null;
   if (!popularItems) return null;
 
   return (
