@@ -370,7 +370,10 @@ export const FullScreenVideoPlayer: React.FC = () => {
             onLoad={(data) => (max.value = secondsToTicks(data.duration))}
             onError={handleVideoError}
             playWhenInactive={true}
+            allowsExternalPlayback={true}
             playInBackground={true}
+            pictureInPicture={true}
+            showNotificationControls={true}
             ignoreSilentSwitch="ignore"
             fullscreen={false}
           />
