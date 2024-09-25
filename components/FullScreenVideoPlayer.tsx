@@ -1,51 +1,41 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  View,
-  TouchableOpacity,
-  Alert,
-  Dimensions,
-  BackHandler,
-  Pressable,
-  Touchable,
-} from "react-native";
-import Video, { OnProgressData } from "react-native-video";
-import { Slider } from "react-native-awesome-slider";
-import { Ionicons } from "@expo/vector-icons";
+import { useAdjacentEpisodes } from "@/hooks/useAdjacentEpisodes";
+import { useCreditSkipper } from "@/hooks/useCreditSkipper";
+import { useIntroSkipper } from "@/hooks/useIntroSkipper";
+import { useTrickplay } from "@/hooks/useTrickplay";
+import { apiAtom } from "@/providers/JellyfinProvider";
 import { usePlayback } from "@/providers/PlaybackProvider";
 import { useSettings } from "@/utils/atoms/settings";
-import { useAdjacentEpisodes } from "@/hooks/useAdjacentEpisodes";
-import { useTrickplay } from "@/hooks/useTrickplay";
-import { Text } from "./common/Text";
-import { Loader } from "./Loader";
+import { getBackdropUrl } from "@/utils/jellyfin/image/getBackdropUrl";
+import { getAuthHeaders } from "@/utils/jellyfin/jellyfin";
 import { writeToLog } from "@/utils/log";
-import { useRouter, useSegments } from "expo-router";
-import { itemRouter } from "./common/TouchableItemRouter";
+import orientationToOrientationLock from "@/utils/OrientationLockConverter";
+import { secondsToTicks } from "@/utils/secondsToTicks";
+import { formatTimeString, ticksToSeconds } from "@/utils/time";
+import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { StatusBar } from "expo-status-bar";
+import { useRouter, useSegments } from "expo-router";
 import * as ScreenOrientation from "expo-screen-orientation";
 import { useAtom } from "jotai";
-import { apiAtom } from "@/providers/JellyfinProvider";
-import { useQuery } from "@tanstack/react-query";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  Alert,
+  BackHandler,
+  Dimensions,
+  Pressable,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { Slider } from "react-native-awesome-slider";
 import {
   runOnJS,
   useAnimatedReaction,
   useSharedValue,
 } from "react-native-reanimated";
-import { secondsToTicks } from "@/utils/secondsToTicks";
-import { getAuthHeaders } from "@/utils/jellyfin/jellyfin";
-import { getBackdropUrl } from "@/utils/jellyfin/image/getBackdropUrl";
-import {
-  useSafeAreaFrame,
-  useSafeAreaInsets,
-} from "react-native-safe-area-context";
-import orientationToOrientationLock from "@/utils/OrientationLockConverter";
-import {
-  formatTimeString,
-  runtimeTicksToSeconds,
-  ticksToSeconds,
-} from "@/utils/time";
-import { useIntroSkipper } from "@/hooks/useIntroSkipper";
-import { useCreditSkipper } from "@/hooks/useCreditSkipper";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Video, { OnProgressData } from "react-native-video";
+import { Text } from "./common/Text";
+import { itemRouter } from "./common/TouchableItemRouter";
+import { Loader } from "./Loader";
 
 const windowDimensions = Dimensions.get("window");
 const screenDimensions = Dimensions.get("screen");
@@ -56,7 +46,6 @@ export const FullScreenVideoPlayer: React.FC = () => {
     pauseVideo,
     playVideo,
     stopPlayback,
-    setVolume,
     setIsPlaying,
     isPlaying,
     videoRef,
@@ -77,7 +66,6 @@ export const FullScreenVideoPlayer: React.FC = () => {
   const [showControls, setShowControls] = useState(true);
   const [isBuffering, setIsBufferingState] = useState(true);
   const [ignoreSafeArea, setIgnoreSafeArea] = useState(false);
-  const [isStatusBarHidden, setIsStatusBarHidden] = useState(false);
 
   // Seconds
   const [currentTime, setCurrentTime] = useState(0);
