@@ -122,7 +122,11 @@ function Layout() {
                       />
                       <Stack.Screen
                         name="(auth)/play"
-                        options={{ headerShown: false, title: "" }}
+                        options={{
+                          headerShown: false,
+                          title: "",
+                          animation: "fade",
+                        }}
                       />
                       <Stack.Screen
                         name="login"
@@ -130,7 +134,6 @@ function Layout() {
                       />
                       <Stack.Screen name="+not-found" />
                     </Stack>
-                    {/* <FullScreenVideoPlayer /> */}
                     <Toaster
                       duration={2000}
                       toastOptions={{
