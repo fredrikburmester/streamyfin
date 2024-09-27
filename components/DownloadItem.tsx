@@ -32,6 +32,7 @@ import { MediaSourceSelector } from "./MediaSourceSelector";
 import ProgressCircle from "./ProgressCircle";
 import { SubtitleTrackSelector } from "./SubtitleTrackSelector";
 import { useDownloadM3U8Files } from "@/hooks/useDownloadM3U8Files";
+import * as FileSystem from "expo-file-system";
 
 interface DownloadProps extends ViewProps {
   item: BaseItemDto;
@@ -45,8 +46,7 @@ export const DownloadItem: React.FC<DownloadProps> = ({ item, ...props }) => {
   const [settings] = useSettings();
   // const { startRemuxing } = useRemuxHlsToMp4(item);
 
-  const { cancelDownload, startBackgroundDownload } =
-    useDownloadM3U8Files(item);
+  const { startBackgroundDownload } = useDownloadM3U8Files(item);
 
   const [selectedMediaSource, setSelectedMediaSource] =
     useState<MediaSourceInfo | null>(null);
@@ -175,13 +175,36 @@ export const DownloadItem: React.FC<DownloadProps> = ({ item, ...props }) => {
   const { data: downloaded, isFetching } = useQuery({
     queryKey: ["downloaded", item.Id],
     queryFn: async () => {
-      if (!item.Id) return false;
+      if (!item.Id) {
+        return false;
+      }
 
-      const data: BaseItemDto[] = JSON.parse(
-        (await AsyncStorage.getItem("downloaded_files")) || "[]"
-      );
+      try {
+        // Check if the item exists in AsyncStorage
+        const downloadedItems = await AsyncStorage.getItem("downloadedItems");
+        const items: BaseItemDto[] = downloadedItems
+          ? JSON.parse(downloadedItems)
+          : [];
+        const isInStorage = items.some(
+          (storedItem) => storedItem.Id === item.Id
+        );
 
-      return data.some((d) => d.Id === item.Id);
+        if (!isInStorage) {
+          return false;
+        }
+
+        // Check if the directory and m3u8 file exist
+        const directoryPath = `${FileSystem.documentDirectory}${item.Id}`;
+        const m3u8FilePath = `${directoryPath}/local.m3u8`;
+
+        const dirInfo = await FileSystem.getInfoAsync(directoryPath);
+        const fileInfo = await FileSystem.getInfoAsync(m3u8FilePath);
+
+        return dirInfo.exists && fileInfo.exists;
+      } catch (error) {
+        console.error("Error checking download status:", error);
+        return false;
+      }
     },
     enabled: !!item.Id,
   });

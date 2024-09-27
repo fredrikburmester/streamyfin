@@ -28,9 +28,18 @@ export const EpisodeCard: React.FC<EpisodeCardProps> = ({ item }) => {
   const { startDownloadedFilePlayback } = usePlayback();
 
   const handleOpenFile = useCallback(async () => {
+    const url = `${FileSystem.documentDirectory}${item.Id}/0.ts`;
+    console.log(url);
+
+    const fileInfo = await FileSystem.getInfoAsync(url);
+
+    if (!fileInfo.exists) {
+      console.warn("m3u8 file does not exist:", url);
+    }
+
     startDownloadedFilePlayback({
       item,
-      url: `${FileSystem.documentDirectory}/${item.Id}.mp4`,
+      url,
     });
     router.push("/play");
   }, [item, startDownloadedFilePlayback]);

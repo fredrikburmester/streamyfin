@@ -70,28 +70,28 @@ const downloads: React.FC = () => {
           if (info.exists) {
             if (info.isDirectory) {
               // List items in the directory
-              const subItems = await FileSystem.readDirectoryAsync(fullPath);
-              if (subItems.length === 0) {
-                console.log(`Directory ${item} is empty.`);
-              } else {
-                console.log(`Items in ${item}:`, subItems);
-                // If item ends in m3u8, print the content of the file
-                const m3u8Files = subItems.filter((subItem) =>
-                  subItem.endsWith(".m3u8")
-                );
-                if (m3u8Files.length === 0) {
-                  console.log(`No .m3u8 files found in ${item}.`);
-                } else {
-                  for (let subItem of m3u8Files) {
-                    console.log(
-                      `Content of ${subItem}:`,
-                      await FileSystem.readAsStringAsync(
-                        `${fullPath}/${subItem}`
-                      )
-                    );
-                  }
-                }
-              }
+              // const subItems = await FileSystem.readDirectoryAsync(fullPath);
+              // if (subItems.length === 0) {
+              //   console.log(`Directory ${item} is empty.`);
+              // } else {
+              //   console.log(`Items in ${item}:`, subItems);
+              //   // If item ends in m3u8, print the content of the file
+              //   const m3u8Files = subItems.filter((subItem) =>
+              //     subItem.endsWith(".m3u8")
+              //   );
+              //   if (m3u8Files.length === 0) {
+              //     console.log(`No .m3u8 files found in ${item}.`);
+              //   } else {
+              //     for (let subItem of m3u8Files) {
+              //       console.log(
+              //         `Content of ${subItem}:`,
+              //         await FileSystem.readAsStringAsync(
+              //           `${fullPath}/${subItem}`
+              //         )
+              //       );
+              //     }
+              //   }
+              // }
             } else {
               console.log(`${item} is a file`);
             }
