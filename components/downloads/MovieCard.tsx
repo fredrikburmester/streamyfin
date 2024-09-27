@@ -11,6 +11,7 @@ import { Text } from "../common/Text";
 
 import { usePlayback } from "@/providers/PlaybackProvider";
 import { useRouter } from "expo-router";
+import { deleteDownloadedItem } from "@/hooks/useDownloadM3U8Files";
 
 interface MovieCardProps {
   item: BaseItemDto;
@@ -26,13 +27,32 @@ export const MovieCard: React.FC<MovieCardProps> = ({ item }) => {
   const router = useRouter();
   const { startDownloadedFilePlayback } = usePlayback();
 
-  const handleOpenFile = useCallback(() => {
-    startDownloadedFilePlayback({
-      item,
-      url: `${FileSystem.documentDirectory}/${item.Id}.mp4`,
-    });
-    router.push("/play");
-  }, [item, startDownloadedFilePlayback]);
+  const handleOpenFile = useCallback(async () => {
+    try {
+      const directoryPath = `${FileSystem.documentDirectory}${item.Id}`;
+      const m3u8FilePath = `${directoryPath}/local.m3u8`;
+
+      console.log("Path: ", m3u8FilePath);
+
+      // Check if the m3u8 file exists
+      const fileInfo = await FileSystem.getInfoAsync(m3u8FilePath);
+
+      if (!fileInfo.exists) {
+        console.warn("m3u8 file does not exist:", m3u8FilePath);
+      }
+
+      // Start playback
+      startDownloadedFilePlayback({
+        item,
+        url: `${m3u8FilePath}`,
+      });
+
+      // Navigate to the play screen
+      router.push("/play");
+    } catch (error) {
+      console.error("Error opening file:", error);
+    }
+  }, [item, startDownloadedFilePlayback, router, deleteDownloadedItem]);
 
   /**
    * Handles deleting the file with haptic feedback.
