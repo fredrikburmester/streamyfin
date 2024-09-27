@@ -8,13 +8,16 @@ import { useQueryClient } from "@tanstack/react-query";
 import * as FileSystem from "expo-file-system";
 import { FFmpegKit, ReturnCode } from "ffmpeg-kit-react-native";
 import { useAtom } from "jotai";
-import { useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner-native";
 
 export const useDownloadM3U8Files = (item: BaseItemDto) => {
   const [_, setProgress] = useAtom(runningProcesses);
   const queryClient = useQueryClient();
   const [api] = useAtom(apiAtom);
+
+  const [totalSegments, setTotalSegments] = useState<number>(0);
+  const [downloadedSegments, setDownloadedSegments] = useState<number[]>([]);
 
   if (!item.Id || !item.Name) {
     throw new Error("Item must have an Id and Name");
@@ -56,6 +59,8 @@ export const useDownloadM3U8Files = (item: BaseItemDto) => {
           item.Id!
         );
 
+        setTotalSegments(segments.length);
+
         for (let i = 0; i < segments.length; i++) {
           const segment = segments[i];
           const segmentUrl = `${api.basePath}/videos/${item.Id}/${segment.path}`;
@@ -65,18 +70,8 @@ export const useDownloadM3U8Files = (item: BaseItemDto) => {
             id: `${item.Id}_segment_${i}`,
             url: segmentUrl,
             destination: destination,
-          }).done((e) => {
-            console.log("Download completed for segment", i);
-            setProgress((prev) => {
-              const newProgress = ((prev?.progress || 0) + 1) / segments.length;
-              if (prev === null) {
-                return null;
-              }
-              return {
-                ...prev,
-                progress: newProgress,
-              };
-            });
+          }).done(() => {
+            setDownloadedSegments((prev) => [...prev, i]);
           });
         }
 
@@ -93,8 +88,23 @@ export const useDownloadM3U8Files = (item: BaseItemDto) => {
         throw error;
       }
     },
-    [item, setProgress, queryClient, api]
+    [item, queryClient, api]
   );
+
+  useEffect(() => {
+    if (totalSegments === 0) return;
+
+    console.log("[0]", downloadedSegments.length, totalSegments);
+
+    const progress = (downloadedSegments.length / totalSegments) * 100;
+    setProgress((prev) => ({
+      ...prev!,
+      progress,
+    }));
+    if (progress > 99) {
+      setProgress(null);
+    }
+  }, [downloadedSegments, totalSegments]);
 
   return { startBackgroundDownload };
 };
@@ -210,5 +220,3 @@ export async function getAllDownloadedItems(): Promise<BaseItemDto[]> {
     return [];
   }
 }
-
-

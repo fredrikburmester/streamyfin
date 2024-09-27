@@ -13,7 +13,7 @@ export const useFileOpener = () => {
 
   const openFile = useCallback(
     async (item: BaseItemDto) => {
-      const m3u8File = `${FileSystem.documentDirectory}${item.Id}/playlist.m3u8`;
+      const m3u8File = `${FileSystem.documentDirectory}${item.Id}/local.m3u8`;
       const outputFile = `${FileSystem.documentDirectory}${item.Id}/output.mp4`;
 
       console.log("Checking for output file:", outputFile);

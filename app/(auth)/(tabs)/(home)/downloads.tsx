@@ -160,7 +160,7 @@ const downloads: React.FC = () => {
                   </Text>
                   <View className="flex flex-row items-center space-x-2 mt-1 text-purple-600">
                     <Text className="text-xs">
-                      {(process.progress * 100).toFixed(0)}%
+                      {process.progress.toFixed(0)}%
                     </Text>
                   </View>
                 </View>
