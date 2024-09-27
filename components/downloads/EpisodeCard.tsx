@@ -1,16 +1,12 @@
+import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
+import * as Haptics from "expo-haptics";
 import React, { useCallback } from "react";
 import { TouchableOpacity } from "react-native";
-import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import * as ContextMenu from "zeego/context-menu";
-import * as Haptics from "expo-haptics";
-import * as FileSystem from "expo-file-system";
-import { useAtom } from "jotai";
 
-import { Text } from "../common/Text";
+import { useFileOpener } from "@/hooks/useDownloadedFileOpener";
 import { useFiles } from "@/hooks/useFiles";
-import { useSettings } from "@/utils/atoms/settings";
-import { usePlayback } from "@/providers/PlaybackProvider";
-import { useRouter } from "expo-router";
+import { Text } from "../common/Text";
 
 interface EpisodeCardProps {
   item: BaseItemDto;
@@ -23,26 +19,11 @@ interface EpisodeCardProps {
  */
 export const EpisodeCard: React.FC<EpisodeCardProps> = ({ item }) => {
   const { deleteFile } = useFiles();
-  const router = useRouter();
+  const { openFile } = useFileOpener();
 
-  const { startDownloadedFilePlayback } = usePlayback();
-
-  const handleOpenFile = useCallback(async () => {
-    const url = `${FileSystem.documentDirectory}${item.Id}/0.ts`;
-    console.log(url);
-
-    const fileInfo = await FileSystem.getInfoAsync(url);
-
-    if (!fileInfo.exists) {
-      console.warn("m3u8 file does not exist:", url);
-    }
-
-    startDownloadedFilePlayback({
-      item,
-      url,
-    });
-    router.push("/play");
-  }, [item, startDownloadedFilePlayback]);
+  const handleOpenFile = useCallback(() => {
+    openFile(item);
+  }, [item, openFile]);
 
   /**
    * Handles deleting the file with haptic feedback.

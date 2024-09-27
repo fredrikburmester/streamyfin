@@ -1,5 +1,4 @@
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
-import * as FileSystem from "expo-file-system";
 import * as Haptics from "expo-haptics";
 import React, { useCallback } from "react";
 import { TouchableOpacity, View } from "react-native";
@@ -9,9 +8,7 @@ import { useFiles } from "@/hooks/useFiles";
 import { runtimeTicksToMinutes } from "@/utils/time";
 import { Text } from "../common/Text";
 
-import { usePlayback } from "@/providers/PlaybackProvider";
-import { useRouter } from "expo-router";
-import { deleteDownloadedItem } from "@/hooks/useDownloadM3U8Files";
+import { useFileOpener } from "@/hooks/useDownloadedFileOpener";
 
 interface MovieCardProps {
   item: BaseItemDto;
@@ -24,35 +21,11 @@ interface MovieCardProps {
  */
 export const MovieCard: React.FC<MovieCardProps> = ({ item }) => {
   const { deleteFile } = useFiles();
-  const router = useRouter();
-  const { startDownloadedFilePlayback } = usePlayback();
+  const { openFile } = useFileOpener();
 
-  const handleOpenFile = useCallback(async () => {
-    try {
-      const directoryPath = `${FileSystem.documentDirectory}${item.Id}`;
-      const m3u8FilePath = `${directoryPath}/local.m3u8`;
-
-      console.log("Path: ", m3u8FilePath);
-
-      // Check if the m3u8 file exists
-      const fileInfo = await FileSystem.getInfoAsync(m3u8FilePath);
-
-      if (!fileInfo.exists) {
-        console.warn("m3u8 file does not exist:", m3u8FilePath);
-      }
-
-      // Start playback
-      startDownloadedFilePlayback({
-        item,
-        url: `${m3u8FilePath}`,
-      });
-
-      // Navigate to the play screen
-      router.push("/play");
-    } catch (error) {
-      console.error("Error opening file:", error);
-    }
-  }, [item, startDownloadedFilePlayback, router, deleteDownloadedItem]);
+  const handleOpenFile = useCallback(() => {
+    openFile(item);
+  }, [item, openFile]);
 
   /**
    * Handles deleting the file with haptic feedback.

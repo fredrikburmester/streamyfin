@@ -4,7 +4,6 @@ import { atom } from "jotai";
 export type ProcessItem = {
   item: BaseItemDto;
   progress: number;
-  speed?: number;
   startTime?: Date;
 };
 
