@@ -134,6 +134,7 @@ async function createLocalM3U8File(segments: Segment[], directoryPath: string) {
   localM3U8Content += "#EXT-X-MEDIA-SEQUENCE:0\n";
 
   segments.forEach((segment, index) => {
+    console.log(segment.path.split(".")[1]);
     localM3U8Content += `#EXTINF:${segment.duration.toFixed(3)},\n`;
     localM3U8Content += `${directoryPath}/${index}.ts\n`;
   });
