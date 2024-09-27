@@ -41,17 +41,6 @@ const downloads: React.FC = () => {
     return Object.values(series);
   }, [downloadedFiles]);
 
-  const eta = useMemo(() => {
-    const length = process?.item?.RunTimeTicks || 0;
-
-    if (!process?.speed || !process?.progress) return "";
-
-    const timeLeft =
-      (length - length * (process.progress / 100)) / process.speed;
-
-    return formatNumber(timeLeft / 10000);
-  }, [process]);
-
   useEffect(() => {
     (async () => {
       const dir = FileSystem.documentDirectory;
@@ -171,14 +160,8 @@ const downloads: React.FC = () => {
                   </Text>
                   <View className="flex flex-row items-center space-x-2 mt-1 text-purple-600">
                     <Text className="text-xs">
-                      {process.progress.toFixed(0)}%
+                      {(process.progress * 100).toFixed(0)}%
                     </Text>
-                    <Text className="text-xs">
-                      {process.speed?.toFixed(2)}x
-                    </Text>
-                    <View>
-                      <Text className="text-xs">ETA {eta}</Text>
-                    </View>
                   </View>
                 </View>
                 <TouchableOpacity

@@ -6,6 +6,7 @@ import { download } from "@kesha-antonov/react-native-background-downloader";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useQueryClient } from "@tanstack/react-query";
 import * as FileSystem from "expo-file-system";
+import { FFmpegKit, ReturnCode } from "ffmpeg-kit-react-native";
 import { useAtom } from "jotai";
 import { useCallback } from "react";
 import { toast } from "sonner-native";
@@ -27,6 +28,11 @@ export const useDownloadM3U8Files = (item: BaseItemDto) => {
 
       toast.success("Download started", { invert: true });
       writeToLog("INFO", `Starting download for item ${item.Name}`);
+      setProgress({
+        startTime: new Date(),
+        item,
+        progress: 0,
+      });
 
       try {
         const directoryPath = `${FileSystem.documentDirectory}${item.Id}`;
@@ -55,12 +61,22 @@ export const useDownloadM3U8Files = (item: BaseItemDto) => {
           const segmentUrl = `${api.basePath}/videos/${item.Id}/${segment.path}`;
           const destination = `${directoryPath}/${i}.ts`;
 
-          await download({
+          download({
             id: `${item.Id}_segment_${i}`,
             url: segmentUrl,
             destination: destination,
           }).done((e) => {
             console.log("Download completed for segment", i);
+            setProgress((prev) => {
+              const newProgress = ((prev?.progress || 0) + 1) / segments.length;
+              if (prev === null) {
+                return null;
+              }
+              return {
+                ...prev,
+                progress: newProgress,
+              };
+            });
           });
         }
 
@@ -194,3 +210,5 @@ export async function getAllDownloadedItems(): Promise<BaseItemDto[]> {
     return [];
   }
 }
+
+
