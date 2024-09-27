@@ -108,10 +108,18 @@ export default function settings() {
             <Button
               color="red"
               onPress={async () => {
-                await deleteAllFiles();
-                Haptics.notificationAsync(
-                  Haptics.NotificationFeedbackType.Success
-                );
+                try {
+                  await deleteAllFiles();
+                  Haptics.notificationAsync(
+                    Haptics.NotificationFeedbackType.Success
+                  );
+                  toast.success("All files deleted");
+                } catch (e) {
+                  Haptics.notificationAsync(
+                    Haptics.NotificationFeedbackType.Error
+                  );
+                  toast.error("Error deleting files");
+                }
               }}
             >
               Delete all downloaded files

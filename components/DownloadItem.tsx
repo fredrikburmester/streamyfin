@@ -31,6 +31,7 @@ import { Loader } from "./Loader";
 import { MediaSourceSelector } from "./MediaSourceSelector";
 import ProgressCircle from "./ProgressCircle";
 import { SubtitleTrackSelector } from "./SubtitleTrackSelector";
+import { useDownloadM3U8Files } from "@/hooks/useDownloadM3U8Files";
 
 interface DownloadProps extends ViewProps {
   item: BaseItemDto;
@@ -42,7 +43,10 @@ export const DownloadItem: React.FC<DownloadProps> = ({ item, ...props }) => {
   const [process] = useAtom(runningProcesses);
   const [queue, setQueue] = useAtom(queueAtom);
   const [settings] = useSettings();
-  const { startRemuxing } = useRemuxHlsToMp4(item);
+  // const { startRemuxing } = useRemuxHlsToMp4(item);
+
+  const { cancelDownload, startBackgroundDownload } =
+    useDownloadM3U8Files(item);
 
   const [selectedMediaSource, setSelectedMediaSource] =
     useState<MediaSourceInfo | null>(null);
@@ -153,11 +157,11 @@ export const DownloadItem: React.FC<DownloadProps> = ({ item, ...props }) => {
 
     if (!url) throw new Error("No url");
 
-    return await startRemuxing(url);
+    return await startBackgroundDownload(url);
   }, [
     api,
     item,
-    startRemuxing,
+    startBackgroundDownload,
     user?.Id,
     selectedMediaSource,
     selectedAudioStream,

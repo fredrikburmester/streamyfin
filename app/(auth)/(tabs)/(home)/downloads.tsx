@@ -2,16 +2,17 @@ import { Text } from "@/components/common/Text";
 import { MovieCard } from "@/components/downloads/MovieCard";
 import { SeriesCard } from "@/components/downloads/SeriesCard";
 import { Loader } from "@/components/Loader";
+import { getAllDownloadedItems } from "@/hooks/useDownloadM3U8Files";
 import { runningProcesses } from "@/utils/atoms/downloads";
 import { queueAtom } from "@/utils/atoms/queue";
 import { Ionicons } from "@expo/vector-icons";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useQuery } from "@tanstack/react-query";
+import * as FileSystem from "expo-file-system";
 import { router } from "expo-router";
 import { FFmpegKit } from "ffmpeg-kit-react-native";
 import { useAtom } from "jotai";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { ScrollView, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -21,10 +22,7 @@ const downloads: React.FC = () => {
 
   const { data: downloadedFiles, isLoading } = useQuery({
     queryKey: ["downloaded_files", process?.item.Id],
-    queryFn: async () =>
-      JSON.parse(
-        (await AsyncStorage.getItem("downloaded_files")) || "[]"
-      ) as BaseItemDto[],
+    queryFn: getAllDownloadedItems,
     staleTime: 0,
   });
 
@@ -53,6 +51,59 @@ const downloads: React.FC = () => {
 
     return formatNumber(timeLeft / 10000);
   }, [process]);
+
+  useEffect(() => {
+    (async () => {
+      const dir = FileSystem.documentDirectory;
+      if (dir) {
+        const items = await FileSystem.readDirectoryAsync(dir);
+
+        if (items.length === 0) {
+          console.log("No items found in the document directory.");
+          return;
+        }
+
+        for (const item of items) {
+          const fullPath = `${dir}${item}`;
+          const info = await FileSystem.getInfoAsync(fullPath);
+
+          if (info.exists) {
+            if (info.isDirectory) {
+              // List items in the directory
+              const subItems = await FileSystem.readDirectoryAsync(fullPath);
+              if (subItems.length === 0) {
+                console.log(`Directory ${item} is empty.`);
+              } else {
+                console.log(`Items in ${item}:`, subItems);
+                // If item ends in m3u8, print the content of the file
+                const m3u8Files = subItems.filter((subItem) =>
+                  subItem.endsWith(".m3u8")
+                );
+                if (m3u8Files.length === 0) {
+                  console.log(`No .m3u8 files found in ${item}.`);
+                } else {
+                  for (let subItem of m3u8Files) {
+                    console.log(
+                      `Content of ${subItem}:`,
+                      await FileSystem.readAsStringAsync(
+                        `${fullPath}/${subItem}`
+                      )
+                    );
+                  }
+                }
+              }
+            } else {
+              console.log(`${item} is a file`);
+            }
+          } else {
+            console.log(`${item} does not exist.`);
+          }
+        }
+      } else {
+        console.log("Document directory is not available.");
+      }
+    })();
+  }, []);
 
   const insets = useSafeAreaInsets();
 

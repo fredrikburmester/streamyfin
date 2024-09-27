@@ -14,24 +14,28 @@ export const useFiles = () => {
    * Deletes all downloaded files and clears the download record.
    */
   const deleteAllFiles = async (): Promise<void> => {
-    const directoryUri = FileSystem.documentDirectory;
-    if (!directoryUri) {
-      console.error("Document directory is undefined");
-      return;
-    }
-
     try {
-      const fileNames = await FileSystem.readDirectoryAsync(directoryUri);
-      await Promise.all(
-        fileNames.map((item) =>
-          FileSystem.deleteAsync(`${directoryUri}/${item}`, {
-            idempotent: true,
-          })
-        )
-      );
-      await AsyncStorage.removeItem("downloaded_files");
+      // Get all downloaded items
+      const downloadedItems = await AsyncStorage.getItem("downloadedItems");
+      if (downloadedItems) {
+        const items = JSON.parse(downloadedItems);
+
+        // Delete each item's folder
+        for (const item of items) {
+          const folderPath = `${FileSystem.documentDirectory}${item.Id}`;
+          await FileSystem.deleteAsync(folderPath, { idempotent: true });
+        }
+      }
+
+      // Clear the downloadedItems in AsyncStorage
+      await AsyncStorage.removeItem("downloadedItems");
+
+      // Invalidate the query to refresh the UI
       queryClient.invalidateQueries({ queryKey: ["downloaded_files"] });
-      queryClient.invalidateQueries({ queryKey: ["downloaded"] });
+
+      console.log(
+        "Successfully deleted all downloaded files and cleared AsyncStorage"
+      );
     } catch (error) {
       console.error("Failed to delete all files:", error);
     }
@@ -48,22 +52,29 @@ export const useFiles = () => {
     }
 
     try {
-      await FileSystem.deleteAsync(
-        `${FileSystem.documentDirectory}/${id}.mp4`,
-        { idempotent: true }
-      );
+      // Delete the entire folder
+      const folderPath = `${FileSystem.documentDirectory}${id}`;
+      await FileSystem.deleteAsync(folderPath, { idempotent: true });
 
-      const currentFiles = await getDownloadedFiles();
-      const updatedFiles = currentFiles.filter((f) => f.Id !== id);
+      // Remove the item from AsyncStorage
+      const downloadedItems = await AsyncStorage.getItem("downloadedItems");
+      if (downloadedItems) {
+        let items = JSON.parse(downloadedItems);
+        items = items.filter((item: any) => item.Id !== id);
+        await AsyncStorage.setItem("downloadedItems", JSON.stringify(items));
+      }
 
-      await AsyncStorage.setItem(
-        "downloaded_files",
-        JSON.stringify(updatedFiles)
-      );
-
+      // Invalidate the query to refresh the UI
       queryClient.invalidateQueries({ queryKey: ["downloaded_files"] });
+
+      console.log(
+        `Successfully deleted folder and AsyncStorage entry for ID ${id}`
+      );
     } catch (error) {
-      console.error(`Failed to delete file with ID ${id}:`, error);
+      console.error(
+        `Failed to delete folder and AsyncStorage entry for ID ${id}:`,
+        error
+      );
     }
   };
 
