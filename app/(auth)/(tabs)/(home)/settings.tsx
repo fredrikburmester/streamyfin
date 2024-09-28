@@ -2,22 +2,20 @@ import { Button } from "@/components/Button";
 import { Text } from "@/components/common/Text";
 import { ListItem } from "@/components/ListItem";
 import { SettingToggles } from "@/components/settings/SettingToggles";
-import { useFiles } from "@/hooks/useFiles";
+import { useDownload } from "@/providers/DownloadProvider";
 import { apiAtom, useJellyfin, userAtom } from "@/providers/JellyfinProvider";
 import { clearLogs, readFromLog } from "@/utils/log";
-import { Ionicons } from "@expo/vector-icons";
 import { getQuickConnectApi } from "@jellyfin/sdk/lib/utils/api";
 import { useQuery } from "@tanstack/react-query";
 import * as Haptics from "expo-haptics";
 import { useAtom } from "jotai";
 import { Alert, ScrollView, View } from "react-native";
-import { red } from "react-native-reanimated/lib/typescript/reanimated2/Colors";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { toast } from "sonner-native";
 
 export default function settings() {
   const { logout } = useJellyfin();
-  const { deleteAllFiles } = useFiles();
+  const { deleteAllFiles } = useDownload();
 
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);

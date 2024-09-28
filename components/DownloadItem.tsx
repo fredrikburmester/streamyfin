@@ -1,6 +1,6 @@
 import { useRemuxHlsToMp4 } from "@/hooks/useRemuxHlsToMp4";
+import { useDownload } from "@/providers/DownloadProvider";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
-import { runningProcesses } from "@/utils/atoms/downloads";
 import { queueActions, queueAtom } from "@/utils/atoms/queue";
 import { useSettings } from "@/utils/atoms/settings";
 import ios from "@/utils/profiles/ios";
@@ -17,8 +17,6 @@ import {
   BaseItemDto,
   MediaSourceInfo,
 } from "@jellyfin/sdk/lib/generated-client/models";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { useAtom } from "jotai";
 import { useCallback, useMemo, useRef, useState } from "react";
@@ -31,8 +29,6 @@ import { Loader } from "./Loader";
 import { MediaSourceSelector } from "./MediaSourceSelector";
 import ProgressCircle from "./ProgressCircle";
 import { SubtitleTrackSelector } from "./SubtitleTrackSelector";
-import { useDownloadM3U8Files } from "@/hooks/useDownloadM3U8Files";
-import * as FileSystem from "expo-file-system";
 
 interface DownloadProps extends ViewProps {
   item: BaseItemDto;
@@ -41,12 +37,10 @@ interface DownloadProps extends ViewProps {
 export const DownloadItem: React.FC<DownloadProps> = ({ item, ...props }) => {
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
-  const [process] = useAtom(runningProcesses);
   const [queue, setQueue] = useAtom(queueAtom);
   const [settings] = useSettings();
-  // const { startRemuxing } = useRemuxHlsToMp4(item);
-
-  const { startBackgroundDownload } = useDownloadM3U8Files(item);
+  const { process, startBackgroundDownload } = useDownload();
+  const { startRemuxing, cancelRemuxing } = useRemuxHlsToMp4(item);
 
   const [selectedMediaSource, setSelectedMediaSource] =
     useState<MediaSourceInfo | null>(null);
@@ -157,7 +151,14 @@ export const DownloadItem: React.FC<DownloadProps> = ({ item, ...props }) => {
 
     if (!url) throw new Error("No url");
 
-    return await startBackgroundDownload(url);
+    if (
+      settings?.optimizedVersionsServerUrl &&
+      settings.optimizedVersionsServerUrl.length > 0
+    ) {
+      return await startBackgroundDownload(url, item);
+    } else {
+      return await startRemuxing(url);
+    }
   }, [
     api,
     item,
@@ -172,42 +173,13 @@ export const DownloadItem: React.FC<DownloadProps> = ({ item, ...props }) => {
   /**
    * Check if item is downloaded
    */
-  const { data: downloaded, isFetching } = useQuery({
-    queryKey: ["downloaded", item.Id],
-    queryFn: async () => {
-      if (!item.Id) {
-        return false;
-      }
+  const { downloadedFiles } = useDownload();
 
-      try {
-        // Check if the item exists in AsyncStorage
-        const downloadedItems = await AsyncStorage.getItem("downloadedItems");
-        const items: BaseItemDto[] = downloadedItems
-          ? JSON.parse(downloadedItems)
-          : [];
-        const isInStorage = items.some(
-          (storedItem) => storedItem.Id === item.Id
-        );
+  const isDownloaded = useMemo(() => {
+    if (!downloadedFiles) return false;
 
-        if (!isInStorage) {
-          return false;
-        }
-
-        // Check if the directory and m3u8 file exist
-        const directoryPath = `${FileSystem.documentDirectory}${item.Id}`;
-        const m3u8FilePath = `${directoryPath}/local.m3u8`;
-
-        const dirInfo = await FileSystem.getInfoAsync(directoryPath);
-        const fileInfo = await FileSystem.getInfoAsync(m3u8FilePath);
-
-        return dirInfo.exists && fileInfo.exists;
-      } catch (error) {
-        console.error("Error checking download status:", error);
-        return false;
-      }
-    },
-    enabled: !!item.Id,
-  });
+    return downloadedFiles.some((file) => file.Id === item.Id);
+  }, [downloadedFiles, item.Id]);
 
   const renderBackdrop = useCallback(
     (props: BottomSheetBackdropProps) => (
@@ -225,9 +197,7 @@ export const DownloadItem: React.FC<DownloadProps> = ({ item, ...props }) => {
       className="bg-neutral-800/80 rounded-full h-10 w-10 flex items-center justify-center"
       {...props}
     >
-      {isFetching ? (
-        <Loader />
-      ) : process && process?.item.Id === item.Id ? (
+      {process && process?.item.Id === item.Id ? (
         <TouchableOpacity
           onPress={() => {
             router.push("/downloads");
@@ -255,7 +225,7 @@ export const DownloadItem: React.FC<DownloadProps> = ({ item, ...props }) => {
         >
           <Ionicons name="hourglass" size={24} color="white" />
         </TouchableOpacity>
-      ) : downloaded ? (
+      ) : isDownloaded ? (
         <TouchableOpacity
           onPress={() => {
             router.push("/downloads");
@@ -315,9 +285,13 @@ export const DownloadItem: React.FC<DownloadProps> = ({ item, ...props }) => {
               className="mt-auto"
               onPress={() => {
                 if (userCanDownload === true) {
+                  if (!item.Id) {
+                    Alert.alert("Error", "Item ID is undefined.");
+                    return;
+                  }
                   closeModal();
                   queueActions.enqueue(queue, setQueue, {
-                    id: item.Id!,
+                    id: item.Id,
                     execute: async () => {
                       await initiateDownload();
                     },

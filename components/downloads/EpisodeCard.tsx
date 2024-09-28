@@ -5,8 +5,8 @@ import { TouchableOpacity } from "react-native";
 import * as ContextMenu from "zeego/context-menu";
 
 import { useFileOpener } from "@/hooks/useDownloadedFileOpener";
-import { useFiles } from "@/hooks/useFiles";
 import { Text } from "../common/Text";
+import { useDownload } from "@/providers/DownloadProvider";
 
 interface EpisodeCardProps {
   item: BaseItemDto;
@@ -18,7 +18,7 @@ interface EpisodeCardProps {
  * @returns {React.ReactElement} The rendered EpisodeCard component.
  */
 export const EpisodeCard: React.FC<EpisodeCardProps> = ({ item }) => {
-  const { deleteFile } = useFiles();
+  const { deleteFile } = useDownload();
   const { openFile } = useFileOpener();
 
   const handleOpenFile = useCallback(() => {

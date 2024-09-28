@@ -1,5 +1,7 @@
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { atom, useAtom } from "jotai";
+import { atomWithStorage } from "jotai/utils";
 import { useEffect } from "react";
 
 export interface Job {
@@ -8,8 +10,31 @@ export interface Job {
   execute: () => void | Promise<void>;
 }
 
-export const queueAtom = atom<Job[]>([]);
-export const isProcessingAtom = atom(false);
+export const runningAtom = atomWithStorage<boolean>("queueRunning", false, {
+  getItem: async (key) => {
+    const value = await AsyncStorage.getItem(key);
+    return value ? JSON.parse(value) : false;
+  },
+  setItem: async (key, value) => {
+    await AsyncStorage.setItem(key, JSON.stringify(value));
+  },
+  removeItem: async (key) => {
+    await AsyncStorage.removeItem(key);
+  },
+});
+
+export const queueAtom = atomWithStorage<Job[]>("queueJobs", [], {
+  getItem: async (key) => {
+    const value = await AsyncStorage.getItem(key);
+    return value ? JSON.parse(value) : [];
+  },
+  setItem: async (key, value) => {
+    await AsyncStorage.setItem(key, JSON.stringify(value));
+  },
+  removeItem: async (key) => {
+    await AsyncStorage.removeItem(key);
+  },
+});
 
 export const queueActions = {
   enqueue: (queue: Job[], setQueue: (update: Job[]) => void, job: Job) => {
@@ -20,7 +45,7 @@ export const queueActions = {
   processJob: async (
     queue: Job[],
     setQueue: (update: Job[]) => void,
-    setProcessing: (processing: boolean) => void,
+    setProcessing: (processing: boolean) => void
   ) => {
     const [job, ...rest] = queue;
     setQueue(rest);
@@ -28,13 +53,17 @@ export const queueActions = {
     console.info("Processing job", job);
 
     setProcessing(true);
+
+    // Excute the function assiociated with the job.
     await job.execute();
+
     console.info("Job done", job);
+
     setProcessing(false);
   },
   clear: (
     setQueue: (update: Job[]) => void,
-    setProcessing: (processing: boolean) => void,
+    setProcessing: (processing: boolean) => void
   ) => {
     setQueue([]);
     setProcessing(false);
@@ -43,12 +72,12 @@ export const queueActions = {
 
 export const useJobProcessor = () => {
   const [queue, setQueue] = useAtom(queueAtom);
-  const [isProcessing, setProcessing] = useAtom(isProcessingAtom);
+  const [running, setRunning] = useAtom(runningAtom);
 
   useEffect(() => {
-    if (queue.length > 0 && !isProcessing) {
+    if (queue.length > 0 && !running) {
       console.info("Processing queue", queue);
-      queueActions.processJob(queue, setQueue, setProcessing);
+      queueActions.processJob(queue, setQueue, setRunning);
     }
-  }, [queue, isProcessing, setQueue, setProcessing]);
+  }, [queue, running, setQueue, setRunning]);
 };
