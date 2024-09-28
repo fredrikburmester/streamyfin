@@ -9,6 +9,7 @@ import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
 import { toast } from "sonner-native";
 import { useSettings } from "@/utils/atoms/settings";
+import { FFmpegKit } from "ffmpeg-kit-react-native";
 
 interface Props extends ViewProps {}
 
@@ -21,17 +22,25 @@ export const ActiveDownload: React.FC<Props> = ({ ...props }) => {
     mutationFn: async () => {
       if (!process) throw new Error("No active download");
 
-      await axios.delete(settings?.optimizedVersionsServerUrl + process.id, {
-        headers: {
-          Authorization: `Bearer ${settings?.optimizedVersionsAuthHeader}`,
-        },
-      });
-      const tasks = await checkForExistingDownloads();
-      for (const task of tasks) task.stop();
-      clearProcess();
+      if (settings?.optimizedVersionsServerUrl) {
+        await axios.delete(
+          settings?.optimizedVersionsServerUrl + "cancel-job/" + process.id,
+          {
+            headers: {
+              Authorization: `Bearer ${settings?.optimizedVersionsAuthHeader}`,
+            },
+          }
+        );
+        const tasks = await checkForExistingDownloads();
+        for (const task of tasks) task.stop();
+        clearProcess();
+      } else {
+        FFmpegKit.cancel();
+        clearProcess();
+      }
     },
     onSuccess: () => {
-      toast.success("Download cancelled");
+      toast.success("Download canceled");
     },
     onError: (e) => {
       console.log(e);
