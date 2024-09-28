@@ -97,6 +97,113 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
             />
           </View>
 
+          <View
+            pointerEvents={settings.autoRotate ? "none" : "auto"}
+            className={`
+            ${
+              settings.autoRotate
+                ? "opacity-50 pointer-events-none"
+                : "opacity-100"
+            }
+                flex flex-row items-center space-x-2 justify-between bg-neutral-900 p-4
+              `}
+          >
+            <View className="flex flex-col shrink">
+              <Text className="font-semibold">Video orientation</Text>
+              <Text className="text-xs opacity-50">
+                Set the full screen video player orientation.
+              </Text>
+            </View>
+            <DropdownMenu.Root>
+              <DropdownMenu.Trigger>
+                <TouchableOpacity className="bg-neutral-800 rounded-lg border-neutral-900 border px-3 py-2 flex flex-row items-center justify-between">
+                  <Text>
+                    {ScreenOrientationEnum[settings.defaultVideoOrientation]}
+                  </Text>
+                </TouchableOpacity>
+              </DropdownMenu.Trigger>
+              <DropdownMenu.Content
+                loop={true}
+                side="bottom"
+                align="start"
+                alignOffset={0}
+                avoidCollisions={true}
+                collisionPadding={8}
+                sideOffset={8}
+              >
+                <DropdownMenu.Label>Orientation</DropdownMenu.Label>
+                <DropdownMenu.Item
+                  key="1"
+                  onSelect={() => {
+                    updateSettings({
+                      defaultVideoOrientation:
+                        ScreenOrientation.OrientationLock.DEFAULT,
+                    });
+                  }}
+                >
+                  <DropdownMenu.ItemTitle>
+                    {
+                      ScreenOrientationEnum[
+                        ScreenOrientation.OrientationLock.DEFAULT
+                      ]
+                    }
+                  </DropdownMenu.ItemTitle>
+                </DropdownMenu.Item>
+                <DropdownMenu.Item
+                  key="2"
+                  onSelect={() => {
+                    updateSettings({
+                      defaultVideoOrientation:
+                        ScreenOrientation.OrientationLock.PORTRAIT_UP,
+                    });
+                  }}
+                >
+                  <DropdownMenu.ItemTitle>
+                    {
+                      ScreenOrientationEnum[
+                        ScreenOrientation.OrientationLock.PORTRAIT_UP
+                      ]
+                    }
+                  </DropdownMenu.ItemTitle>
+                </DropdownMenu.Item>
+                <DropdownMenu.Item
+                  key="3"
+                  onSelect={() => {
+                    updateSettings({
+                      defaultVideoOrientation:
+                        ScreenOrientation.OrientationLock.LANDSCAPE_LEFT,
+                    });
+                  }}
+                >
+                  <DropdownMenu.ItemTitle>
+                    {
+                      ScreenOrientationEnum[
+                        ScreenOrientation.OrientationLock.LANDSCAPE_LEFT
+                      ]
+                    }
+                  </DropdownMenu.ItemTitle>
+                </DropdownMenu.Item>
+                <DropdownMenu.Item
+                  key="4"
+                  onSelect={() => {
+                    updateSettings({
+                      defaultVideoOrientation:
+                        ScreenOrientation.OrientationLock.LANDSCAPE_RIGHT,
+                    });
+                  }}
+                >
+                  <DropdownMenu.ItemTitle>
+                    {
+                      ScreenOrientationEnum[
+                        ScreenOrientation.OrientationLock.LANDSCAPE_RIGHT
+                      ]
+                    }
+                  </DropdownMenu.ItemTitle>
+                </DropdownMenu.Item>
+              </DropdownMenu.Content>
+            </DropdownMenu.Root>
+          </View>
+
           <View className="flex flex-row space-x-2 items-center justify-between bg-neutral-900 p-4">
             <View className="flex flex-col shrink">
               <Text className="font-semibold">Use external player (VLC)</Text>
@@ -256,106 +363,6 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
             </DropdownMenu.Root>
           </View>
           <View className="flex flex-col">
-            <View
-              className={`
-                flex flex-row items-center space-x-2 justify-between bg-neutral-900 p-4
-              `}
-            >
-              <View className="flex flex-col shrink">
-                <Text className="font-semibold">Video orientation</Text>
-                <Text className="text-xs opacity-50">
-                  Set the full screen video player orientation.
-                </Text>
-              </View>
-              <DropdownMenu.Root>
-                <DropdownMenu.Trigger>
-                  <TouchableOpacity className="bg-neutral-800 rounded-lg border-neutral-900 border px-3 py-2 flex flex-row items-center justify-between">
-                    <Text>
-                      {ScreenOrientationEnum[settings.defaultVideoOrientation]}
-                    </Text>
-                  </TouchableOpacity>
-                </DropdownMenu.Trigger>
-                <DropdownMenu.Content
-                  loop={true}
-                  side="bottom"
-                  align="start"
-                  alignOffset={0}
-                  avoidCollisions={true}
-                  collisionPadding={8}
-                  sideOffset={8}
-                >
-                  <DropdownMenu.Label>Orientation</DropdownMenu.Label>
-                  <DropdownMenu.Item
-                    key="1"
-                    onSelect={() => {
-                      updateSettings({
-                        defaultVideoOrientation:
-                          ScreenOrientation.OrientationLock.DEFAULT,
-                      });
-                    }}
-                  >
-                    <DropdownMenu.ItemTitle>
-                      {
-                        ScreenOrientationEnum[
-                          ScreenOrientation.OrientationLock.DEFAULT
-                        ]
-                      }
-                    </DropdownMenu.ItemTitle>
-                  </DropdownMenu.Item>
-                  <DropdownMenu.Item
-                    key="2"
-                    onSelect={() => {
-                      updateSettings({
-                        defaultVideoOrientation:
-                          ScreenOrientation.OrientationLock.PORTRAIT_UP,
-                      });
-                    }}
-                  >
-                    <DropdownMenu.ItemTitle>
-                      {
-                        ScreenOrientationEnum[
-                          ScreenOrientation.OrientationLock.PORTRAIT_UP
-                        ]
-                      }
-                    </DropdownMenu.ItemTitle>
-                  </DropdownMenu.Item>
-                  <DropdownMenu.Item
-                    key="3"
-                    onSelect={() => {
-                      updateSettings({
-                        defaultVideoOrientation:
-                          ScreenOrientation.OrientationLock.LANDSCAPE_LEFT,
-                      });
-                    }}
-                  >
-                    <DropdownMenu.ItemTitle>
-                      {
-                        ScreenOrientationEnum[
-                          ScreenOrientation.OrientationLock.LANDSCAPE_LEFT
-                        ]
-                      }
-                    </DropdownMenu.ItemTitle>
-                  </DropdownMenu.Item>
-                  <DropdownMenu.Item
-                    key="4"
-                    onSelect={() => {
-                      updateSettings({
-                        defaultVideoOrientation:
-                          ScreenOrientation.OrientationLock.LANDSCAPE_RIGHT,
-                      });
-                    }}
-                  >
-                    <DropdownMenu.ItemTitle>
-                      {
-                        ScreenOrientationEnum[
-                          ScreenOrientation.OrientationLock.LANDSCAPE_RIGHT
-                        ]
-                      }
-                    </DropdownMenu.ItemTitle>
-                  </DropdownMenu.Item>
-                </DropdownMenu.Content>
-              </DropdownMenu.Root>
-            </View>
             <View
               className={`
                 flex flex-row items-center space-x-2 justify-between bg-neutral-900 p-4

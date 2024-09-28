@@ -73,7 +73,6 @@ type Settings = {
   forwardSkipTime: number;
   rewindSkipTime: number;
 };
-
 /**
  *
  * The settings atom is a Jotai atom that stores the user's settings.

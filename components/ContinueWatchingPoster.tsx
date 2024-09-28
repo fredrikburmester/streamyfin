@@ -76,10 +76,7 @@ const ContinueWatchingPoster: React.FC<ContinueWatchingPosterProps> = ({
       {progress > 0 && (
         <>
           <View
-            style={{
-              width: `100%`,
-            }}
-            className={`absolute bottom-0 left-0 h-1 bg-neutral-700 opacity-80 w-full`}
+            className={`absolute w-100 bottom-0 left-0 h-1 bg-neutral-700 opacity-80 w-full`}
           ></View>
           <View
             style={{

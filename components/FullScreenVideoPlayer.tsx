@@ -1,49 +1,44 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  View,
-  TouchableOpacity,
-  Alert,
-  Dimensions,
-  BackHandler,
-  Pressable,
-  Touchable,
-} from "react-native";
-import Video, { OnProgressData } from "react-native-video";
-import { Slider } from "react-native-awesome-slider";
-import { Ionicons } from "@expo/vector-icons";
+import { useAdjacentEpisodes } from "@/hooks/useAdjacentEpisodes";
+import { useCreditSkipper } from "@/hooks/useCreditSkipper";
+import { useIntroSkipper } from "@/hooks/useIntroSkipper";
+import { useTrickplay } from "@/hooks/useTrickplay";
+import { apiAtom } from "@/providers/JellyfinProvider";
 import { usePlayback } from "@/providers/PlaybackProvider";
 import { useSettings } from "@/utils/atoms/settings";
-import { useAdjacentEpisodes } from "@/hooks/useAdjacentEpisodes";
-import { useTrickplay } from "@/hooks/useTrickplay";
-import { Text } from "./common/Text";
-import { Loader } from "./Loader";
+import { getBackdropUrl } from "@/utils/jellyfin/image/getBackdropUrl";
+import { getAuthHeaders } from "@/utils/jellyfin/jellyfin";
 import { writeToLog } from "@/utils/log";
-import { useRouter, useSegments } from "expo-router";
-import { itemRouter } from "./common/TouchableItemRouter";
+import orientationToOrientationLock from "@/utils/OrientationLockConverter";
+import { secondsToTicks } from "@/utils/secondsToTicks";
+import { formatTimeString, ticksToSeconds } from "@/utils/time";
+import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { StatusBar } from "expo-status-bar";
+import { useRouter, useSegments } from "expo-router";
 import * as ScreenOrientation from "expo-screen-orientation";
 import { useAtom } from "jotai";
-import { apiAtom } from "@/providers/JellyfinProvider";
-import { useQuery } from "@tanstack/react-query";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  Alert,
+  BackHandler,
+  Dimensions,
+  Pressable,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { Slider } from "react-native-awesome-slider";
 import {
   runOnJS,
   useAnimatedReaction,
   useSharedValue,
 } from "react-native-reanimated";
-import { secondsToTicks } from "@/utils/secondsToTicks";
-import { getAuthHeaders } from "@/utils/jellyfin/jellyfin";
-import { getBackdropUrl } from "@/utils/jellyfin/image/getBackdropUrl";
-import {
-  useSafeAreaFrame,
-  useSafeAreaInsets,
-} from "react-native-safe-area-context";
-import orientationToOrientationLock from "@/utils/OrientationLockConverter";
-import {
-  formatTimeString,
-  runtimeTicksToSeconds,
-  ticksToSeconds,
-} from "@/utils/time";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Video, { OnProgressData } from "react-native-video";
+import { Text } from "./common/Text";
+import { itemRouter } from "./common/TouchableItemRouter";
+import { Loader } from "./Loader";
+
+const windowDimensions = Dimensions.get("window");
+const screenDimensions = Dimensions.get("screen");
 
 export const FullScreenVideoPlayer: React.FC = () => {
   const {
@@ -51,7 +46,6 @@ export const FullScreenVideoPlayer: React.FC = () => {
     pauseVideo,
     playVideo,
     stopPlayback,
-    setVolume,
     setIsPlaying,
     isPlaying,
     videoRef,
@@ -72,7 +66,6 @@ export const FullScreenVideoPlayer: React.FC = () => {
   const [showControls, setShowControls] = useState(true);
   const [isBuffering, setIsBufferingState] = useState(true);
   const [ignoreSafeArea, setIgnoreSafeArea] = useState(false);
-  const [isStatusBarHidden, setIsStatusBarHidden] = useState(false);
 
   // Seconds
   const [currentTime, setCurrentTime] = useState(0);
@@ -85,7 +78,20 @@ export const FullScreenVideoPlayer: React.FC = () => {
   const min = useSharedValue(0);
   const max = useSharedValue(currentlyPlaying?.item.RunTimeTicks || 0);
 
-  const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
+  const [dimensions, setDimensions] = useState({
+    window: windowDimensions,
+    screen: screenDimensions,
+  });
+
+  useEffect(() => {
+    const subscription = Dimensions.addEventListener(
+      "change",
+      ({ window, screen }) => {
+        setDimensions({ window, screen });
+      }
+    );
+    return () => subscription?.remove();
+  });
 
   const from = useMemo(() => segments[2], [segments]);
 
@@ -98,6 +104,18 @@ export const FullScreenVideoPlayer: React.FC = () => {
       setRemainingTime(remaining);
     },
     []
+  );
+
+  const { showSkipButton, skipIntro } = useIntroSkipper(
+    currentlyPlaying?.item.Id,
+    currentTime,
+    videoRef
+  );
+
+  const { showSkipCreditButton, skipCredit } = useCreditSkipper(
+    currentlyPlaying?.item.Id,
+    currentTime,
+    videoRef
   );
 
   useAnimatedReaction(
@@ -123,7 +141,13 @@ export const FullScreenVideoPlayer: React.FC = () => {
             onPress: () => null,
             style: "cancel",
           },
-          { text: "Yes", onPress: () => stopPlayback() },
+          {
+            text: "Yes",
+            onPress: () => {
+              stopPlayback();
+              router.back();
+            },
+          },
         ]);
         return true;
       }
@@ -136,7 +160,7 @@ export const FullScreenVideoPlayer: React.FC = () => {
     );
 
     return () => backHandler.remove();
-  }, [currentlyPlaying, stopPlayback]);
+  }, [currentlyPlaying, stopPlayback, router]);
 
   const [orientation, setOrientation] = useState(
     ScreenOrientation.OrientationLock.UNKNOWN
@@ -153,6 +177,10 @@ export const FullScreenVideoPlayer: React.FC = () => {
         );
       }
     );
+
+    ScreenOrientation.getOrientationAsync().then((orientation) => {
+      setOrientation(orientationToOrientationLock(orientation));
+    });
 
     return () => {
       subscription.remove();
@@ -199,25 +227,13 @@ export const FullScreenVideoPlayer: React.FC = () => {
   }, [currentlyPlaying, api, poster]);
 
   useEffect(() => {
-    if (!currentlyPlaying) {
-      ScreenOrientation.unlockAsync();
-      progress.value = 0;
-      max.value = 0;
-      setShowControls(true);
-      setIsStatusBarHidden(false);
-      isSeeking.value = false;
-    } else {
-      setIsStatusBarHidden(true);
-      ScreenOrientation.lockAsync(
-        settings?.defaultVideoOrientation ||
-          ScreenOrientation.OrientationLock.DEFAULT
-      );
+    if (currentlyPlaying) {
       progress.value =
         currentlyPlaying.item?.UserData?.PlaybackPositionTicks || 0;
       max.value = currentlyPlaying.item.RunTimeTicks || 0;
       setShowControls(true);
     }
-  }, [currentlyPlaying, settings]);
+  }, [currentlyPlaying]);
 
   const toggleControls = () => setShowControls(!showControls);
 
@@ -243,10 +259,10 @@ export const FullScreenVideoPlayer: React.FC = () => {
     [setIsPlaying]
   );
 
-  const handlePlayPause = () => {
+  const handlePlayPause = useCallback(() => {
     if (isPlaying) pauseVideo();
     else playVideo();
-  };
+  }, [isPlaying, pauseVideo, playVideo]);
 
   const handleSliderComplete = (value: number) => {
     progress.value = value;
@@ -287,78 +303,37 @@ export const FullScreenVideoPlayer: React.FC = () => {
     }
   }, [settings]);
 
-  const handleGoToPreviousItem = () => {
+  const handleGoToPreviousItem = useCallback(() => {
     if (!previousItem || !from) return;
     const url = itemRouter(previousItem, from);
     stopPlayback();
     // @ts-ignore
     router.push(url);
-  };
+  }, [previousItem, from, stopPlayback, router]);
 
-  const handleGoToNextItem = () => {
+  const handleGoToNextItem = useCallback(() => {
     if (!nextItem || !from) return;
     const url = itemRouter(nextItem, from);
     stopPlayback();
     // @ts-ignore
     router.push(url);
-  };
+  }, [nextItem, from, stopPlayback, router]);
 
-  const toggleIgnoreSafeArea = () => {
-    setIgnoreSafeArea(!ignoreSafeArea);
-  };
-
-  const { data: introTimestamps } = useQuery({
-    queryKey: ["introTimestamps", currentlyPlaying?.item.Id],
-    queryFn: async () => {
-      if (!currentlyPlaying?.item.Id) {
-        console.log("No item id");
-        return null;
-      }
-
-      const res = await api?.axiosInstance.get(
-        `${api.basePath}/Episode/${currentlyPlaying.item.Id}/IntroTimestamps`,
-        {
-          headers: getAuthHeaders(api),
-        }
-      );
-
-      if (res?.status !== 200) {
-        return null;
-      }
-
-      return res?.data as {
-        EpisodeId: string;
-        HideSkipPromptAt: number;
-        IntroEnd: number;
-        IntroStart: number;
-        ShowSkipPromptAt: number;
-        Valid: boolean;
-      };
-    },
-    enabled: !!currentlyPlaying?.item.Id,
-  });
-
-  const skipIntro = async () => {
-    if (!introTimestamps || !videoRef.current) return;
-    try {
-      videoRef.current.seek(introTimestamps.IntroEnd);
-    } catch (error) {
-      writeToLog("ERROR", "Error skipping intro", error);
-    }
-  };
+  const toggleIgnoreSafeArea = useCallback(() => {
+    setIgnoreSafeArea((prev) => !prev);
+  }, []);
 
   if (!currentlyPlaying) return null;
 
   return (
     <View
       style={{
-        width: screenWidth,
-        height: screenHeight,
+        width: dimensions.window.width,
+        height: dimensions.window.height,
         backgroundColor: "black",
       }}
     >
-      <StatusBar hidden={isStatusBarHidden} />
-      <TouchableOpacity
+      <Pressable
         onPress={toggleControls}
         style={[
           {
@@ -368,8 +343,8 @@ export const FullScreenVideoPlayer: React.FC = () => {
             left: ignoreSafeArea ? 0 : insets.left,
             right: ignoreSafeArea ? 0 : insets.right,
             width: ignoreSafeArea
-              ? screenWidth
-              : screenWidth - (insets.left + insets.right),
+              ? dimensions.window.width
+              : dimensions.window.width - (insets.left + insets.right),
           },
         ]}
       >
@@ -383,45 +358,82 @@ export const FullScreenVideoPlayer: React.FC = () => {
             onLoad={(data) => (max.value = secondsToTicks(data.duration))}
             onError={handleVideoError}
             playWhenInactive={true}
+            allowsExternalPlayback={true}
             playInBackground={true}
+            pictureInPicture={true}
+            showNotificationControls={true}
             ignoreSilentSwitch="ignore"
             fullscreen={false}
           />
         )}
-      </TouchableOpacity>
+      </Pressable>
+
+      {(showControls || isBuffering) && (
+        <View
+          pointerEvents="none"
+          style={[
+            {
+              top: 0,
+              left: 0,
+              position: "absolute",
+              width: dimensions.window.width,
+              height: dimensions.window.height,
+            },
+          ]}
+          className="  bg-black/50 z-0"
+        ></View>
+      )}
 
       {isBuffering && (
         <View
           pointerEvents="none"
-          className="fixed top-0 brightness-50 bg-black/50 left-0 w-screen h-screen flex flex-col items-center justify-center"
+          className="fixed top-0 left-0 w-screen h-screen flex flex-col items-center justify-center"
         >
           <Loader />
         </View>
       )}
 
-      {introTimestamps &&
-        currentTime > introTimestamps.ShowSkipPromptAt &&
-        currentTime < introTimestamps.HideSkipPromptAt && (
-          <View
-            style={[
-              {
-                position: "absolute",
-                bottom: isLandscape ? insets.bottom + 26 : insets.bottom + 70,
-                right: isLandscape ? insets.right + 32 : insets.right + 16,
-                height: 70,
-                zIndex: 10,
-              },
-            ]}
-            className=""
+      {showSkipButton && (
+        <View
+          style={[
+            {
+              position: "absolute",
+              bottom: isLandscape ? insets.bottom + 26 : insets.bottom + 70,
+              right: isLandscape ? insets.right + 32 : insets.right + 16,
+              height: 70,
+            },
+          ]}
+          className="z-10"
+        >
+          <TouchableOpacity
+            onPress={skipIntro}
+            className="bg-purple-600 rounded-full px-2.5 py-2 font-semibold"
           >
-            <TouchableOpacity
-              onPress={skipIntro}
-              className="bg-purple-600 rounded-full p-2"
-            >
-              <Text className="text-white">Skip Intro</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+            <Text className="text-white">Skip Intro</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {showSkipCreditButton && (
+        <View
+          style={[
+            {
+              position: "absolute",
+              bottom: isLandscape ? insets.bottom + 26 : insets.bottom + 70,
+              right: isLandscape ? insets.right + 32 : insets.right + 16,
+              height: 70,
+            },
+          ]}
+          className="z-10"
+        >
+          <TouchableOpacity
+            onPress={skipCredit}
+            className="bg-purple-600 rounded-full px-2.5 py-2 font-semibold"
+          >
+            <Text className="text-white">Skip Credits</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {showControls && (
         <>
@@ -430,8 +442,9 @@ export const FullScreenVideoPlayer: React.FC = () => {
               {
                 position: "absolute",
                 top: insets.top,
-                right: isLandscape ? insets.right + 32 : insets.right + 8,
+                right: isLandscape ? insets.right + 32 : insets.right + 16,
                 height: 70,
+                zIndex: 10,
               },
             ]}
             className="flex flex-row items-center space-x-2 z-10"
@@ -447,7 +460,10 @@ export const FullScreenVideoPlayer: React.FC = () => {
               />
             </TouchableOpacity>
             <TouchableOpacity
-              onPress={stopPlayback}
+              onPress={() => {
+                stopPlayback();
+                router.back();
+              }}
               className="aspect-square flex flex-col bg-neutral-800 rounded-xl items-center justify-center p-2"
             >
               <Ionicons name="close" size={24} color="white" />
@@ -461,8 +477,8 @@ export const FullScreenVideoPlayer: React.FC = () => {
                 bottom: insets.bottom + 8,
                 left: isLandscape ? insets.left + 32 : insets.left + 16,
                 width: isLandscape
-                  ? screenWidth - insets.left - insets.right - 64
-                  : screenWidth - insets.left - insets.right - 32,
+                  ? dimensions.window.width - insets.left - insets.right - 64
+                  : dimensions.window.width - insets.left - insets.right - 32,
               },
             ]}
           >
