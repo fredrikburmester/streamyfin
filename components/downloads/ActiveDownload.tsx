@@ -76,7 +76,6 @@ export const ActiveDownload: React.FC<Props> = ({ ...props }) => {
         <View className="p-4 flex flex-row items-center justify-between w-full">
           <View>
             <Text className="font-semibold">{process.item.Name}</Text>
-            <Text className="text-xs opacity-50">{process.item.Id}</Text>
             <Text className="text-xs opacity-50">{process.item.Type}</Text>
             <View className="flex flex-row items-center space-x-2 mt-1 text-purple-600">
               <Text className="text-xs">{process.progress.toFixed(0)}%</Text>

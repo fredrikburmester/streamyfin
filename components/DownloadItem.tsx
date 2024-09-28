@@ -29,6 +29,7 @@ import { Loader } from "./Loader";
 import { MediaSourceSelector } from "./MediaSourceSelector";
 import ProgressCircle from "./ProgressCircle";
 import { SubtitleTrackSelector } from "./SubtitleTrackSelector";
+import { toast } from "sonner-native";
 
 interface DownloadProps extends ViewProps {
   item: BaseItemDto;
@@ -65,9 +66,7 @@ export const DownloadItem: React.FC<DownloadProps> = ({ item, ...props }) => {
     bottomSheetModalRef.current?.present();
   }, []);
 
-  const handleSheetChanges = useCallback((index: number) => {
-    console.log("handleSheetChanges", index);
-  }, []);
+  const handleSheetChanges = useCallback((index: number) => {}, []);
 
   const closeModal = useCallback(() => {
     bottomSheetModalRef.current?.dismiss();
@@ -286,22 +285,19 @@ export const DownloadItem: React.FC<DownloadProps> = ({ item, ...props }) => {
               onPress={() => {
                 if (userCanDownload === true) {
                   if (!item.Id) {
-                    Alert.alert("Error", "Item ID is undefined.");
-                    return;
+                    throw new Error("No item id");
                   }
                   closeModal();
-                  queueActions.enqueue(queue, setQueue, {
-                    id: item.Id,
-                    execute: async () => {
-                      await initiateDownload();
-                    },
-                    item,
-                  });
+                  initiateDownload();
+                  // Remove for now
+                  // queueActions.enqueue(queue, setQueue, {
+                  //   id: item.Id,
+                  //   execute: async () => {
+                  //   },
+                  //   item,
+                  // });
                 } else {
-                  Alert.alert(
-                    "Disabled",
-                    "This user is not allowed to download files."
-                  );
+                  toast.error("You are not allowed to download files.");
                 }
               }}
               color="purple"

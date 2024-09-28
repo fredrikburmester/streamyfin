@@ -10,31 +10,9 @@ export interface Job {
   execute: () => void | Promise<void>;
 }
 
-export const runningAtom = atomWithStorage<boolean>("queueRunning", false, {
-  getItem: async (key) => {
-    const value = await AsyncStorage.getItem(key);
-    return value ? JSON.parse(value) : false;
-  },
-  setItem: async (key, value) => {
-    await AsyncStorage.setItem(key, JSON.stringify(value));
-  },
-  removeItem: async (key) => {
-    await AsyncStorage.removeItem(key);
-  },
-});
+export const runningAtom = atom<boolean>(false);
 
-export const queueAtom = atomWithStorage<Job[]>("queueJobs", [], {
-  getItem: async (key) => {
-    const value = await AsyncStorage.getItem(key);
-    return value ? JSON.parse(value) : [];
-  },
-  setItem: async (key, value) => {
-    await AsyncStorage.setItem(key, JSON.stringify(value));
-  },
-  removeItem: async (key) => {
-    await AsyncStorage.removeItem(key);
-  },
-});
+export const queueAtom = atom<Job[]>([]);
 
 export const queueActions = {
   enqueue: (queue: Job[], setQueue: (update: Job[]) => void, job: Job) => {

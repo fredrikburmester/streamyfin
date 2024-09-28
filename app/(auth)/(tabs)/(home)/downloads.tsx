@@ -39,59 +39,6 @@ const downloads: React.FC = () => {
     return Object.values(series);
   }, [downloadedFiles]);
 
-  useEffect(() => {
-    (async () => {
-      const dir = FileSystem.documentDirectory;
-      if (dir) {
-        const items = await FileSystem.readDirectoryAsync(dir);
-
-        if (items.length === 0) {
-          console.log("No items found in the document directory.");
-          return;
-        }
-
-        for (const item of items) {
-          const fullPath = `${dir}${item}`;
-          const info = await FileSystem.getInfoAsync(fullPath);
-
-          if (info.exists) {
-            if (info.isDirectory) {
-              // List items in the directory
-              // const subItems = await FileSystem.readDirectoryAsync(fullPath);
-              // if (subItems.length === 0) {
-              //   console.log(`Directory ${item} is empty.`);
-              // } else {
-              //   console.log(`Items in ${item}:`, subItems);
-              //   // If item ends in m3u8, print the content of the file
-              //   const m3u8Files = subItems.filter((subItem) =>
-              //     subItem.endsWith(".m3u8")
-              //   );
-              //   if (m3u8Files.length === 0) {
-              //     console.log(`No .m3u8 files found in ${item}.`);
-              //   } else {
-              //     for (let subItem of m3u8Files) {
-              //       console.log(
-              //         `Content of ${subItem}:`,
-              //         await FileSystem.readAsStringAsync(
-              //           `${fullPath}/${subItem}`
-              //         )
-              //       );
-              //     }
-              //   }
-              // }
-            } else {
-              console.log(`${item} is a file`);
-            }
-          } else {
-            console.log(`${item} does not exist.`);
-          }
-        }
-      } else {
-        console.log("Document directory is not available.");
-      }
-    })();
-  }, []);
-
   const insets = useSafeAreaInsets();
 
   return (
@@ -121,9 +68,9 @@ const downloads: React.FC = () => {
                   <TouchableOpacity
                     onPress={() => {
                       clearProcess();
-                      setQueue(async (prev) => {
+                      setQueue((prev) => {
                         if (!prev) return [];
-                        return [...(await prev).filter((i) => i.id !== q.id)];
+                        return [...prev.filter((i) => i.id !== q.id)];
                       });
                     }}
                   >

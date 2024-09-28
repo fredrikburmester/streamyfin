@@ -14,6 +14,7 @@ import {
 } from "@tanstack/react-query";
 import axios from "axios";
 import * as FileSystem from "expo-file-system";
+import { useRouter } from "expo-router";
 import React, {
   createContext,
   useCallback,
@@ -42,7 +43,7 @@ function useDownloadProvider() {
   const queryClient = useQueryClient();
   const [process, setProcess] = useState<ProcessItem | null>(null);
   const [settings] = useSettings();
-
+  const router = useRouter();
   const authHeader = useMemo(() => {
     return `Bearer ${settings?.optimizedVersionsAuthHeader}`;
   }, [settings]);
@@ -185,8 +186,6 @@ function useDownloadProvider() {
           return;
         }
 
-        // console.log("Job ~", job);
-
         // Update the local process state with the state from the server.
         let newState: ProcessItem["state"] = "optimizing";
         if (job.status === "completed") {
@@ -260,7 +259,14 @@ function useDownloadProvider() {
           state: "optimizing",
         });
 
-        toast.success(`Optimization started for ${item.Name}`);
+        toast.success(`Optimization started for ${item.Name}`, {
+          action: {
+            label: "Go to download",
+            onClick: () => {
+              router.push("/downloads");
+            },
+          },
+        });
       } catch (error) {
         console.error("Error in startBackgroundDownload:", error);
         toast.error(`Failed to start download for ${item.Name}`);
