@@ -99,7 +99,6 @@ function Layout() {
   useEffect(() => {
     const subscription = ScreenOrientation.addOrientationChangeListener(
       (event) => {
-        console.log(event.orientationInfo.orientation);
         setOrientation(event.orientationInfo.orientation);
       }
     );

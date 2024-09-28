@@ -39,7 +39,6 @@ export default function settings() {
               code: text,
               userId: user?.Id,
             });
-            console.log(res.status, res.statusText, res.data);
             if (res.status === 200) {
               Haptics.notificationAsync(
                 Haptics.NotificationFeedbackType.Success

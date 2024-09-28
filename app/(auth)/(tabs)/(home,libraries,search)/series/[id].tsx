@@ -20,8 +20,6 @@ const page: React.FC = () => {
     seasonIndex: string;
   };
 
-  console.log("seasonIndex", seasonIndex);
-
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
 

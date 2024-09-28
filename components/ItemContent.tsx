@@ -118,8 +118,6 @@ export const ItemContent: React.FC<{ id: string }> = React.memo(({ id }) => {
         itemId: id,
       });
 
-      console.log("itemID", res?.Id);
-
       return res;
     },
     enabled: !!id && !!api,
