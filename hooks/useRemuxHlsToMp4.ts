@@ -30,6 +30,8 @@ export const useRemuxHlsToMp4 = (item: BaseItemDto) => {
 
   const startRemuxing = useCallback(
     async (url: string) => {
+      if (!item.Id) throw new Error("Item must have an Id");
+
       toast.success("Download started");
 
       const command = `-y -loglevel quiet -thread_queue_size 512 -protocol_whitelist file,http,https,tcp,tls,crypto -multiple_requests 1 -tcp_nodelay 1 -fflags +genpts -i ${url} -c copy -bufsize 50M -max_muxing_queue_size 4096 ${output}`;
@@ -41,7 +43,7 @@ export const useRemuxHlsToMp4 = (item: BaseItemDto) => {
 
       try {
         updateProcess({
-          id: item.Id!,
+          id: item.Id,
           item,
           progress: 0,
           state: "downloading",
@@ -53,7 +55,6 @@ export const useRemuxHlsToMp4 = (item: BaseItemDto) => {
           const fps = item.MediaStreams?.[0]?.RealFrameRate || 25;
           const totalFrames = videoLength * fps;
           const processedFrames = statistics.getVideoFrameNumber();
-          const speed = statistics.getSpeed();
 
           const percentage =
             totalFrames > 0
@@ -76,6 +77,7 @@ export const useRemuxHlsToMp4 = (item: BaseItemDto) => {
               const returnCode = await session.getReturnCode();
 
               if (returnCode.isValueSuccess()) {
+                if (!item) throw new Error("Item is undefined");
                 await saveDownloadedItemInfo(item);
                 toast.success("Download completed");
                 writeToLog(

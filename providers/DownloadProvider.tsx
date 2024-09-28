@@ -385,6 +385,8 @@ function useDownloadProvider() {
       }
 
       await AsyncStorage.setItem("downloadedItems", JSON.stringify(items));
+      await queryClient.invalidateQueries({ queryKey: ["downloadedItems"] });
+      refetch();
     } catch (error) {
       console.error("Failed to save downloaded item information:", error);
     }
