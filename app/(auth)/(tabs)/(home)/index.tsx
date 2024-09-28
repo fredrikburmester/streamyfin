@@ -6,7 +6,7 @@ import { Loader } from "@/components/Loader";
 import { MediaListSection } from "@/components/medialists/MediaListSection";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import { useSettings } from "@/utils/atoms/settings";
-import { Ionicons } from "@expo/vector-icons";
+import { Feather, Ionicons } from "@expo/vector-icons";
 import { Api } from "@jellyfin/sdk";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import {
@@ -16,16 +16,19 @@ import {
   getUserLibraryApi,
   getUserViewsApi,
 } from "@jellyfin/sdk/lib/utils/api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import NetInfo from "@react-native-community/netinfo";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "expo-router";
+import { useNavigation, useRouter } from "expo-router";
 import { useAtom } from "jotai";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Platform,
   RefreshControl,
   SafeAreaView,
   ScrollView,
+  TouchableOpacity,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -60,6 +63,7 @@ export default function index() {
 
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
   const [loadingRetry, setLoadingRetry] = useState(false);
+  const navigation = useNavigation();
 
   const checkConnection = useCallback(async () => {
     setLoadingRetry(true);
@@ -67,6 +71,56 @@ export default function index() {
     setIsConnected(state.isConnected);
     setLoadingRetry(false);
   }, []);
+
+  useEffect(() => {
+    try {
+      // we check for downloaded files and turn the downloads button green if there are downloads
+      AsyncStorage.getItem("downloaded_files").then((value) => {
+        let downloadButtonColor = "white";
+        if (value) {
+          const files = JSON.parse(value) as BaseItemDto[];
+          if (files.length > 0) {
+            downloadButtonColor = "green";
+          } else {
+            downloadButtonColor = "white";
+          }
+        } else {
+          downloadButtonColor = "white";
+        }
+        console.log("color: ", downloadButtonColor);
+        navigation.setOptions({
+          headerLeft: () => (
+            <TouchableOpacity
+              style={{
+                marginRight: Platform.OS === "android" ? 17 : 0,
+              }}
+              onPress={() => {
+                router.push("/(auth)/downloads");
+              }}
+            >
+              <Feather name="download" color={downloadButtonColor} size={22} />
+            </TouchableOpacity>
+          ),
+        });
+      });
+    } catch (error) {
+      console.log(error);
+      navigation.setOptions({
+        headerLeft: () => (
+          <TouchableOpacity
+            style={{
+              marginRight: Platform.OS === "android" ? 17 : 0,
+            }}
+            onPress={() => {
+              router.push("/(auth)/downloads");
+            }}
+          >
+            <Feather name="download" color={"white"} size={22} />
+          </TouchableOpacity>
+        ),
+      });
+    }
+  }, [navigation.getState()]);
 
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener((state) => {
