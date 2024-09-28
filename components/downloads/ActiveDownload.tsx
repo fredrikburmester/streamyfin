@@ -18,10 +18,10 @@ export const ActiveDownload: React.FC<Props> = ({ ...props }) => {
   const [settings] = useSettings();
 
   const cancelJobMutation = useMutation({
-    mutationFn: async (id: string) => {
-      if (!process) return;
+    mutationFn: async () => {
+      if (!process) throw new Error("No active download");
 
-      await axios.delete(settings?.optimizedVersionsServerUrl + id);
+      await axios.delete(settings?.optimizedVersionsServerUrl + process.id);
       const tasks = await checkForExistingDownloads();
       for (const task of tasks) task.stop();
       clearProcess();
@@ -29,7 +29,8 @@ export const ActiveDownload: React.FC<Props> = ({ ...props }) => {
     onSuccess: () => {
       toast.success("Download cancelled");
     },
-    onError: () => {
+    onError: (e) => {
+      console.log(e);
       toast.error("Failed to cancel download");
     },
   });
@@ -71,9 +72,7 @@ export const ActiveDownload: React.FC<Props> = ({ ...props }) => {
               <Text className="text-xs capitalize">{process.state}</Text>
             </View>
           </View>
-          <TouchableOpacity
-            onPress={() => cancelJobMutation.mutate(process.id)}
-          >
+          <TouchableOpacity onPress={() => cancelJobMutation.mutate()}>
             <Ionicons name="close" size={24} color="red" />
           </TouchableOpacity>
         </View>
