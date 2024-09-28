@@ -91,9 +91,7 @@ export default function settings() {
           <Text className="font-bold text-lg mb-2">Tests</Text>
           <Button
             onPress={() => {
-              toast.success("Download started", {
-                invert: true,
-              });
+              toast.success("Download started");
             }}
             color="black"
           >

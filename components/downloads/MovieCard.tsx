@@ -1,17 +1,16 @@
-import React, { useCallback } from "react";
-import { TouchableOpacity, View } from "react-native";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
-import * as ContextMenu from "zeego/context-menu";
 import * as FileSystem from "expo-file-system";
 import * as Haptics from "expo-haptics";
-import { useAtom } from "jotai";
+import React, { useCallback } from "react";
+import { TouchableOpacity, View } from "react-native";
+import * as ContextMenu from "zeego/context-menu";
 
-import { Text } from "../common/Text";
 import { useFiles } from "@/hooks/useFiles";
 import { runtimeTicksToMinutes } from "@/utils/time";
+import { Text } from "../common/Text";
 
-import { useSettings } from "@/utils/atoms/settings";
 import { usePlayback } from "@/providers/PlaybackProvider";
+import { useRouter } from "expo-router";
 
 interface MovieCardProps {
   item: BaseItemDto;
@@ -24,8 +23,7 @@ interface MovieCardProps {
  */
 export const MovieCard: React.FC<MovieCardProps> = ({ item }) => {
   const { deleteFile } = useFiles();
-  const [settings] = useSettings();
-
+  const router = useRouter();
   const { startDownloadedFilePlayback } = usePlayback();
 
   const handleOpenFile = useCallback(() => {
@@ -33,6 +31,7 @@ export const MovieCard: React.FC<MovieCardProps> = ({ item }) => {
       item,
       url: `${FileSystem.documentDirectory}/${item.Id}.mp4`,
     });
+    router.push("/play");
   }, [item, startDownloadedFilePlayback]);
 
   /**

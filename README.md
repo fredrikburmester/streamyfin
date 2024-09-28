@@ -12,8 +12,8 @@ Welcome to Streamyfin, a simple and user-friendly Jellyfin client built with Exp
 </div>
 
 ## 🌟 Features
-
-- 📱 **Native video player**: Playback with the platform native video player. With support for subtitles, playback speed control, and more.
+- 🚀 **Skp intro / credits support**
+- 🖼️ **Trickplay images**: The new golden standard for chapter previews when seeking.
 - 📺 **Picture in Picture** (iPhone only): Watch movies in PiP mode on your iPhone.
 - 🔊 **Background audio**: Stream music in the background, even when locking the phone.
 - 📥 **Download media** (Experimental): Save your media locally and watch it offline.
