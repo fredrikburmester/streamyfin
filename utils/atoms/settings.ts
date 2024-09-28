@@ -73,6 +73,7 @@ type Settings = {
   forwardSkipTime: number;
   rewindSkipTime: number;
   optimizedVersionsServerUrl?: string | null;
+  optimizedVersionsAuthHeader?: string | null;
 };
 /**
  *

@@ -21,7 +21,11 @@ export const ActiveDownload: React.FC<Props> = ({ ...props }) => {
     mutationFn: async () => {
       if (!process) throw new Error("No active download");
 
-      await axios.delete(settings?.optimizedVersionsServerUrl + process.id);
+      await axios.delete(settings?.optimizedVersionsServerUrl + process.id, {
+        headers: {
+          Authorization: `Bearer ${settings?.optimizedVersionsAuthHeader}`,
+        },
+      });
       const tasks = await checkForExistingDownloads();
       for (const task of tasks) task.stop();
       clearProcess();

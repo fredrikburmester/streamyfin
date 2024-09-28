@@ -35,6 +35,8 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
   const [marlinUrl, setMarlinUrl] = useState<string>("");
   const [optimizedVersionsServerUrl, setOptimizedVersionsServerUrl] =
     useState<string>("");
+  const [optimizedVersionsAuthHeader, setOptimizedVersionsAuthHeader] =
+    useState<string>("");
 
   const queryClient = useQueryClient();
 
@@ -497,6 +499,51 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
             {settings.optimizedVersionsServerUrl && (
               <Text className="text-neutral-500 mt-2">
                 Current: {settings.optimizedVersionsServerUrl}
+              </Text>
+            )}
+          </View>
+          <View className="flex flex-col bg-neutral-900 px-4 py-4">
+            <View className="flex flex-col shrink mb-2">
+              <Text className="font-semibold">
+                Optimized versions auth header
+              </Text>
+              <Text className="text-xs opacity-50">
+                The auth header for the optimized versions server.
+              </Text>
+            </View>
+            <View className="flex flex-row items-center space-x-2">
+              <View className="shrink">
+                <Input
+                  placeholder="Optimized versions server URL..."
+                  defaultValue={
+                    settings.optimizedVersionsAuthHeader
+                      ? settings.optimizedVersionsAuthHeader
+                      : ""
+                  }
+                  value={optimizedVersionsAuthHeader}
+                  keyboardType="url"
+                  returnKeyType="done"
+                  autoCapitalize="none"
+                  textContentType="URL"
+                  onChangeText={(text) => setOptimizedVersionsAuthHeader(text)}
+                />
+              </View>
+              <Button
+                color="purple"
+                className=" w-16 h-12"
+                onPress={() => {
+                  updateSettings({
+                    optimizedVersionsAuthHeader,
+                  });
+                }}
+              >
+                Save
+              </Button>
+            </View>
+
+            {settings.optimizedVersionsAuthHeader && (
+              <Text className="text-neutral-500 mt-2">
+                Current: {settings.optimizedVersionsAuthHeader}
               </Text>
             )}
           </View>
