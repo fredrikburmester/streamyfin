@@ -14,12 +14,15 @@ import * as ScreenOrientation from "expo-screen-orientation";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { Provider as JotaiProvider, useAtom } from "jotai";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 import * as Linking from "expo-linking";
 import { orientationAtom } from "@/utils/atoms/orientation";
 import { Toaster } from "sonner-native";
+import { checkForExistingDownloads } from "@kesha-antonov/react-native-background-downloader";
+import { AppState } from "react-native";
+import { DownloadProvider } from "@/providers/DownloadProvider";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -74,6 +77,25 @@ function Layout() {
       );
   }, [settings]);
 
+  const appState = useRef(AppState.currentState);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (nextAppState) => {
+      if (
+        appState.current.match(/inactive|background/) &&
+        nextAppState === "active"
+      ) {
+        checkForExistingDownloads();
+      }
+    });
+
+    checkForExistingDownloads();
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
   useEffect(() => {
     const subscription = ScreenOrientation.addOrientationChangeListener(
       (event) => {
@@ -101,57 +123,59 @@ function Layout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <QueryClientProvider client={queryClientRef.current}>
         <JobQueueProvider>
-          <ActionSheetProvider>
-            <BottomSheetModalProvider>
-              <JellyfinProvider>
-                <PlaybackProvider>
-                  <StatusBar style="light" backgroundColor="#000" />
-                  <ThemeProvider value={DarkTheme}>
-                    <Stack
-                      initialRouteName="/home"
-                      screenOptions={{
-                        autoHideHomeIndicator: true,
-                      }}
-                    >
-                      <Stack.Screen
-                        name="(auth)/(tabs)"
-                        options={{
-                          headerShown: false,
-                          title: "",
+          <DownloadProvider>
+            <ActionSheetProvider>
+              <BottomSheetModalProvider>
+                <JellyfinProvider>
+                  <PlaybackProvider>
+                    <StatusBar style="light" backgroundColor="#000" />
+                    <ThemeProvider value={DarkTheme}>
+                      <Stack
+                        initialRouteName="/home"
+                        screenOptions={{
+                          autoHideHomeIndicator: true,
+                        }}
+                      >
+                        <Stack.Screen
+                          name="(auth)/(tabs)"
+                          options={{
+                            headerShown: false,
+                            title: "",
+                          }}
+                        />
+                        <Stack.Screen
+                          name="(auth)/play"
+                          options={{
+                            headerShown: false,
+                            title: "",
+                            animation: "fade",
+                          }}
+                        />
+                        <Stack.Screen
+                          name="login"
+                          options={{ headerShown: false, title: "Login" }}
+                        />
+                        <Stack.Screen name="+not-found" />
+                      </Stack>
+                      <Toaster
+                        duration={2000}
+                        toastOptions={{
+                          style: {
+                            backgroundColor: "#262626",
+                            borderColor: "#363639",
+                            borderWidth: 1,
+                          },
+                          titleStyle: {
+                            color: "white",
+                          },
                         }}
                       />
-                      <Stack.Screen
-                        name="(auth)/play"
-                        options={{
-                          headerShown: false,
-                          title: "",
-                          animation: "fade",
-                        }}
-                      />
-                      <Stack.Screen
-                        name="login"
-                        options={{ headerShown: false, title: "Login" }}
-                      />
-                      <Stack.Screen name="+not-found" />
-                    </Stack>
-                    <Toaster
-                      duration={2000}
-                      toastOptions={{
-                        style: {
-                          backgroundColor: "#262626",
-                          borderColor: "#363639",
-                          borderWidth: 1,
-                        },
-                        titleStyle: {
-                          color: "white",
-                        },
-                      }}
-                    />
-                  </ThemeProvider>
-                </PlaybackProvider>
-              </JellyfinProvider>
-            </BottomSheetModalProvider>
-          </ActionSheetProvider>
+                    </ThemeProvider>
+                  </PlaybackProvider>
+                </JellyfinProvider>
+              </BottomSheetModalProvider>
+            </ActionSheetProvider>
+          </DownloadProvider>
         </JobQueueProvider>
       </QueryClientProvider>
     </GestureHandlerRootView>

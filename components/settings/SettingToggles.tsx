@@ -33,6 +33,8 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
   const [user] = useAtom(userAtom);
 
   const [marlinUrl, setMarlinUrl] = useState<string>("");
+  const [optimizedVersionsServerUrl, setOptimizedVersionsServerUrl] =
+    useState<string>("");
 
   const queryClient = useQueryClient();
 
@@ -308,9 +310,9 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
 
           <View
             className={`
-        flex flex-row items-center space-x-2 justify-between bg-neutral-900 p-4
-        ${settings.forceDirectPlay ? "opacity-50 select-none" : ""}
-      `}
+              flex flex-row items-center space-x-2 justify-between bg-neutral-900 p-4
+              ${settings.forceDirectPlay ? "opacity-50 select-none" : ""}
+            `}
           >
             <View className="flex flex-col shrink">
               <Text className="font-semibold">Device profile</Text>
@@ -362,6 +364,7 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
               </DropdownMenu.Content>
             </DropdownMenu.Root>
           </View>
+
           <View className="flex flex-col">
             <View
               className={`
@@ -413,36 +416,88 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
             </View>
             {settings.searchEngine === "Marlin" && (
               <View className="flex flex-col bg-neutral-900 px-4 pb-4">
-                <>
-                  <View className="flex flex-row items-center space-x-2">
-                    <View className="grow">
-                      <Input
-                        placeholder="Marlin Server URL..."
-                        defaultValue={settings.marlinServerUrl}
-                        value={marlinUrl}
-                        keyboardType="url"
-                        returnKeyType="done"
-                        autoCapitalize="none"
-                        textContentType="URL"
-                        onChangeText={(text) => setMarlinUrl(text)}
-                      />
-                    </View>
-                    <Button
-                      color="purple"
-                      className="shrink w-16 h-12"
-                      onPress={() => {
-                        updateSettings({ marlinServerUrl: marlinUrl });
-                      }}
-                    >
-                      Save
-                    </Button>
+                <View className="flex flex-row items-center space-x-2">
+                  <View className="grow">
+                    <Input
+                      placeholder="Marlin Server URL..."
+                      defaultValue={settings.marlinServerUrl}
+                      value={marlinUrl}
+                      keyboardType="url"
+                      returnKeyType="done"
+                      autoCapitalize="none"
+                      textContentType="URL"
+                      onChangeText={(text) => setMarlinUrl(text)}
+                    />
                   </View>
+                  <Button
+                    color="purple"
+                    className="shrink w-16 h-12"
+                    onPress={() => {
+                      updateSettings({
+                        marlinServerUrl: marlinUrl.endsWith("/")
+                          ? marlinUrl
+                          : marlinUrl + "/",
+                      });
+                    }}
+                  >
+                    Save
+                  </Button>
+                </View>
 
+                {settings.marlinServerUrl && (
                   <Text className="text-neutral-500 mt-2">
-                    {settings.marlinServerUrl}
+                    Current: {settings.marlinServerUrl}
                   </Text>
-                </>
+                )}
               </View>
+            )}
+          </View>
+          <View className="flex flex-col bg-neutral-900 px-4 py-4">
+            <View className="flex flex-col shrink mb-2">
+              <Text className="font-semibold">Optimized versions server</Text>
+              <Text className="text-xs opacity-50">
+                Set the URL for the optimized versions server for downloads.
+              </Text>
+            </View>
+            <View className="flex flex-row items-center space-x-2">
+              <View className="grow">
+                <Input
+                  placeholder="Optimized versions server URL..."
+                  defaultValue={
+                    settings.optimizedVersionsServerUrl
+                      ? settings.optimizedVersionsServerUrl
+                      : ""
+                  }
+                  value={optimizedVersionsServerUrl}
+                  keyboardType="url"
+                  returnKeyType="done"
+                  autoCapitalize="none"
+                  textContentType="URL"
+                  onChangeText={(text) => setOptimizedVersionsServerUrl(text)}
+                />
+              </View>
+              <Button
+                color="purple"
+                className="shrink w-16 h-12"
+                onPress={() => {
+                  updateSettings({
+                    optimizedVersionsServerUrl:
+                      optimizedVersionsServerUrl.length === 0
+                        ? null
+                        : optimizedVersionsServerUrl.endsWith("/")
+                        ? optimizedVersionsServerUrl
+                        : optimizedVersionsServerUrl + "/",
+                  });
+                }}
+              >
+                Save
+              </Button>
+            </View>
+
+            {settings.optimizedVersionsServerUrl && (
+              <Text className="text-neutral-500 mt-2">
+                Current: {settings.optimizedVersionsServerUrl}
+              </Text>
             )}
           </View>
         </View>

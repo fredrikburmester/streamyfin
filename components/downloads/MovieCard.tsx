@@ -4,11 +4,11 @@ import React, { useCallback } from "react";
 import { TouchableOpacity, View } from "react-native";
 import * as ContextMenu from "zeego/context-menu";
 
-import { useFiles } from "@/hooks/useFiles";
 import { runtimeTicksToMinutes } from "@/utils/time";
 import { Text } from "../common/Text";
 
 import { useFileOpener } from "@/hooks/useDownloadedFileOpener";
+import { useDownload } from "@/providers/DownloadProvider";
 
 interface MovieCardProps {
   item: BaseItemDto;
@@ -20,7 +20,7 @@ interface MovieCardProps {
  * @returns {React.ReactElement} The rendered MovieCard component.
  */
 export const MovieCard: React.FC<MovieCardProps> = ({ item }) => {
-  const { deleteFile } = useFiles();
+  const { deleteFile } = useDownload();
   const { openFile } = useFileOpener();
 
   const handleOpenFile = useCallback(() => {

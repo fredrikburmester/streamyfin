@@ -72,6 +72,7 @@ type Settings = {
   defaultVideoOrientation: ScreenOrientation.OrientationLock;
   forwardSkipTime: number;
   rewindSkipTime: number;
+  optimizedVersionsServerUrl?: string | null;
 };
 /**
  *
