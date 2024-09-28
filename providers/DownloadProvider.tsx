@@ -19,6 +19,7 @@ import React, {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useState,
 } from "react";
 import { toast } from "sonner-native";
@@ -41,6 +42,10 @@ function useDownloadProvider() {
   const queryClient = useQueryClient();
   const [process, setProcess] = useState<ProcessItem | null>(null);
   const [settings] = useSettings();
+
+  const authHeader = useMemo(() => {
+    return `Bearer ${settings?.optimizedVersionsAuthHeader}`;
+  }, [settings]);
 
   const {
     data: downloadedFiles,
@@ -105,8 +110,12 @@ function useDownloadProvider() {
       id: process.id,
       url: settings?.optimizedVersionsServerUrl + "download/" + process.id,
       destination: `${directories.documents}/${process?.item.Id}.mp4`,
+      headers: {
+        Authorization: authHeader,
+      },
     })
       .begin(() => {
+        toast.info(`Download started for ${process.item.Name}`);
         updateProcess((prev) => {
           if (!prev) return null;
           return {
@@ -167,7 +176,8 @@ function useDownloadProvider() {
       if (process.state === "optimizing") {
         const job = await checkJobStatus(
           process.id,
-          settings?.optimizedVersionsServerUrl
+          settings?.optimizedVersionsServerUrl,
+          authHeader
         );
 
         if (!job) {
@@ -232,6 +242,7 @@ function useDownloadProvider() {
           {
             headers: {
               "Content-Type": "application/json",
+              Authorization: authHeader,
             },
           }
         );
@@ -249,7 +260,7 @@ function useDownloadProvider() {
           state: "optimizing",
         });
 
-        toast.success(`Optimization job started for ${item.Name}`);
+        toast.success(`Optimization started for ${item.Name}`);
       } catch (error) {
         console.error("Error in startBackgroundDownload:", error);
         toast.error(`Failed to start download for ${item.Name}`);
@@ -428,13 +439,17 @@ export function useDownload() {
 
 const checkJobStatus = async (
   id: string,
-  baseUrl: string
+  baseUrl: string,
+  authHeader?: string | null
 ): Promise<{
   progress: number;
   status: "running" | "completed" | "failed" | "cancelled";
 }> => {
-  const statusResponse = await axios.get(`${baseUrl}job-status/${id}`);
-
+  const statusResponse = await axios.get(`${baseUrl}job-status/${id}`, {
+    headers: {
+      Authorization: authHeader,
+    },
+  });
   if (statusResponse.status !== 200) {
     throw new Error("Failed to fetch job status");
   }
