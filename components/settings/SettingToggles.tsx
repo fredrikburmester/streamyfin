@@ -454,6 +454,12 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
               </View>
             )}
           </View>
+        </View>
+      </View>
+
+      <View className="mt-4">
+        <Text className="text-lg font-bold mb-2">Optimized versions</Text>
+        <View className="flex flex-col rounded-xl overflow-hidden  divide-y-2 divide-solid divide-neutral-800">
           <View className="flex flex-col bg-neutral-900 px-4 py-4">
             <View className="flex flex-col shrink mb-2">
               <Text className="font-semibold">Optimized versions server</Text>
@@ -461,26 +467,24 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
                 Set the URL for the optimized versions server for downloads.
               </Text>
             </View>
-            <View className="flex flex-row items-center space-x-2">
-              <View className="grow">
-                <Input
-                  placeholder="Optimized versions server URL..."
-                  defaultValue={
-                    settings.optimizedVersionsServerUrl
-                      ? settings.optimizedVersionsServerUrl
-                      : ""
-                  }
-                  value={optimizedVersionsServerUrl}
-                  keyboardType="url"
-                  returnKeyType="done"
-                  autoCapitalize="none"
-                  textContentType="URL"
-                  onChangeText={(text) => setOptimizedVersionsServerUrl(text)}
-                />
-              </View>
+            <View className="flex flex-col">
+              <Input
+                placeholder="Optimized versions server URL..."
+                defaultValue={
+                  settings.optimizedVersionsServerUrl
+                    ? settings.optimizedVersionsServerUrl
+                    : ""
+                }
+                value={optimizedVersionsServerUrl}
+                keyboardType="url"
+                returnKeyType="done"
+                autoCapitalize="none"
+                textContentType="URL"
+                onChangeText={(text) => setOptimizedVersionsServerUrl(text)}
+              />
               <Button
                 color="purple"
-                className="shrink w-16 h-12"
+                className="h-12 mt-2"
                 onPress={() => {
                   updateSettings({
                     optimizedVersionsServerUrl:
@@ -497,12 +501,13 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
             </View>
 
             {settings.optimizedVersionsServerUrl && (
-              <Text className="text-neutral-500 mt-2">
-                Current: {settings.optimizedVersionsServerUrl}
-              </Text>
+              <View className="p-4 bg-neutral-800 rounded-xl mt-2">
+                <Text selectable>{settings.optimizedVersionsServerUrl}</Text>
+              </View>
             )}
           </View>
-          <View className="flex flex-col bg-neutral-900 px-4 py-4">
+
+          <View className="flex flex-col bg-neutral-900 px-4 py-4 w-full grow-0">
             <View className="flex flex-col shrink mb-2">
               <Text className="font-semibold">
                 Optimized versions auth header
@@ -511,26 +516,25 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
                 The auth header for the optimized versions server.
               </Text>
             </View>
-            <View className="flex flex-row items-center space-x-2">
-              <View className="shrink">
-                <Input
-                  placeholder="Optimized versions server URL..."
-                  defaultValue={
-                    settings.optimizedVersionsAuthHeader
-                      ? settings.optimizedVersionsAuthHeader
-                      : ""
-                  }
-                  value={optimizedVersionsAuthHeader}
-                  keyboardType="url"
-                  returnKeyType="done"
-                  autoCapitalize="none"
-                  textContentType="URL"
-                  onChangeText={(text) => setOptimizedVersionsAuthHeader(text)}
-                />
-              </View>
+            <View className="flex flex-col  w-full">
+              <Input
+                placeholder="Optimized versions server URL..."
+                defaultValue={
+                  settings.optimizedVersionsAuthHeader
+                    ? settings.optimizedVersionsAuthHeader
+                    : ""
+                }
+                value={optimizedVersionsAuthHeader}
+                keyboardType="url"
+                returnKeyType="done"
+                autoCapitalize="none"
+                textContentType="URL"
+                onChangeText={(text) => setOptimizedVersionsAuthHeader(text)}
+                className="w-full"
+              />
               <Button
                 color="purple"
-                className=" w-16 h-12"
+                className=" h-12 w-full mt-2"
                 onPress={() => {
                   updateSettings({
                     optimizedVersionsAuthHeader,
@@ -542,10 +546,24 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
             </View>
 
             {settings.optimizedVersionsAuthHeader && (
-              <Text className="text-neutral-500 mt-2">
-                Current: {settings.optimizedVersionsAuthHeader}
-              </Text>
+              <View className="p-4 bg-neutral-800 rounded-xl mt-2">
+                <Text className="" selectable>
+                  {settings.optimizedVersionsAuthHeader}
+                </Text>
+              </View>
             )}
+            <Button
+              color="red"
+              className="mt-2"
+              onPress={() => {
+                updateSettings({
+                  optimizedVersionsAuthHeader: null,
+                  optimizedVersionsServerUrl: null,
+                });
+              }}
+            >
+              Reset
+            </Button>
           </View>
         </View>
       </View>

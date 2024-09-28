@@ -126,10 +126,6 @@ export const useRemuxHlsToMp4 = (item: BaseItemDto) => {
   const cancelRemuxing = useCallback(() => {
     FFmpegKit.cancel();
     clearProcess();
-    writeToLog(
-      "INFO",
-      `useRemuxHlsToMp4 ~ remuxing cancelled for item: ${item.Name}`
-    );
   }, [item.Name, clearProcess]);
 
   return { startRemuxing, cancelRemuxing };
