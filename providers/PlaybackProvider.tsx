@@ -29,6 +29,7 @@ import {
   parseM3U8ForSubtitles,
   SubtitleTrack,
 } from "@/utils/hls/parseM3U8ForSubtitles";
+import { useRouter } from "expo-router";
 
 export type CurrentlyPlayingState = {
   url: string;
@@ -69,6 +70,8 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
 }) => {
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
+
+  const router = useRouter();
 
   const videoRef = useRef<VideoRef | null>(null);
 
@@ -326,6 +329,7 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
       } else if (command === "Stop") {
         console.log("Command ~ Stop");
         stopPlayback();
+        router.canGoBack() && router.back();
       } else if (command === "Mute") {
         console.log("Command ~ Mute");
         setVolume(0);

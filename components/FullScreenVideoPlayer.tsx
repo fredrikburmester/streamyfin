@@ -66,6 +66,9 @@ export const FullScreenVideoPlayer: React.FC = () => {
   const [showControls, setShowControls] = useState(true);
   const [isBuffering, setIsBufferingState] = useState(true);
   const [ignoreSafeArea, setIgnoreSafeArea] = useState(false);
+  const [orientation, setOrientation] = useState(
+    ScreenOrientation.OrientationLock.UNKNOWN
+  );
 
   // Seconds
   const [currentTime, setCurrentTime] = useState(0);
@@ -162,13 +165,6 @@ export const FullScreenVideoPlayer: React.FC = () => {
     return () => backHandler.remove();
   }, [currentlyPlaying, stopPlayback, router]);
 
-  const [orientation, setOrientation] = useState(
-    ScreenOrientation.OrientationLock.UNKNOWN
-  );
-
-  /**
-   * Event listener for orientation
-   */
   useEffect(() => {
     const subscription = ScreenOrientation.addOrientationChangeListener(
       (event) => {
@@ -232,6 +228,7 @@ export const FullScreenVideoPlayer: React.FC = () => {
         currentlyPlaying.item?.UserData?.PlaybackPositionTicks || 0;
       max.value = currentlyPlaying.item.RunTimeTicks || 0;
       setShowControls(true);
+      playVideo();
     }
   }, [currentlyPlaying]);
 
