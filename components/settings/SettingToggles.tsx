@@ -23,6 +23,7 @@ import { useState } from "react";
 import { Button } from "../Button";
 import { MediaToggles } from "./MediaToggles";
 import * as ScreenOrientation from "expo-screen-orientation";
+import { opacity } from "react-native-reanimated/lib/typescript/reanimated2/Colors";
 
 interface Props extends ViewProps {}
 
@@ -458,112 +459,177 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
       </View>
 
       <View className="mt-4">
-        <Text className="text-lg font-bold mb-2">Optimized versions</Text>
+        <Text className="text-lg font-bold mb-2">Downloads</Text>
         <View className="flex flex-col rounded-xl overflow-hidden  divide-y-2 divide-solid divide-neutral-800">
-          <View className="flex flex-col bg-neutral-900 px-4 py-4">
-            <View className="flex flex-col shrink mb-2">
-              <Text className="font-semibold">Optimized versions server</Text>
+          <View
+            className={`
+                flex flex-row items-center space-x-2 justify-between bg-neutral-900 p-4
+              `}
+          >
+            <View className="flex flex-col shrink">
+              <Text className="font-semibold">Download method</Text>
               <Text className="text-xs opacity-50">
-                Set the URL for the optimized versions server for downloads.
+                Choose the download method to use. Optimized requires the
+                optimized server.
               </Text>
             </View>
-            <View className="flex flex-col">
-              <Input
-                placeholder="Optimized versions server URL..."
-                defaultValue={
-                  settings.optimizedVersionsServerUrl
-                    ? settings.optimizedVersionsServerUrl
-                    : ""
-                }
-                value={optimizedVersionsServerUrl}
-                keyboardType="url"
-                returnKeyType="done"
-                autoCapitalize="none"
-                textContentType="URL"
-                onChangeText={(text) => setOptimizedVersionsServerUrl(text)}
-              />
-              <Button
-                color="purple"
-                className="h-12 mt-2"
-                onPress={() => {
-                  updateSettings({
-                    optimizedVersionsServerUrl:
-                      optimizedVersionsServerUrl.length === 0
-                        ? null
-                        : optimizedVersionsServerUrl.endsWith("/")
-                        ? optimizedVersionsServerUrl
-                        : optimizedVersionsServerUrl + "/",
-                  });
-                }}
+            <DropdownMenu.Root>
+              <DropdownMenu.Trigger>
+                <TouchableOpacity className="bg-neutral-800 rounded-lg border-neutral-900 border px-3 py-2 flex flex-row items-center justify-between">
+                  <Text>
+                    {settings.downloadMethod === "remux"
+                      ? "Default"
+                      : "Optimized"}
+                  </Text>
+                </TouchableOpacity>
+              </DropdownMenu.Trigger>
+              <DropdownMenu.Content
+                loop={true}
+                side="bottom"
+                align="start"
+                alignOffset={0}
+                avoidCollisions={true}
+                collisionPadding={8}
+                sideOffset={8}
               >
-                Save
-              </Button>
-            </View>
-
-            {settings.optimizedVersionsServerUrl && (
-              <View className="p-4 bg-neutral-800 rounded-xl mt-2">
-                <Text selectable>{settings.optimizedVersionsServerUrl}</Text>
-              </View>
-            )}
+                <DropdownMenu.Label>Methods</DropdownMenu.Label>
+                <DropdownMenu.Item
+                  key="1"
+                  onSelect={() => {
+                    updateSettings({ downloadMethod: "remux" });
+                    queryClient.invalidateQueries({ queryKey: ["search"] });
+                  }}
+                >
+                  <DropdownMenu.ItemTitle>Default</DropdownMenu.ItemTitle>
+                </DropdownMenu.Item>
+                <DropdownMenu.Item
+                  key="2"
+                  onSelect={() => {
+                    updateSettings({ downloadMethod: "optimized" });
+                    queryClient.invalidateQueries({ queryKey: ["search"] });
+                  }}
+                >
+                  <DropdownMenu.ItemTitle>Optimized</DropdownMenu.ItemTitle>
+                </DropdownMenu.Item>
+              </DropdownMenu.Content>
+            </DropdownMenu.Root>
           </View>
-
-          <View className="flex flex-col bg-neutral-900 px-4 py-4 w-full grow-0">
-            <View className="flex flex-col shrink mb-2">
-              <Text className="font-semibold">
-                Optimized versions auth header
-              </Text>
-              <Text className="text-xs opacity-50">
-                The auth header for the optimized versions server.
-              </Text>
-            </View>
-            <View className="flex flex-col  w-full">
-              <Input
-                placeholder="Optimized versions server URL..."
-                defaultValue={
-                  settings.optimizedVersionsAuthHeader
-                    ? settings.optimizedVersionsAuthHeader
-                    : ""
-                }
-                value={optimizedVersionsAuthHeader}
-                keyboardType="url"
-                returnKeyType="done"
-                autoCapitalize="none"
-                textContentType="URL"
-                onChangeText={(text) => setOptimizedVersionsAuthHeader(text)}
-                className="w-full"
-              />
-              <Button
-                color="purple"
-                className=" h-12 w-full mt-2"
-                onPress={() => {
-                  updateSettings({
-                    optimizedVersionsAuthHeader,
-                  });
-                }}
-              >
-                Save
-              </Button>
-            </View>
-
-            {settings.optimizedVersionsAuthHeader && (
-              <View className="p-4 bg-neutral-800 rounded-xl mt-2">
-                <Text className="" selectable>
-                  {settings.optimizedVersionsAuthHeader}
+          <View
+            pointerEvents={
+              settings.downloadMethod === "optimized" ? "auto" : "none"
+            }
+            className={`
+              ${
+                settings.downloadMethod === "optimized"
+                  ? "opacity-100"
+                  : "opacity-50"
+              }`}
+          >
+            <View className="flex flex-col bg-neutral-900 px-4 py-4">
+              <View className="flex flex-col shrink mb-2">
+                <Text className="font-semibold">Optimized versions server</Text>
+                <Text className="text-xs opacity-50">
+                  Set the URL for the optimized versions server for downloads.
                 </Text>
               </View>
-            )}
-            <Button
-              color="red"
-              className="mt-2"
-              onPress={() => {
-                updateSettings({
-                  optimizedVersionsAuthHeader: null,
-                  optimizedVersionsServerUrl: null,
-                });
-              }}
-            >
-              Reset
-            </Button>
+              <View className="flex flex-col">
+                <Input
+                  placeholder="Optimized versions server URL..."
+                  defaultValue={
+                    settings.optimizedVersionsServerUrl
+                      ? settings.optimizedVersionsServerUrl
+                      : ""
+                  }
+                  value={optimizedVersionsServerUrl}
+                  keyboardType="url"
+                  returnKeyType="done"
+                  autoCapitalize="none"
+                  textContentType="URL"
+                  onChangeText={(text) => setOptimizedVersionsServerUrl(text)}
+                />
+                <Button
+                  color="purple"
+                  className="h-12 mt-2"
+                  onPress={() => {
+                    updateSettings({
+                      optimizedVersionsServerUrl:
+                        optimizedVersionsServerUrl.length === 0
+                          ? null
+                          : optimizedVersionsServerUrl.endsWith("/")
+                          ? optimizedVersionsServerUrl
+                          : optimizedVersionsServerUrl + "/",
+                    });
+                  }}
+                >
+                  Save
+                </Button>
+              </View>
+
+              {settings.optimizedVersionsServerUrl && (
+                <View className="p-4 bg-neutral-800 rounded-xl mt-2">
+                  <Text selectable>{settings.optimizedVersionsServerUrl}</Text>
+                </View>
+              )}
+            </View>
+
+            <View className="flex flex-col bg-neutral-900 px-4 py-4 w-full grow-0">
+              <View className="flex flex-col shrink mb-2">
+                <Text className="font-semibold">
+                  Optimized versions auth header
+                </Text>
+                <Text className="text-xs opacity-50">
+                  The auth header for the optimized versions server.
+                </Text>
+              </View>
+              <View className="flex flex-col  w-full">
+                <Input
+                  placeholder="Optimized versions auth header..."
+                  defaultValue={
+                    settings.optimizedVersionsAuthHeader
+                      ? settings.optimizedVersionsAuthHeader
+                      : ""
+                  }
+                  value={optimizedVersionsAuthHeader}
+                  keyboardType="url"
+                  returnKeyType="done"
+                  autoCapitalize="none"
+                  textContentType="URL"
+                  onChangeText={(text) => setOptimizedVersionsAuthHeader(text)}
+                  className="w-full"
+                />
+                <Button
+                  color="purple"
+                  className=" h-12 w-full mt-2"
+                  onPress={() => {
+                    updateSettings({
+                      optimizedVersionsAuthHeader,
+                    });
+                  }}
+                >
+                  Save
+                </Button>
+              </View>
+
+              {settings.optimizedVersionsAuthHeader && (
+                <View className="p-4 bg-neutral-800 rounded-xl mt-2">
+                  <Text className="" selectable>
+                    {settings.optimizedVersionsAuthHeader}
+                  </Text>
+                </View>
+              )}
+              <Button
+                color="red"
+                className="mt-2"
+                onPress={() => {
+                  updateSettings({
+                    optimizedVersionsAuthHeader: null,
+                    optimizedVersionsServerUrl: null,
+                  });
+                }}
+              >
+                Reset
+              </Button>
+            </View>
           </View>
         </View>
       </View>

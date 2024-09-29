@@ -22,7 +22,7 @@ export const ActiveDownload: React.FC<Props> = ({ ...props }) => {
     mutationFn: async () => {
       if (!process) throw new Error("No active download");
 
-      if (settings?.optimizedVersionsServerUrl) {
+      if (settings?.downloadMethod === "optimized") {
         await axios.delete(
           settings?.optimizedVersionsServerUrl + "cancel-job/" + process.id,
           {
@@ -45,6 +45,7 @@ export const ActiveDownload: React.FC<Props> = ({ ...props }) => {
     onError: (e) => {
       console.log(e);
       toast.error("Failed to cancel download");
+      clearProcess();
     },
   });
 
