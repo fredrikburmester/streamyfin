@@ -345,8 +345,9 @@ export default function index() {
       contentContainerStyle={{
         paddingLeft: insets.left,
         paddingRight: insets.right,
+        paddingBottom: insets.bottom,
       }}
-      className="flex flex-col space-y-4 mb-20"
+      className="flex flex-col space-y-4"
     >
       <LargeMovieCarousel />
 
@@ -362,7 +363,7 @@ export default function index() {
               limit: 20,
               enableImageTypes: ["Primary", "Backdrop", "Thumb"],
             })
-          ).data.Items|| []
+          ).data.Items || []
         }
         orientation={"horizontal"}
       />
