@@ -50,7 +50,7 @@ export default function TabLayout() {
     >
       <Tabs.Screen redirect name="index" />
       <Tabs.Screen
-        name="home"
+        name="(home)"
         options={{
           headerShown: false,
           title: t("tabs.home"),
@@ -63,7 +63,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="search"
+        name="(search)"
         options={{
           headerShown: false,
           title: t("tabs.search"),
@@ -73,7 +73,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="library"
+        name="(libraries)"
         options={{
           headerShown: false,
           title: t("tabs.library"),

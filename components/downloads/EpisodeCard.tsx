@@ -8,12 +8,9 @@ import { useAtom } from "jotai";
 
 import { Text } from "../common/Text";
 import { useFiles } from "@/hooks/useFiles";
-import {
-  currentlyPlayingItemAtom,
-  fullScreenAtom,
-  playingAtom,
-} from "../CurrentlyPlayingBar";
 import { useSettings } from "@/utils/atoms/settings";
+import { usePlayback } from "@/providers/PlaybackProvider";
+import { useRouter } from "expo-router";
 
 interface EpisodeCardProps {
   item: BaseItemDto;
@@ -26,23 +23,17 @@ interface EpisodeCardProps {
  */
 export const EpisodeCard: React.FC<EpisodeCardProps> = ({ item }) => {
   const { deleteFile } = useFiles();
-  const [, setCurrentlyPlaying] = useAtom(currentlyPlayingItemAtom);
-  const [, setPlaying] = useAtom(playingAtom);
-  const [, setFullscreen] = useAtom(fullScreenAtom);
-  const [settings] = useSettings();
+  const router = useRouter();
 
-  /**
-   * Handles opening the file for playback.
-   */
+  const { startDownloadedFilePlayback } = usePlayback();
+
   const handleOpenFile = useCallback(async () => {
-    setCurrentlyPlaying({
+    startDownloadedFilePlayback({
       item,
-      playbackUrl: `${FileSystem.documentDirectory}/${item.Id}.mp4`,
+      url: `${FileSystem.documentDirectory}/${item.Id}.mp4`,
     });
-    setPlaying(true);
-    if (settings?.openFullScreenVideoPlayerByDefault === true)
-      setFullscreen(true);
-  }, [item, setCurrentlyPlaying, settings]);
+    router.push("/play");
+  }, [item, startDownloadedFilePlayback]);
 
   /**
    * Handles deleting the file with haptic feedback.

@@ -5,39 +5,63 @@ import { useAtom } from "jotai";
 import { useMemo, useState } from "react";
 import { View } from "react-native";
 import { WatchedIndicator } from "./WatchedIndicator";
-import { getPrimaryImageUrl } from "@/utils/jellyfin/image/getPrimaryImageUrl";
 
 type ContinueWatchingPosterProps = {
   item: BaseItemDto;
+  width?: number;
+  useEpisodePoster?: boolean;
 };
 
 const ContinueWatchingPoster: React.FC<ContinueWatchingPosterProps> = ({
   item,
+  width = 176,
+  useEpisodePoster = false,
 }) => {
   const [api] = useAtom(apiAtom);
 
-  const url = useMemo(
-    () =>
-      getPrimaryImageUrl({
-        api,
-        item,
-        quality: 70,
-        width: 300,
-      }),
-    [item],
-  );
+  /**
+   * Get horrizontal poster for movie and episode, with failover to primary.
+   */
+  const url = useMemo(() => {
+    if (!api) return;
+    if (item.Type === "Episode" && useEpisodePoster) {
+      return `${api?.basePath}/Items/${item.Id}/Images/Primary?fillHeight=389&quality=80`;
+    }
+    if (item.Type === "Episode") {
+      if (item.ParentBackdropItemId && item.ParentThumbImageTag)
+        return `${api?.basePath}/Items/${item.ParentBackdropItemId}/Images/Thumb?fillHeight=389&quality=80&tag=${item.ParentThumbImageTag}`;
+      else
+        return `${api?.basePath}/Items/${item.Id}/Images/Primary?fillHeight=389&quality=80`;
+    }
+    if (item.Type === "Movie") {
+      if (item.ImageTags?.["Thumb"])
+        return `${api?.basePath}/Items/${item.Id}/Images/Thumb?fillHeight=389&quality=80&tag=${item.ImageTags?.["Thumb"]}`;
+      else
+        return `${api?.basePath}/Items/${item.Id}/Images/Primary?fillHeight=389&quality=80`;
+    }
+  }, [item]);
 
   const [progress, setProgress] = useState(
-    item.UserData?.PlayedPercentage || 0,
+    item.UserData?.PlayedPercentage || 0
   );
 
   if (!url)
     return (
-      <View className="w-48 aspect-video border border-neutral-800"></View>
+      <View
+        className="aspect-video border border-neutral-800"
+        style={{
+          width,
+        }}
+      ></View>
     );
 
   return (
-    <View className="w-48 relative aspect-video rounded-lg overflow-hidden border border-neutral-800">
+    <View
+      style={{
+        width,
+      }}
+      className="relative aspect-video rounded-lg overflow-hidden border border-neutral-800"
+    >
       <Image
         key={item.Id}
         id={item.Id}
@@ -52,10 +76,7 @@ const ContinueWatchingPoster: React.FC<ContinueWatchingPosterProps> = ({
       {progress > 0 && (
         <>
           <View
-            style={{
-              width: `100%`,
-            }}
-            className={`absolute bottom-0 left-0 h-1 bg-neutral-700 opacity-80 w-full`}
+            className={`absolute w-100 bottom-0 left-0 h-1 bg-neutral-700 opacity-80 w-full`}
           ></View>
           <View
             style={{

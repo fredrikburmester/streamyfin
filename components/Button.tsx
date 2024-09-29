@@ -10,7 +10,7 @@ interface ButtonProps extends React.ComponentProps<typeof TouchableOpacity> {
   disabled?: boolean;
   children?: string | ReactNode;
   loading?: boolean;
-  color?: "purple" | "red" | "black";
+  color?: "purple" | "red" | "black" | "transparent";
   iconRight?: ReactNode;
   iconLeft?: ReactNode;
   justify?: "center" | "between";
@@ -37,6 +37,8 @@ export const Button: React.FC<PropsWithChildren<ButtonProps>> = ({
         return "bg-red-600";
       case "black":
         return "bg-neutral-900 border border-neutral-800";
+      case "transparent":
+        return "bg-transparent";
     }
   }, [color]);
 

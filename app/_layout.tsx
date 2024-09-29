@@ -1,32 +1,30 @@
+import { FullScreenVideoPlayer } from "@/components/FullScreenVideoPlayer";
 import { JellyfinProvider } from "@/providers/JellyfinProvider";
+import { JobQueueProvider } from "@/providers/JobQueueProvider";
+import { PlaybackProvider } from "@/providers/PlaybackProvider";
+import { useSettings } from "@/utils/atoms/settings";
+import { ActionSheetProvider } from "@expo/react-native-action-sheet";
+import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { DarkTheme, ThemeProvider } from "@react-navigation/native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useFonts } from "expo-font";
-import { Stack } from "expo-router";
-import * as SplashScreen from "expo-splash-screen";
-import { Provider as JotaiProvider } from "jotai";
-import { useEffect, useRef, useState } from "react";
-import "react-native-reanimated";
-import * as ScreenOrientation from "expo-screen-orientation";
-import { StatusBar } from "expo-status-bar";
-import { CurrentlyPlayingBar } from "@/components/CurrentlyPlayingBar";
-import { ActionSheetProvider } from "@expo/react-native-action-sheet";
-import { useJobProcessor } from "@/utils/atoms/queue";
-import { JobQueueProvider } from "@/providers/JobQueueProvider";
 import { useKeepAwake } from "expo-keep-awake";
-import { useSettings } from "@/utils/atoms/settings";
+import { Stack, useRouter } from "expo-router";
+import * as ScreenOrientation from "expo-screen-orientation";
+import * as SplashScreen from "expo-splash-screen";
+import { StatusBar } from "expo-status-bar";
+import { Provider as JotaiProvider, useAtom } from "jotai";
+import { useEffect, useRef } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
+import "react-native-reanimated";
+import * as Linking from "expo-linking";
+import { orientationAtom } from "@/utils/atoms/orientation";
+import { Toaster } from "sonner-native";
 import { I18nextProvider, useTranslation } from "react-i18next";
 import i18n from "@/i18n";
 import { getLocales } from "expo-localization";
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
-
-export const unstable_settings = {
-  initialRouteName: "/index",
-};
 
 export default function RootLayout() {
   const [loaded] = useFonts({
@@ -54,6 +52,7 @@ export default function RootLayout() {
 
 function Layout() {
   const [settings, updateSettings] = useSettings();
+  const [orientation, setOrientation] = useAtom(orientationAtom);
 
   useKeepAwake();
 
@@ -86,7 +85,28 @@ function Layout() {
     i18n.changeLanguage(
       settings?.preferedLanguage || getLocales()[0].languageCode || "en"
     );
-  }, [settings]);
+
+    const subscription = ScreenOrientation.addOrientationChangeListener(
+      (event) => {
+        console.log(event.orientationInfo.orientation);
+        setOrientation(event.orientationInfo.orientation);
+      }
+    );
+
+    ScreenOrientation.getOrientationAsync().then((initialOrientation) => {
+      setOrientation(initialOrientation);
+    });
+
+    return () => {
+      ScreenOrientation.removeOrientationChangeListener(subscription);
+    };
+  }, []);
+
+  const url = Linking.useURL();
+
+  if (url) {
+    const { hostname, path, queryParams } = Linking.parse(url);
+  }
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -95,99 +115,51 @@ function Layout() {
           <ActionSheetProvider>
             <BottomSheetModalProvider>
               <JellyfinProvider>
-                <StatusBar style="light" backgroundColor="#000" />
-                <ThemeProvider value={DarkTheme}>
-                  <Stack initialRouteName="/home">
-                    <Stack.Screen
-                      name="(auth)/(tabs)"
-                      options={{
-                        headerShown: false,
-                        title: "",
+                <PlaybackProvider>
+                  <StatusBar style="light" backgroundColor="#000" />
+                  <ThemeProvider value={DarkTheme}>
+                    <Stack
+                      initialRouteName="/home"
+                      screenOptions={{
+                        autoHideHomeIndicator: true,
+                      }}
+                    >
+                      <Stack.Screen
+                        name="(auth)/(tabs)"
+                        options={{
+                          headerShown: false,
+                          title: "",
+                        }}
+                      />
+                      <Stack.Screen
+                        name="(auth)/play"
+                        options={{
+                          headerShown: false,
+                          title: "",
+                          animation: "fade",
+                        }}
+                      />
+                      <Stack.Screen
+                        name="login"
+                        options={{ headerShown: false, title: "Login" }}
+                      />
+                      <Stack.Screen name="+not-found" />
+                    </Stack>
+                    <Toaster
+                      duration={2000}
+                      toastOptions={{
+                        style: {
+                          backgroundColor: "#262626",
+                          borderColor: "#363639",
+                          borderWidth: 1,
+                        },
+                        titleStyle: {
+                          color: "white",
+                        },
                       }}
                     />
-                    <Stack.Screen
-                      name="(auth)/settings"
-                      options={{
-                        headerShown: true,
-                        title: "Settings",
-                        headerStyle: { backgroundColor: "black" },
-                        headerShadowVisible: false,
-                      }}
-                    />
-                    <Stack.Screen
-                      name="(auth)/downloads"
-                      options={{
-                        headerShown: true,
-                        title: "Downloads",
-                        headerStyle: { backgroundColor: "black" },
-                        headerShadowVisible: false,
-                      }}
-                    />
-                    <Stack.Screen
-                      name="(auth)/items/[id]"
-                      options={{
-                        title: "",
-                        headerShown: false,
-                      }}
-                    />
-                    <Stack.Screen
-                      name="(auth)/collections/[collectionId]"
-                      options={{
-                        title: "",
-                        headerShown: true,
-                        headerStyle: { backgroundColor: "black" },
-                        headerShadowVisible: false,
-                      }}
-                    />
-                    <Stack.Screen
-                      name="(auth)/artists/page"
-                      options={{
-                        title: "",
-                        headerShown: true,
-                        headerStyle: { backgroundColor: "black" },
-                        headerShadowVisible: false,
-                      }}
-                    />
-                    <Stack.Screen
-                      name="(auth)/artists/[artistId]/page"
-                      options={{
-                        title: "",
-                        headerShown: true,
-                        headerStyle: { backgroundColor: "black" },
-                        headerShadowVisible: false,
-                      }}
-                    />
-                    <Stack.Screen
-                      name="(auth)/albums/[albumId]"
-                      options={{
-                        title: "",
-                        headerShown: true,
-                        headerStyle: { backgroundColor: "black" },
-                        headerShadowVisible: false,
-                      }}
-                    />
-                    <Stack.Screen
-                      name="(auth)/songs/[songId]"
-                      options={{
-                        title: "",
-                        headerShown: false,
-                      }}
-                    />
-                    <Stack.Screen
-                      name="(auth)/series/[id]"
-                      options={{
-                        title: "",
-                        headerShown: false,
-                      }}
-                    />
-                    <Stack.Screen
-                      name="login"
-                      options={{ headerShown: false, title: "Login" }}
-                    />
-                    <Stack.Screen name="+not-found" />
-                  </Stack>
-                  <CurrentlyPlayingBar />
-                </ThemeProvider>
+                  </ThemeProvider>
+                </PlaybackProvider>
               </JellyfinProvider>
             </BottomSheetModalProvider>
           </ActionSheetProvider>

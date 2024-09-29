@@ -3,17 +3,79 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect } from "react";
 import { getLocales } from "expo-localization";
 
+import * as ScreenOrientation from "expo-screen-orientation";
+
+export type DownloadQuality = "original" | "high" | "low";
+
+export type DownloadOption = {
+  label: string;
+  value: DownloadQuality;
+};
+
+export const ScreenOrientationEnum: Record<
+  ScreenOrientation.OrientationLock,
+  string
+> = {
+  [ScreenOrientation.OrientationLock.DEFAULT]: "Default",
+  [ScreenOrientation.OrientationLock.ALL]: "All",
+  [ScreenOrientation.OrientationLock.PORTRAIT]: "Portrait",
+  [ScreenOrientation.OrientationLock.PORTRAIT_UP]: "Portrait Up",
+  [ScreenOrientation.OrientationLock.PORTRAIT_DOWN]: "Portrait Down",
+  [ScreenOrientation.OrientationLock.LANDSCAPE]: "Landscape",
+  [ScreenOrientation.OrientationLock.LANDSCAPE_LEFT]: "Landscape Left",
+  [ScreenOrientation.OrientationLock.LANDSCAPE_RIGHT]: "Landscape Right",
+  [ScreenOrientation.OrientationLock.OTHER]: "Other",
+  [ScreenOrientation.OrientationLock.UNKNOWN]: "Unknown",
+};
+
+export const DownloadOptions: DownloadOption[] = [
+  {
+    label: "Original quality",
+    value: "original",
+  },
+  {
+    label: "High quality",
+    value: "high",
+  },
+  {
+    label: "Small file size",
+    value: "low",
+  },
+];
+
+export type LibraryOptions = {
+  display: "row" | "list";
+  cardStyle: "compact" | "detailed";
+  imageStyle: "poster" | "cover";
+  showTitles: boolean;
+  showStats: boolean;
+};
+
+export type DefaultLanguageOption = {
+  value: string;
+  label: string;
+};
+
 type Settings = {
   autoRotate?: boolean;
   forceLandscapeInVideoPlayer?: boolean;
-  openFullScreenVideoPlayerByDefault?: boolean;
   usePopularPlugin?: boolean;
   deviceProfile?: "Expo" | "Native" | "Old";
   forceDirectPlay?: boolean;
   mediaListCollectionIds?: string[];
   preferedLanguage?: string;
+  searchEngine: "Marlin" | "Jellyfin";
+  marlinServerUrl?: string;
+  openInVLC?: boolean;
+  downloadQuality?: DownloadOption;
+  libraryOptions: LibraryOptions;
+  defaultSubtitleLanguage: DefaultLanguageOption | null;
+  defaultAudioLanguage: DefaultLanguageOption | null;
+  showHomeTitles: boolean;
+  defaultVideoOrientation: ScreenOrientation.OrientationLock;
+  forwardSkipTime: number;
+  rewindSkipTime: number;
 };
-
 /**
  *
  * The settings atom is a Jotai atom that stores the user's settings.
@@ -22,21 +84,44 @@ type Settings = {
  *
  */
 
-// Utility function to load settings from AsyncStorage
 const loadSettings = async (): Promise<Settings> => {
-  const jsonValue = await AsyncStorage.getItem("settings");
-  return jsonValue != null
-    ? JSON.parse(jsonValue)
-    : {
-        autoRotate: true,
-        forceLandscapeInVideoPlayer: false,
-        openFullScreenVideoPlayerByDefault: false,
-        usePopularPlugin: false,
-        deviceProfile: "Expo",
-        forceDirectPlay: false,
-        mediaListCollectionIds: [],
-        preferedLanguage: getLocales()[0] || "en",
-      };
+  const defaultValues: Settings = {
+    autoRotate: true,
+    forceLandscapeInVideoPlayer: false,
+    usePopularPlugin: false,
+    deviceProfile: "Expo",
+    forceDirectPlay: false,
+    mediaListCollectionIds: [],
+    searchEngine: "Jellyfin",
+    marlinServerUrl: "",
+    openInVLC: false,
+    downloadQuality: DownloadOptions[0],
+    libraryOptions: {
+      display: "list",
+      cardStyle: "detailed",
+      imageStyle: "cover",
+      showTitles: true,
+      showStats: true,
+    },
+    defaultAudioLanguage: null,
+    defaultSubtitleLanguage: null,
+    showHomeTitles: true,
+    defaultVideoOrientation: ScreenOrientation.OrientationLock.DEFAULT,
+    forwardSkipTime: 30,
+    rewindSkipTime: 10,
+    preferedLanguage: getLocales()[0].languageCode || "en",
+  };
+
+  try {
+    const jsonValue = await AsyncStorage.getItem("settings");
+    const loadedValues: Partial<Settings> =
+      jsonValue != null ? JSON.parse(jsonValue) : {};
+
+    return { ...defaultValues, ...loadedValues };
+  } catch (error) {
+    console.error("Failed to load settings:", error);
+    return defaultValues;
+  }
 };
 
 // Utility function to save settings to AsyncStorage

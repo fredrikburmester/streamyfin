@@ -1,20 +1,16 @@
-import React, { useCallback } from "react";
-import { TouchableOpacity, View } from "react-native";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
-import * as ContextMenu from "zeego/context-menu";
 import * as FileSystem from "expo-file-system";
 import * as Haptics from "expo-haptics";
-import { useAtom } from "jotai";
+import React, { useCallback } from "react";
+import { TouchableOpacity, View } from "react-native";
+import * as ContextMenu from "zeego/context-menu";
 
-import { Text } from "../common/Text";
 import { useFiles } from "@/hooks/useFiles";
 import { runtimeTicksToMinutes } from "@/utils/time";
-import {
-  currentlyPlayingItemAtom,
-  fullScreenAtom,
-  playingAtom,
-} from "../CurrentlyPlayingBar";
-import { useSettings } from "@/utils/atoms/settings";
+import { Text } from "../common/Text";
+
+import { usePlayback } from "@/providers/PlaybackProvider";
+import { useRouter } from "expo-router";
 
 interface MovieCardProps {
   item: BaseItemDto;
@@ -27,25 +23,16 @@ interface MovieCardProps {
  */
 export const MovieCard: React.FC<MovieCardProps> = ({ item }) => {
   const { deleteFile } = useFiles();
-  const [, setCurrentlyPlaying] = useAtom(currentlyPlayingItemAtom);
-  const [, setPlaying] = useAtom(playingAtom);
-  const [, setFullscreen] = useAtom(fullScreenAtom);
-  const [settings] = useSettings();
+  const router = useRouter();
+  const { startDownloadedFilePlayback } = usePlayback();
 
-  /**
-   * Handles opening the file for playback.
-   */
   const handleOpenFile = useCallback(() => {
-    console.log("Open movie file", item.Name);
-    setCurrentlyPlaying({
+    startDownloadedFilePlayback({
       item,
-      playbackUrl: `${FileSystem.documentDirectory}/${item.Id}.mp4`,
+      url: `${FileSystem.documentDirectory}/${item.Id}.mp4`,
     });
-    setPlaying(true);
-    if (settings?.openFullScreenVideoPlayerByDefault === true) {
-      setFullscreen(true);
-    }
-  }, [item, setCurrentlyPlaying, setPlaying, settings]);
+    router.push("/play");
+  }, [item, startDownloadedFilePlayback]);
 
   /**
    * Handles deleting the file with haptic feedback.
@@ -81,7 +68,12 @@ export const MovieCard: React.FC<MovieCardProps> = ({ item }) => {
           </View>
         </TouchableOpacity>
       </ContextMenu.Trigger>
-      <ContextMenu.Content>
+      <ContextMenu.Content
+        loop={false}
+        alignOffset={0}
+        avoidCollisions={false}
+        collisionPadding={0}
+      >
         {contextMenuOptions.map((option) => (
           <ContextMenu.Item
             key={option.label}

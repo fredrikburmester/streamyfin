@@ -21,6 +21,7 @@ build-*
 *.mp4
 build-*
 Streamyfin.app
+package-lock.json
 
 /ios
 /android
@@ -29,3 +30,4 @@ pc-api-7079014811501811218-719-3b9f15aeccf8.json
 credentials.json
 *.apk
 *.ipa
+.continuerc.json

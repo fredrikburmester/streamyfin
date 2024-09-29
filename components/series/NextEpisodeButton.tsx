@@ -23,40 +23,6 @@ export const NextEpisodeButton: React.FC<Props> = ({
   const [user] = useAtom(userAtom);
   const [api] = useAtom(apiAtom);
 
-  // const { data: seasons } = useQuery({
-  //   queryKey: ["seasons", item.SeriesId],
-  //   queryFn: async () => {
-  //     if (
-  //       !api ||
-  //       !user?.Id ||
-  //       !item?.Id ||
-  //       !item?.SeriesId ||
-  //       !item?.IndexNumber
-  //     )
-  //       return [];
-
-  //     const response = await getItemsApi(api).getItems({
-  //       parentId: item?.SeriesId,
-  //     });
-
-  //     console.log("seasons ~", type, response.data);
-
-  //     return (response.data.Items as BaseItemDto[]) ?? [];
-  //   },
-  //   enabled: Boolean(api && user?.Id && item?.Id && item.SeasonId),
-  // });
-
-  // const nextSeason = useMemo(() => {
-  //   if (!seasons) return null;
-  //   const currentSeasonIndex = seasons.findIndex(
-  //     (season) => season.Id === item.SeasonId,
-  //   );
-
-  //   if (currentSeasonIndex === seasons.length - 1) return null;
-
-  //   return seasons[currentSeasonIndex + 1];
-  // }, [seasons]);
-
   const { data: nextEpisode } = useQuery({
     queryKey: ["nextEpisode", item.Id, item.ParentId, type],
     queryFn: async () => {
@@ -90,7 +56,7 @@ export const NextEpisodeButton: React.FC<Props> = ({
 
   return (
     <Button
-      onPress={() => router.replace(`/items/${nextEpisode?.Id}`)}
+      onPress={() => router.setParams({ id: nextEpisode?.Id })}
       className={`h-12 aspect-square`}
       disabled={disabled}
       {...props}

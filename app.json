@@ -2,7 +2,7 @@
   "expo": {
     "name": "Streamyfin",
     "slug": "streamyfin",
-    "version": "0.6.1",
+    "version": "0.15.0",
     "orientation": "default",
     "icon": "./assets/images/icon.png",
     "scheme": "streamyfin",
@@ -25,12 +25,15 @@
           "NSAllowsArbitraryLoads": true
         }
       },
+      "config": {
+        "usesNonExemptEncryption": false
+      },
       "supportsTablet": true,
       "bundleIdentifier": "com.fredrikburmester.streamyfin"
     },
     "android": {
       "jsEngine": "hermes",
-      "versionCode": 18,
+      "versionCode": 41,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png"
       },
@@ -69,12 +72,24 @@
         }
       ],
       [
+        "./plugins/withAndroidMainActivityAttributes",
+        {
+          "com.reactnative.googlecast.RNGCExpandedControllerActivity": true
+        }
+      ],
+      ["./plugins/withExpandedController.js"],
+      [
         "expo-build-properties",
         {
           "ios": {
             "deploymentTarget": "14.0"
           },
           "android": {
+            "android": {
+              "compileSdkVersion": 34,
+              "targetSdkVersion": 34,
+              "buildToolsVersion": "34.0.0"
+            },
             "minSdkVersion": 24,
             "usesCleartextTraffic": true,
             "packagingOptions": {

@@ -15,14 +15,16 @@ type MoviePosterProps = {
 const SeriesPoster: React.FC<MoviePosterProps> = ({ item }) => {
   const [api] = useAtom(apiAtom);
 
-  const url = useMemo(
-    () =>
-      getPrimaryImageUrl({
-        api,
-        item,
-      }),
-    [item]
-  );
+  const url = useMemo(() => {
+    if (item.Type === "Episode") {
+      return `${api?.basePath}/Items/${item.SeriesId}/Images/Primary?fillHeight=389&quality=80&tag=${item.SeriesPrimaryImageTag}`;
+    }
+    return getPrimaryImageUrl({
+      api,
+      item,
+      width: 300,
+    });
+  }, [item]);
 
   const blurhash = useMemo(() => {
     const key = item.ImageTags?.["Primary"] as string;
@@ -30,7 +32,7 @@ const SeriesPoster: React.FC<MoviePosterProps> = ({ item }) => {
   }, [item]);
 
   return (
-    <View className="relative rounded-md overflow-hidden border border-neutral-900">
+    <View className="relative rounded-lg overflow-hidden border border-neutral-900">
       <Image
         placeholder={{
           blurhash,

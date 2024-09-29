@@ -1,57 +1,75 @@
 import { Text } from "@/components/common/Text";
 import MoviePoster from "@/components/posters/MoviePoster";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
+import {
+  useQuery,
+  type QueryFunction,
+  type QueryKey,
+} from "@tanstack/react-query";
 import { View, ViewProps } from "react-native";
 import ContinueWatchingPoster from "../ContinueWatchingPoster";
 import { ItemCardText } from "../ItemCardText";
 import { HorizontalScroll } from "../common/HorrizontalScroll";
 import { TouchableItemRouter } from "../common/TouchableItemRouter";
+import SeriesPoster from "../posters/SeriesPoster";
 
 interface Props extends ViewProps {
-  title: string;
-  loading?: boolean;
+  title?: string | null;
   orientation?: "horizontal" | "vertical";
-  data?: BaseItemDto[] | null;
-  height?: "small" | "large";
   disabled?: boolean;
+  queryKey: QueryKey;
+  queryFn: QueryFunction<BaseItemDto[]>;
 }
 
 export const ScrollingCollectionList: React.FC<Props> = ({
   title,
-  data,
   orientation = "vertical",
-  height = "small",
-  loading = false,
   disabled = false,
+  queryFn,
+  queryKey,
   ...props
 }) => {
-  if (disabled) return null;
+  const { data, isLoading } = useQuery({
+    queryKey,
+    queryFn,
+    enabled: !disabled,
+    staleTime: 60 * 1000,
+  });
+
+  if (disabled || !title) return null;
 
   return (
     <View {...props}>
-      <Text className="px-4 text-2xl font-bold mb-2 text-neutral-100">
+      <Text className="px-4 text-lg font-bold mb-2 text-neutral-100">
         {title}
       </Text>
-      <HorizontalScroll<BaseItemDto>
+      <HorizontalScroll
         data={data}
-        height={orientation === "vertical" ? 247 : 164}
-        loading={loading}
+        extraData={[orientation, isLoading]}
+        loading={isLoading}
         renderItem={(item, index) => (
           <TouchableItemRouter
-            key={index}
             item={item}
-            className={`flex flex-col
-              ${orientation === "vertical" ? "w-32" : "w-48"}
-            `}
+            key={index}
+            style={{
+              width: orientation === "horizontal" ? 176 : 112,
+              zIndex: 100,
+            }}
           >
-            <View>
-              {orientation === "vertical" ? (
-                <MoviePoster item={item} />
-              ) : (
-                <ContinueWatchingPoster item={item} />
-              )}
-              <ItemCardText item={item} />
-            </View>
+            {item.Type === "Episode" && orientation === "horizontal" && (
+              <ContinueWatchingPoster item={item} />
+            )}
+            {item.Type === "Episode" && orientation === "vertical" && (
+              <SeriesPoster item={item} />
+            )}
+            {item.Type === "Movie" && orientation === "horizontal" && (
+              <ContinueWatchingPoster item={item} />
+            )}
+            {item.Type === "Movie" && orientation === "vertical" && (
+              <MoviePoster item={item} />
+            )}
+            {item.Type === "Series" && <SeriesPoster item={item} />}
+            <ItemCardText item={item} />
           </TouchableItemRouter>
         )}
       />

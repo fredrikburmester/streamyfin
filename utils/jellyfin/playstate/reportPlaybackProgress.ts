@@ -1,12 +1,13 @@
 import { Api } from "@jellyfin/sdk";
-import { AxiosError } from "axios";
 import { getAuthHeaders } from "../jellyfin";
+import { postCapabilities } from "../session/capabilities";
 
 interface ReportPlaybackProgressParams {
-  api: Api;
-  sessionId: string;
-  itemId: string;
-  positionTicks: number;
+  api?: Api | null;
+  sessionId?: string | null;
+  itemId?: string | null;
+  positionTicks?: number | null;
+  IsPaused?: boolean;
 }
 
 /**
@@ -20,25 +21,38 @@ export const reportPlaybackProgress = async ({
   sessionId,
   itemId,
   positionTicks,
+  IsPaused = false,
 }: ReportPlaybackProgressParams): Promise<void> => {
-  console.info(
-    "Reporting playback progress:",
-    sessionId,
-    itemId,
-    positionTicks,
-  );
+  if (!api || !sessionId || !itemId || !positionTicks) {
+    return;
+  }
+
+  console.info("reportPlaybackProgress ~ IsPaused", IsPaused);
+
+  try {
+    await postCapabilities({
+      api,
+      itemId,
+      sessionId,
+    });
+  } catch (error) {
+    console.error("Failed to post capabilities.", error);
+    throw new Error("Failed to post capabilities.");
+  }
+
   try {
     await api.axiosInstance.post(
       `${api.basePath}/Sessions/Playing/Progress`,
       {
         ItemId: itemId,
         PlaySessionId: sessionId,
-        IsPaused: false,
+        IsPaused,
         PositionTicks: Math.round(positionTicks),
         CanSeek: true,
         MediaSourceId: itemId,
+        EventName: "timeupdate",
       },
-      { headers: getAuthHeaders(api) },
+      { headers: getAuthHeaders(api) }
     );
   } catch (error) {
     console.error(error);
