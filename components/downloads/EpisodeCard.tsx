@@ -1,8 +1,11 @@
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import * as Haptics from "expo-haptics";
-import React, { useCallback } from "react";
+import React, { useCallback, useRef } from "react";
 import { TouchableOpacity } from "react-native";
-import * as ContextMenu from "zeego/context-menu";
+import {
+  ActionSheetProvider,
+  useActionSheet,
+} from "@expo/react-native-action-sheet";
 
 import { useFileOpener } from "@/hooks/useDownloadedFileOpener";
 import { Text } from "../common/Text";
@@ -13,13 +16,14 @@ interface EpisodeCardProps {
 }
 
 /**
- * EpisodeCard component displays an episode with context menu options.
+ * EpisodeCard component displays an episode with action sheet options.
  * @param {EpisodeCardProps} props - The component props.
  * @returns {React.ReactElement} The rendered EpisodeCard component.
  */
 export const EpisodeCard: React.FC<EpisodeCardProps> = ({ item }) => {
   const { deleteFile } = useDownload();
   const { openFile } = useFileOpener();
+  const { showActionSheetWithOptions } = useActionSheet();
 
   const handleOpenFile = useCallback(() => {
     openFile(item);
@@ -35,43 +39,48 @@ export const EpisodeCard: React.FC<EpisodeCardProps> = ({ item }) => {
     }
   }, [deleteFile, item.Id]);
 
-  const contextMenuOptions = [
-    {
-      label: "Delete",
-      onSelect: handleDeleteFile,
-      destructive: true,
-    },
-  ];
+  const showActionSheet = useCallback(() => {
+    const options = ["Delete", "Cancel"];
+    const destructiveButtonIndex = 0;
+    const cancelButtonIndex = 1;
+
+    showActionSheetWithOptions(
+      {
+        options,
+        cancelButtonIndex,
+        destructiveButtonIndex,
+      },
+      (selectedIndex) => {
+        switch (selectedIndex) {
+          case destructiveButtonIndex:
+            // Delete
+            handleDeleteFile();
+            break;
+          case cancelButtonIndex:
+            // Cancelled
+            break;
+        }
+      }
+    );
+  }, [showActionSheetWithOptions, handleDeleteFile]);
 
   return (
-    <ContextMenu.Root>
-      <ContextMenu.Trigger>
-        <TouchableOpacity
-          onPress={handleOpenFile}
-          className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4"
-        >
-          <Text className="font-bold">{item.Name}</Text>
-          <Text className="text-xs opacity-50">Episode {item.IndexNumber}</Text>
-        </TouchableOpacity>
-      </ContextMenu.Trigger>
-      <ContextMenu.Content
-        alignOffset={0}
-        avoidCollisions
-        collisionPadding={10}
-        loop={false}
-      >
-        {contextMenuOptions.map((option) => (
-          <ContextMenu.Item
-            key={option.label}
-            onSelect={option.onSelect}
-            destructive={option.destructive}
-          >
-            <ContextMenu.ItemTitle style={{ color: "red" }}>
-              {option.label}
-            </ContextMenu.ItemTitle>
-          </ContextMenu.Item>
-        ))}
-      </ContextMenu.Content>
-    </ContextMenu.Root>
+    <TouchableOpacity
+      onPress={handleOpenFile}
+      onLongPress={showActionSheet}
+      className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4"
+    >
+      <Text className="font-bold">{item.Name}</Text>
+      <Text className="text-xs opacity-50">Episode {item.IndexNumber}</Text>
+    </TouchableOpacity>
   );
 };
+
+// Wrap the parent component with ActionSheetProvider
+export const EpisodeCardWithActionSheet: React.FC<EpisodeCardProps> = (
+  props
+) => (
+  <ActionSheetProvider>
+    <EpisodeCard {...props} />
+  </ActionSheetProvider>
+);

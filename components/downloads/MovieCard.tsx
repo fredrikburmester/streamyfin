@@ -2,7 +2,10 @@ import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import * as Haptics from "expo-haptics";
 import React, { useCallback } from "react";
 import { TouchableOpacity, View } from "react-native";
-import * as ContextMenu from "zeego/context-menu";
+import {
+  ActionSheetProvider,
+  useActionSheet,
+} from "@expo/react-native-action-sheet";
 
 import { runtimeTicksToMinutes } from "@/utils/time";
 import { Text } from "../common/Text";
@@ -15,13 +18,14 @@ interface MovieCardProps {
 }
 
 /**
- * MovieCard component displays a movie with context menu options.
+ * MovieCard component displays a movie with action sheet options.
  * @param {MovieCardProps} props - The component props.
  * @returns {React.ReactElement} The rendered MovieCard component.
  */
 export const MovieCard: React.FC<MovieCardProps> = ({ item }) => {
   const { deleteFile } = useDownload();
   const { openFile } = useFileOpener();
+  const { showActionSheetWithOptions } = useActionSheet();
 
   const handleOpenFile = useCallback(() => {
     openFile(item);
@@ -37,48 +41,51 @@ export const MovieCard: React.FC<MovieCardProps> = ({ item }) => {
     }
   }, [deleteFile, item.Id]);
 
-  const contextMenuOptions = [
-    {
-      label: "Delete",
-      onSelect: handleDeleteFile,
-      destructive: true,
-    },
-  ];
+  const showActionSheet = useCallback(() => {
+    const options = ["Delete", "Cancel"];
+    const destructiveButtonIndex = 0;
+    const cancelButtonIndex = 1;
+
+    showActionSheetWithOptions(
+      {
+        options,
+        cancelButtonIndex,
+        destructiveButtonIndex,
+      },
+      (selectedIndex) => {
+        switch (selectedIndex) {
+          case destructiveButtonIndex:
+            // Delete
+            handleDeleteFile();
+            break;
+          case cancelButtonIndex:
+            // Cancelled
+            break;
+        }
+      }
+    );
+  }, [showActionSheetWithOptions, handleDeleteFile]);
 
   return (
-    <ContextMenu.Root>
-      <ContextMenu.Trigger>
-        <TouchableOpacity
-          onPress={handleOpenFile}
-          className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4"
-        >
-          <Text className="font-bold">{item.Name}</Text>
-          <View className="flex flex-col">
-            <Text className="text-xs opacity-50">{item.ProductionYear}</Text>
-            <Text className="text-xs opacity-50">
-              {runtimeTicksToMinutes(item.RunTimeTicks)}
-            </Text>
-          </View>
-        </TouchableOpacity>
-      </ContextMenu.Trigger>
-      <ContextMenu.Content
-        loop={false}
-        alignOffset={0}
-        avoidCollisions={false}
-        collisionPadding={0}
-      >
-        {contextMenuOptions.map((option) => (
-          <ContextMenu.Item
-            key={option.label}
-            onSelect={option.onSelect}
-            destructive={option.destructive}
-          >
-            <ContextMenu.ItemTitle style={{ color: "red" }}>
-              {option.label}
-            </ContextMenu.ItemTitle>
-          </ContextMenu.Item>
-        ))}
-      </ContextMenu.Content>
-    </ContextMenu.Root>
+    <TouchableOpacity
+      onPress={handleOpenFile}
+      onLongPress={showActionSheet}
+      className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4"
+    >
+      <Text className="font-bold">{item.Name}</Text>
+      <View className="flex flex-col">
+        <Text className="text-xs opacity-50">{item.ProductionYear}</Text>
+        <Text className="text-xs opacity-50">
+          {runtimeTicksToMinutes(item.RunTimeTicks)}
+        </Text>
+      </View>
+    </TouchableOpacity>
   );
 };
+
+// Wrap the parent component with ActionSheetProvider
+export const MovieCardWithActionSheet: React.FC<MovieCardProps> = (props) => (
+  <ActionSheetProvider>
+    <MovieCard {...props} />
+  </ActionSheetProvider>
+);
