@@ -19,7 +19,7 @@ import { useRouter } from "expo-router";
  */
 export const useRemuxHlsToMp4 = (item: BaseItemDto) => {
   const queryClient = useQueryClient();
-  const { process, updateProcess, clearProcess, saveDownloadedItemInfo } =
+  const { clearProcesses, saveDownloadedItemInfo, addProcess, updateProcess } =
     useDownload();
   const router = useRouter();
 
@@ -52,7 +52,7 @@ export const useRemuxHlsToMp4 = (item: BaseItemDto) => {
       );
 
       try {
-        updateProcess({
+        addProcess({
           id: item.Id,
           item,
           progress: 0,
@@ -71,12 +71,9 @@ export const useRemuxHlsToMp4 = (item: BaseItemDto) => {
               ? Math.floor((processedFrames / totalFrames) * 100)
               : 0;
 
-          updateProcess((prev) => {
-            if (!prev) return null;
-            return {
-              ...prev,
-              progress: percentage,
-            };
+          if (!item.Id) throw new Error("Item is undefined");
+          updateProcess(item.Id, {
+            progress: percentage,
           });
         });
 
@@ -114,7 +111,7 @@ export const useRemuxHlsToMp4 = (item: BaseItemDto) => {
                 resolve();
               }
 
-              clearProcess();
+              clearProcesses();
             } catch (error) {
               reject(error);
             }
@@ -126,17 +123,17 @@ export const useRemuxHlsToMp4 = (item: BaseItemDto) => {
           "ERROR",
           `useRemuxHlsToMp4 ~ remuxing failed for item: ${item.Name}`
         );
-        clearProcess();
+        clearProcesses();
         throw error; // Re-throw the error to propagate it to the caller
       }
     },
-    [output, item, clearProcess]
+    [output, item, clearProcesses]
   );
 
   const cancelRemuxing = useCallback(() => {
     FFmpegKit.cancel();
-    clearProcess();
-  }, [item.Name, clearProcess]);
+    clearProcesses();
+  }, [item.Name, clearProcesses]);
 
   return { startRemuxing, cancelRemuxing };
 };
