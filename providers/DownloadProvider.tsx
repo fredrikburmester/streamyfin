@@ -26,6 +26,8 @@ import React, {
 } from "react";
 import { toast } from "sonner-native";
 import { apiAtom } from "./JellyfinProvider";
+import * as BackgroundFetch from "expo-background-fetch";
+import * as TaskManager from "expo-task-manager";
 
 export type ProcessItem = {
   id: string;
@@ -42,7 +44,32 @@ export type ProcessItem = {
     | "queued";
 };
 
+export const BACKGROUND_FETCH_TASK = "background-fetch";
+
+TaskManager.defineTask(BACKGROUND_FETCH_TASK, async () => {
+  const now = Date.now();
+
+  console.log(
+    `Got background fetch call at date: ${new Date(now).toISOString()}`
+  );
+
+  // Be sure to return the successful result type!
+  return BackgroundFetch.BackgroundFetchResult.NewData;
+});
+
 const STORAGE_KEY = "runningProcesses";
+
+export async function registerBackgroundFetchAsync() {
+  return BackgroundFetch.registerTaskAsync(BACKGROUND_FETCH_TASK, {
+    minimumInterval: 60 * 15, // 1 minutes
+    stopOnTerminate: false, // android only,
+    startOnBoot: true, // android only
+  });
+}
+
+export async function unregisterBackgroundFetchAsync() {
+  return BackgroundFetch.unregisterTaskAsync(BACKGROUND_FETCH_TASK);
+}
 
 const DownloadContext = createContext<ReturnType<
   typeof useDownloadProvider
@@ -66,6 +93,9 @@ function useDownloadProvider() {
   });
 
   useEffect(() => {
+    // Check background task status
+    checkStatusAsync();
+
     // Load initial processes state from AsyncStorage
     const loadInitialProcesses = async () => {
       const storedProcesses = await readProcesses();
@@ -73,6 +103,40 @@ function useDownloadProvider() {
     };
     loadInitialProcesses();
   }, []);
+
+  /********************
+   * Background task
+   *******************/
+  const [isRegistered, setIsRegistered] = useState(false);
+  const [status, setStatus] =
+    useState<BackgroundFetch.BackgroundFetchStatus | null>(null);
+
+  const checkStatusAsync = async () => {
+    const status = await BackgroundFetch.getStatusAsync();
+    const isRegistered = await TaskManager.isTaskRegisteredAsync(
+      BACKGROUND_FETCH_TASK
+    );
+    setStatus(status);
+    setIsRegistered(isRegistered);
+
+    console.log("Background fetch status:", status);
+    console.log("Background fetch task registered:", isRegistered);
+  };
+
+  const toggleFetchTask = async () => {
+    if (isRegistered) {
+      console.log("Unregistering background fetch task");
+      await unregisterBackgroundFetchAsync();
+    } else {
+      console.log("Registering background fetch task");
+      await registerBackgroundFetchAsync();
+    }
+
+    checkStatusAsync();
+  };
+  /**********************
+   **********************
+   *********************/
 
   const clearProcesses = useCallback(async () => {
     await AsyncStorage.removeItem(STORAGE_KEY);
@@ -129,7 +193,7 @@ function useDownloadProvider() {
       })
         .begin(() => {
           toast.info(`Download started for ${process.item.Name}`);
-          updateProcess(process.id, { state: "downloading" });
+          updateProcess(process.id, { state: "downloading", progress: 0 });
         })
         .progress((data) => {
           const percent = (data.bytesDownloaded / data.bytesTotal) * 100;

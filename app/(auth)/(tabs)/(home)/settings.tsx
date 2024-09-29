@@ -2,7 +2,10 @@ import { Button } from "@/components/Button";
 import { Text } from "@/components/common/Text";
 import { ListItem } from "@/components/ListItem";
 import { SettingToggles } from "@/components/settings/SettingToggles";
-import { useDownload } from "@/providers/DownloadProvider";
+import {
+  registerBackgroundFetchAsync,
+  useDownload,
+} from "@/providers/DownloadProvider";
 import { apiAtom, useJellyfin, userAtom } from "@/providers/JellyfinProvider";
 import { clearLogs, readFromLog } from "@/utils/log";
 import { getQuickConnectApi } from "@jellyfin/sdk/lib/utils/api";
@@ -66,6 +69,13 @@ export default function settings() {
       }}
     >
       <View className="p-4 flex flex-col gap-y-4">
+        {/* <Button
+          onPress={() => {
+            registerBackgroundFetchAsync();
+          }}
+        >
+          registerBackgroundFetchAsync
+        </Button> */}
         <View>
           <Text className="font-bold text-lg mb-2">Information</Text>
 
