@@ -161,39 +161,66 @@ function useDownloadProvider() {
 
       const updatedProcesses = await Promise.all(
         processes.map(async (process) => {
-          if (!settings.optimizedVersionsServerUrl) return;
+          if (!settings.optimizedVersionsServerUrl) return process;
           if (process.state === "queued" || process.state === "optimizing") {
-            const job = await checkJobStatus(
-              process.id,
-              settings.optimizedVersionsServerUrl,
-              authHeader
-            );
+            try {
+              const job = await checkJobStatus(
+                process.id,
+                settings.optimizedVersionsServerUrl,
+                authHeader
+              );
 
-            if (!job) {
-              return null;
+              if (!job) {
+                return process;
+              }
+
+              let newState: ProcessItem["state"] = process.state;
+              if (job.status === "queued") {
+                newState = "queued";
+              } else if (job.status === "running") {
+                newState = "optimizing";
+              } else if (job.status === "completed") {
+                startDownload(process);
+                return null;
+              } else if (job.status === "failed") {
+                newState = "error";
+              } else if (job.status === "cancelled") {
+                newState = "canceled";
+              }
+
+              return { ...process, state: newState, progress: job.progress };
+            } catch (error) {
+              if (axios.isAxiosError(error) && !error.response) {
+                // Network error occurred (server might be down)
+                console.error("Network error occurred:", error.message);
+                toast.error(
+                  "Network error: Unable to connect to optimization server"
+                );
+                return {
+                  ...process,
+                  state: "error",
+                  errorMessage:
+                    "Network error: Unable to connect to optimization server",
+                };
+              } else {
+                // Other types of errors
+                console.error("Error checking job status:", error);
+                toast.error(
+                  "An unexpected error occurred while checking job status"
+                );
+                return {
+                  ...process,
+                  state: "error",
+                  errorMessage: "An unexpected error occurred",
+                };
+              }
             }
-
-            let newState: ProcessItem["state"] = process.state;
-            if (job.status === "queued") {
-              newState = "queued";
-            } else if (job.status === "running") {
-              newState = "optimizing";
-            } else if (job.status === "completed") {
-              startDownload(process);
-              return null;
-            } else if (job.status === "failed") {
-              newState = "error";
-            } else if (job.status === "cancelled") {
-              newState = "canceled";
-            }
-
-            return { ...process, state: newState, progress: job.progress };
           }
           return process;
         })
       );
 
-      // Filter out null values (completed or cancelled jobs)
+      // Filter out null values (completed jobs)
       const filteredProcesses = updatedProcesses.filter(
         (process) => process !== null
       ) as ProcessItem[];
@@ -205,7 +232,12 @@ function useDownloadProvider() {
     const intervalId = setInterval(checkJobStatusPeriodically, 2000);
 
     return () => clearInterval(intervalId);
-  }, [processes, settings?.optimizedVersionsServerUrl]);
+  }, [
+    processes,
+    settings?.optimizedVersionsServerUrl,
+    authHeader,
+    startDownload,
+  ]);
 
   const startBackgroundDownload = useCallback(
     async (url: string, item: BaseItemDto) => {

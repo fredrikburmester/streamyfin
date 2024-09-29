@@ -164,6 +164,7 @@ export const DownloadItem: React.FC<DownloadProps> = ({ item, ...props }) => {
     selectedAudioStream,
     selectedSubtitleStream,
     maxBitrate,
+    settings?.downloadMethod,
   ]);
 
   /**
@@ -291,14 +292,17 @@ export const DownloadItem: React.FC<DownloadProps> = ({ item, ...props }) => {
                     throw new Error("No item id");
                   }
                   closeModal();
-                  initiateDownload();
-                  // Remove for now
-                  // queueActions.enqueue(queue, setQueue, {
-                  //   id: item.Id,
-                  //   execute: async () => {
-                  //   },
-                  //   item,
-                  // });
+                  if (settings?.downloadMethod === "remux") {
+                    queueActions.enqueue(queue, setQueue, {
+                      id: item.Id,
+                      execute: async () => {
+                        await initiateDownload();
+                      },
+                      item,
+                    });
+                  } else {
+                    initiateDownload();
+                  }
                 } else {
                   toast.error("You are not allowed to download files.");
                 }

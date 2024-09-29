@@ -53,9 +53,12 @@ const downloads: React.FC = () => {
       <View className="px-4 py-4">
         <View className="mb-4 flex flex-col space-y-4">
           {settings?.downloadMethod === "remux" && (
-            <View>
-              <Text className="text-2xl font-bold mb-2">Queue</Text>
-              <View className="flex flex-col space-y-2">
+            <View className="bg-neutral-900 p-4 rounded-2xl">
+              <Text className="text-lg font-bold">Queue</Text>
+              <Text className="text-xs opacity-70 text-red-600">
+                Queue and downloads will be lost on app restart
+              </Text>
+              <View className="flex flex-col space-y-2 mt-2">
                 {queue.map((q) => (
                   <TouchableOpacity
                     onPress={() =>
