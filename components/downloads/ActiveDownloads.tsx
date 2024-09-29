@@ -3,13 +3,14 @@ import { Text } from "@/components/common/Text";
 import { useRouter } from "expo-router";
 import { checkForExistingDownloads } from "@kesha-antonov/react-native-background-downloader";
 import { Ionicons } from "@expo/vector-icons";
-import { useEffect, useState } from "react";
-import { useDownload } from "@/providers/DownloadProvider";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { ProcessItem, useDownload } from "@/providers/DownloadProvider";
 import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
 import { toast } from "sonner-native";
 import { useSettings } from "@/utils/atoms/settings";
 import { FFmpegKit } from "ffmpeg-kit-react-native";
+import { formatTimeString } from "@/utils/time";
 
 interface Props extends ViewProps {}
 
@@ -52,6 +53,17 @@ export const ActiveDownloads: React.FC<Props> = ({ ...props }) => {
     },
   });
 
+  const eta = useCallback(
+    (p: ProcessItem) => {
+      if (!p.speed || !p.progress) return null;
+
+      const length = p?.item?.RunTimeTicks || 0;
+      const timeLeft = (length - length * (p.progress / 100)) / p.speed;
+      return formatTimeString(timeLeft, true);
+    },
+    [process]
+  );
+
   if (processes.length === 0)
     return (
       <View {...props} className="bg-neutral-900 p-4 rounded-2xl">
@@ -82,13 +94,14 @@ export const ActiveDownloads: React.FC<Props> = ({ ...props }) => {
               <View>
                 <Text className="font-semibold">{p.item.Name}</Text>
                 <Text className="text-xs opacity-50">{p.item.Type}</Text>
-                <View className="flex flex-row items-center space-x-4">
-                  <View className="flex flex-row items-center space-x-2 mt-1 text-purple-600">
-                    <Text className="text-xs">{p.progress.toFixed(0)}%</Text>
-                  </View>
+                <View className="flex flex-row items-center space-x-2 mt-1 text-purple-600">
+                  <Text className="text-xs">{p.progress.toFixed(0)}%</Text>
                   {p.speed && (
-                    <View className="flex flex-row items-center space-x-2 mt-1 text-purple-600">
-                      <Text className="text-xs">{p.speed.toFixed(2)}%</Text>
+                    <Text className="text-xs">{p.speed?.toFixed(2)}x</Text>
+                  )}
+                  {eta(p) && (
+                    <View>
+                      <Text className="text-xs">ETA {eta(p)}</Text>
                     </View>
                   )}
                 </View>
