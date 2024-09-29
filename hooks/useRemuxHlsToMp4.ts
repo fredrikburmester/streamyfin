@@ -8,6 +8,7 @@ import { writeToLog } from "@/utils/log";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner-native";
 import { useDownload } from "@/providers/DownloadProvider";
+import { useRouter } from "expo-router";
 
 /**
  * Custom hook for remuxing HLS to MP4 using FFmpeg.
@@ -20,6 +21,7 @@ export const useRemuxHlsToMp4 = (item: BaseItemDto) => {
   const queryClient = useQueryClient();
   const { process, updateProcess, clearProcess, saveDownloadedItemInfo } =
     useDownload();
+  const router = useRouter();
 
   if (!item.Id || !item.Name) {
     writeToLog("ERROR", "useRemuxHlsToMp4 ~ missing arguments");
@@ -32,7 +34,15 @@ export const useRemuxHlsToMp4 = (item: BaseItemDto) => {
     async (url: string) => {
       if (!item.Id) throw new Error("Item must have an Id");
 
-      toast.success("Download started");
+      toast.success(`Download started for ${item.Name}`, {
+        action: {
+          label: "Go to download",
+          onClick: () => {
+            router.push("/downloads");
+            toast.dismiss();
+          },
+        },
+      });
 
       const command = `-y -loglevel quiet -thread_queue_size 512 -protocol_whitelist file,http,https,tcp,tls,crypto -multiple_requests 1 -tcp_nodelay 1 -fflags +genpts -i ${url} -c copy -bufsize 50M -max_muxing_queue_size 4096 ${output}`;
 

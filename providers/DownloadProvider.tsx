@@ -264,6 +264,7 @@ function useDownloadProvider() {
             label: "Go to download",
             onClick: () => {
               router.push("/downloads");
+              toast.dismiss();
             },
           },
         });

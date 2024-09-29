@@ -74,6 +74,7 @@ type Settings = {
   rewindSkipTime: number;
   optimizedVersionsServerUrl?: string | null;
   optimizedVersionsAuthHeader?: string | null;
+  downloadMethod?: "optimized" | "remux";
 };
 /**
  *
@@ -108,6 +109,9 @@ const loadSettings = async (): Promise<Settings> => {
     defaultVideoOrientation: ScreenOrientation.OrientationLock.DEFAULT,
     forwardSkipTime: 30,
     rewindSkipTime: 10,
+    optimizedVersionsServerUrl: null,
+    optimizedVersionsAuthHeader: null,
+    downloadMethod: "remux",
   };
 
   try {

@@ -168,6 +168,7 @@ function Layout() {
                             color: "white",
                           },
                         }}
+                        closeButton
                       />
                     </ThemeProvider>
                   </PlaybackProvider>

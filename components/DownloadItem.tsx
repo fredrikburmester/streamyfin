@@ -150,10 +150,7 @@ export const DownloadItem: React.FC<DownloadProps> = ({ item, ...props }) => {
 
     if (!url) throw new Error("No url");
 
-    if (
-      settings?.optimizedVersionsServerUrl &&
-      settings.optimizedVersionsServerUrl.length > 0
-    ) {
+    if (settings?.downloadMethod === "optimized") {
       return await startBackgroundDownload(url, item);
     } else {
       return await startRemuxing(url);
@@ -304,6 +301,13 @@ export const DownloadItem: React.FC<DownloadProps> = ({ item, ...props }) => {
             >
               Download
             </Button>
+            <View className="opacity-70 text-center w-full flex items-center">
+              {settings?.downloadMethod === "optimized" ? (
+                <Text className="text-xs">Using optimized server</Text>
+              ) : (
+                <Text className="text-xs">Using default method</Text>
+              )}
+            </View>
           </View>
         </BottomSheetView>
       </BottomSheetModal>
