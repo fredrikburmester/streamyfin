@@ -30,6 +30,7 @@ export type ProcessItem = {
   item: Partial<BaseItemDto>;
   progress: number;
   size?: number;
+  speed?: number;
   state:
     | "optimizing"
     | "downloading"

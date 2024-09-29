@@ -82,8 +82,15 @@ export const ActiveDownloads: React.FC<Props> = ({ ...props }) => {
               <View>
                 <Text className="font-semibold">{p.item.Name}</Text>
                 <Text className="text-xs opacity-50">{p.item.Type}</Text>
-                <View className="flex flex-row items-center space-x-2 mt-1 text-purple-600">
-                  <Text className="text-xs">{p.progress.toFixed(0)}%</Text>
+                <View className="flex flex-row items-center space-x-4">
+                  <View className="flex flex-row items-center space-x-2 mt-1 text-purple-600">
+                    <Text className="text-xs">{p.progress.toFixed(0)}%</Text>
+                  </View>
+                  {p.speed && (
+                    <View className="flex flex-row items-center space-x-2 mt-1 text-purple-600">
+                      <Text className="text-xs">{p.speed.toFixed(2)}%</Text>
+                    </View>
+                  )}
                 </View>
                 <View className="flex flex-row items-center space-x-2 mt-1 text-purple-600">
                   <Text className="text-xs capitalize">{p.state}</Text>

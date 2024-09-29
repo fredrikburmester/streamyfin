@@ -65,6 +65,7 @@ export const useRemuxHlsToMp4 = (item: BaseItemDto) => {
           const fps = item.MediaStreams?.[0]?.RealFrameRate || 25;
           const totalFrames = videoLength * fps;
           const processedFrames = statistics.getVideoFrameNumber();
+          const speed = statistics.getSpeed();
 
           const percentage =
             totalFrames > 0
@@ -74,6 +75,7 @@ export const useRemuxHlsToMp4 = (item: BaseItemDto) => {
           if (!item.Id) throw new Error("Item is undefined");
           updateProcess(item.Id, {
             progress: percentage,
+            speed: Math.max(speed, 0),
           });
         });
 
