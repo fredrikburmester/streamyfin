@@ -305,6 +305,8 @@ const Login: React.FC = () => {
               textContentType="URL"
               maxLength={500}
             />
+            <Text className="opacity-30">{t("server.server_url_hint")}</Text>
+            <LanguageSwitcher />
           </View>
           <Button
             loading={loadingServerCheck}

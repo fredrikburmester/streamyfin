@@ -20,6 +20,7 @@ import NetInfo from "@react-native-community/netinfo";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useAtom } from "jotai";
+import { useTranslation } from "react-i18next";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -50,6 +51,7 @@ type Section = ScrollingCollectionListSection | MediaListSection;
 
 export default function index() {
   const queryClient = useQueryClient();
+  const { i18n, t } = useTranslation();
   const router = useRouter();
 
   const [api] = useAtom(apiAtom);
@@ -186,7 +188,7 @@ export default function index() {
       //   orientation: "horizontal",
       // },
       {
-        title: "Recently Added in Movies",
+        title: t("home.recentlyAddedMovies"),
         queryKey: ["recentlyAddedInMovies", user?.Id, movieCollectionId],
         queryFn: async () =>
           (
@@ -203,7 +205,7 @@ export default function index() {
         type: "ScrollingCollectionList",
       },
       {
-        title: "Recently Added in TV-Shows",
+        title: t("home.recentlyAddedTVShows"),
         queryKey: ["recentlyAddedInTVShows", user?.Id, tvShowCollectionId],
         queryFn: async () =>
           (
@@ -229,7 +231,7 @@ export default function index() {
           } as MediaListSection)
       ) || []),
       {
-        title: "Suggested Movies",
+        title: t("home.suggestedMovies"),
         queryKey: ["suggestedMovies", user?.Id],
         queryFn: async () =>
           (
@@ -244,7 +246,7 @@ export default function index() {
         orientation: "vertical",
       },
       {
-        title: "Suggested Episodes",
+        title: t("home.suggestedEpisodes"),
         queryKey: ["suggestedEpisodes", user?.Id],
         queryFn: async () => {
           try {
@@ -276,9 +278,9 @@ export default function index() {
   if (isConnected === false) {
     return (
       <View className="flex flex-col items-center justify-center h-full -mt-6 px-8">
-        <Text className="text-3xl font-bold mb-2">No Internet</Text>
+        <Text className="text-3xl font-bold mb-2">{t("home.noInternet")}</Text>
         <Text className="text-center opacity-70">
-          No worries, you can still watch{"\n"}downloaded content.
+          {t("home.noInternetMessage")}
         </Text>
         <View className="mt-4">
           <Button
@@ -289,7 +291,7 @@ export default function index() {
               <Ionicons name="arrow-forward" size={20} color="white" />
             }
           >
-            Go to downloads
+            {t("home.goToDownloads")}
           </Button>
           <Button
             color="black"
@@ -320,10 +322,8 @@ export default function index() {
   if (e1 || e2 || !api)
     return (
       <View className="flex flex-col items-center justify-center h-full -mt-6">
-        <Text className="text-3xl font-bold mb-2">Oops!</Text>
-        <Text className="text-center opacity-70">
-          Something went wrong.{"\n"}Please log out and in again.
-        </Text>
+        <Text className="text-3xl font-bold mb-2">{t("home.oops")}</Text>
+        <Text className="text-center opacity-70">{t("home.errorMessage")}</Text>
       </View>
     );
 
@@ -352,7 +352,7 @@ export default function index() {
 
       <ScrollingCollectionList
         key="nextUp"
-        title={"Next Up"}
+        title={t("home.nextUp")}
         queryKey={["nextUp-all", user?.Id]}
         queryFn={async () =>
           (
@@ -369,7 +369,7 @@ export default function index() {
 
       <ScrollingCollectionList
         key="continueWatching"
-        title={"Continue Watching"}
+        title={t("home.continueWatching")}
         queryKey={["continueWatching", user?.Id]}
         queryFn={async () =>
           (

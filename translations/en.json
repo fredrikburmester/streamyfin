@@ -28,7 +28,8 @@
     "nextUp": "Next Up",
     "recentlyAddedMovies": "Recently Added in Movies",
     "recentlyAddedTVShows": "Recently Added in TV-Shows",
-    "suggestions": "Suggestions"
+    "suggestedMovies": "Suggested Movies",
+    "suggestedEpisodes": "Suggested Episodes"
   },
   "tabs": {
     "home": "Home",
