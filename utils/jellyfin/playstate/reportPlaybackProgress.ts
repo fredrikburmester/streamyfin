@@ -1,6 +1,7 @@
 import { Api } from "@jellyfin/sdk";
 import { getAuthHeaders } from "../jellyfin";
 import { postCapabilities } from "../session/capabilities";
+import { Settings } from "@/utils/atoms/settings";
 
 interface ReportPlaybackProgressParams {
   api?: Api | null;
@@ -8,6 +9,7 @@ interface ReportPlaybackProgressParams {
   itemId?: string | null;
   positionTicks?: number | null;
   IsPaused?: boolean;
+  deviceProfile?: Settings["deviceProfile"];
 }
 
 /**
@@ -22,6 +24,7 @@ export const reportPlaybackProgress = async ({
   itemId,
   positionTicks,
   IsPaused = false,
+  deviceProfile,
 }: ReportPlaybackProgressParams): Promise<void> => {
   if (!api || !sessionId || !itemId || !positionTicks) {
     return;
@@ -34,6 +37,7 @@ export const reportPlaybackProgress = async ({
       api,
       itemId,
       sessionId,
+      deviceProfile,
     });
   } catch (error) {
     console.error("Failed to post capabilities.", error);

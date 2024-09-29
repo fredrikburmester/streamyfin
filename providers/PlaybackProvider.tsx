@@ -140,6 +140,7 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
             api,
             itemId: state.item.Id,
             sessionId: res.data.PlaySessionId,
+            deviceProfile: settings?.deviceProfile,
           });
 
           setSession(res.data);

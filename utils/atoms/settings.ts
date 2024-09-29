@@ -54,7 +54,7 @@ export type DefaultLanguageOption = {
   label: string;
 };
 
-type Settings = {
+export type Settings = {
   autoRotate?: boolean;
   forceLandscapeInVideoPlayer?: boolean;
   usePopularPlugin?: boolean;
