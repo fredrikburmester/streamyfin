@@ -55,11 +55,7 @@ function useDownloadProvider() {
     return `Bearer ${settings?.optimizedVersionsAuthHeader}`;
   }, [settings]);
 
-  const {
-    data: downloadedFiles,
-    isLoading,
-    refetch,
-  } = useQuery({
+  const { data: downloadedFiles, refetch } = useQuery({
     queryKey: ["downloadedItems"],
     queryFn: getAllDownloadedItems,
     staleTime: 0,
@@ -182,14 +178,23 @@ function useDownloadProvider() {
                 newState = "optimizing";
               } else if (job.status === "completed") {
                 startDownload(process);
-                return null;
+                return {
+                  ...process,
+                  progress: 100,
+                  speed: 0,
+                };
               } else if (job.status === "failed") {
                 newState = "error";
               } else if (job.status === "cancelled") {
                 newState = "canceled";
               }
 
-              return { ...process, state: newState, progress: job.progress };
+              return {
+                ...process,
+                state: newState,
+                progress: job.progress,
+                speed: job.speed,
+              };
             } catch (error) {
               if (axios.isAxiosError(error) && !error.response) {
                 // Network error occurred (server might be down)
@@ -438,6 +443,7 @@ const checkJobStatus = async (
 ): Promise<{
   progress: number;
   status: "queued" | "running" | "completed" | "failed" | "cancelled";
+  speed?: string;
 }> => {
   const statusResponse = await axios.get(`${baseUrl}job-status/${id}`, {
     headers: {
