@@ -40,7 +40,7 @@ export const DownloadItem: React.FC<DownloadProps> = ({ item, ...props }) => {
   const [user] = useAtom(userAtom);
   const [queue, setQueue] = useAtom(queueAtom);
   const [settings] = useSettings();
-  const { process, startBackgroundDownload } = useDownload();
+  const { processes, startBackgroundDownload } = useDownload();
   const { startRemuxing, cancelRemuxing } = useRemuxHlsToMp4(item);
 
   const [selectedMediaSource, setSelectedMediaSource] =
@@ -187,6 +187,12 @@ export const DownloadItem: React.FC<DownloadProps> = ({ item, ...props }) => {
     ),
     []
   );
+
+  const process = useMemo(() => {
+    if (!processes) return null;
+
+    return processes.find((process) => process.item.Id === item.Id);
+  }, [processes, item.Id]);
 
   return (
     <View

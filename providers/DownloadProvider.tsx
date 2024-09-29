@@ -30,10 +30,16 @@ export type ProcessItem = {
   item: Partial<BaseItemDto>;
   progress: number;
   size?: number;
-  state: "optimizing" | "downloading" | "done" | "error" | "canceled";
+  state:
+    | "optimizing"
+    | "downloading"
+    | "done"
+    | "error"
+    | "canceled"
+    | "queued";
 };
 
-const STORAGE_KEY = "runningProcess";
+const STORAGE_KEY = "runningProcesses";
 
 const DownloadContext = createContext<ReturnType<
   typeof useDownloadProvider
@@ -41,7 +47,7 @@ const DownloadContext = createContext<ReturnType<
 
 function useDownloadProvider() {
   const queryClient = useQueryClient();
-  const [process, setProcess] = useState<ProcessItem | null>(null);
+  const [processes, setProcesses] = useState<ProcessItem[]>([]);
   const [settings] = useSettings();
   const router = useRouter();
   const authHeader = useMemo(() => {
@@ -59,178 +65,147 @@ function useDownloadProvider() {
   });
 
   useEffect(() => {
-    // Load initial process state from AsyncStorage
-    const loadInitialProcess = async () => {
-      const storedProcess = await readProcess();
-      setProcess(storedProcess);
+    // Load initial processes state from AsyncStorage
+    const loadInitialProcesses = async () => {
+      const storedProcesses = await readProcesses();
+      setProcesses(storedProcesses);
     };
-    loadInitialProcess();
+    loadInitialProcesses();
   }, []);
 
-  const clearProcess = useCallback(async () => {
+  const clearProcesses = useCallback(async () => {
     await AsyncStorage.removeItem(STORAGE_KEY);
-    setProcess(null);
+    setProcesses([]);
   }, []);
 
   const updateProcess = useCallback(
-    async (
-      itemOrUpdater:
-        | ProcessItem
-        | null
-        | ((prevState: ProcessItem | null) => ProcessItem | null)
-    ) => {
-      setProcess((prevProcess) => {
-        let newState: ProcessItem | null;
-        if (typeof itemOrUpdater === "function") {
-          newState = itemOrUpdater(prevProcess);
-        } else {
-          newState = itemOrUpdater;
-        }
+    async (id: string, updater: Partial<ProcessItem>) => {
+      setProcesses((prevProcesses) => {
+        const newProcesses = prevProcesses.map((process) =>
+          process.id === id ? { ...process, ...updater } : process
+        );
 
-        if (newState === null) {
-          AsyncStorage.removeItem(STORAGE_KEY);
-        } else {
-          AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
-        }
+        AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newProcesses));
 
-        return newState;
+        return newProcesses;
       });
     },
     []
   );
 
-  const readProcess = useCallback(async (): Promise<ProcessItem | null> => {
-    const item = await AsyncStorage.getItem(STORAGE_KEY);
-    return item ? JSON.parse(item) : null;
+  const addProcess = useCallback(async (item: ProcessItem) => {
+    setProcesses((prevProcesses) => {
+      const newProcesses = [...prevProcesses, item];
+      AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newProcesses));
+      return newProcesses;
+    });
   }, []);
 
-  const startDownload = useCallback(() => {
-    if (!process?.item.Id) throw new Error("No item id");
+  const removeProcess = useCallback(async (id: string) => {
+    setProcesses((prevProcesses) => {
+      const newProcesses = prevProcesses.filter((process) => process.id !== id);
+      AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newProcesses));
+      return newProcesses;
+    });
+  }, []);
 
-    download({
-      id: process.id,
-      url: settings?.optimizedVersionsServerUrl + "download/" + process.id,
-      destination: `${directories.documents}/${process?.item.Id}.mp4`,
-      headers: {
-        Authorization: authHeader,
-      },
-    })
-      .begin(() => {
-        toast.info(`Download started for ${process.item.Name}`);
-        updateProcess((prev) => {
-          if (!prev) return null;
-          return {
-            ...prev,
-            state: "downloading",
-            progress: 50,
-          } as ProcessItem;
-        });
+  const readProcesses = useCallback(async (): Promise<ProcessItem[]> => {
+    const items = await AsyncStorage.getItem(STORAGE_KEY);
+    return items ? JSON.parse(items) : [];
+  }, []);
+
+  const startDownload = useCallback(
+    (process: ProcessItem) => {
+      if (!process?.item.Id) throw new Error("No item id");
+
+      download({
+        id: process.id,
+        url: settings?.optimizedVersionsServerUrl + "download/" + process.id,
+        destination: `${directories.documents}/${process?.item.Id}.mp4`,
+        headers: {
+          Authorization: authHeader,
+        },
       })
-      .progress((data) => {
-        const percent = (data.bytesDownloaded / data.bytesTotal) * 100;
-        updateProcess((prev) => {
-          if (!prev) {
-            console.warn("no prev");
-            return null;
-          }
-          return {
-            ...prev,
+        .begin(() => {
+          toast.info(`Download started for ${process.item.Name}`);
+          updateProcess(process.id, { state: "downloading" });
+        })
+        .progress((data) => {
+          const percent = (data.bytesDownloaded / data.bytesTotal) * 100;
+          updateProcess(process.id, {
             state: "downloading",
             progress: percent,
-          };
+          });
+        })
+        .done(async () => {
+          removeProcess(process.id);
+          await saveDownloadedItemInfo(process.item);
+          await queryClient.invalidateQueries({
+            queryKey: ["downloadedItems"],
+          });
+          await refetch();
+          completeHandler(process.id);
+          toast.success(`Download completed for ${process.item.Name}`);
+        })
+        .error((error) => {
+          updateProcess(process.id, { state: "error" });
+          toast.error(`Download failed for ${process.item.Name}: ${error}`);
         });
-      })
-      .done(async () => {
-        clearProcess();
-        await saveDownloadedItemInfo(process.item);
-        await queryClient.invalidateQueries({
-          queryKey: ["downloadedItems"],
-        });
-        await refetch();
-        completeHandler(process.id);
-        toast.success(`Download completed for ${process.item.Name}`);
-      })
-      .error((error) => {
-        updateProcess((prev) => {
-          if (!prev) return null;
-          return {
-            ...prev,
-            state: "error",
-          };
-        });
-        toast.error(`Download failed for ${process.item.Name}: ${error}`);
-      });
-  }, [queryClient, process?.id, settings?.optimizedVersionsServerUrl]);
+    },
+    [queryClient, settings?.optimizedVersionsServerUrl]
+  );
 
   useEffect(() => {
-    let intervalId: NodeJS.Timeout | null = null;
-
     const checkJobStatusPeriodically = async () => {
-      // console.log("checkJobStatusPeriodically ~");
-      if (
-        !process?.id ||
-        !process.state ||
-        !process.item.Id ||
-        !settings?.optimizedVersionsServerUrl
-      )
-        return;
-      if (process.state === "optimizing") {
-        const job = await checkJobStatus(
-          process.id,
-          settings?.optimizedVersionsServerUrl,
-          authHeader
-        );
+      if (!settings?.optimizedVersionsServerUrl) return;
 
-        if (!job) {
-          clearProcess();
-          return;
-        }
+      const updatedProcesses = await Promise.all(
+        processes.map(async (process) => {
+          if (!settings.optimizedVersionsServerUrl) return;
+          if (process.state === "queued" || process.state === "optimizing") {
+            const job = await checkJobStatus(
+              process.id,
+              settings.optimizedVersionsServerUrl,
+              authHeader
+            );
 
-        // Update the local process state with the state from the server.
-        let newState: ProcessItem["state"] = "optimizing";
-        if (job.status === "completed") {
-          if (intervalId) clearInterval(intervalId);
-          startDownload();
-          return;
-        } else if (job.status === "failed") {
-          newState = "error";
-        } else if (job.status === "cancelled") {
-          newState = "canceled";
-        }
+            if (!job) {
+              return null;
+            }
 
-        updateProcess((prev) => {
-          if (!prev) return null;
-          return {
-            ...prev,
-            state: newState,
-            progress: job.progress,
-          };
-        });
-      } else if (process.state === "downloading") {
-        // Don't do anything, it's downloading locally
-        return;
-      } else if (["done", "canceled", "error"].includes(process.state)) {
-        console.log("Job is done or failed or canceled");
-        clearProcess();
-        if (intervalId) clearInterval(intervalId);
-      }
+            let newState: ProcessItem["state"] = process.state;
+            if (job.status === "queued") {
+              newState = "queued";
+            } else if (job.status === "running") {
+              newState = "optimizing";
+            } else if (job.status === "completed") {
+              startDownload(process);
+              return null;
+            } else if (job.status === "failed") {
+              newState = "error";
+            } else if (job.status === "cancelled") {
+              newState = "canceled";
+            }
+
+            return { ...process, state: newState, progress: job.progress };
+          }
+          return process;
+        })
+      );
+
+      // Filter out null values (completed or cancelled jobs)
+      const filteredProcesses = updatedProcesses.filter(
+        (process) => process !== null
+      ) as ProcessItem[];
+
+      // Update the state with the filtered processes
+      setProcesses(filteredProcesses);
     };
 
-    console.log("Starting interval check");
+    const intervalId = setInterval(checkJobStatusPeriodically, 2000);
 
-    // Start checking immediately
-    checkJobStatusPeriodically();
-
-    // Then check every 2 seconds
-    intervalId = setInterval(checkJobStatusPeriodically, 2000);
-
-    // Clean up function
-    return () => {
-      if (intervalId) {
-        clearInterval(intervalId);
-      }
-    };
-  }, [process?.id, settings?.optimizedVersionsServerUrl]);
+    return () => clearInterval(intervalId);
+  }, [processes, settings?.optimizedVersionsServerUrl]);
 
   const startBackgroundDownload = useCallback(
     async (url: string, item: BaseItemDto) => {
@@ -252,14 +227,14 @@ function useDownloadProvider() {
 
         const { id } = response.data;
 
-        updateProcess({
+        addProcess({
           id,
           item: item,
           progress: 0,
-          state: "optimizing",
+          state: "queued",
         });
 
-        toast.success(`Optimization started for ${item.Name}`, {
+        toast.success(`Queued ${item.Name} for optimization`, {
           action: {
             label: "Go to download",
             onClick: () => {
@@ -276,22 +251,16 @@ function useDownloadProvider() {
     [settings?.optimizedVersionsServerUrl]
   );
 
-  /**
-   * Deletes all downloaded files and clears the download record.
-   */
   const deleteAllFiles = async (): Promise<void> => {
     try {
-      // Get the base directory
       const baseDirectory = FileSystem.documentDirectory;
 
       if (!baseDirectory) {
         throw new Error("Base directory not found");
       }
 
-      // Read the contents of the base directory
       const dirContents = await FileSystem.readDirectoryAsync(baseDirectory);
 
-      // Delete each item in the directory
       for (const item of dirContents) {
         const itemPath = `${baseDirectory}${item}`;
         const itemInfo = await FileSystem.getInfoAsync(itemPath);
@@ -300,12 +269,10 @@ function useDownloadProvider() {
           await FileSystem.deleteAsync(itemPath, { idempotent: true });
         }
       }
-      // Clear the downloadedItems in AsyncStorage
       await AsyncStorage.removeItem("downloadedItems");
-      await AsyncStorage.removeItem("runningProcess");
-      clearProcess();
+      await AsyncStorage.removeItem("runningProcesses");
+      clearProcesses();
 
-      // Invalidate the query to refresh the UI
       queryClient.invalidateQueries({ queryKey: ["downloadedItems"] });
 
       console.log(
@@ -316,10 +283,6 @@ function useDownloadProvider() {
     }
   };
 
-  /**
-   * Deletes a specific file and updates the download record.
-   * @param id - The ID of the file to delete.
-   */
   const deleteFile = async (id: string): Promise<void> => {
     if (!id) {
       console.error("Invalid file ID");
@@ -327,17 +290,14 @@ function useDownloadProvider() {
     }
 
     try {
-      // Get the directory path
       const directory = FileSystem.documentDirectory;
 
       if (!directory) {
         console.error("Document directory not found");
         return;
       }
-      // Read the contents of the directory
       const dirContents = await FileSystem.readDirectoryAsync(directory);
 
-      // Find and delete the file with the matching ID (without extension)
       for (const item of dirContents) {
         const itemNameWithoutExtension = item.split(".")[0];
         if (itemNameWithoutExtension === id) {
@@ -348,7 +308,6 @@ function useDownloadProvider() {
         }
       }
 
-      // Remove the item from AsyncStorage
       const downloadedItems = await AsyncStorage.getItem("downloadedItems");
       if (downloadedItems) {
         let items = JSON.parse(downloadedItems);
@@ -356,7 +315,6 @@ function useDownloadProvider() {
         await AsyncStorage.setItem("downloadedItems", JSON.stringify(items));
       }
 
-      // Invalidate the query to refresh the UI
       queryClient.invalidateQueries({ queryKey: ["downloadedItems"] });
 
       console.log(
@@ -370,10 +328,6 @@ function useDownloadProvider() {
     }
   };
 
-  /**
-   * Retrieves the list of downloaded files from AsyncStorage.
-   * @returns An array of BaseItemDto objects representing downloaded files.
-   */
   async function getAllDownloadedItems(): Promise<BaseItemDto[]> {
     try {
       const downloadedItems = await AsyncStorage.getItem("downloadedItems");
@@ -411,19 +365,20 @@ function useDownloadProvider() {
   }
 
   return {
-    process,
+    processes,
     updateProcess,
     startBackgroundDownload,
-    clearProcess,
-    readProcess,
+    clearProcesses,
+    readProcesses,
     downloadedFiles,
     deleteAllFiles,
     deleteFile,
     saveDownloadedItemInfo,
+    addProcess,
+    removeProcess,
   };
 }
 
-// Create the provider component
 export function DownloadProvider({ children }: { children: React.ReactNode }) {
   const downloadProviderValue = useDownloadProvider();
   const queryClient = new QueryClient();
@@ -435,7 +390,6 @@ export function DownloadProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-// Create a custom hook to use the download context
 export function useDownload() {
   const context = useContext(DownloadContext);
   if (context === null) {
@@ -450,7 +404,7 @@ const checkJobStatus = async (
   authHeader?: string | null
 ): Promise<{
   progress: number;
-  status: "running" | "completed" | "failed" | "cancelled";
+  status: "queued" | "running" | "completed" | "failed" | "cancelled";
 }> => {
   const statusResponse = await axios.get(`${baseUrl}job-status/${id}`, {
     headers: {
