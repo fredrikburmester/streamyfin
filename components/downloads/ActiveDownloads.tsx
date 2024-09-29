@@ -1,16 +1,18 @@
-import { TouchableOpacity, View, ViewProps } from "react-native";
 import { Text } from "@/components/common/Text";
-import { useRouter } from "expo-router";
-import { checkForExistingDownloads } from "@kesha-antonov/react-native-background-downloader";
-import { Ionicons } from "@expo/vector-icons";
-import { useCallback, useEffect, useMemo, useState } from "react";
 import { ProcessItem, useDownload } from "@/providers/DownloadProvider";
+import { apiAtom } from "@/providers/JellyfinProvider";
+import { useSettings } from "@/utils/atoms/settings";
+import { formatTimeString } from "@/utils/time";
+import { Ionicons } from "@expo/vector-icons";
+import { checkForExistingDownloads } from "@kesha-antonov/react-native-background-downloader";
 import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
-import { toast } from "sonner-native";
-import { useSettings } from "@/utils/atoms/settings";
+import { useRouter } from "expo-router";
 import { FFmpegKit } from "ffmpeg-kit-react-native";
-import { formatTimeString } from "@/utils/time";
+import { useAtom } from "jotai";
+import { useCallback } from "react";
+import { TouchableOpacity, View, ViewProps } from "react-native";
+import { toast } from "sonner-native";
 
 interface Props extends ViewProps {}
 
@@ -18,6 +20,7 @@ export const ActiveDownloads: React.FC<Props> = ({ ...props }) => {
   const router = useRouter();
   const { removeProcess, processes } = useDownload();
   const [settings] = useSettings();
+  const [api] = useAtom(apiAtom);
 
   const cancelJobMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -29,7 +32,7 @@ export const ActiveDownloads: React.FC<Props> = ({ ...props }) => {
             settings?.optimizedVersionsServerUrl + "cancel-job/" + id,
             {
               headers: {
-                Authorization: `Bearer ${settings?.optimizedVersionsAuthHeader}`,
+                Authorization: api?.accessToken,
               },
             }
           );

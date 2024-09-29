@@ -15,6 +15,7 @@ import {
 import axios from "axios";
 import * as FileSystem from "expo-file-system";
 import { useRouter } from "expo-router";
+import { useAtom } from "jotai";
 import React, {
   createContext,
   useCallback,
@@ -24,6 +25,7 @@ import React, {
   useState,
 } from "react";
 import { toast } from "sonner-native";
+import { apiAtom } from "./JellyfinProvider";
 
 export type ProcessItem = {
   id: string;
@@ -51,9 +53,11 @@ function useDownloadProvider() {
   const [processes, setProcesses] = useState<ProcessItem[]>([]);
   const [settings] = useSettings();
   const router = useRouter();
+  const [api] = useAtom(apiAtom);
+
   const authHeader = useMemo(() => {
-    return `Bearer ${settings?.optimizedVersionsAuthHeader}`;
-  }, [settings]);
+    return api?.accessToken;
+  }, [api]);
 
   const { data: downloadedFiles, refetch } = useQuery({
     queryKey: ["downloadedItems"],
@@ -113,7 +117,7 @@ function useDownloadProvider() {
 
   const startDownload = useCallback(
     (process: ProcessItem) => {
-      if (!process?.item.Id) throw new Error("No item id");
+      if (!process?.item.Id || !authHeader) throw new Error("No item id");
 
       download({
         id: process.id,
@@ -149,12 +153,12 @@ function useDownloadProvider() {
           toast.error(`Download failed for ${process.item.Name}: ${error}`);
         });
     },
-    [queryClient, settings?.optimizedVersionsServerUrl]
+    [queryClient, settings?.optimizedVersionsServerUrl, authHeader]
   );
 
   useEffect(() => {
     const checkJobStatusPeriodically = async () => {
-      if (!settings?.optimizedVersionsServerUrl) return;
+      if (!settings?.optimizedVersionsServerUrl || !authHeader) return;
 
       const updatedProcesses = await Promise.all(
         processes.map(async (process) => {
@@ -283,10 +287,34 @@ function useDownloadProvider() {
         });
       } catch (error) {
         console.error("Error in startBackgroundDownload:", error);
-        toast.error(`Failed to start download for ${item.Name}`);
+        if (axios.isAxiosError(error)) {
+          console.error("Axios error details:", {
+            message: error.message,
+            response: error.response?.data,
+            status: error.response?.status,
+            headers: error.response?.headers,
+          });
+          toast.error(
+            `Failed to start download for ${item.Name}: ${error.message}`
+          );
+          if (error.response) {
+            toast.error(
+              `Server responded with status ${error.response.status}`
+            );
+          } else if (error.request) {
+            toast.error("No response received from server");
+          } else {
+            toast.error("Error setting up the request");
+          }
+        } else {
+          console.error("Non-Axios error:", error);
+          toast.error(
+            `Failed to start download for ${item.Name}: Unexpected error`
+          );
+        }
       }
     },
-    [settings?.optimizedVersionsServerUrl]
+    [settings?.optimizedVersionsServerUrl, authHeader]
   );
 
   const deleteAllFiles = async (): Promise<void> => {
@@ -439,7 +467,7 @@ export function useDownload() {
 const checkJobStatus = async (
   id: string,
   baseUrl: string,
-  authHeader?: string | null
+  authHeader: string
 ): Promise<{
   progress: number;
   status: "queued" | "running" | "completed" | "failed" | "cancelled";
