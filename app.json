@@ -19,7 +19,7 @@
       "infoPlist": {
         "NSCameraUsageDescription": "The app needs access to your camera to scan barcodes.",
         "NSMicrophoneUsageDescription": "The app needs access to your microphone.",
-        "UIBackgroundModes": ["audio"],
+        "UIBackgroundModes": ["audio", "fetch"],
         "NSLocalNetworkUsageDescription": "The app needs access to your local network to connect to your Jellyfin server.",
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true

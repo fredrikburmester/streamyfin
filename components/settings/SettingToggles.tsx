@@ -36,8 +36,6 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
   const [marlinUrl, setMarlinUrl] = useState<string>("");
   const [optimizedVersionsServerUrl, setOptimizedVersionsServerUrl] =
     useState<string>("");
-  const [optimizedVersionsAuthHeader, setOptimizedVersionsAuthHeader] =
-    useState<string>("");
 
   const queryClient = useQueryClient();
 
@@ -570,65 +568,6 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
                   <Text selectable>{settings.optimizedVersionsServerUrl}</Text>
                 </View>
               )}
-            </View>
-
-            <View className="flex flex-col bg-neutral-900 px-4 py-4 w-full grow-0">
-              <View className="flex flex-col shrink mb-2">
-                <Text className="font-semibold">
-                  Optimized versions auth header
-                </Text>
-                <Text className="text-xs opacity-50">
-                  The auth header for the optimized versions server.
-                </Text>
-              </View>
-              <View className="flex flex-col  w-full">
-                <Input
-                  placeholder="Optimized versions auth header..."
-                  defaultValue={
-                    settings.optimizedVersionsAuthHeader
-                      ? settings.optimizedVersionsAuthHeader
-                      : ""
-                  }
-                  value={optimizedVersionsAuthHeader}
-                  keyboardType="url"
-                  returnKeyType="done"
-                  autoCapitalize="none"
-                  textContentType="URL"
-                  onChangeText={(text) => setOptimizedVersionsAuthHeader(text)}
-                  className="w-full"
-                />
-                <Button
-                  color="purple"
-                  className=" h-12 w-full mt-2"
-                  onPress={() => {
-                    updateSettings({
-                      optimizedVersionsAuthHeader,
-                    });
-                  }}
-                >
-                  Save
-                </Button>
-              </View>
-
-              {settings.optimizedVersionsAuthHeader && (
-                <View className="p-4 bg-neutral-800 rounded-xl mt-2">
-                  <Text className="" selectable>
-                    {settings.optimizedVersionsAuthHeader}
-                  </Text>
-                </View>
-              )}
-              <Button
-                color="red"
-                className="mt-2"
-                onPress={() => {
-                  updateSettings({
-                    optimizedVersionsAuthHeader: null,
-                    optimizedVersionsServerUrl: null,
-                  });
-                }}
-              >
-                Reset
-              </Button>
             </View>
           </View>
         </View>

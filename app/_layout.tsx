@@ -1,28 +1,27 @@
-import { FullScreenVideoPlayer } from "@/components/FullScreenVideoPlayer";
+import { DownloadProvider } from "@/providers/DownloadProvider";
 import { JellyfinProvider } from "@/providers/JellyfinProvider";
 import { JobQueueProvider } from "@/providers/JobQueueProvider";
 import { PlaybackProvider } from "@/providers/PlaybackProvider";
+import { orientationAtom } from "@/utils/atoms/orientation";
 import { useSettings } from "@/utils/atoms/settings";
 import { ActionSheetProvider } from "@expo/react-native-action-sheet";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
+import { checkForExistingDownloads } from "@kesha-antonov/react-native-background-downloader";
 import { DarkTheme, ThemeProvider } from "@react-navigation/native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useFonts } from "expo-font";
 import { useKeepAwake } from "expo-keep-awake";
-import { Stack, useRouter } from "expo-router";
+import * as Linking from "expo-linking";
+import { Stack } from "expo-router";
 import * as ScreenOrientation from "expo-screen-orientation";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { Provider as JotaiProvider, useAtom } from "jotai";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
+import { AppState } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
-import * as Linking from "expo-linking";
-import { orientationAtom } from "@/utils/atoms/orientation";
 import { Toaster } from "sonner-native";
-import { checkForExistingDownloads } from "@kesha-antonov/react-native-background-downloader";
-import { AppState } from "react-native";
-import { DownloadProvider } from "@/providers/DownloadProvider";
 
 SplashScreen.preventAutoHideAsync();
 
