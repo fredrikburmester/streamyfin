@@ -48,7 +48,7 @@ export const ActiveDownloads: React.FC<Props> = ({ ...props }) => {
     },
     onError: (e) => {
       console.log(e);
-      toast.error("Failed to cancel download");
+      toast.error("Failed to cancel download on the server");
     },
   });
 
