@@ -51,7 +51,7 @@ type Section = ScrollingCollectionListSection | MediaListSection;
 
 export default function index() {
   const queryClient = useQueryClient();
-  const { i18n, t } = useTranslation();
+  const { t } = useTranslation();
   const router = useRouter();
 
   const [api] = useAtom(apiAtom);

@@ -25,7 +25,7 @@ const CredentialsSchema = z.object({
 });
 
 const Login: React.FC = () => {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { setServer, login, removeServer, initiateQuickConnect } =
     useJellyfin();
   const [api] = useAtom(apiAtom);

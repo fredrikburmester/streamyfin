@@ -53,7 +53,7 @@
     "expo-updates": "~0.25.25",
     "expo-web-browser": "~13.0.3",
     "ffmpeg-kit-react-native": "^6.0.2",
-    "i18next": "^23.13.0",
+    "i18next": "^23.15.1",
     "jotai": "^2.10.0",
     "lodash": "^4.17.21",
     "nativewind": "^2.0.11",
