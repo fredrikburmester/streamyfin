@@ -1,6 +1,7 @@
 import { Button } from "@/components/Button";
 import { Input } from "@/components/common/Input";
 import { Text } from "@/components/common/Text";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { apiAtom, useJellyfin } from "@/providers/JellyfinProvider";
 import { Ionicons } from "@expo/vector-icons";
 import { PublicSystemInfo } from "@jellyfin/sdk/lib/generated-client";
@@ -8,6 +9,7 @@ import { getSystemApi } from "@jellyfin/sdk/lib/utils/api";
 import { useLocalSearchParams } from "expo-router";
 import { useAtom } from "jotai";
 import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -23,6 +25,7 @@ const CredentialsSchema = z.object({
 });
 
 const Login: React.FC = () => {
+  const { t } = useTranslation();
   const { setServer, login, removeServer, initiateQuickConnect } =
     useJellyfin();
   const [api] = useAtom(apiAtom);
@@ -203,7 +206,7 @@ const Login: React.FC = () => {
                   {serverName || "Streamyfin"}
                 </Text>
                 <Text className="text-neutral-500 mb-2">
-                  Server: {api.basePath}
+                  {t("server.server_label", { serverURL: api.basePath })}
                 </Text>
                 <Button
                   color="black"
@@ -219,14 +222,14 @@ const Login: React.FC = () => {
                     />
                   }
                 >
-                  Change server
+                  {t("server.change_server")}
                 </Button>
               </View>
 
               <View className="flex flex-col space-y-2">
-                <Text className="text-2xl font-bold">Log in</Text>
+                <Text className="text-2xl font-bold">{t("login.login")}</Text>
                 <Input
-                  placeholder="Username"
+                  placeholder={t("login.username_placeholder")}
                   onChangeText={(text) =>
                     setCredentials({ ...credentials, username: text })
                   }
@@ -243,7 +246,7 @@ const Login: React.FC = () => {
 
                 <Input
                   className="mb-2"
-                  placeholder="Password"
+                  placeholder={t("login.password_placeholder")}
                   onChangeText={(text) =>
                     setCredentials({ ...credentials, password: text })
                   }
@@ -267,10 +270,10 @@ const Login: React.FC = () => {
                 onPress={handleQuickConnect}
                 className="mb-2"
               >
-                Use Quick Connect
+                {t("login.use_quick_connect")}
               </Button>
               <Button onPress={handleLogin} loading={loading}>
-                Log in
+              {t("login.login_button")}
               </Button>
             </View>
           </View>
@@ -290,10 +293,10 @@ const Login: React.FC = () => {
           <View className="flex flex-col gap-y-2">
             <Text className="text-3xl font-bold">Streamyfin</Text>
             <Text className="text-neutral-500">
-              Connect to your Jellyfin server
+              {t("server.connect_to_server")}
             </Text>
             <Input
-              placeholder="Server URL"
+              placeholder={t("server.server_url_placeholder")}
               onChangeText={setServerURL}
               value={serverURL}
               keyboardType="url"
@@ -302,6 +305,8 @@ const Login: React.FC = () => {
               textContentType="URL"
               maxLength={500}
             />
+            <Text className="opacity-30">{t("server.server_url_hint")}</Text>
+            <LanguageSwitcher />
           </View>
           <Button
             loading={loadingServerCheck}
@@ -309,7 +314,7 @@ const Login: React.FC = () => {
             onPress={async () => await handleConnect(serverURL)}
             className="mb-2"
           >
-            Connect
+            {t("server.connect_button")}
           </Button>
         </View>
       </KeyboardAvoidingView>

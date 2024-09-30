@@ -11,6 +11,7 @@ import { Text } from "../common/Text";
 
 import { usePlayback } from "@/providers/PlaybackProvider";
 import { useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
 
 interface MovieCardProps {
   item: BaseItemDto;
@@ -25,6 +26,7 @@ export const MovieCard: React.FC<MovieCardProps> = ({ item }) => {
   const { deleteFile } = useFiles();
   const router = useRouter();
   const { startDownloadedFilePlayback } = usePlayback();
+  const { t } = useTranslation();
 
   const handleOpenFile = useCallback(() => {
     startDownloadedFilePlayback({
@@ -46,7 +48,7 @@ export const MovieCard: React.FC<MovieCardProps> = ({ item }) => {
 
   const contextMenuOptions = [
     {
-      label: "Delete",
+      label: t("downloads.delete"),
       onSelect: handleDeleteFile,
       destructive: true,
     },

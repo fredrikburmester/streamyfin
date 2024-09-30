@@ -1,0 +1,126 @@
+{
+    "login": {
+      "username_required": "Nom d'utilisateur requis",
+      "error_title": "Erreur",
+      "url_error_message": "L'URL doit débuter par http ou https.",
+      "login": "Connexion",
+      "login_subtitle": "Connectez-vous avec n'importe quel compte utilisateur",
+      "username_placeholder": "Nom d'utilisateur",
+      "password_placeholder": "Mot de passe",
+      "login_button": "Se connecter",
+      "use_quick_connect": "Utiliser Connexion Rapide"
+    },
+    "server": {
+      "server_label": "Serveur: {{serverURL}}",
+      "change_server": "Changer de serveur",
+      "connect_to_server": "Connectez-vous à votre serveur Jellyfin",
+      "server_url_placeholder": "URL du serveur",
+      "server_url_hint": "L'URL du serveur doit contenir http ou https",
+      "connect_button": "Connexion"
+    },
+    "home": {
+      "noInternet": "Pas d'Internet",
+      "noInternetMessage": "Pas d'inquiétude, vous pouvez quand même regarder\nle contenu téléchargé.",
+      "goToDownloads": "Aller aux téléchargements",
+      "oops": "Oups!",
+      "errorMessage": "Quelque chose s'est mal passé.\nVeuillez vous déconnecter et connecter à nouveau.",
+      "continueWatching": "Continuer à regarder",
+      "nextUp": "À suivre",
+      "recentlyAddedMovies": "Ajouté récemment dans Films",
+      "recentlyAddedTVShows": "Ajouté récemment dans Séries",
+      "suggestedMovies": "Films suggérés",
+      "suggestedEpisodes": "Épisodes suggérés"
+    },
+    "search": {
+      "search_here": "Rechercher ici...",
+      "results_for": "Résultats pour",
+      "search": "Rechercher...",
+      "no_results_found_for": "Aucun résultat trouvé pour",
+      "series": "Séries",
+      "movies": "Films",
+      "episodes": "Épisodes",
+      "collections": "Collections",
+      "actors": "Acteurs",
+      "artists": "Artistes",
+      "albums": "Albums",
+      "songs": "Chansons"
+    },
+    "settings": {
+      "user": "Utilisateur",
+      "server": "Serveur",
+      "authorize": "Autoriser",
+      "media": "Média",
+      "audio_language": "Langue audio",
+      "none": "Aucune",
+      "audio_language_hint": "Choisissez une langue audio par défaut.",
+      "subtitle_language": "Langue des sous-titres",
+      "subtitle_language_hint": "Choisissez une langue par défaut pour les sous-titres.",
+      "forward_skip_length": "Longueur de saut vers l'avant",
+      "forward_skip_length_hint": "Choisissez la durée en secondes lors du saut dans la lecture vidéo.",
+      "other": "Autres",
+      "rewind_length": "Longueur de saut vers l'arrière",
+      "rewind_length_hint": "Choisissez la durée en secondes lors du saut dans la lecture vidéo.",
+      "auto_rotate": "Rotation automatique",
+      "auto_rotate_hint": "Important sur Android car l'orientation du lecteur vidéo est verrouillée sur l'orientation de l'application.",
+      "video_orientation": "Orientation de la vidéo",
+      "video_orientation_hint": "Définissez l’orientation du lecteur vidéo plein écran.",
+      "orientation": "Orientation",
+      "use_external_player": "Utiliser un lecteur externe (VLC)",
+      "use_external_player_hint": "Ouvrez toutes les vidéos dans VLC au lieu du lecteur par défaut. Cela nécessite que VLC soit installé sur le téléphone.",
+      "use_popular_list_plugin": "Utiliser le plugin des listes populaires",
+      "made_by": "Fait par: lostb1t",
+      "more_info": "Plus d'informations",
+      "no_collections_found": "Aucune collection trouvée. Ajoutez-en dans Jellyfin.",
+      "force_direct_play": "Forcer la lecture directe",
+      "force_direct_play_hint": "Cela demandera toujours une lecture directe. C'est une bonne idée si vous voulez essayer de diffuser des films que vous pensez que l'appareil prend en charge.",
+      "device_profile": "Profil de l'appareil",
+      "device_profile_hint": "Un profil utilisé pour décider quels codecs audio et vidéo l'appareil prend en charge.",
+      "profiles": "Profils",
+      "expo": "Expo",
+      "native": "Natif",
+      "old": "Ancien",
+      "search_engine": "Moteur de recherche",
+      "search_engine_hint": "Choisissez le moteur de recherche que vous souhaitez utiliser.",
+      "save": "Enregistrer",
+      "information": "Information",
+      "quick_connect": "Connexion Rapide",
+      "tests": "Tests",
+      "test_toast": "Toast de test",
+      "account_and_storage": "Compte et stockage",
+      "log_out": "Déconnexion",
+      "delete_all_downloaded_files": "Supprimer tous les téléchargements",
+      "delete_all_logs": "Supprimer tous les journaux",
+      "logs": "Journaux",
+      "no_logs_available": "Aucun journaux disponibles",
+      "marlin_server_url": "URL du serveur Marlin..."
+    },
+    "downloads": {
+      "queue": "File d'attente",
+      "no_item_in_queue": "Aucun item dans la file d'attente",
+      "active_download": "Téléchargement actifs",
+      "eta": "Temps restant",
+      "_no_active_downloads": "Aucun téléchargement actif",
+      "movies": "Films",
+      "delete": "Supprimer",
+      "episode": "Épisode {{episodeNumber}}",
+      "tv_series": "Séries TV"
+    },
+    "tabs": {
+      "home": "Accueil",
+      "search": "Rechercher",
+      "library": "Bibiliotèque"
+    },
+    "stacks": {
+      "settings": "Paramètres",
+      "downloads": "Téléchargements"
+    },
+    "filters": {
+      "load_more": "Charger plus",
+      "items": "{{ itemCount}} items",
+      "search": "Rechercher..."
+    }, 
+    "toasts": {
+      "download_started": "Téléchargement débuté"
+    }
+  }
+  

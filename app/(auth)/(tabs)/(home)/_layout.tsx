@@ -3,10 +3,12 @@ import { HeaderBackButton } from "@/components/common/HeaderBackButton";
 import { nestedTabPageScreenOptions } from "@/components/stacks/NestedTabPageStack";
 import { Feather } from "@expo/vector-icons";
 import { Stack, useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
 import { Platform, TouchableOpacity, View } from "react-native";
 
 export default function IndexLayout() {
   const router = useRouter();
+  const { t } = useTranslation();
   return (
     <Stack>
       <Stack.Screen
@@ -14,7 +16,7 @@ export default function IndexLayout() {
         options={{
           headerShown: true,
           headerLargeTitle: true,
-          headerTitle: "Home",
+          headerTitle: t("tabs.home"),
           headerBlurEffect: "prominent",
           headerTransparent: Platform.OS === "ios" ? true : false,
           headerShadowVisible: false,
@@ -49,13 +51,13 @@ export default function IndexLayout() {
       <Stack.Screen
         name="downloads"
         options={{
-          title: "Downloads",
+          title:  t("stacks.downloads"),
         }}
       />
       <Stack.Screen
         name="settings"
         options={{
-          title: "Settings",
+          title: t("stacks.settings"),
         }}
       />
       {Object.entries(nestedTabPageScreenOptions).map(([name, options]) => (

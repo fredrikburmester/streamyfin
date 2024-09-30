@@ -1,6 +1,8 @@
 import { atom, useAtom } from "jotai";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect } from "react";
+import { getLocales } from "expo-localization";
+
 import * as ScreenOrientation from "expo-screen-orientation";
 
 export type DownloadQuality = "original" | "high" | "low";
@@ -61,6 +63,7 @@ type Settings = {
   deviceProfile?: "Expo" | "Native" | "Old";
   forceDirectPlay?: boolean;
   mediaListCollectionIds?: string[];
+  preferedLanguage?: string;
   searchEngine: "Marlin" | "Jellyfin";
   marlinServerUrl?: string;
   openInVLC?: boolean;
@@ -106,6 +109,7 @@ const loadSettings = async (): Promise<Settings> => {
     defaultVideoOrientation: ScreenOrientation.OrientationLock.DEFAULT,
     forwardSkipTime: 30,
     rewindSkipTime: 10,
+    preferedLanguage: getLocales()[0].languageCode || "en",
   };
 
   try {

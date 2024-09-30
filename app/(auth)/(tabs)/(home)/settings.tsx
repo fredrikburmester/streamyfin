@@ -14,10 +14,12 @@ import { Alert, ScrollView, View } from "react-native";
 import { red } from "react-native-reanimated/lib/typescript/reanimated2/Colors";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { toast } from "sonner-native";
+import { useTranslation } from "react-i18next";
 
 export default function settings() {
   const { logout } = useJellyfin();
   const { deleteAllFiles } = useFiles();
+  const { t } = useTranslation();
 
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
@@ -70,40 +72,40 @@ export default function settings() {
     >
       <View className="p-4 flex flex-col gap-y-4">
         <View>
-          <Text className="font-bold text-lg mb-2">Information</Text>
+          <Text className="font-bold text-lg mb-2">{t("settings.information")}</Text>
 
           <View className="flex flex-col rounded-xl overflow-hidden border-neutral-800 divide-y-2 divide-solid divide-neutral-800 ">
-            <ListItem title="User" subTitle={user?.Name} />
-            <ListItem title="Server" subTitle={api?.basePath} />
+            <ListItem title={t("settings.user")} subTitle={user?.Name} />
+            <ListItem title={t("settings.server")} subTitle={api?.basePath} />
           </View>
         </View>
 
         <View>
-          <Text className="font-bold text-lg mb-2">Quick connect</Text>
+          <Text className="font-bold text-lg mb-2">{t("settings.quick_connect")}</Text>
           <Button onPress={openQuickConnectAuthCodeInput} color="black">
-            Authorize
+           {t("settings.authorize")}
           </Button>
         </View>
 
         <SettingToggles />
 
         <View>
-          <Text className="font-bold text-lg mb-2">Tests</Text>
+          <Text className="font-bold text-lg mb-2">{t("settings.tests")}</Text>
           <Button
-            onPress={() => {
-              toast.success("Download started");
+            onPress={() => {""
+              toast.success(t("toasts.download_started"));
             }}
             color="black"
           >
-            Test toast
+            {t("settings.test_toast")}
           </Button>
         </View>
 
         <View>
-          <Text className="font-bold text-lg mb-2">Account and storage</Text>
+          <Text className="font-bold text-lg mb-2">{t("settings.account_and_storage")}</Text>
           <View className="flex flex-col space-y-2">
             <Button color="black" onPress={logout}>
-              Log out
+              {t("settings.log_out")}
             </Button>
             <Button
               color="red"
@@ -114,7 +116,7 @@ export default function settings() {
                 );
               }}
             >
-              Delete all downloaded files
+              {t("settings.delete_all_downloaded_files")}
             </Button>
             <Button
               color="red"
@@ -125,12 +127,12 @@ export default function settings() {
                 );
               }}
             >
-              Delete all logs
+              {t("settings.delete_all_logs")}
             </Button>
           </View>
         </View>
         <View>
-          <Text className="font-bold text-lg mb-2">Logs</Text>
+          <Text className="font-bold text-lg mb-2">{t("settings.logs")}</Text>
           <View className="flex flex-col space-y-2">
             {logs?.map((log, index) => (
               <View key={index} className="bg-neutral-900 rounded-xl p-3">
@@ -147,7 +149,7 @@ export default function settings() {
               </View>
             ))}
             {logs?.length === 0 && (
-              <Text className="opacity-50">No logs available</Text>
+              <Text className="opacity-50">{t("settings.no_logs_available")}</Text>
             )}
           </View>
         </View>

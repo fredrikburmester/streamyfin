@@ -20,6 +20,9 @@ import "react-native-reanimated";
 import * as Linking from "expo-linking";
 import { orientationAtom } from "@/utils/atoms/orientation";
 import { Toaster } from "sonner-native";
+import { I18nextProvider, useTranslation } from "react-i18next";
+import i18n from "@/i18n";
+import { getLocales } from "expo-localization";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -40,7 +43,9 @@ export default function RootLayout() {
 
   return (
     <JotaiProvider>
-      <Layout />
+      <I18nextProvider i18n={i18n}>
+        <Layout />
+      </I18nextProvider>
     </JotaiProvider>
   );
 }
@@ -50,6 +55,8 @@ function Layout() {
   const [orientation, setOrientation] = useAtom(orientationAtom);
 
   useKeepAwake();
+
+  const { i18n } = useTranslation();
 
   const queryClientRef = useRef<QueryClient>(
     new QueryClient({
@@ -75,6 +82,10 @@ function Layout() {
   }, [settings]);
 
   useEffect(() => {
+    i18n.changeLanguage(
+      settings?.preferedLanguage || getLocales()[0].languageCode || "en"
+    );
+
     const subscription = ScreenOrientation.addOrientationChangeListener(
       (event) => {
         console.log(event.orientationInfo.orientation);
