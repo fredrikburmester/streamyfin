@@ -261,8 +261,13 @@ function useDownloadProvider() {
           toast.success(`Download completed for ${process.item.Name}`);
         })
         .error(async (error) => {
+          removeProcess(process.id);
           completeHandler(process.id);
-          toast.error(`Download failed for ${process.item.Name}: ${error}`);
+          let errorMsg = "";
+          if (error.errorCode === 1000) {
+            errorMsg = "No space left";
+          }
+          toast.error(`Download failed for ${process.item.Name} - ${errorMsg}`);
           writeToLog("ERROR", `Download failed for ${process.item.Name}`, {
             error,
           });
