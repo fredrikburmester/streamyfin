@@ -77,6 +77,8 @@ function useDownloadProvider() {
   const router = useRouter();
   const [api] = useAtom(apiAtom);
 
+  const [processes, setProcesses] = useState<JobStatus[]>([]);
+
   const authHeader = useMemo(() => {
     return api?.accessToken;
   }, [api]);
@@ -86,8 +88,6 @@ function useDownloadProvider() {
     queryFn: getAllDownloadedItems,
     staleTime: 0,
   });
-
-  const [processes, setProcesses] = useState<JobStatus[]>([]);
 
   useQuery({
     queryKey: ["jobs"],
@@ -216,10 +216,12 @@ function useDownloadProvider() {
         },
       });
 
+      const baseDirectory = FileSystem.documentDirectory;
+
       download({
         id: process.id,
         url: settings?.optimizedVersionsServerUrl + "download/" + process.id,
-        destination: `${directories.documents}/${process.item.Id}.mp4`,
+        destination: `${baseDirectory}/${process.item.Id}.mp4`,
       })
         .begin(() => {
           toast.info(`Download started for ${process.item.Name}`);
