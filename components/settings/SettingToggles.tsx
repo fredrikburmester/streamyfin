@@ -402,7 +402,7 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
                   <View className="flex flex-row items-center space-x-2">
                     <View className="grow">
                       <Input
-                        placeholder="Marlin Server URL..."
+                        placeholder={t("settings.marlin_server_url")}
                         defaultValue={settings.marlinServerUrl}
                         value={marlinUrl}
                         keyboardType="url"

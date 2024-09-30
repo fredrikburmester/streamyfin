@@ -91,7 +91,8 @@
       "delete_all_downloaded_files": "Supprimer tous les téléchargements",
       "delete_all_logs": "Supprimer tous les journaux",
       "logs": "Journaux",
-      "no_logs_available": "Aucun journaux disponibles"
+      "no_logs_available": "Aucun journaux disponibles",
+      "marlin_server_url": "URL du serveur Marlin..."
     },
     "downloads": {
       "queue": "File d'attente",
@@ -115,7 +116,8 @@
     },
     "filters": {
       "load_more": "Charger plus",
-      "items": "{{ itemCount}} items"
+      "items": "{{ itemCount}} items",
+      "search": "Rechercher..."
     }, 
     "toasts": {
       "download_started": "Téléchargement débuté"

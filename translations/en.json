@@ -91,7 +91,8 @@
     "delete_all_downloaded_files": "Delete all downloaded files",
     "delete_all_logs": "Delete all logs",
     "logs": "Logs",
-    "no_logs_available": "No logs available"
+    "no_logs_available": "No logs available",
+    "marlin_server_url": "Marlin Server URL..."
   },
   "downloads": {
     "queue": "Queue",
@@ -115,7 +116,8 @@
   },
   "filters": {
     "load_more": "Load more",
-    "items": "{{ itemCount}} items"
+    "items": "{{ itemCount}} items",
+    "search": "Search..."
   }, 
   "toasts": {
     "download_started": "Download started"

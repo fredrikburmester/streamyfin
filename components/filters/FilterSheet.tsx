@@ -159,7 +159,7 @@ export const FilterSheet = <T,>({
           <Text className="mb-2 text-neutral-500">{t("filters.items",{itemCount: _data?.length})}</Text>
           {showSearch && (
             <Input
-              placeholder="Search..."
+              placeholder={t("filters.search")}
               className="my-2"
               value={search}
               onChangeText={(text) => {
