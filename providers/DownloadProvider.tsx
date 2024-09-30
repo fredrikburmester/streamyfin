@@ -1,10 +1,19 @@
 import { useSettings } from "@/utils/atoms/settings";
+import { getOrSetDeviceId } from "@/utils/device";
+import { writeToLog } from "@/utils/log";
+import {
+  cancelAllJobs,
+  cancelJobById,
+  getAllJobsByDeviceId,
+  JobStatus,
+} from "@/utils/optimize-server";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import {
   checkForExistingDownloads,
   completeHandler,
   directories,
   download,
+  setConfig,
 } from "@kesha-antonov/react-native-background-downloader";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
@@ -14,8 +23,10 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import axios from "axios";
+import * as BackgroundFetch from "expo-background-fetch";
 import * as FileSystem from "expo-file-system";
 import { useRouter } from "expo-router";
+import * as TaskManager from "expo-task-manager";
 import { useAtom } from "jotai";
 import React, {
   createContext,
@@ -28,16 +39,6 @@ import React, {
 } from "react";
 import { toast } from "sonner-native";
 import { apiAtom } from "./JellyfinProvider";
-import * as BackgroundFetch from "expo-background-fetch";
-import * as TaskManager from "expo-task-manager";
-import { writeToLog } from "@/utils/log";
-import { getOrSetDeviceId } from "@/utils/device";
-import {
-  cancelAllJobs,
-  cancelJobById,
-  getAllJobsByDeviceId,
-  JobStatus,
-} from "@/utils/optimize-server";
 
 export const BACKGROUND_FETCH_TASK = "background-fetch";
 
@@ -108,12 +109,21 @@ function useDownloadProvider() {
         url,
       });
 
-      setProcesses(jobs);
+      // Local downloading processes that are still valid
+      const downloadingProcesses = processes
+        .filter((p) => p.status === "downloading")
+        .filter((p) => jobs.some((j) => j.id === p.id));
+
+      const updatedProcesses = jobs.filter(
+        (j) => !downloadingProcesses.some((p) => p.id === j.id)
+      );
+
+      setProcesses([...updatedProcesses, ...downloadingProcesses]);
 
       return jobs;
     },
     staleTime: 0,
-    refetchInterval: 1000 * 3, // 5 minutes
+    refetchInterval: 1000,
     enabled: settings?.downloadMethod === "optimized",
   });
 
@@ -123,11 +133,10 @@ function useDownloadProvider() {
       for (let i = 0; i < processes.length; i++) {
         const job = processes[i];
 
-        // Check if the download is already in progress
-        const tasks = await checkForExistingDownloads();
-        if (tasks.find((task) => task.id === job.id)) continue;
-
         if (job.status === "completed") {
+          // Check if the download is already in progress
+          const tasks = await checkForExistingDownloads();
+          if (tasks.find((task) => task.id === job.id)) continue;
           await startDownload(job);
           continue;
         }
@@ -199,32 +208,58 @@ function useDownloadProvider() {
     async (process: JobStatus) => {
       if (!process?.item.Id || !authHeader) throw new Error("No item id");
 
+      setConfig({
+        isLogsEnabled: true,
+        progressInterval: 500,
+        headers: {
+          Authorization: authHeader,
+        },
+      });
+
       download({
         id: process.id,
         url: settings?.optimizedVersionsServerUrl + "download/" + process.id,
         destination: `${directories.documents}/${process.item.Id}.mp4`,
-        headers: {
-          Authorization: authHeader,
-        },
       })
         .begin(() => {
           toast.info(`Download started for ${process.item.Name}`);
+          setProcesses((prev) =>
+            prev.map((p) =>
+              p.id === process.id
+                ? {
+                    ...p,
+                    speed: undefined,
+                    status: "downloading",
+                    progress: 0,
+                  }
+                : p
+            )
+          );
         })
         .progress((data) => {
           const percent = (data.bytesDownloaded / data.bytesTotal) * 100;
-          console.log("Progress ~", percent);
+          console.log("Download progress:", percent);
+          setProcesses((prev) =>
+            prev.map((p) =>
+              p.id === process.id
+                ? {
+                    ...p,
+                    speed: undefined,
+                    status: "downloading",
+                    progress: percent,
+                  }
+                : p
+            )
+          );
         })
         .done(async () => {
-          removeProcess(process.id);
           await saveDownloadedItemInfo(process.item);
-          await queryClient.invalidateQueries({
-            queryKey: ["downloadedItems"],
-          });
-          await refetch();
+          removeProcess(process.id);
           completeHandler(process.id);
           toast.success(`Download completed for ${process.item.Name}`);
         })
-        .error((error) => {
+        .error(async (error) => {
+          completeHandler(process.id);
           toast.error(`Download failed for ${process.item.Name}: ${error}`);
           writeToLog("ERROR", `Download failed for ${process.item.Name}`, {
             error,
