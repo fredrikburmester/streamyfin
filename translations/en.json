@@ -19,7 +19,6 @@
     "connect_button": "Connect"
   },
   "home": {
-    "home": "Home",
     "noInternet": "No Internet",
     "noInternetMessage": "No worries, you can still watch\ndownloaded content.",
     "goToDownloads": "Go to downloads",

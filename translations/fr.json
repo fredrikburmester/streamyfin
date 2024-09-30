@@ -19,7 +19,6 @@
       "connect_button": "Connexion"
     },
     "home": {
-      "home": "Accueil",
       "noInternet": "Pas d'Internet",
       "noInternetMessage": "Pas d'inquiétude, vous pouvez quand même regarder\nle contenu téléchargé.",
       "goToDownloads": "Aller aux téléchargements",

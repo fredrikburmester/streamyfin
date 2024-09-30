@@ -18,7 +18,6 @@
     "connect_button": "Anslut"
   },
   "home": {
-    "home": "Hem",
     "noInternet": "Ingen Internet",
     "noInternetMessage": "Ingen fara, du kan fortfarande titta\npå nedladdat innehåll.",
     "goToDownloads": "Gå till nedladdningar",
