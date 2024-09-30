@@ -24,11 +24,13 @@ import { Button } from "../Button";
 import { MediaToggles } from "./MediaToggles";
 import * as ScreenOrientation from "expo-screen-orientation";
 import { opacity } from "react-native-reanimated/lib/typescript/reanimated2/Colors";
+import { useDownload } from "@/providers/DownloadProvider";
 
 interface Props extends ViewProps {}
 
 export const SettingToggles: React.FC<Props> = ({ ...props }) => {
   const [settings, updateSettings] = useSettings();
+  const { setProcesses } = useDownload();
 
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
@@ -495,7 +497,7 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
                   key="1"
                   onSelect={() => {
                     updateSettings({ downloadMethod: "remux" });
-                    queryClient.invalidateQueries({ queryKey: ["search"] });
+                    setProcesses([]);
                   }}
                 >
                   <DropdownMenu.ItemTitle>Default</DropdownMenu.ItemTitle>
@@ -504,6 +506,7 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
                   key="2"
                   onSelect={() => {
                     updateSettings({ downloadMethod: "optimized" });
+                    setProcesses([]);
                     queryClient.invalidateQueries({ queryKey: ["search"] });
                   }}
                 >

@@ -9,6 +9,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner-native";
 import { useDownload } from "@/providers/DownloadProvider";
 import { useRouter } from "expo-router";
+import { JobStatus } from "@/utils/optimize-server";
 
 /**
  * Custom hook for remuxing HLS to MP4 using FFmpeg.
@@ -19,8 +20,7 @@ import { useRouter } from "expo-router";
  */
 export const useRemuxHlsToMp4 = (item: BaseItemDto) => {
   const queryClient = useQueryClient();
-  const { clearProcesses, saveDownloadedItemInfo, addProcess, updateProcess } =
-    useDownload();
+  const { saveDownloadedItemInfo, setProcesses } = useDownload();
   const router = useRouter();
 
   if (!item.Id || !item.Name) {
@@ -52,12 +52,20 @@ export const useRemuxHlsToMp4 = (item: BaseItemDto) => {
       );
 
       try {
-        addProcess({
-          id: item.Id,
-          item,
-          progress: 0,
-          state: "downloading",
-        });
+        setProcesses((prev) => [
+          ...prev,
+          {
+            id: "",
+            deviceId: "",
+            inputUrl: "",
+            item,
+            itemId: item.Id,
+            outputPath: "",
+            progress: 0,
+            status: "running",
+            timestamp: new Date(),
+          } as JobStatus,
+        ]);
 
         FFmpegKitConfig.enableStatisticsCallback((statistics) => {
           const videoLength =
@@ -73,9 +81,17 @@ export const useRemuxHlsToMp4 = (item: BaseItemDto) => {
               : 0;
 
           if (!item.Id) throw new Error("Item is undefined");
-          updateProcess(item.Id, {
-            progress: percentage,
-            speed: Math.max(speed, 0),
+          setProcesses((prev) => {
+            return prev.map((process) => {
+              if (process.itemId === item.Id) {
+                return {
+                  ...process,
+                  progress: percentage,
+                  speed: Math.max(speed, 0),
+                };
+              }
+              return process;
+            });
           });
         });
 
@@ -98,14 +114,12 @@ export const useRemuxHlsToMp4 = (item: BaseItemDto) => {
                 });
                 resolve();
               } else if (returnCode.isValueError()) {
-                toast.success("Download failed");
                 writeToLog(
                   "ERROR",
                   `useRemuxHlsToMp4 ~ remuxing failed for item: ${item.Name}`
                 );
                 reject(new Error("Remuxing failed")); // Reject the promise on error
               } else if (returnCode.isValueCancel()) {
-                toast.success("Download canceled");
                 writeToLog(
                   "INFO",
                   `useRemuxHlsToMp4 ~ remuxing was canceled for item: ${item.Name}`
@@ -113,7 +127,9 @@ export const useRemuxHlsToMp4 = (item: BaseItemDto) => {
                 resolve();
               }
 
-              clearProcesses();
+              setProcesses((prev) => {
+                return prev.filter((process) => process.itemId !== item.Id);
+              });
             } catch (error) {
               reject(error);
             }
@@ -125,17 +141,21 @@ export const useRemuxHlsToMp4 = (item: BaseItemDto) => {
           "ERROR",
           `useRemuxHlsToMp4 ~ remuxing failed for item: ${item.Name}`
         );
-        clearProcesses();
+        setProcesses((prev) => {
+          return prev.filter((process) => process.itemId !== item.Id);
+        });
         throw error; // Re-throw the error to propagate it to the caller
       }
     },
-    [output, item, clearProcesses]
+    [output, item]
   );
 
   const cancelRemuxing = useCallback(() => {
     FFmpegKit.cancel();
-    clearProcesses();
-  }, [item.Name, clearProcesses]);
+    setProcesses((prev) => {
+      return prev.filter((process) => process.itemId !== item.Id);
+    });
+  }, [item.Name]);
 
   return { startRemuxing, cancelRemuxing };
 };

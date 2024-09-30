@@ -1,6 +1,7 @@
 import { useSettings } from "@/utils/atoms/settings";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import {
+  checkForExistingDownloads,
   completeHandler,
   directories,
   download,
@@ -22,27 +23,21 @@ import React, {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { toast } from "sonner-native";
 import { apiAtom } from "./JellyfinProvider";
 import * as BackgroundFetch from "expo-background-fetch";
 import * as TaskManager from "expo-task-manager";
-
-export type ProcessItem = {
-  id: string;
-  item: Partial<BaseItemDto>;
-  progress: number;
-  size?: number;
-  speed?: number;
-  state:
-    | "optimizing"
-    | "downloading"
-    | "done"
-    | "error"
-    | "canceled"
-    | "queued";
-};
+import { writeToLog } from "@/utils/log";
+import { getOrSetDeviceId } from "@/utils/device";
+import {
+  cancelAllJobs,
+  cancelJobById,
+  getAllJobsByDeviceId,
+  JobStatus,
+} from "@/utils/optimize-server";
 
 export const BACKGROUND_FETCH_TASK = "background-fetch";
 
@@ -77,7 +72,6 @@ const DownloadContext = createContext<ReturnType<
 
 function useDownloadProvider() {
   const queryClient = useQueryClient();
-  const [processes, setProcesses] = useState<ProcessItem[]>([]);
   const [settings] = useSettings();
   const router = useRouter();
   const [api] = useAtom(apiAtom);
@@ -92,115 +86,133 @@ function useDownloadProvider() {
     staleTime: 0,
   });
 
-  useEffect(() => {
-    // Check background task status
-    checkStatusAsync();
+  const [processes, setProcesses] = useState<JobStatus[]>([]);
 
-    // Load initial processes state from AsyncStorage
-    const loadInitialProcesses = async () => {
-      const storedProcesses = await readProcesses();
-      setProcesses(storedProcesses);
+  useQuery({
+    queryKey: ["jobs"],
+    queryFn: async () => {
+      const deviceId = await getOrSetDeviceId();
+      const url = settings?.optimizedVersionsServerUrl;
+
+      if (
+        settings?.downloadMethod !== "optimized" ||
+        !url ||
+        !deviceId ||
+        !authHeader
+      )
+        return [];
+
+      const jobs = await getAllJobsByDeviceId({
+        deviceId,
+        authHeader,
+        url,
+      });
+
+      setProcesses(jobs);
+
+      return jobs;
+    },
+    staleTime: 0,
+    refetchInterval: 1000 * 3, // 5 minutes
+    enabled: settings?.downloadMethod === "optimized",
+  });
+
+  useEffect(() => {
+    const checkIfShouldStartDownload = async () => {
+      if (!processes) return;
+      for (let i = 0; i < processes.length; i++) {
+        const job = processes[i];
+
+        // Check if the download is already in progress
+        const tasks = await checkForExistingDownloads();
+        if (tasks.find((task) => task.id === job.id)) continue;
+
+        if (job.status === "completed") {
+          await startDownload(job);
+          continue;
+        }
+      }
     };
-    loadInitialProcesses();
-  }, []);
+
+    checkIfShouldStartDownload();
+  }, [processes]);
 
   /********************
    * Background task
    *******************/
-  const [isRegistered, setIsRegistered] = useState(false);
-  const [status, setStatus] =
-    useState<BackgroundFetch.BackgroundFetchStatus | null>(null);
+  // useEffect(() => {
+  //   // Check background task status
+  //   checkStatusAsync();
+  // }, []);
 
-  const checkStatusAsync = async () => {
-    const status = await BackgroundFetch.getStatusAsync();
-    const isRegistered = await TaskManager.isTaskRegisteredAsync(
-      BACKGROUND_FETCH_TASK
-    );
-    setStatus(status);
-    setIsRegistered(isRegistered);
+  // const [isRegistered, setIsRegistered] = useState(false);
+  // const [status, setStatus] =
+  //   useState<BackgroundFetch.BackgroundFetchStatus | null>(null);
 
-    console.log("Background fetch status:", status);
-    console.log("Background fetch task registered:", isRegistered);
-  };
+  // const checkStatusAsync = async () => {
+  //   const status = await BackgroundFetch.getStatusAsync();
+  //   const isRegistered = await TaskManager.isTaskRegisteredAsync(
+  //     BACKGROUND_FETCH_TASK
+  //   );
+  //   setStatus(status);
+  //   setIsRegistered(isRegistered);
 
-  const toggleFetchTask = async () => {
-    if (isRegistered) {
-      console.log("Unregistering background fetch task");
-      await unregisterBackgroundFetchAsync();
-    } else {
-      console.log("Registering background fetch task");
-      await registerBackgroundFetchAsync();
-    }
+  //   console.log("Background fetch status:", status);
+  //   console.log("Background fetch task registered:", isRegistered);
+  // };
 
-    checkStatusAsync();
-  };
+  // const toggleFetchTask = async () => {
+  //   if (isRegistered) {
+  //     console.log("Unregistering background fetch task");
+  //     await unregisterBackgroundFetchAsync();
+  //   } else {
+  //     console.log("Registering background fetch task");
+  //     await registerBackgroundFetchAsync();
+  //   }
+
+  //   checkStatusAsync();
+  // };
   /**********************
    **********************
    *********************/
 
-  const clearProcesses = useCallback(async () => {
-    await AsyncStorage.removeItem(STORAGE_KEY);
-    setProcesses([]);
-  }, []);
+  const removeProcess = useCallback(
+    async (id: string) => {
+      const deviceId = await getOrSetDeviceId();
+      if (!deviceId || !authHeader || !settings?.optimizedVersionsServerUrl)
+        return;
 
-  const updateProcess = useCallback(
-    async (id: string, updater: Partial<ProcessItem>) => {
-      setProcesses((prevProcesses) => {
-        const newProcesses = prevProcesses.map((process) =>
-          process.id === id ? { ...process, ...updater } : process
-        );
-
-        AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newProcesses));
-
-        return newProcesses;
-      });
+      try {
+        await cancelJobById({
+          authHeader,
+          id,
+          url: settings?.optimizedVersionsServerUrl,
+        });
+      } catch (error) {
+        console.log(error);
+      }
     },
-    []
+    [settings?.optimizedVersionsServerUrl, authHeader]
   );
 
-  const addProcess = useCallback(async (item: ProcessItem) => {
-    setProcesses((prevProcesses) => {
-      const newProcesses = [...prevProcesses, item];
-      AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newProcesses));
-      return newProcesses;
-    });
-  }, []);
-
-  const removeProcess = useCallback(async (id: string) => {
-    setProcesses((prevProcesses) => {
-      const newProcesses = prevProcesses.filter((process) => process.id !== id);
-      AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newProcesses));
-      return newProcesses;
-    });
-  }, []);
-
-  const readProcesses = useCallback(async (): Promise<ProcessItem[]> => {
-    const items = await AsyncStorage.getItem(STORAGE_KEY);
-    return items ? JSON.parse(items) : [];
-  }, []);
-
   const startDownload = useCallback(
-    (process: ProcessItem) => {
+    async (process: JobStatus) => {
       if (!process?.item.Id || !authHeader) throw new Error("No item id");
 
       download({
         id: process.id,
         url: settings?.optimizedVersionsServerUrl + "download/" + process.id,
-        destination: `${directories.documents}/${process?.item.Id}.mp4`,
+        destination: `${directories.documents}/${process.item.Id}.mp4`,
         headers: {
           Authorization: authHeader,
         },
       })
         .begin(() => {
           toast.info(`Download started for ${process.item.Name}`);
-          updateProcess(process.id, { state: "downloading", progress: 0 });
         })
         .progress((data) => {
           const percent = (data.bytesDownloaded / data.bytesTotal) * 100;
-          updateProcess(process.id, {
-            state: "downloading",
-            progress: percent,
-          });
+          console.log("Progress ~", percent);
         })
         .done(async () => {
           removeProcess(process.id);
@@ -213,112 +225,22 @@ function useDownloadProvider() {
           toast.success(`Download completed for ${process.item.Name}`);
         })
         .error((error) => {
-          updateProcess(process.id, { state: "error" });
           toast.error(`Download failed for ${process.item.Name}: ${error}`);
+          writeToLog("ERROR", `Download failed for ${process.item.Name}`, {
+            error,
+          });
         });
     },
     [queryClient, settings?.optimizedVersionsServerUrl, authHeader]
   );
 
-  useEffect(() => {
-    const checkJobStatusPeriodically = async () => {
-      if (!settings?.optimizedVersionsServerUrl || !authHeader) return;
-
-      const updatedProcesses = await Promise.all(
-        processes.map(async (process) => {
-          if (!settings.optimizedVersionsServerUrl) return process;
-          if (process.state === "queued" || process.state === "optimizing") {
-            try {
-              const job = await checkJobStatus(
-                process.id,
-                settings.optimizedVersionsServerUrl,
-                authHeader
-              );
-
-              if (!job) {
-                return process;
-              }
-
-              let newState: ProcessItem["state"] = process.state;
-              if (job.status === "queued") {
-                newState = "queued";
-              } else if (job.status === "running") {
-                newState = "optimizing";
-              } else if (job.status === "completed") {
-                startDownload(process);
-                return {
-                  ...process,
-                  progress: 100,
-                  speed: 0,
-                };
-              } else if (job.status === "failed") {
-                newState = "error";
-              } else if (job.status === "cancelled") {
-                newState = "canceled";
-              }
-
-              return {
-                ...process,
-                state: newState,
-                progress: job.progress,
-                speed: job.speed,
-              };
-            } catch (error) {
-              if (axios.isAxiosError(error) && !error.response) {
-                // Network error occurred (server might be down)
-                console.error("Network error occurred:", error.message);
-                toast.error(
-                  "Network error: Unable to connect to optimization server"
-                );
-                return {
-                  ...process,
-                  state: "error",
-                  errorMessage:
-                    "Network error: Unable to connect to optimization server",
-                };
-              } else {
-                // Other types of errors
-                console.error("Error checking job status:", error);
-                toast.error(
-                  "An unexpected error occurred while checking job status"
-                );
-                return {
-                  ...process,
-                  state: "error",
-                  errorMessage: "An unexpected error occurred",
-                };
-              }
-            }
-          }
-          return process;
-        })
-      );
-
-      // Filter out null values (completed jobs)
-      const filteredProcesses = updatedProcesses.filter(
-        (process) => process !== null
-      ) as ProcessItem[];
-
-      // Update the state with the filtered processes
-      setProcesses(filteredProcesses);
-    };
-
-    const intervalId = setInterval(checkJobStatusPeriodically, 2000);
-
-    return () => clearInterval(intervalId);
-  }, [
-    processes,
-    settings?.optimizedVersionsServerUrl,
-    authHeader,
-    startDownload,
-  ]);
-
   const startBackgroundDownload = useCallback(
-    async (url: string, item: BaseItemDto) => {
+    async (url: string, item: BaseItemDto, fileExtension: string) => {
       try {
+        const deviceId = await getOrSetDeviceId();
         const response = await axios.post(
           settings?.optimizedVersionsServerUrl + "optimize-version",
-          { url },
+          { url, fileExtension, deviceId, itemId: item.Id, item },
           {
             headers: {
               "Content-Type": "application/json",
@@ -330,15 +252,6 @@ function useDownloadProvider() {
         if (response.status !== 201) {
           throw new Error("Failed to start optimization job");
         }
-
-        const { id } = response.data;
-
-        addProcess({
-          id,
-          item: item,
-          progress: 0,
-          state: "queued",
-        });
 
         toast.success(`Queued ${item.Name} for optimization`, {
           action: {
@@ -400,14 +313,19 @@ function useDownloadProvider() {
         }
       }
       await AsyncStorage.removeItem("downloadedItems");
-      await AsyncStorage.removeItem("runningProcesses");
-      clearProcesses();
+
+      if (!authHeader) throw new Error("No auth header");
+      if (!settings?.optimizedVersionsServerUrl)
+        throw new Error("No server url");
+      cancelAllJobs({
+        authHeader,
+        url: settings?.optimizedVersionsServerUrl,
+        deviceId: await getOrSetDeviceId(),
+      });
 
       queryClient.invalidateQueries({ queryKey: ["downloadedItems"] });
 
-      console.log(
-        "Successfully deleted all files and folders in the directory and cleared AsyncStorage"
-      );
+      toast.success("All files and folders deleted successfully");
     } catch (error) {
       console.error("Failed to delete all files and folders:", error);
     }
@@ -496,16 +414,13 @@ function useDownloadProvider() {
 
   return {
     processes,
-    updateProcess,
     startBackgroundDownload,
-    clearProcesses,
-    readProcesses,
     downloadedFiles,
     deleteAllFiles,
     deleteFile,
     saveDownloadedItemInfo,
-    addProcess,
     removeProcess,
+    setProcesses,
   };
 }
 
@@ -527,25 +442,3 @@ export function useDownload() {
   }
   return context;
 }
-
-const checkJobStatus = async (
-  id: string,
-  baseUrl: string,
-  authHeader: string
-): Promise<{
-  progress: number;
-  status: "queued" | "running" | "completed" | "failed" | "cancelled";
-  speed?: string;
-}> => {
-  const statusResponse = await axios.get(`${baseUrl}job-status/${id}`, {
-    headers: {
-      Authorization: authHeader,
-    },
-  });
-  if (statusResponse.status !== 200) {
-    throw new Error("Failed to fetch job status");
-  }
-
-  const json = statusResponse.data;
-  return json;
-};
