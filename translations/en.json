@@ -7,7 +7,8 @@
     "login_subtitle": "Log in to any user account",
     "username_placeholder": "Username",
     "password_placeholder": "Password",
-    "login_button": "Log in"
+    "login_button": "Log in",
+    "use_quick_connect": "Use Quick Connect"
   },
   "server": {
     "server_label": "Server: {{serverURL}}",
@@ -31,9 +32,72 @@
     "suggestedMovies": "Suggested Movies",
     "suggestedEpisodes": "Suggested Episodes"
   },
+  "settings": {
+    "user": "User",
+    "server": "Server",
+    "authorize": "Authorize",
+    "media": "Media",
+    "audio_language": "Audio language",
+    "none": "None",
+    "audio_language_hint": "Choose a default audio language.",
+    "subtitle_language": "Subtitle language",
+    "subtitle_language_hint": "Choose a default subtitle language.",
+    "forward_skip_length": "Forward skip length",
+    "forward_skip_length_hint": "Choose length in seconds when skipping in video playback.",
+    "other": "Other",
+    "rewind_length": "Rewind length",
+    "rewind_length_hint": "Choose length in seconds when skipping in video playback.",
+    "auto_rotate": "Auto rotate",
+    "auto_rotate_hint": "Important on android since the video player orientation is locked to the app orientation.",
+    "video_orientation": "Video orientation",
+    "video_orientation_hint": "Set the full screen video player orientation.",
+    "orientation": "Orientation",
+    "use_external_player": "Use external player (VLC)",
+    "use_external_player_hint": "Open all videos in VLC instead of the default player. This requries VLC to be installed on the phone.",
+    "use_popular_list_plugin": "Use popular lists plugin",
+    "made_by": "Made by: lostb1t",
+    "more_info": "More info",
+    "no_collections_found": "No collections found. Add some in Jellyfin.",
+    "force_direct_play": "Force direct play",
+    "force_direct_play_hint": "This will always request direct play. This is good if you want to try to stream movies you think the device supports.",
+    "device_profile": "Device profile",
+    "device_profile_hint": "A profile used for deciding what audio and video codecs the device supports.",
+    "profiles": "Profiles",
+    "expo": "Expo",
+    "native": "Native",
+    "old": "Old",
+    "search_engine": "Search engine",
+    "search_engine_hint": "Choose the search engine you want to use.",
+    "save": "Save",
+    "information": "Information",
+    "quick_connect": "Quick connect",
+    "tests": "Tests",
+    "test_toast": "Test toast",
+    "account_and_storage": "Account and storage",
+    "log_out": "Log out",
+    "delete_all_downloaded_files": "Delete all downloaded files",
+    "delete_all_logs": "Delete all logs",
+    "logs": "Logs",
+    "no_logs_available": "No logs available"
+  },
+  "downloads": {
+    "queue": "Queue",
+    "no_item_in_queue": "No items in queue",
+    "active_download": "Active download",
+    "eta": "ETA",
+    "_no_active_downloads": "No active downloads",
+    "movies": "Movies"
+  },
   "tabs": {
     "home": "Home",
     "search": "Search",
     "library": "Library"
+  },
+  "stacks": {
+    "settings": "Settings",
+    "downloads": "Downloads"
+  },
+  "toasts": {
+    "download_started": "Download started"
   }
 }

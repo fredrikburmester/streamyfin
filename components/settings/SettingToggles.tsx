@@ -22,6 +22,7 @@ import { Input } from "../common/Input";
 import { useState } from "react";
 import { Button } from "../Button";
 import { MediaToggles } from "./MediaToggles";
+import { useTranslation } from "react-i18next";
 import * as ScreenOrientation from "expo-screen-orientation";
 
 interface Props extends ViewProps {}
@@ -35,6 +36,8 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
   const [marlinUrl, setMarlinUrl] = useState<string>("");
 
   const queryClient = useQueryClient();
+
+  const { t } = useTranslation();
 
   const {
     data: mediaListCollections,
@@ -80,16 +83,13 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
       <MediaToggles />
 
       <View>
-        <Text className="text-lg font-bold mb-2">Other</Text>
+        <Text className="text-lg font-bold mb-2">{t("settings.other")}</Text>
 
         <View className="flex flex-col rounded-xl overflow-hidden  divide-y-2 divide-solid divide-neutral-800">
           <View className="flex flex-row items-center justify-between bg-neutral-900 p-4">
             <View className="shrink">
-              <Text className="font-semibold">Auto rotate</Text>
-              <Text className="text-xs opacity-50">
-                Important on android since the video player orientation is
-                locked to the app orientation.
-              </Text>
+              <Text className="font-semibold">{t("settings.auto_rotate")}</Text>
+              <Text className="text-xs opacity-50">{t("settings.auto_rotate_hint")}</Text>
             </View>
             <Switch
               value={settings.autoRotate}
@@ -109,10 +109,8 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
               `}
           >
             <View className="flex flex-col shrink">
-              <Text className="font-semibold">Video orientation</Text>
-              <Text className="text-xs opacity-50">
-                Set the full screen video player orientation.
-              </Text>
+              <Text className="font-semibold">{t("settings.video_orientation")}</Text>
+              <Text className="text-xs opacity-50">{t("settings.video_orientation_hint")}</Text>
             </View>
             <DropdownMenu.Root>
               <DropdownMenu.Trigger>
@@ -131,7 +129,7 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
                 collisionPadding={8}
                 sideOffset={8}
               >
-                <DropdownMenu.Label>Orientation</DropdownMenu.Label>
+                <DropdownMenu.Label>{t("settings.orientation")}</DropdownMenu.Label>
                 <DropdownMenu.Item
                   key="1"
                   onSelect={() => {
@@ -206,11 +204,8 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
 
           <View className="flex flex-row space-x-2 items-center justify-between bg-neutral-900 p-4">
             <View className="flex flex-col shrink">
-              <Text className="font-semibold">Use external player (VLC)</Text>
-              <Text className="text-xs opacity-50 shrink">
-                Open all videos in VLC instead of the default player. This
-                requries VLC to be installed on the phone.
-              </Text>
+              <Text className="font-semibold">{t("settings.use_external_player")}</Text>
+              <Text className="text-xs opacity-50 shrink">{t("settings.use_external_player_hint")}</Text>
             </View>
             <Switch
               value={settings.openInVLC}
@@ -223,8 +218,8 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
           <View className="flex flex-col">
             <View className="flex flex-row items-center justify-between bg-neutral-900 p-4">
               <View className="flex flex-col">
-                <Text className="font-semibold">Use popular lists plugin</Text>
-                <Text className="text-xs opacity-50">Made by: lostb1t</Text>
+                <Text className="font-semibold">{t("settings.use_popular_list_plugin")}</Text>
+                <Text className="text-xs opacity-50">{t("settings.made_by")}</Text>
                 <TouchableOpacity
                   onPress={() => {
                     Linking.openURL(
@@ -232,7 +227,7 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
                     );
                   }}
                 >
-                  <Text className="text-xs text-purple-600">More info</Text>
+                  <Text className="text-xs text-purple-600">{t("settings.more_info")}</Text>
                 </TouchableOpacity>
               </View>
               <Switch
@@ -281,9 +276,7 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
                 )}
                 {mediaListCollections?.length === 0 && (
                   <View className="flex flex-row items-center justify-between bg-neutral-900 p-4">
-                    <Text className="text-xs opacity-50">
-                      No collections found. Add some in Jellyfin.
-                    </Text>
+                    <Text className="text-xs opacity-50">{t("settings.no_collections_found")}</Text>
                   </View>
                 )}
               </View>
@@ -292,11 +285,8 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
 
           <View className="flex flex-row space-x-2 items-center justify-between bg-neutral-900 p-4">
             <View className="flex flex-col shrink">
-              <Text className="font-semibold">Force direct play</Text>
-              <Text className="text-xs opacity-50 shrink">
-                This will always request direct play. This is good if you want
-                to try to stream movies you think the device supports.
-              </Text>
+              <Text className="font-semibold">{t("settings.force_direct_play")}</Text>
+              <Text className="text-xs opacity-50 shrink">{t("settings.force_direct_play_hint")}</Text>
             </View>
             <Switch
               value={settings.forceDirectPlay}
@@ -313,11 +303,8 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
       `}
           >
             <View className="flex flex-col shrink">
-              <Text className="font-semibold">Device profile</Text>
-              <Text className="text-xs opacity-50">
-                A profile used for deciding what audio and video codecs the
-                device supports.
-              </Text>
+              <Text className="font-semibold">{t("settings.device_profile")}</Text>
+              <Text className="text-xs opacity-50">{t("settings.device_profile_hint")}</Text>
             </View>
             <DropdownMenu.Root>
               <DropdownMenu.Trigger>
@@ -334,14 +321,14 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
                 collisionPadding={8}
                 sideOffset={8}
               >
-                <DropdownMenu.Label>Profiles</DropdownMenu.Label>
+                <DropdownMenu.Label>{t("settings.profiles")}</DropdownMenu.Label>
                 <DropdownMenu.Item
                   key="1"
                   onSelect={() => {
                     updateSettings({ deviceProfile: "Expo" });
                   }}
                 >
-                  <DropdownMenu.ItemTitle>Expo</DropdownMenu.ItemTitle>
+                  <DropdownMenu.ItemTitle>{t("settings.expo")}</DropdownMenu.ItemTitle>
                 </DropdownMenu.Item>
                 <DropdownMenu.Item
                   key="2"
@@ -349,7 +336,7 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
                     updateSettings({ deviceProfile: "Native" });
                   }}
                 >
-                  <DropdownMenu.ItemTitle>Native</DropdownMenu.ItemTitle>
+                  <DropdownMenu.ItemTitle>{t("settings.native")}</DropdownMenu.ItemTitle>
                 </DropdownMenu.Item>
                 <DropdownMenu.Item
                   key="3"
@@ -357,7 +344,7 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
                     updateSettings({ deviceProfile: "Old" });
                   }}
                 >
-                  <DropdownMenu.ItemTitle>Old</DropdownMenu.ItemTitle>
+                  <DropdownMenu.ItemTitle>{t("settings.old")}</DropdownMenu.ItemTitle>
                 </DropdownMenu.Item>
               </DropdownMenu.Content>
             </DropdownMenu.Root>
@@ -369,10 +356,8 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
               `}
             >
               <View className="flex flex-col shrink">
-                <Text className="font-semibold">Search engine</Text>
-                <Text className="text-xs opacity-50">
-                  Choose the search engine you want to use.
-                </Text>
+                <Text className="font-semibold">{t("settings.search_engine")}</Text>
+                <Text className="text-xs opacity-50">{t("settings.search_engine_hint")}</Text>
               </View>
               <DropdownMenu.Root>
                 <DropdownMenu.Trigger>
@@ -389,7 +374,7 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
                   collisionPadding={8}
                   sideOffset={8}
                 >
-                  <DropdownMenu.Label>Profiles</DropdownMenu.Label>
+                  <DropdownMenu.Label>{t("settings.profiles")}</DropdownMenu.Label>
                   <DropdownMenu.Item
                     key="1"
                     onSelect={() => {
@@ -434,7 +419,7 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
                         updateSettings({ marlinServerUrl: marlinUrl });
                       }}
                     >
-                      Save
+                      {t("settings.save")}
                     </Button>
                   </View>
 

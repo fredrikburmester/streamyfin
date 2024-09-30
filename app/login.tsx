@@ -270,7 +270,7 @@ const Login: React.FC = () => {
                 onPress={handleQuickConnect}
                 className="mb-2"
               >
-                Use Quick Connect
+                {t("login.use_quick_connect")}
               </Button>
               <Button onPress={handleLogin} loading={loading}>
               {t("login.login_button")}

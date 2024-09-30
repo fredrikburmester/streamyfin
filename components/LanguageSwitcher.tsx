@@ -1,6 +1,5 @@
 import { Text } from "@/components/common/Text";
 import { useSettings } from "@/utils/atoms/settings";
-import { getLocales } from "expo-localization";
 import { useTranslation } from "react-i18next";
 import { TouchableOpacity, View, ViewProps } from "react-native";
 
@@ -9,7 +8,7 @@ interface Props extends ViewProps {}
 export const LanguageSwitcher: React.FC<Props> = ({ ...props }) => {
   const { i18n } = useTranslation();
 
-  const lngs = ["en", "sv"];
+  const lngs = ["en", "fr", "sv"];
 
   const [settings, updateSettings] = useSettings();
   return (

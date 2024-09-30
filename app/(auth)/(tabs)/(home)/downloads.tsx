@@ -14,10 +14,12 @@ import { useAtom } from "jotai";
 import { useMemo } from "react";
 import { ScrollView, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTranslation } from "react-i18next";
 
 const downloads: React.FC = () => {
   const [process, setProcess] = useAtom(runningProcesses);
   const [queue, setQueue] = useAtom(queueAtom);
+  const { t } = useTranslation();
 
   const { data: downloadedFiles, isLoading } = useQuery({
     queryKey: ["downloaded_files", process?.item.Id],
@@ -75,7 +77,7 @@ const downloads: React.FC = () => {
       <View className="px-4 py-4">
         <View className="mb-4 flex flex-col space-y-4">
           <View>
-            <Text className="text-2xl font-bold mb-2">Queue</Text>
+            <Text className="text-2xl font-bold mb-2">{t("downloads.queue")}</Text>
             <View className="flex flex-col space-y-2">
               {queue.map((q) => (
                 <TouchableOpacity
@@ -100,12 +102,12 @@ const downloads: React.FC = () => {
             </View>
 
             {queue.length === 0 && (
-              <Text className="opacity-50">No items in queue</Text>
+              <Text className="opacity-50">{t("downloads.no_item_in_queue")}</Text>
             )}
           </View>
 
           <View>
-            <Text className="text-2xl font-bold mb-2">Active download</Text>
+            <Text className="text-2xl font-bold mb-2">{t("downloads.active_download")}</Text>
             {process?.item ? (
               <TouchableOpacity
                 onPress={() =>
@@ -126,7 +128,7 @@ const downloads: React.FC = () => {
                       {process.speed?.toFixed(2)}x
                     </Text>
                     <View>
-                      <Text className="text-xs">ETA {eta}</Text>
+                      <Text className="text-xs">{t("downloads.eta")} {eta}</Text>
                     </View>
                   </View>
                 </View>
@@ -150,14 +152,14 @@ const downloads: React.FC = () => {
                 ></View>
               </TouchableOpacity>
             ) : (
-              <Text className="opacity-50">No active downloads</Text>
+              <Text className="opacity-50">{t("downloads._no_active_downloads")}</Text>
             )}
           </View>
         </View>
         {movies.length > 0 && (
           <View className="mb-4">
             <View className="flex flex-row items-center justify-between mb-2">
-              <Text className="text-2xl font-bold">Movies</Text>
+              <Text className="text-2xl font-bold">{t("downloads.movies")}</Text>
               <View className="bg-purple-600 rounded-full h-6 w-6 flex items-center justify-center">
                 <Text className="text-xs font-bold">{movies?.length}</Text>
               </View>

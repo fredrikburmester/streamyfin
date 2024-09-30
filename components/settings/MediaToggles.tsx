@@ -3,17 +3,19 @@ import { TouchableOpacity, View, ViewProps } from "react-native";
 import * as DropdownMenu from "zeego/dropdown-menu";
 import { Text } from "../common/Text";
 import { LANGUAGES } from "@/constants/Languages";
+import { useTranslation } from "react-i18next";
 
 interface Props extends ViewProps {}
 
 export const MediaToggles: React.FC<Props> = ({ ...props }) => {
   const [settings, updateSettings] = useSettings();
+  const { t } = useTranslation();
 
   if (!settings) return null;
 
   return (
     <View>
-      <Text className="text-lg font-bold mb-2">Media</Text>
+      <Text className="text-lg font-bold mb-2">{t("settings.media")}</Text>
       <View className="flex flex-col rounded-xl mb-4 overflow-hidden  divide-y-2 divide-solid divide-neutral-800">
         <View
           className={`
@@ -21,15 +23,15 @@ export const MediaToggles: React.FC<Props> = ({ ...props }) => {
             `}
         >
           <View className="flex flex-col shrink">
-            <Text className="font-semibold">Audio language</Text>
+            <Text className="font-semibold">{t("settings.audio_language")}</Text>
             <Text className="text-xs opacity-50">
-              Choose a default audio language.
+              {t("settings.audio_language_hint")}
             </Text>
           </View>
           <DropdownMenu.Root>
             <DropdownMenu.Trigger>
               <TouchableOpacity className="bg-neutral-800 rounded-lg border-neutral-900 border px-3 py-2 flex flex-row items-center justify-between">
-                <Text>{settings?.defaultAudioLanguage?.label || "None"}</Text>
+                <Text>{settings?.defaultAudioLanguage?.label || t("settings.none")}</Text>
               </TouchableOpacity>
             </DropdownMenu.Trigger>
             <DropdownMenu.Content
@@ -50,7 +52,7 @@ export const MediaToggles: React.FC<Props> = ({ ...props }) => {
                   });
                 }}
               >
-                <DropdownMenu.ItemTitle>None</DropdownMenu.ItemTitle>
+                <DropdownMenu.ItemTitle>{t("settings.none")}</DropdownMenu.ItemTitle>
               </DropdownMenu.Item>
               {LANGUAGES.map((l) => (
                 <DropdownMenu.Item
@@ -73,16 +75,16 @@ export const MediaToggles: React.FC<Props> = ({ ...props }) => {
             `}
         >
           <View className="flex flex-col shrink">
-            <Text className="font-semibold">Subtitle language</Text>
+            <Text className="font-semibold">{t("settings.subtitle_language")}</Text>
             <Text className="text-xs opacity-50">
-              Choose a default subtitle language.
+              {t("settings.subtitle_language_hint")}
             </Text>
           </View>
           <DropdownMenu.Root>
             <DropdownMenu.Trigger>
               <TouchableOpacity className="bg-neutral-800 rounded-lg border-neutral-900 border px-3 py-2 flex flex-row items-center justify-between">
                 <Text>
-                  {settings?.defaultSubtitleLanguage?.label || "None"}
+                  {settings?.defaultSubtitleLanguage?.label || t("settings.none")}
                 </Text>
               </TouchableOpacity>
             </DropdownMenu.Trigger>
@@ -104,7 +106,7 @@ export const MediaToggles: React.FC<Props> = ({ ...props }) => {
                   });
                 }}
               >
-                <DropdownMenu.ItemTitle>None</DropdownMenu.ItemTitle>
+                <DropdownMenu.ItemTitle>{t("settings.none")}</DropdownMenu.ItemTitle>
               </DropdownMenu.Item>
               {LANGUAGES.map((l) => (
                 <DropdownMenu.Item
@@ -128,9 +130,9 @@ export const MediaToggles: React.FC<Props> = ({ ...props }) => {
             `}
         >
           <View className="flex flex-col shrink">
-            <Text className="font-semibold">Forward skip length</Text>
+            <Text className="font-semibold">{t("settings.forward_skip_length")}</Text>
             <Text className="text-xs opacity-50">
-              Choose length in seconds when skipping in video playback.
+              {t("settings.forward_skip_length_hint")}
             </Text>
           </View>
           <View className="flex flex-row items-center">
@@ -166,9 +168,9 @@ export const MediaToggles: React.FC<Props> = ({ ...props }) => {
             `}
         >
           <View className="flex flex-col shrink">
-            <Text className="font-semibold">Rewind length</Text>
+            <Text className="font-semibold">{t("settings.rewind_length")}</Text>
             <Text className="text-xs opacity-50">
-              Choose length in seconds when skipping in video playback.
+              {t("settings.rewind_length_hint")}
             </Text>
           </View>
           <View className="flex flex-row items-center">

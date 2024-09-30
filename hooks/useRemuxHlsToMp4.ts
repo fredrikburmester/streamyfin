@@ -8,6 +8,7 @@ import { runningProcesses } from "@/utils/atoms/downloads";
 import { writeToLog } from "@/utils/log";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner-native";
+import { useTranslation } from "react-i18next";
 
 /**
  * Custom hook for remuxing HLS to MP4 using FFmpeg.
@@ -19,6 +20,7 @@ import { toast } from "sonner-native";
 export const useRemuxHlsToMp4 = (item: BaseItemDto) => {
   const [_, setProgress] = useAtom(runningProcesses);
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
 
   if (!item.Id || !item.Name) {
     writeToLog("ERROR", "useRemuxHlsToMp4 ~ missing arguments");
@@ -29,7 +31,7 @@ export const useRemuxHlsToMp4 = (item: BaseItemDto) => {
 
   const startRemuxing = useCallback(
     async (url: string) => {
-      toast.success("Download started", {
+      toast.success(t("toasts.download_started"), {
         invert: true,
       });
 
