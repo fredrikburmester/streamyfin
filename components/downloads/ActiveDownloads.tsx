@@ -1,7 +1,8 @@
 import { Text } from "@/components/common/Text";
-import { ProcessItem, useDownload } from "@/providers/DownloadProvider";
+import { useDownload } from "@/providers/DownloadProvider";
 import { apiAtom } from "@/providers/JellyfinProvider";
 import { useSettings } from "@/utils/atoms/settings";
+import { cancelJobById, JobStatus } from "@/utils/optimize-server";
 import { formatTimeString } from "@/utils/time";
 import { Ionicons } from "@expo/vector-icons";
 import { checkForExistingDownloads } from "@kesha-antonov/react-native-background-downloader";
@@ -18,7 +19,7 @@ interface Props extends ViewProps {}
 
 export const ActiveDownloads: React.FC<Props> = ({ ...props }) => {
   const router = useRouter();
-  const { removeProcess, processes } = useDownload();
+  const { removeProcess, processes, setProcesses } = useDownload();
   const [settings] = useSettings();
   const [api] = useAtom(apiAtom);
 
@@ -26,25 +27,22 @@ export const ActiveDownloads: React.FC<Props> = ({ ...props }) => {
     mutationFn: async (id: string) => {
       if (!process) throw new Error("No active download");
 
-      try {
-        if (settings?.downloadMethod === "optimized") {
-          await axios.delete(
-            settings?.optimizedVersionsServerUrl + "cancel-job/" + id,
-            {
-              headers: {
-                Authorization: api?.accessToken,
-              },
-            }
-          );
+      if (settings?.downloadMethod === "optimized") {
+        try {
           const tasks = await checkForExistingDownloads();
-          for (const task of tasks) task.stop();
-        } else {
-          FFmpegKit.cancel();
+          for (const task of tasks) {
+            if (task.id === id) {
+              await task.stop();
+            }
+          }
+        } catch (e) {
+          throw e;
+        } finally {
+          removeProcess(id);
         }
-      } catch (e) {
-        throw e;
-      } finally {
-        removeProcess(id);
+      } else {
+        FFmpegKit.cancel();
+        setProcesses((prev) => prev.filter((p) => p.id !== id));
       }
     },
     onSuccess: () => {
@@ -52,12 +50,12 @@ export const ActiveDownloads: React.FC<Props> = ({ ...props }) => {
     },
     onError: (e) => {
       console.log(e);
-      toast.error("Failed to cancel download on the server");
+      toast.error("Could not cancel download");
     },
   });
 
   const eta = useCallback(
-    (p: ProcessItem) => {
+    (p: JobStatus) => {
       if (!p.speed || !p.progress) return null;
 
       const length = p?.item?.RunTimeTicks || 0;
@@ -67,7 +65,7 @@ export const ActiveDownloads: React.FC<Props> = ({ ...props }) => {
     [process]
   );
 
-  if (processes.length === 0)
+  if (processes?.length === 0)
     return (
       <View {...props} className="bg-neutral-900 p-4 rounded-2xl">
         <Text className="text-lg font-bold">Active download</Text>
@@ -79,7 +77,7 @@ export const ActiveDownloads: React.FC<Props> = ({ ...props }) => {
     <View {...props} className="bg-neutral-900 p-4 rounded-2xl">
       <Text className="text-lg font-bold mb-2">Active downloads</Text>
       <View className="space-y-2">
-        {processes.map((p) => (
+        {processes?.map((p) => (
           <TouchableOpacity
             key={p.id}
             onPress={() => router.push(`/(auth)/items/page?id=${p.item.Id}`)}
@@ -109,7 +107,7 @@ export const ActiveDownloads: React.FC<Props> = ({ ...props }) => {
                   )}
                 </View>
                 <View className="flex flex-row items-center space-x-2 mt-1 text-purple-600">
-                  <Text className="text-xs capitalize">{p.state}</Text>
+                  <Text className="text-xs capitalize">{p.status}</Text>
                 </View>
               </View>
               <TouchableOpacity onPress={() => cancelJobMutation.mutate(p.id)}>

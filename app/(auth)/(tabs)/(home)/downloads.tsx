@@ -16,12 +16,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const downloads: React.FC = () => {
   const [queue, setQueue] = useAtom(queueAtom);
-  const {
-    startBackgroundDownload,
-    updateProcess,
-    removeProcess,
-    downloadedFiles,
-  } = useDownload();
+  const { removeProcess, downloadedFiles } = useDownload();
 
   const [settings] = useSettings();
 

@@ -112,6 +112,7 @@ export const DownloadItem: React.FC<DownloadProps> = ({ item, ...props }) => {
     );
 
     let url: string | undefined = undefined;
+    let fileExtension: string | undefined | null = "mp4";
 
     const mediaSource: MediaSourceInfo = response.data.MediaSources.find(
       (source: MediaSourceInfo) => source.Id === selectedMediaSource?.Id
@@ -146,12 +147,14 @@ export const DownloadItem: React.FC<DownloadProps> = ({ item, ...props }) => {
       }
     } else if (mediaSource.TranscodingUrl) {
       url = `${api.basePath}${mediaSource.TranscodingUrl}`;
+      fileExtension = mediaSource.TranscodingContainer;
     }
 
     if (!url) throw new Error("No url");
+    if (!fileExtension) throw new Error("No file extension");
 
     if (settings?.downloadMethod === "optimized") {
-      return await startBackgroundDownload(url, item);
+      return await startBackgroundDownload(url, item, fileExtension);
     } else {
       return await startRemuxing(url);
     }
@@ -192,7 +195,7 @@ export const DownloadItem: React.FC<DownloadProps> = ({ item, ...props }) => {
   const process = useMemo(() => {
     if (!processes) return null;
 
-    return processes.find((process) => process.item.Id === item.Id);
+    return processes.find((process) => process?.item?.Id === item.Id);
   }, [processes, item.Id]);
 
   return (
