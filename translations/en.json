@@ -32,6 +32,20 @@
     "suggestedMovies": "Suggested Movies",
     "suggestedEpisodes": "Suggested Episodes"
   },
+  "search": {
+    "search_here": "Search here...",
+    "results_for": "Results for",
+    "search": "Search...",
+    "no_results_found_for": "No results found for",
+    "series": "Series",
+    "movies": "Movies",
+    "episodes": "Episodes",
+    "collections": "Collections",
+    "actors": "Actors",
+    "artists": "Artists",
+    "albums": "Albums",
+    "songs": "Songs"
+  },
   "settings": {
     "user": "User",
     "server": "Server",
@@ -86,7 +100,10 @@
     "active_download": "Active download",
     "eta": "ETA",
     "_no_active_downloads": "No active downloads",
-    "movies": "Movies"
+    "movies": "Movies",
+    "delete": "Delete",
+    "episode": "Episode {{episodeNumber}}",
+    "tv_series": "TV-Series"
   },
   "tabs": {
     "home": "Home",
@@ -97,6 +114,10 @@
     "settings": "Settings",
     "downloads": "Downloads"
   },
+  "filters": {
+    "load_more": "Load more",
+    "items": "{{ itemCount}} items"
+  }, 
   "toasts": {
     "download_started": "Download started"
   }

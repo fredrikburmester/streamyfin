@@ -11,6 +11,7 @@ import { useFiles } from "@/hooks/useFiles";
 import { useSettings } from "@/utils/atoms/settings";
 import { usePlayback } from "@/providers/PlaybackProvider";
 import { useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
 
 interface EpisodeCardProps {
   item: BaseItemDto;
@@ -24,6 +25,7 @@ interface EpisodeCardProps {
 export const EpisodeCard: React.FC<EpisodeCardProps> = ({ item }) => {
   const { deleteFile } = useFiles();
   const router = useRouter();
+  const { t } = useTranslation();
 
   const { startDownloadedFilePlayback } = usePlayback();
 
@@ -47,7 +49,7 @@ export const EpisodeCard: React.FC<EpisodeCardProps> = ({ item }) => {
 
   const contextMenuOptions = [
     {
-      label: "Delete",
+      label: t("downloads.delete"),
       onSelect: handleDeleteFile,
       destructive: true,
     },
@@ -61,7 +63,7 @@ export const EpisodeCard: React.FC<EpisodeCardProps> = ({ item }) => {
           className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4"
         >
           <Text className="font-bold">{item.Name}</Text>
-          <Text className="text-xs opacity-50">Episode {item.IndexNumber}</Text>
+          <Text className="text-xs opacity-50">{t("downloads.episode", {episodeNumber: item.IndexNumber})}</Text>
         </TouchableOpacity>
       </ContextMenu.Trigger>
       <ContextMenu.Content

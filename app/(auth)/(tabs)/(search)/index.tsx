@@ -30,6 +30,7 @@ import React, {
 import { Platform, ScrollView, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDebounce } from "use-debounce";
+import { useTranslation } from "react-i18next";
 
 const exampleSearches = [
   "Lord of the rings",
@@ -109,7 +110,7 @@ export default function search() {
     if (Platform.OS === "ios")
       navigation.setOptions({
         headerSearchBarOptions: {
-          placeholder: "Search...",
+          placeholder: t("search.search"),
           onChangeText: (e: any) => {
             router.setParams({ q: "" });
             setSearch(e.nativeEvent.text);
@@ -217,6 +218,8 @@ export default function search() {
     return l1 || l2 || l3 || l4 || l5 || l6 || l7 || l8;
   }, [l1, l2, l3, l4, l5, l6, l7, l8]);
 
+  const { t } = useTranslation();
+
   return (
     <>
       <ScrollView
@@ -234,7 +237,7 @@ export default function search() {
                 autoCorrect={false}
                 returnKeyType="done"
                 keyboardType="web-search"
-                placeholder="Search here..."
+                placeholder={t("search.search_here")}
                 value={search}
                 onChangeText={(text) => setSearch(text)}
               />
@@ -243,12 +246,12 @@ export default function search() {
           {!!q && (
             <View className="px-4 flex flex-col space-y-2">
               <Text className="text-neutral-500 ">
-                Results for <Text className="text-purple-600">{q}</Text>
+                {t("search.results_for")} <Text className="text-purple-600">{q}</Text>
               </Text>
             </View>
           )}
           <SearchItemWrapper
-            header="Movies"
+            header={t("search.movies")}
             ids={movies?.map((m) => m.Id!)}
             renderItem={(data) => (
               <HorizontalScroll
@@ -273,7 +276,7 @@ export default function search() {
           />
           <SearchItemWrapper
             ids={series?.map((m) => m.Id!)}
-            header="Series"
+            header={t("search.series")}
             renderItem={(data) => (
               <HorizontalScroll
                 data={data}
@@ -297,7 +300,7 @@ export default function search() {
           />
           <SearchItemWrapper
             ids={episodes?.map((m) => m.Id!)}
-            header="Episodes"
+            header={t("search.episodes")}
             renderItem={(data) => (
               <HorizontalScroll
                 data={data}
@@ -316,7 +319,7 @@ export default function search() {
           />
           <SearchItemWrapper
             ids={collections?.map((m) => m.Id!)}
-            header="Collections"
+            header={t("search.collections")}
             renderItem={(data) => (
               <HorizontalScroll
                 data={data}
@@ -337,7 +340,7 @@ export default function search() {
           />
           <SearchItemWrapper
             ids={actors?.map((m) => m.Id!)}
-            header="Actors"
+            header={t("search.actors")}
             renderItem={(data) => (
               <HorizontalScroll
                 data={data}
@@ -356,7 +359,7 @@ export default function search() {
           />
           <SearchItemWrapper
             ids={artists?.map((m) => m.Id!)}
-            header="Artists"
+            header={t("search.artists")}
             renderItem={(data) => (
               <HorizontalScroll
                 data={data}
@@ -375,7 +378,7 @@ export default function search() {
           />
           <SearchItemWrapper
             ids={albums?.map((m) => m.Id!)}
-            header="Albums"
+            header={t("search.albums")}
             renderItem={(data) => (
               <HorizontalScroll
                 data={data}
@@ -394,7 +397,7 @@ export default function search() {
           />
           <SearchItemWrapper
             ids={songs?.map((m) => m.Id!)}
-            header="Songs"
+            header={t("search.songs")}
             renderItem={(data) => (
               <HorizontalScroll
                 data={data}
@@ -418,7 +421,7 @@ export default function search() {
           ) : noResults && debouncedSearch.length > 0 ? (
             <View>
               <Text className="text-center text-lg font-bold mt-4">
-                No results found for
+                {t("search.no_results_found_for")}
               </Text>
               <Text className="text-xs text-purple-600 text-center">
                 "{debouncedSearch}"

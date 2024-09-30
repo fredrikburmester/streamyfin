@@ -19,6 +19,7 @@ import { StyleSheet, TouchableOpacity, View, ViewProps } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Button } from "../Button";
 import { Input } from "../common/Input";
+import { useTranslation } from "react-i18next";
 
 interface Props<T> extends ViewProps {
   open: boolean;
@@ -131,6 +132,8 @@ export const FilterSheet = <T,>({
     []
   );
 
+  const { t } = useTranslation();
+
   return (
     <BottomSheetModal
       ref={bottomSheetModalRef}
@@ -153,7 +156,7 @@ export const FilterSheet = <T,>({
       >
         <View className="px-4 mt-2 mb-8">
           <Text className="font-bold text-2xl">{title}</Text>
-          <Text className="mb-2 text-neutral-500">{_data?.length} items</Text>
+          <Text className="mb-2 text-neutral-500">{t("filters.items",{itemCount: _data?.length})}</Text>
           {showSearch && (
             <Input
               placeholder="Search..."
@@ -207,7 +210,7 @@ export const FilterSheet = <T,>({
                 setOffset(offset + 100);
               }}
             >
-              Load more
+              {t("filters.load_more")}
             </Button>
           )}
         </View>

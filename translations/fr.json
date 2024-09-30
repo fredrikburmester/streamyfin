@@ -32,6 +32,20 @@
       "suggestedMovies": "Films suggérés",
       "suggestedEpisodes": "Épisodes suggérés"
     },
+    "search": {
+      "search_here": "Rechercher ici...",
+      "results_for": "Résultats pour",
+      "search": "Rechercher...",
+      "no_results_found_for": "Aucun résultat trouvé pour",
+      "series": "Séries",
+      "movies": "Films",
+      "episodes": "Épisodes",
+      "collections": "Collections",
+      "actors": "Acteurs",
+      "artists": "Artistes",
+      "albums": "Albums",
+      "songs": "Chansons"
+    },
     "settings": {
       "user": "Utilisateur",
       "server": "Serveur",
@@ -86,7 +100,10 @@
       "active_download": "Téléchargement actifs",
       "eta": "Temps restant",
       "_no_active_downloads": "Aucun téléchargement actif",
-      "movies": "Films"
+      "movies": "Films",
+      "delete": "Supprimer",
+      "episode": "Épisode {{episodeNumber}}",
+      "tv_series": "Séries TV"
     },
     "tabs": {
       "home": "Accueil",
@@ -97,6 +114,10 @@
       "settings": "Paramètres",
       "downloads": "Téléchargements"
     },
+    "filters": {
+      "load_more": "Charger plus",
+      "items": "{{ itemCount}} items"
+    }, 
     "toasts": {
       "download_started": "Téléchargement débuté"
     }

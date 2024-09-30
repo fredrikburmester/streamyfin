@@ -4,8 +4,10 @@ import { EpisodeCard } from "./EpisodeCard";
 import { Text } from "../common/Text";
 import { useMemo } from "react";
 import { SeasonPicker } from "../series/SeasonPicker";
+import { useTranslation } from "react-i18next";
 
 export const SeriesCard: React.FC<{ items: BaseItemDto[] }> = ({ items }) => {
+  const { t } = useTranslation();
   const groupBySeason = useMemo(() => {
     const seasons: Record<string, BaseItemDto[]> = {};
 
@@ -31,7 +33,7 @@ export const SeriesCard: React.FC<{ items: BaseItemDto[] }> = ({ items }) => {
         </View>
       </View>
 
-      <Text className="opacity-50 mb-2">TV-Series</Text>
+      <Text className="opacity-50 mb-2">{t("downloads.tv_series")}</Text>
       {groupBySeason.map((seasonItems, seasonIndex) => (
         <View key={seasonIndex}>
           <Text className="mb-2 font-semibold">
