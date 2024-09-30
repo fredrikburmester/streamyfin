@@ -10,7 +10,13 @@ interface IJobInput {
 
 export interface JobStatus {
   id: string;
-  status: "queued" | "running" | "completed" | "failed" | "cancelled";
+  status:
+    | "queued"
+    | "optimizing"
+    | "completed"
+    | "failed"
+    | "cancelled"
+    | "downloading";
   progress: number;
   outputPath: string;
   inputUrl: string;
