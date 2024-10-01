@@ -129,22 +129,21 @@ function useDownloadProvider() {
 
   useEffect(() => {
     const checkIfShouldStartDownload = async () => {
-      if (!processes) return;
-      for (let i = 0; i < processes.length; i++) {
-        const job = processes[i];
+      const tasks = await checkForExistingDownloads();
+      // for (let i = 0; i < processes.length; i++) {
+      //   const job = processes[i];
 
-        if (job.status === "completed") {
-          // Check if the download is already in progress
-          const tasks = await checkForExistingDownloads();
-          if (tasks.find((task) => task.id === job.id)) continue;
-          await startDownload(job);
-          continue;
-        }
-      }
+      //   if (job.status === "completed") {
+      //     // Check if the download is already in progress
+      //     if (tasks.find((task) => task.id === job.id)) continue;
+      //     await startDownload(job);
+      //     continue;
+      //   }
+      // }
     };
 
     checkIfShouldStartDownload();
-  }, [processes]);
+  }, []);
 
   /********************
    * Background task
@@ -208,6 +207,19 @@ function useDownloadProvider() {
     async (process: JobStatus) => {
       if (!process?.item.Id || !authHeader) throw new Error("No item id");
 
+      setProcesses((prev) =>
+        prev.map((p) =>
+          p.id === process.id
+            ? {
+                ...p,
+                speed: undefined,
+                status: "downloading",
+                progress: 0,
+              }
+            : p
+        )
+      );
+
       setConfig({
         isLogsEnabled: true,
         progressInterval: 500,
@@ -256,9 +268,11 @@ function useDownloadProvider() {
         })
         .done(async () => {
           await saveDownloadedItemInfo(process.item);
-          removeProcess(process.id);
-          completeHandler(process.id);
           toast.success(`Download completed for ${process.item.Name}`);
+          setTimeout(() => {
+            completeHandler(process.id);
+            removeProcess(process.id);
+          }, 1000);
         })
         .error(async (error) => {
           removeProcess(process.id);
@@ -267,9 +281,20 @@ function useDownloadProvider() {
           if (error.errorCode === 1000) {
             errorMsg = "No space left";
           }
+          if (error.errorCode === 404) {
+            errorMsg = "File not found on server";
+          }
           toast.error(`Download failed for ${process.item.Name} - ${errorMsg}`);
           writeToLog("ERROR", `Download failed for ${process.item.Name}`, {
             error,
+            processDetails: {
+              id: process.id,
+              itemName: process.item.Name,
+              itemId: process.item.Id,
+            },
+          });
+          console.error("Error details:", {
+            errorCode: error.errorCode,
           });
         });
     },
@@ -463,6 +488,7 @@ function useDownloadProvider() {
     saveDownloadedItemInfo,
     removeProcess,
     setProcesses,
+    startDownload,
   };
 }
 
