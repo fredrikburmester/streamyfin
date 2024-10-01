@@ -62,7 +62,7 @@ export const useRemuxHlsToMp4 = (item: BaseItemDto) => {
             itemId: item.Id,
             outputPath: "",
             progress: 0,
-            status: "running",
+            status: "downloading",
             timestamp: new Date(),
           } as JobStatus,
         ]);

@@ -101,7 +101,8 @@ const DownloadCard = ({ process, ...props }: DownloadCardProps) => {
       className="relative bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden"
       {...props}
     >
-      {process.status === "optimizing" && (
+      {(process.status === "optimizing" ||
+        process.status === "downloading") && (
         <View
           className={`
         bg-purple-600 h-1 absolute bottom-0 left-0

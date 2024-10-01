@@ -2,10 +2,7 @@ import { Button } from "@/components/Button";
 import { Text } from "@/components/common/Text";
 import { ListItem } from "@/components/ListItem";
 import { SettingToggles } from "@/components/settings/SettingToggles";
-import {
-  registerBackgroundFetchAsync,
-  useDownload,
-} from "@/providers/DownloadProvider";
+import { useDownload } from "@/providers/DownloadProvider";
 import { apiAtom, useJellyfin, userAtom } from "@/providers/JellyfinProvider";
 import { clearLogs, readFromLog } from "@/utils/log";
 import { getQuickConnectApi } from "@jellyfin/sdk/lib/utils/api";
@@ -93,18 +90,6 @@ export default function settings() {
         </View>
 
         <SettingToggles />
-
-        <View>
-          <Text className="font-bold text-lg mb-2">Tests</Text>
-          <Button
-            onPress={() => {
-              toast.success("Download started");
-            }}
-            color="black"
-          >
-            Test toast
-          </Button>
-        </View>
 
         <View>
           <Text className="font-bold text-lg mb-2">Account and storage</Text>
