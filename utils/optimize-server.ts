@@ -53,6 +53,11 @@ export async function getAllJobsByDeviceId({
     },
   });
   if (statusResponse.status !== 200) {
+    console.error(
+      statusResponse.status,
+      statusResponse.data,
+      statusResponse.statusText
+    );
     throw new Error("Failed to fetch job status");
   }
 

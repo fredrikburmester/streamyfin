@@ -11,22 +11,20 @@ import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import {
   checkForExistingDownloads,
   completeHandler,
-  directories,
   download,
   setConfig,
 } from "@kesha-antonov/react-native-background-downloader";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
+  focusManager,
   QueryClient,
   QueryClientProvider,
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
 import axios from "axios";
-import * as BackgroundFetch from "expo-background-fetch";
 import * as FileSystem from "expo-file-system";
 import { useRouter } from "expo-router";
-import * as TaskManager from "expo-task-manager";
 import { useAtom } from "jotai";
 import React, {
   createContext,
@@ -34,37 +32,14 @@ import React, {
   useContext,
   useEffect,
   useMemo,
-  useRef,
   useState,
 } from "react";
+import { AppState, AppStateStatus } from "react-native";
 import { toast } from "sonner-native";
 import { apiAtom } from "./JellyfinProvider";
 
-export const BACKGROUND_FETCH_TASK = "background-fetch";
-
-TaskManager.defineTask(BACKGROUND_FETCH_TASK, async () => {
-  const now = Date.now();
-
-  console.log(
-    `Got background fetch call at date: ${new Date(now).toISOString()}`
-  );
-
-  // Be sure to return the successful result type!
-  return BackgroundFetch.BackgroundFetchResult.NewData;
-});
-
-const STORAGE_KEY = "runningProcesses";
-
-export async function registerBackgroundFetchAsync() {
-  return BackgroundFetch.registerTaskAsync(BACKGROUND_FETCH_TASK, {
-    minimumInterval: 60 * 15, // 1 minutes
-    stopOnTerminate: false, // android only,
-    startOnBoot: true, // android only
-  });
-}
-
-export async function unregisterBackgroundFetchAsync() {
-  return BackgroundFetch.unregisterTaskAsync(BACKGROUND_FETCH_TASK);
+function onAppStateChange(status: AppStateStatus) {
+  focusManager.setFocused(status === "active");
 }
 
 const DownloadContext = createContext<ReturnType<
@@ -87,7 +62,16 @@ function useDownloadProvider() {
     queryKey: ["downloadedItems"],
     queryFn: getAllDownloadedItems,
     staleTime: 0,
+    refetchOnMount: true,
+    refetchOnReconnect: true,
+    refetchOnWindowFocus: true,
   });
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", onAppStateChange);
+
+    return () => subscription.remove();
+  }, []);
 
   useQuery({
     queryKey: ["jobs"],
@@ -109,6 +93,29 @@ function useDownloadProvider() {
         url,
       });
 
+      jobs.forEach((job) => {
+        const process = processes.find((p) => p.id === job.id);
+        if (
+          process &&
+          process.status === "optimizing" &&
+          job.status === "completed"
+        ) {
+          if (settings.autoDownload) {
+            startDownload(job);
+          } else {
+            toast.info(`${job.item.Name} is ready to be downloaded`, {
+              action: {
+                label: "Go to downloads",
+                onClick: () => {
+                  router.push("/downloads");
+                  toast.dismiss();
+                },
+              },
+            });
+          }
+        }
+      });
+
       // Local downloading processes that are still valid
       const downloadingProcesses = processes
         .filter((p) => p.status === "downloading")
@@ -123,66 +130,30 @@ function useDownloadProvider() {
       return jobs;
     },
     staleTime: 0,
-    refetchInterval: 1000,
+    refetchInterval: 2000,
     enabled: settings?.downloadMethod === "optimized",
   });
 
   useEffect(() => {
     const checkIfShouldStartDownload = async () => {
+      if (processes.length === 0) return;
       const tasks = await checkForExistingDownloads();
-      // for (let i = 0; i < processes.length; i++) {
-      //   const job = processes[i];
+      // if (settings?.autoDownload) {
+      //   for (let i = 0; i < processes.length; i++) {
+      //     const job = processes[i];
 
-      //   if (job.status === "completed") {
-      //     // Check if the download is already in progress
-      //     if (tasks.find((task) => task.id === job.id)) continue;
-      //     await startDownload(job);
-      //     continue;
+      //     if (job.status === "completed") {
+      //       // Check if the download is already in progress
+      //       if (tasks.find((task) => task.id === job.id)) continue;
+      //       await startDownload(job);
+      //       continue;
+      //     }
       //   }
       // }
     };
 
     checkIfShouldStartDownload();
-  }, []);
-
-  /********************
-   * Background task
-   *******************/
-  // useEffect(() => {
-  //   // Check background task status
-  //   checkStatusAsync();
-  // }, []);
-
-  // const [isRegistered, setIsRegistered] = useState(false);
-  // const [status, setStatus] =
-  //   useState<BackgroundFetch.BackgroundFetchStatus | null>(null);
-
-  // const checkStatusAsync = async () => {
-  //   const status = await BackgroundFetch.getStatusAsync();
-  //   const isRegistered = await TaskManager.isTaskRegisteredAsync(
-  //     BACKGROUND_FETCH_TASK
-  //   );
-  //   setStatus(status);
-  //   setIsRegistered(isRegistered);
-
-  //   console.log("Background fetch status:", status);
-  //   console.log("Background fetch task registered:", isRegistered);
-  // };
-
-  // const toggleFetchTask = async () => {
-  //   if (isRegistered) {
-  //     console.log("Unregistering background fetch task");
-  //     await unregisterBackgroundFetchAsync();
-  //   } else {
-  //     console.log("Registering background fetch task");
-  //     await registerBackgroundFetchAsync();
-  //   }
-
-  //   checkStatusAsync();
-  // };
-  /**********************
-   **********************
-   *********************/
+  }, [settings, processes]);
 
   const removeProcess = useCallback(
     async (id: string) => {
@@ -228,6 +199,16 @@ function useDownloadProvider() {
         },
       });
 
+      toast.info(`Download started for ${process.item.Name}`, {
+        action: {
+          label: "Go to downloads",
+          onClick: () => {
+            router.push("/downloads");
+            toast.dismiss();
+          },
+        },
+      });
+
       const baseDirectory = FileSystem.documentDirectory;
 
       download({
@@ -236,7 +217,6 @@ function useDownloadProvider() {
         destination: `${baseDirectory}/${process.item.Id}.mp4`,
       })
         .begin(() => {
-          toast.info(`Download started for ${process.item.Name}`);
           setProcesses((prev) =>
             prev.map((p) =>
               p.id === process.id
@@ -268,7 +248,16 @@ function useDownloadProvider() {
         })
         .done(async () => {
           await saveDownloadedItemInfo(process.item);
-          toast.success(`Download completed for ${process.item.Name}`);
+          toast.success(`Download completed for ${process.item.Name}`, {
+            duration: 3000,
+            action: {
+              label: "Go to downloads",
+              onClick: () => {
+                router.push("/downloads");
+                toast.dismiss();
+              },
+            },
+          });
           setTimeout(() => {
             completeHandler(process.id);
             removeProcess(process.id);

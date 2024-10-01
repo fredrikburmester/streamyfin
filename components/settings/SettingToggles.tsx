@@ -9,6 +9,7 @@ import { getItemsApi } from "@jellyfin/sdk/lib/utils/api";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAtom } from "jotai";
 import {
+  ActivityIndicator,
   Linking,
   Switch,
   TouchableOpacity,
@@ -19,12 +20,19 @@ import * as DropdownMenu from "zeego/dropdown-menu";
 import { Text } from "../common/Text";
 import { Loader } from "../Loader";
 import { Input } from "../common/Input";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "../Button";
 import { MediaToggles } from "./MediaToggles";
 import * as ScreenOrientation from "expo-screen-orientation";
 import { opacity } from "react-native-reanimated/lib/typescript/reanimated2/Colors";
 import { useDownload } from "@/providers/DownloadProvider";
+import * as BackgroundFetch from "expo-background-fetch";
+import * as TaskManager from "expo-task-manager";
+import {
+  BACKGROUND_FETCH_TASK,
+  registerBackgroundFetchAsync,
+  unregisterBackgroundFetchAsync,
+} from "@/utils/background-tasks";
 
 interface Props extends ViewProps {}
 
@@ -37,9 +45,49 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
 
   const [marlinUrl, setMarlinUrl] = useState<string>("");
   const [optimizedVersionsServerUrl, setOptimizedVersionsServerUrl] =
-    useState<string>("");
+    useState<string>(settings?.optimizedVersionsServerUrl || "");
 
   const queryClient = useQueryClient();
+
+  /********************
+   * Background task
+   *******************/
+  const [isRegistered, setIsRegistered] = useState<boolean | null>(null);
+  const [status, setStatus] =
+    useState<BackgroundFetch.BackgroundFetchStatus | null>(null);
+
+  useEffect(() => {
+    checkStatusAsync();
+  }, []);
+
+  const checkStatusAsync = async () => {
+    const status = await BackgroundFetch.getStatusAsync();
+    const isRegistered = await TaskManager.isTaskRegisteredAsync(
+      BACKGROUND_FETCH_TASK
+    );
+    setStatus(status);
+    setIsRegistered(isRegistered);
+  };
+
+  const toggleFetchTask = async () => {
+    if (isRegistered) {
+      console.log("Unregistering task");
+      await unregisterBackgroundFetchAsync();
+      updateSettings({
+        autoDownload: false,
+      });
+    } else {
+      console.log("Registering task");
+      await registerBackgroundFetchAsync();
+      updateSettings({
+        autoDownload: true,
+      });
+    }
+
+    checkStatusAsync();
+  };
+  /**********************
+   *********************/
 
   const {
     data: mediaListCollections,
@@ -515,6 +563,23 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
               </DropdownMenu.Content>
             </DropdownMenu.Root>
           </View>
+          <View className="flex flex-row space-x-2 items-center justify-between bg-neutral-900 p-4">
+            <View className="flex flex-col shrink">
+              <Text className="font-semibold">Auto download</Text>
+              <Text className="text-xs opacity-50 shrink">
+                This will automatically download the media file when it's
+                finished optimizing on the server.
+              </Text>
+            </View>
+            {isRegistered === null ? (
+              <ActivityIndicator size="small" color="white" />
+            ) : (
+              <Switch
+                value={isRegistered}
+                onValueChange={(value) => toggleFetchTask()}
+              />
+            )}
+          </View>
           <View
             pointerEvents={
               settings.downloadMethod === "optimized" ? "auto" : "none"
@@ -536,11 +601,6 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
               <View className="flex flex-col">
                 <Input
                   placeholder="Optimized versions server URL..."
-                  defaultValue={
-                    settings.optimizedVersionsServerUrl
-                      ? settings.optimizedVersionsServerUrl
-                      : ""
-                  }
                   value={optimizedVersionsServerUrl}
                   keyboardType="url"
                   returnKeyType="done"
@@ -565,12 +625,6 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
                   Save
                 </Button>
               </View>
-
-              {settings.optimizedVersionsServerUrl && (
-                <View className="p-4 bg-neutral-800 rounded-xl mt-2">
-                  <Text selectable>{settings.optimizedVersionsServerUrl}</Text>
-                </View>
-              )}
             </View>
           </View>
         </View>

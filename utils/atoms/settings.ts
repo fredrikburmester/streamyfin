@@ -73,7 +73,8 @@ export type Settings = {
   forwardSkipTime: number;
   rewindSkipTime: number;
   optimizedVersionsServerUrl?: string | null;
-  downloadMethod?: "optimized" | "remux";
+  downloadMethod: "optimized" | "remux";
+  autoDownload: boolean;
 };
 /**
  *
@@ -110,6 +111,7 @@ const loadSettings = async (): Promise<Settings> => {
     rewindSkipTime: 10,
     optimizedVersionsServerUrl: null,
     downloadMethod: "remux",
+    autoDownload: false,
   };
 
   try {
