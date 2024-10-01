@@ -18,11 +18,12 @@ import {
   ViewProps,
 } from "react-native";
 import { toast } from "sonner-native";
+import { Button } from "../Button";
 
 interface Props extends ViewProps {}
 
 export const ActiveDownloads: React.FC<Props> = ({ ...props }) => {
-  const { processes } = useDownload();
+  const { processes, startDownload } = useDownload();
   if (processes?.length === 0)
     return (
       <View {...props} className="bg-neutral-900 p-4 rounded-2xl">
@@ -48,6 +49,7 @@ interface DownloadCardProps extends TouchableOpacityProps {
 }
 
 const DownloadCard = ({ process, ...props }: DownloadCardProps) => {
+  const { processes, startDownload } = useDownload();
   const router = useRouter();
   const { removeProcess, setProcesses } = useDownload();
   const [settings] = useSettings();
@@ -99,43 +101,67 @@ const DownloadCard = ({ process, ...props }: DownloadCardProps) => {
       className="relative bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden"
       {...props}
     >
-      <View
-        className={`
+      {process.status === "optimizing" && (
+        <View
+          className={`
         bg-purple-600 h-1 absolute bottom-0 left-0
         `}
-        style={{
-          width: process.progress ? `${Math.max(5, process.progress)}%` : "5%",
-        }}
-      ></View>
-      <View className="p-4 flex flex-row items-center justify-between w-full">
-        <View className="shrink">
-          <Text className="font-semibold shrink">{process.item.Name}</Text>
-          <Text className="text-xs opacity-50">{process.item.Type}</Text>
-          <View className="flex flex-row items-center space-x-2 mt-1 text-purple-600">
-            <Text className="text-xs">{process.progress.toFixed(0)}%</Text>
-            {process.speed && (
-              <Text className="text-xs">{process.speed?.toFixed(2)}x</Text>
-            )}
-            {eta(process) && (
-              <View>
+          style={{
+            width: process.progress
+              ? `${Math.max(5, process.progress)}%`
+              : "5%",
+          }}
+        ></View>
+      )}
+      <View className="p-4 flex flex-col w-full">
+        <View className="flex flex-row items-center justify-between w-full">
+          <View className="shrink">
+            <Text className="text-xs opacity-50">{process.item.Type}</Text>
+            <Text className="font-semibold shrink">{process.item.Name}</Text>
+            <Text className="text-xs opacity-50">
+              {process.item.ProductionYear}
+            </Text>
+            <View className="flex flex-row items-center space-x-2 mt-2 text-purple-600">
+              {process.progress === 0 ? (
+                <ActivityIndicator size={"small"} color={"white"} />
+              ) : (
+                <Text className="text-xs">{process.progress.toFixed(0)}%</Text>
+              )}
+              {process.speed && (
+                <Text className="text-xs">{process.speed?.toFixed(2)}x</Text>
+              )}
+              {eta(process) && (
                 <Text className="text-xs">ETA {eta(process)}</Text>
-              </View>
+              )}
+            </View>
+
+            <View className="flex flex-row items-center space-x-2 mt-1 text-purple-600">
+              <Text className="text-xs capitalize">{process.status}</Text>
+            </View>
+          </View>
+          <TouchableOpacity
+            disabled={cancelJobMutation.isPending}
+            onPress={() => cancelJobMutation.mutate(process.id)}
+          >
+            {cancelJobMutation.isPending ? (
+              <ActivityIndicator size="small" color="white" />
+            ) : (
+              <Ionicons name="close" size={24} color="red" />
             )}
-          </View>
-          <View className="flex flex-row items-center space-x-2 mt-1 text-purple-600">
-            <Text className="text-xs capitalize">{process.status}</Text>
-          </View>
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity
-          disabled={cancelJobMutation.isPending}
-          onPress={() => cancelJobMutation.mutate(process.id)}
-        >
-          {cancelJobMutation.isPending ? (
-            <ActivityIndicator size="small" color="white" />
-          ) : (
-            <Ionicons name="close" size={24} color="red" />
-          )}
-        </TouchableOpacity>
+        {process.status === "completed" && (
+          <View className="flex flex-row mt-4 space-x-4">
+            <Button
+              onPress={() => {
+                startDownload(process);
+              }}
+              className="w-full"
+            >
+              Download now
+            </Button>
+          </View>
+        )}
       </View>
     </TouchableOpacity>
   );
