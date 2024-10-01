@@ -105,7 +105,6 @@ export default function settings() {
                   Haptics.notificationAsync(
                     Haptics.NotificationFeedbackType.Success
                   );
-                  toast.success("All files deleted");
                 } catch (e) {
                   Haptics.notificationAsync(
                     Haptics.NotificationFeedbackType.Error

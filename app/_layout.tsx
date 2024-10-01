@@ -1,7 +1,6 @@
 import { DownloadProvider } from "@/providers/DownloadProvider";
 import {
   getOrSetDeviceId,
-  getServerUrlFromStorage,
   getTokenFromStoraage,
   JellyfinProvider,
 } from "@/providers/JellyfinProvider";
@@ -9,36 +8,36 @@ import { JobQueueProvider } from "@/providers/JobQueueProvider";
 import { PlaybackProvider } from "@/providers/PlaybackProvider";
 import { orientationAtom } from "@/utils/atoms/orientation";
 import { Settings, useSettings } from "@/utils/atoms/settings";
+import { BACKGROUND_FETCH_TASK } from "@/utils/background-tasks";
+import { cancelJobById, getAllJobsByDeviceId } from "@/utils/optimize-server";
 import { ActionSheetProvider } from "@expo/react-native-action-sheet";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
+import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client";
 import {
   checkForExistingDownloads,
   completeHandler,
   download,
 } from "@kesha-antonov/react-native-background-downloader";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { DarkTheme, ThemeProvider } from "@react-navigation/native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import * as BackgroundFetch from "expo-background-fetch";
+import * as FileSystem from "expo-file-system";
 import { useFonts } from "expo-font";
 import { useKeepAwake } from "expo-keep-awake";
 import * as Linking from "expo-linking";
+import * as Notifications from "expo-notifications";
 import { router, Stack } from "expo-router";
 import * as ScreenOrientation from "expo-screen-orientation";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
+import * as TaskManager from "expo-task-manager";
 import { Provider as JotaiProvider, useAtom } from "jotai";
 import { useEffect, useRef } from "react";
 import { AppState } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 import { Toaster } from "sonner-native";
-import * as TaskManager from "expo-task-manager";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as BackgroundFetch from "expo-background-fetch";
-import { cancelJobById, getAllJobsByDeviceId } from "@/utils/optimize-server";
-import * as FileSystem from "expo-file-system";
-import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client";
-import * as Notifications from "expo-notifications";
-import { BACKGROUND_FETCH_TASK } from "@/utils/background-tasks";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -145,16 +144,6 @@ TaskManager.defineTask(BACKGROUND_FETCH_TASK, async () => {
       })
         .begin(() => {
           console.log("TaskManager ~ Download started: ", job.id);
-          Notifications.scheduleNotificationAsync({
-            content: {
-              title: job.item.Name,
-              body: "Download started",
-              data: {
-                url: `/downloads`,
-              },
-            },
-            trigger: null,
-          });
         })
         .done(() => {
           console.log("TaskManager ~ Download completed: ", job.id);
