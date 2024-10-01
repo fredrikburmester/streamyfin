@@ -150,6 +150,14 @@ function Layout() {
                           }}
                         />
                         <Stack.Screen
+                          name="(auth)/play-music"
+                          options={{
+                            headerShown: false,
+                            title: "",
+                            animation: "fade",
+                          }}
+                        />
+                        <Stack.Screen
                           name="login"
                           options={{ headerShown: false, title: "Login" }}
                         />
