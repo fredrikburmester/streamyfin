@@ -1,13 +1,18 @@
+import { useDownload } from "@/providers/DownloadProvider";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
+import { ScreenOrientationEnum, useSettings } from "@/utils/atoms/settings";
 import {
-  DefaultLanguageOption,
-  DownloadOptions,
-  ScreenOrientationEnum,
-  useSettings,
-} from "@/utils/atoms/settings";
+  BACKGROUND_FETCH_TASK,
+  registerBackgroundFetchAsync,
+  unregisterBackgroundFetchAsync,
+} from "@/utils/background-tasks";
 import { getItemsApi } from "@jellyfin/sdk/lib/utils/api";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import * as BackgroundFetch from "expo-background-fetch";
+import * as ScreenOrientation from "expo-screen-orientation";
+import * as TaskManager from "expo-task-manager";
 import { useAtom } from "jotai";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Linking,
@@ -16,23 +21,13 @@ import {
   View,
   ViewProps,
 } from "react-native";
+import { toast } from "sonner-native";
 import * as DropdownMenu from "zeego/dropdown-menu";
+import { Button } from "../Button";
+import { Input } from "../common/Input";
 import { Text } from "../common/Text";
 import { Loader } from "../Loader";
-import { Input } from "../common/Input";
-import { useEffect, useState } from "react";
-import { Button } from "../Button";
 import { MediaToggles } from "./MediaToggles";
-import * as ScreenOrientation from "expo-screen-orientation";
-import { opacity } from "react-native-reanimated/lib/typescript/reanimated2/Colors";
-import { useDownload } from "@/providers/DownloadProvider";
-import * as BackgroundFetch from "expo-background-fetch";
-import * as TaskManager from "expo-task-manager";
-import {
-  BACKGROUND_FETCH_TASK,
-  registerBackgroundFetchAsync,
-  unregisterBackgroundFetchAsync,
-} from "@/utils/background-tasks";
 
 interface Props extends ViewProps {}
 
@@ -52,40 +47,24 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
   /********************
    * Background task
    *******************/
-  const [isRegistered, setIsRegistered] = useState<boolean | null>(null);
-  const [status, setStatus] =
-    useState<BackgroundFetch.BackgroundFetchStatus | null>(null);
-
   useEffect(() => {
     checkStatusAsync();
   }, []);
 
   const checkStatusAsync = async () => {
-    const status = await BackgroundFetch.getStatusAsync();
-    const isRegistered = await TaskManager.isTaskRegisteredAsync(
-      BACKGROUND_FETCH_TASK
-    );
-    setStatus(status);
-    setIsRegistered(isRegistered);
+    await BackgroundFetch.getStatusAsync();
+    await TaskManager.isTaskRegisteredAsync(BACKGROUND_FETCH_TASK);
   };
 
-  const toggleFetchTask = async () => {
-    if (isRegistered) {
-      console.log("Unregistering task");
-      await unregisterBackgroundFetchAsync();
-      updateSettings({
-        autoDownload: false,
-      });
+  useEffect(() => {
+    if (settings?.autoDownload) {
+      registerBackgroundFetchAsync();
     } else {
-      console.log("Registering task");
-      await registerBackgroundFetchAsync();
-      updateSettings({
-        autoDownload: true,
-      });
+      unregisterBackgroundFetchAsync();
     }
 
     checkStatusAsync();
-  };
+  }, [settings?.autoDownload]);
   /**********************
    *********************/
 
@@ -571,14 +550,10 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
                 finished optimizing on the server.
               </Text>
             </View>
-            {isRegistered === null ? (
-              <ActivityIndicator size="small" color="white" />
-            ) : (
-              <Switch
-                value={isRegistered}
-                onValueChange={(value) => toggleFetchTask()}
-              />
-            )}
+            <Switch
+              value={settings.autoDownload}
+              onValueChange={(value) => updateSettings({ autoDownload: value })}
+            />
           </View>
           <View
             pointerEvents={
@@ -612,6 +587,7 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
                   color="purple"
                   className="h-12 mt-2"
                   onPress={() => {
+                    toast.success("Saved");
                     updateSettings({
                       optimizedVersionsServerUrl:
                         optimizedVersionsServerUrl.length === 0

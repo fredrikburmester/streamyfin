@@ -37,6 +37,7 @@ import React, {
 import { AppState, AppStateStatus } from "react-native";
 import { toast } from "sonner-native";
 import { apiAtom } from "./JellyfinProvider";
+import * as Notifications from "expo-notifications";
 
 function onAppStateChange(status: AppStateStatus) {
   focusManager.setFocused(status === "active");
@@ -93,7 +94,20 @@ function useDownloadProvider() {
         url,
       });
 
-      jobs.forEach((job) => {
+      // Local downloading processes that are still valid
+      const downloadingProcesses = processes
+        .filter((p) => p.status === "downloading")
+        .filter((p) => jobs.some((j) => j.id === p.id));
+
+      const updatedProcesses = jobs.filter(
+        (j) => !downloadingProcesses.some((p) => p.id === j.id)
+      );
+
+      setProcesses([...updatedProcesses, ...downloadingProcesses]);
+
+      // Go though new jobs and compare them to old jobs
+      // if new job is now completed, start download.
+      for (let job of jobs) {
         const process = processes.find((p) => p.id === job.id);
         if (
           process &&
@@ -112,20 +126,19 @@ function useDownloadProvider() {
                 },
               },
             });
+            Notifications.scheduleNotificationAsync({
+              content: {
+                title: job.item.Name,
+                body: `${job.item.Name} is ready to be downloaded`,
+                data: {
+                  url: `/downloads`,
+                },
+              },
+              trigger: null,
+            });
           }
         }
-      });
-
-      // Local downloading processes that are still valid
-      const downloadingProcesses = processes
-        .filter((p) => p.status === "downloading")
-        .filter((p) => jobs.some((j) => j.id === p.id));
-
-      const updatedProcesses = jobs.filter(
-        (j) => !downloadingProcesses.some((p) => p.id === j.id)
-      );
-
-      setProcesses([...updatedProcesses, ...downloadingProcesses]);
+      }
 
       return jobs;
     },
@@ -137,19 +150,7 @@ function useDownloadProvider() {
   useEffect(() => {
     const checkIfShouldStartDownload = async () => {
       if (processes.length === 0) return;
-      const tasks = await checkForExistingDownloads();
-      // if (settings?.autoDownload) {
-      //   for (let i = 0; i < processes.length; i++) {
-      //     const job = processes[i];
-
-      //     if (job.status === "completed") {
-      //       // Check if the download is already in progress
-      //       if (tasks.find((task) => task.id === job.id)) continue;
-      //       await startDownload(job);
-      //       continue;
-      //     }
-      //   }
-      // }
+      await checkForExistingDownloads();
     };
 
     checkIfShouldStartDownload();
@@ -178,6 +179,7 @@ function useDownloadProvider() {
     async (process: JobStatus) => {
       if (!process?.item.Id || !authHeader) throw new Error("No item id");
 
+      console.log("[0] Setting process to downloading");
       setProcesses((prev) =>
         prev.map((p) =>
           p.id === process.id
@@ -352,38 +354,71 @@ function useDownloadProvider() {
 
   const deleteAllFiles = async (): Promise<void> => {
     try {
-      const baseDirectory = FileSystem.documentDirectory;
+      await deleteLocalFiles();
+      await removeDownloadedItemsFromStorage();
+      await cancelAllServerJobs();
+      queryClient.invalidateQueries({ queryKey: ["downloadedItems"] });
+      toast.success("All files, folders, and jobs deleted successfully");
+    } catch (error) {
+      console.error("Failed to delete all files, folders, and jobs:", error);
+      toast.error("An error occurred while deleting files and jobs");
+    }
+  };
 
-      if (!baseDirectory) {
-        throw new Error("Base directory not found");
-      }
+  const deleteLocalFiles = async (): Promise<void> => {
+    const baseDirectory = FileSystem.documentDirectory;
+    if (!baseDirectory) {
+      throw new Error("Base directory not found");
+    }
 
-      const dirContents = await FileSystem.readDirectoryAsync(baseDirectory);
-
-      for (const item of dirContents) {
-        const itemPath = `${baseDirectory}${item}`;
-        const itemInfo = await FileSystem.getInfoAsync(itemPath);
-
-        if (itemInfo.exists) {
+    const dirContents = await FileSystem.readDirectoryAsync(baseDirectory);
+    for (const item of dirContents) {
+      const itemPath = `${baseDirectory}${item}`;
+      const itemInfo = await FileSystem.getInfoAsync(itemPath);
+      if (itemInfo.exists) {
+        if (itemInfo.isDirectory) {
+          await FileSystem.deleteAsync(itemPath, { idempotent: true });
+        } else {
           await FileSystem.deleteAsync(itemPath, { idempotent: true });
         }
       }
+    }
+  };
+
+  const removeDownloadedItemsFromStorage = async (): Promise<void> => {
+    try {
       await AsyncStorage.removeItem("downloadedItems");
-
-      if (!authHeader) throw new Error("No auth header");
-      if (!settings?.optimizedVersionsServerUrl)
-        throw new Error("No server url");
-      cancelAllJobs({
-        authHeader,
-        url: settings?.optimizedVersionsServerUrl,
-        deviceId: await getOrSetDeviceId(),
-      });
-
-      queryClient.invalidateQueries({ queryKey: ["downloadedItems"] });
-
-      toast.success("All files and folders deleted successfully");
     } catch (error) {
-      console.error("Failed to delete all files and folders:", error);
+      console.error(
+        "Failed to remove downloadedItems from AsyncStorage:",
+        error
+      );
+      throw error;
+    }
+  };
+
+  const cancelAllServerJobs = async (): Promise<void> => {
+    if (!authHeader) {
+      throw new Error("No auth header available");
+    }
+    if (!settings?.optimizedVersionsServerUrl) {
+      throw new Error("No server URL configured");
+    }
+
+    const deviceId = await getOrSetDeviceId();
+    if (!deviceId) {
+      throw new Error("Failed to get device ID");
+    }
+
+    try {
+      await cancelAllJobs({
+        authHeader,
+        url: settings.optimizedVersionsServerUrl,
+        deviceId,
+      });
+    } catch (error) {
+      console.error("Failed to cancel all server jobs:", error);
+      throw error;
     }
   };
 

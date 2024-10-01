@@ -23,6 +23,7 @@ import { useAtom } from "jotai";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Platform,
   RefreshControl,
   SafeAreaView,
   ScrollView,
@@ -345,7 +346,8 @@ export default function index() {
       contentContainerStyle={{
         paddingLeft: insets.left,
         paddingRight: insets.right,
-        paddingBottom: insets.bottom,
+        paddingBottom:
+          Platform.OS === "android" ? insets.bottom + 65 : insets.bottom,
       }}
       className="flex flex-col space-y-4"
     >
