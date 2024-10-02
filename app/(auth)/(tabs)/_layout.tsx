@@ -1,6 +1,5 @@
 import { TabBarIcon } from "@/components/navigation/TabBarIcon";
 import { Colors } from "@/constants/Colors";
-import { useCheckRunningJobs } from "@/hooks/useCheckRunningJobs";
 import { BlurView } from "expo-blur";
 import * as NavigationBar from "expo-navigation-bar";
 import { Tabs } from "expo-router";

@@ -21,10 +21,16 @@ export const PlayedStatus: React.FC<Props> = ({ item, ...props }) => {
 
   const invalidateQueries = () => {
     queryClient.invalidateQueries({
-      queryKey: ["item"],
+      queryKey: ["item", item.Id],
     });
     queryClient.invalidateQueries({
       queryKey: ["resumeItems"],
+    });
+    queryClient.invalidateQueries({
+      queryKey: ["continueWatching"],
+    });
+    queryClient.invalidateQueries({
+      queryKey: ["nextUp-all"],
     });
     queryClient.invalidateQueries({
       queryKey: ["nextUp"],

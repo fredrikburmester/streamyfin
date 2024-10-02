@@ -3,9 +3,9 @@ import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client";
 import axios from "axios";
 
 interface IJobInput {
-  deviceId: string;
-  authHeader: string;
-  url: string;
+  deviceId?: string | null;
+  authHeader?: string | null;
+  url?: string | null;
 }
 
 export interface JobStatus {
@@ -88,6 +88,10 @@ export async function cancelJobById({
 }
 
 export async function cancelAllJobs({ authHeader, url, deviceId }: IJobInput) {
+  if (!deviceId) return false;
+  if (!authHeader) return false;
+  if (!url) return false;
+
   try {
     await getAllJobsByDeviceId({
       deviceId,
@@ -108,4 +112,42 @@ export async function cancelAllJobs({ authHeader, url, deviceId }: IJobInput) {
   }
 
   return true;
+}
+
+/**
+ * Fetches statistics for a specific device.
+ *
+ * @param {IJobInput} params - The parameters for the API request.
+ * @param {string} params.deviceId - The ID of the device to fetch statistics for.
+ * @param {string} params.authHeader - The authorization header for the API request.
+ * @param {string} params.url - The base URL for the API endpoint.
+ *
+ * @returns {Promise<any | null>} A promise that resolves to the statistics data or null if the request fails.
+ *
+ * @throws {Error} Throws an error if any required parameter is missing.
+ */
+export async function getStatistics({
+  authHeader,
+  url,
+  deviceId,
+}: IJobInput): Promise<any | null> {
+  if (!deviceId || !authHeader || !url) {
+    return null;
+  }
+
+  try {
+    const statusResponse = await axios.get(`${url}statistics`, {
+      headers: {
+        Authorization: authHeader,
+      },
+      params: {
+        deviceId,
+      },
+    });
+
+    return statusResponse.data;
+  } catch (error) {
+    console.error("Failed to fetch statistics:", error);
+    return null;
+  }
 }

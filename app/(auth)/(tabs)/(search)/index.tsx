@@ -8,6 +8,7 @@ import { Loader } from "@/components/Loader";
 import AlbumCover from "@/components/posters/AlbumCover";
 import MoviePoster from "@/components/posters/MoviePoster";
 import SeriesPoster from "@/components/posters/SeriesPoster";
+import { TAB_HEIGHT } from "@/constants/Values";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import { useSettings } from "@/utils/atoms/settings";
 import { getUserItemData } from "@/utils/jellyfin/user-library/getUserItemData";
@@ -226,8 +227,11 @@ export default function search() {
           paddingLeft: insets.left,
           paddingRight: insets.right,
         }}
+        style={{
+          marginBottom: TAB_HEIGHT,
+        }}
       >
-        <View className="flex flex-col pt-4 pb-32">
+        <View className="flex flex-col pt-4">
           {Platform.OS === "android" && (
             <View className="mb-4 px-4">
               <Input

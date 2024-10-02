@@ -245,7 +245,7 @@ function Layout() {
     new QueryClient({
       defaultOptions: {
         queries: {
-          staleTime: 60 * 1000,
+          staleTime: 0,
           refetchOnMount: true,
           refetchOnReconnect: true,
           refetchOnWindowFocus: true,

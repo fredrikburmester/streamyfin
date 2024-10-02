@@ -4,6 +4,7 @@ import { LargeMovieCarousel } from "@/components/home/LargeMovieCarousel";
 import { ScrollingCollectionList } from "@/components/home/ScrollingCollectionList";
 import { Loader } from "@/components/Loader";
 import { MediaListSection } from "@/components/medialists/MediaListSection";
+import { TAB_HEIGHT } from "@/constants/Values";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import { useSettings } from "@/utils/atoms/settings";
 import { Ionicons } from "@expo/vector-icons";
@@ -25,7 +26,6 @@ import {
   ActivityIndicator,
   Platform,
   RefreshControl,
-  SafeAreaView,
   ScrollView,
   View,
 } from "react-native";
@@ -139,18 +139,24 @@ export default function index() {
 
   const refetch = useCallback(async () => {
     setLoading(true);
-    await queryClient.refetchQueries({ queryKey: ["userViews"] });
-    await queryClient.refetchQueries({ queryKey: ["resumeItems"] });
-    await queryClient.refetchQueries({ queryKey: ["nextUp-all"] });
-    await queryClient.refetchQueries({ queryKey: ["recentlyAddedInMovies"] });
-    await queryClient.refetchQueries({ queryKey: ["recentlyAddedInTVShows"] });
-    await queryClient.refetchQueries({ queryKey: ["suggestions"] });
-    await queryClient.refetchQueries({
-      queryKey: ["sf_promoted"],
-    });
-    await queryClient.refetchQueries({
-      queryKey: ["sf_carousel"],
-    });
+    await queryClient.invalidateQueries();
+    // await queryClient.invalidateQueries({ queryKey: ["userViews"] });
+    // await queryClient.invalidateQueries({ queryKey: ["resumeItems"] });
+    // await queryClient.invalidateQueries({ queryKey: ["continueWatching"] });
+    // await queryClient.invalidateQueries({ queryKey: ["nextUp-all"] });
+    // await queryClient.invalidateQueries({
+    //   queryKey: ["recentlyAddedInMovies"],
+    // });
+    // await queryClient.invalidateQueries({
+    //   queryKey: ["recentlyAddedInTVShows"],
+    // });
+    // await queryClient.invalidateQueries({ queryKey: ["suggestions"] });
+    // await queryClient.invalidateQueries({
+    //   queryKey: ["sf_promoted"],
+    // });
+    // await queryClient.invalidateQueries({
+    //   queryKey: ["sf_carousel"],
+    // });
     setLoading(false);
   }, [queryClient, user?.Id]);
 
@@ -344,14 +350,32 @@ export default function index() {
       }
       key={"home"}
       contentContainerStyle={{
+        flexDirection: "column",
         paddingLeft: insets.left,
         paddingRight: insets.right,
-        paddingBottom:
-          Platform.OS === "android" ? insets.bottom + 65 : insets.bottom,
+        paddingTop: 8,
+        rowGap: 8,
       }}
-      className="flex flex-col space-y-4"
+      style={{
+        marginBottom: TAB_HEIGHT,
+      }}
     >
       <LargeMovieCarousel />
+
+      <ScrollingCollectionList
+        key="continueWatching"
+        title={"Continue Watching"}
+        queryKey={["continueWatching", user?.Id]}
+        queryFn={async () =>
+          (
+            await getItemsApi(api).getResumeItems({
+              userId: user?.Id,
+              enableImageTypes: ["Primary", "Backdrop", "Thumb"],
+            })
+          ).data.Items || []
+        }
+        orientation={"horizontal"}
+      />
 
       <ScrollingCollectionList
         key="nextUp"
@@ -363,21 +387,6 @@ export default function index() {
               userId: user?.Id,
               fields: ["MediaSourceCount"],
               limit: 20,
-              enableImageTypes: ["Primary", "Backdrop", "Thumb"],
-            })
-          ).data.Items || []
-        }
-        orientation={"horizontal"}
-      />
-
-      <ScrollingCollectionList
-        key="continueWatching"
-        title={"Continue Watching"}
-        queryKey={["continueWatching", user?.Id]}
-        queryFn={async () =>
-          (
-            await getItemsApi(api).getResumeItems({
-              userId: user?.Id,
               enableImageTypes: ["Primary", "Backdrop", "Thumb"],
             })
           ).data.Items || []
