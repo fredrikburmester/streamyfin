@@ -5,6 +5,7 @@ import { useAtom } from "jotai";
 import { useMemo, useState } from "react";
 import { View } from "react-native";
 import { WatchedIndicator } from "./WatchedIndicator";
+import React from "react";
 
 type ContinueWatchingPosterProps = {
   item: BaseItemDto;
@@ -14,7 +15,6 @@ type ContinueWatchingPosterProps = {
 
 const ContinueWatchingPoster: React.FC<ContinueWatchingPosterProps> = ({
   item,
-  width = 176,
   useEpisodePoster = false,
 }) => {
   const [api] = useAtom(apiAtom);
@@ -47,21 +47,11 @@ const ContinueWatchingPoster: React.FC<ContinueWatchingPosterProps> = ({
 
   if (!url)
     return (
-      <View
-        className="aspect-video border border-neutral-800"
-        style={{
-          width,
-        }}
-      ></View>
+      <View className="aspect-video border border-neutral-800 w-44"></View>
     );
 
   return (
-    <View
-      style={{
-        width,
-      }}
-      className="relative aspect-video rounded-lg overflow-hidden border border-neutral-800"
-    >
+    <View className="relative w-44 aspect-video rounded-lg overflow-hidden border border-neutral-800">
       <Image
         key={item.Id}
         id={item.Id}

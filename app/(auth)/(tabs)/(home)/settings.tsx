@@ -79,6 +79,7 @@ export default function settings() {
           <View className="flex flex-col rounded-xl overflow-hidden border-neutral-800 divide-y-2 divide-solid divide-neutral-800 ">
             <ListItem title="User" subTitle={user?.Name} />
             <ListItem title="Server" subTitle={api?.basePath} />
+            <ListItem title="Token" subTitle={api?.accessToken} />
           </View>
         </View>
 

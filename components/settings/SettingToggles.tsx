@@ -1,5 +1,9 @@
 import { useDownload } from "@/providers/DownloadProvider";
-import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
+import {
+  apiAtom,
+  getOrSetDeviceId,
+  userAtom,
+} from "@/providers/JellyfinProvider";
 import { ScreenOrientationEnum, useSettings } from "@/utils/atoms/settings";
 import {
   BACKGROUND_FETCH_TASK,
@@ -28,6 +32,8 @@ import { Input } from "../common/Input";
 import { Text } from "../common/Text";
 import { Loader } from "../Loader";
 import { MediaToggles } from "./MediaToggles";
+import axios from "axios";
+import { getStatistics } from "@/utils/optimize-server";
 
 interface Props extends ViewProps {}
 
@@ -43,6 +49,21 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
     useState<string>(settings?.optimizedVersionsServerUrl || "");
 
   const queryClient = useQueryClient();
+
+  const { data: optimizeServerStatistics } = useQuery({
+    queryKey: ["optimize-server", settings?.optimizedVersionsServerUrl],
+    queryFn: async () =>
+      getStatistics({
+        url: settings?.optimizedVersionsServerUrl,
+        authHeader: api?.accessToken,
+        deviceId: await getOrSetDeviceId(),
+      }),
+    refetchInterval: 1000,
+    staleTime: 0,
+    enabled:
+      !!settings?.optimizedVersionsServerUrl &&
+      settings.optimizedVersionsServerUrl.length > 0,
+  });
 
   /********************
    * Background task
@@ -568,11 +589,24 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
           >
             <View className="flex flex-col bg-neutral-900 px-4 py-4">
               <View className="flex flex-col shrink mb-2">
-                <Text className="font-semibold">Optimized versions server</Text>
+                <View className="flex flex-row justify-between items-center">
+                  <Text className="font-semibold">
+                    Optimized versions server
+                  </Text>
+                  <View
+                    className={`
+                      w-3 h-3 rounded-full
+                      ${
+                        optimizeServerStatistics ? "bg-green-600" : "bg-red-600"
+                      }
+                    `}
+                  ></View>
+                </View>
                 <Text className="text-xs opacity-50">
                   Set the URL for the optimized versions server for downloads.
                 </Text>
               </View>
+              <View></View>
               <View className="flex flex-col">
                 <Input
                   placeholder="Optimized versions server URL..."
@@ -587,7 +621,7 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
                   color="purple"
                   className="h-12 mt-2"
                   onPress={() => {
-                    toast.success("Saved");
+                    toast.info("Saved");
                     updateSettings({
                       optimizedVersionsServerUrl:
                         optimizedVersionsServerUrl.length === 0
