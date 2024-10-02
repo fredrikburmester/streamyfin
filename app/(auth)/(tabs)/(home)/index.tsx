@@ -8,7 +8,10 @@ import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import { useSettings } from "@/utils/atoms/settings";
 import { Ionicons } from "@expo/vector-icons";
 import { Api } from "@jellyfin/sdk";
-import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
+import {
+  BaseItemDto,
+  BaseItemKind,
+} from "@jellyfin/sdk/lib/generated-client/models";
 import {
   getItemsApi,
   getSuggestionsApi,
@@ -128,12 +131,13 @@ export default function index() {
     staleTime: 60 * 1000,
   });
 
-  const movieCollectionId = useMemo(() => {
-    return userViews?.find((c) => c.CollectionType === "movies")?.Id;
-  }, [userViews]);
-
-  const tvShowCollectionId = useMemo(() => {
-    return userViews?.find((c) => c.CollectionType === "tvshows")?.Id;
+  const collections = useMemo(() => {
+    const allow = ["movies", "tvshows"];
+    return (
+      userViews?.filter(
+        (c) => c.CollectionType && allow.includes(c.CollectionType)
+      ) || []
+    );
   }, [userViews]);
 
   const refetch = useCallback(async () => {
@@ -153,8 +157,55 @@ export default function index() {
     setLoading(false);
   }, [queryClient, user?.Id]);
 
+  type queryKey = (string | undefined)[];
+  const createCollectionConfig = (
+    title: string,
+    queryKey: queryKey,
+    includeItemTypes: BaseItemKind[],
+    parentId: string | undefined
+  ): ScrollingCollectionListSection => ({
+    title,
+    queryKey,
+    queryFn: async () => {
+      if (!api) return [];
+      return (
+        (
+          await getUserLibraryApi(api).getLatestMedia({
+            userId: user?.Id,
+            limit: 50,
+            fields: ["PrimaryImageAspectRatio", "Path"],
+            imageTypeLimit: 1,
+            enableImageTypes: ["Primary", "Backdrop", "Thumb"],
+            includeItemTypes,
+            parentId,
+          })
+        ).data || []
+      );
+    },
+    type: "ScrollingCollectionList",
+  });
+
   const sections = useMemo(() => {
     if (!api || !user?.Id) return [];
+
+    const latestMediaViews: ScrollingCollectionListSection[] = collections.map(
+      (c) => {
+        const includeItemTypes: BaseItemKind[] =
+          c.CollectionType === "tvshows" ? ["Series"] : ["Movie"];
+        const title = "Recently Added in " + c.Name;
+        const query: queryKey = [
+          "recentlyAddedIn" + c.CollectionType,
+          user?.Id,
+          c.Id,
+        ];
+        return createCollectionConfig(
+          title || "",
+          query,
+          includeItemTypes,
+          c.Id
+        );
+      }
+    );
 
     const ss: Section[] = [
       // {
@@ -185,40 +236,7 @@ export default function index() {
       //   type: "ScrollingCollectionList",
       //   orientation: "horizontal",
       // },
-      {
-        title: "Recently Added in Movies",
-        queryKey: ["recentlyAddedInMovies", user?.Id, movieCollectionId],
-        queryFn: async () =>
-          (
-            await getUserLibraryApi(api).getLatestMedia({
-              userId: user?.Id,
-              limit: 50,
-              fields: ["PrimaryImageAspectRatio", "Path"],
-              imageTypeLimit: 1,
-              enableImageTypes: ["Primary", "Backdrop", "Thumb"],
-              includeItemTypes: ["Movie"],
-              parentId: movieCollectionId,
-            })
-          ).data || [],
-        type: "ScrollingCollectionList",
-      },
-      {
-        title: "Recently Added in TV-Shows",
-        queryKey: ["recentlyAddedInTVShows", user?.Id, tvShowCollectionId],
-        queryFn: async () =>
-          (
-            await getUserLibraryApi(api).getLatestMedia({
-              userId: user?.Id,
-              limit: 50,
-              fields: ["PrimaryImageAspectRatio", "Path"],
-              imageTypeLimit: 1,
-              enableImageTypes: ["Primary", "Backdrop", "Thumb"],
-              includeItemTypes: ["Series"],
-              parentId: tvShowCollectionId,
-            })
-          ).data || [],
-        type: "ScrollingCollectionList",
-      },
+      ...latestMediaViews,
       ...(mediaListCollections?.map(
         (ml) =>
           ({
@@ -265,13 +283,7 @@ export default function index() {
       },
     ];
     return ss;
-  }, [
-    api,
-    user?.Id,
-    movieCollectionId,
-    tvShowCollectionId,
-    mediaListCollections,
-  ]);
+  }, [api, user?.Id, ...collections.map((c) => c.Id), mediaListCollections]);
 
   if (isConnected === false) {
     return (
@@ -362,7 +374,7 @@ export default function index() {
               limit: 20,
               enableImageTypes: ["Primary", "Backdrop", "Thumb"],
             })
-          ).data.Items|| []
+          ).data.Items || []
         }
         orientation={"horizontal"}
       />
