@@ -283,7 +283,7 @@ export default function index() {
       },
     ];
     return ss;
-  }, [api, user?.Id, ...collections.map((c) => c.Id), mediaListCollections]);
+  }, [api, user?.Id, collections.map((c) => c.Id), mediaListCollections]);
 
   if (isConnected === false) {
     return (
