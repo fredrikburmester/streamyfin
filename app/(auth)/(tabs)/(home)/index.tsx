@@ -4,11 +4,9 @@ import { LargeMovieCarousel } from "@/components/home/LargeMovieCarousel";
 import { ScrollingCollectionList } from "@/components/home/ScrollingCollectionList";
 import { Loader } from "@/components/Loader";
 import { MediaListSection } from "@/components/medialists/MediaListSection";
-import { TAB_HEIGHT } from "@/constants/Values";
-import { useDownload } from "@/providers/DownloadProvider";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import { useSettings } from "@/utils/atoms/settings";
-import { Feather, Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { Api } from "@jellyfin/sdk";
 import {
   BaseItemDto,
@@ -21,18 +19,15 @@ import {
   getUserLibraryApi,
   getUserViewsApi,
 } from "@jellyfin/sdk/lib/utils/api";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import NetInfo from "@react-native-community/netinfo";
 import { QueryFunction, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRouter, useNavigation } from "expo-router";
+import { useRouter } from "expo-router";
 import { useAtom } from "jotai";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
-  Platform,
   RefreshControl,
   ScrollView,
-  TouchableOpacity,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -65,7 +60,6 @@ export default function index() {
 
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
   const [loadingRetry, setLoadingRetry] = useState(false);
-  const navigation = useNavigation();
 
   const checkConnection = useCallback(async () => {
     setLoadingRetry(true);
@@ -73,27 +67,6 @@ export default function index() {
     setIsConnected(state.isConnected);
     setLoadingRetry(false);
   }, []);
-
-  const { downloadedFiles } = useDownload();
-
-  useEffect(() => {
-    const color =
-      downloadedFiles && downloadedFiles?.length > 0 ? "#9334E9" : "white";
-    navigation.setOptions({
-      headerLeft: () => (
-        <TouchableOpacity
-          style={{
-            marginRight: Platform.OS === "android" ? 17 : 0,
-          }}
-          onPress={() => {
-            router.push("/(auth)/downloads");
-          }}
-        >
-          <Feather name="download" color={color} size={22} />
-        </TouchableOpacity>
-      ),
-    });
-  }, [downloadedFiles, navigation]);
 
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener((state) => {
@@ -365,16 +338,10 @@ export default function index() {
       }
       key={"home"}
       contentContainerStyle={{
-        flexDirection: "column",
         paddingLeft: insets.left,
         paddingRight: insets.right,
-        paddingTop: 8,
-        paddingBottom: 8,
-        rowGap: 8,
       }}
-      style={{
-        marginBottom: TAB_HEIGHT,
-      }}
+      className="flex flex-col space-y-4 mb-20"
     >
       <LargeMovieCarousel />
 
