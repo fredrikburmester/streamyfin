@@ -1,6 +1,6 @@
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import * as Haptics from "expo-haptics";
-import React, { useCallback } from "react";
+import React, { useCallback, useMemo } from "react";
 import { TouchableOpacity, View } from "react-native";
 import {
   ActionSheetProvider,
@@ -12,6 +12,10 @@ import { Text } from "../common/Text";
 
 import { useFileOpener } from "@/hooks/useDownloadedFileOpener";
 import { useDownload } from "@/providers/DownloadProvider";
+import { storage } from "@/utils/mmkv";
+import { Image } from "expo-image";
+import { Ionicons } from "@expo/vector-icons";
+import { ItemCardText } from "../ItemCardText";
 
 interface MovieCardProps {
   item: BaseItemDto;
@@ -30,6 +34,10 @@ export const MovieCard: React.FC<MovieCardProps> = ({ item }) => {
   const handleOpenFile = useCallback(() => {
     openFile(item);
   }, [item, openFile]);
+
+  const base64Image = useMemo(() => {
+    return storage.getString(item.Id!);
+  }, []);
 
   /**
    * Handles deleting the file with haptic feedback.
@@ -67,18 +75,31 @@ export const MovieCard: React.FC<MovieCardProps> = ({ item }) => {
   }, [showActionSheetWithOptions, handleDeleteFile]);
 
   return (
-    <TouchableOpacity
-      onPress={handleOpenFile}
-      onLongPress={showActionSheet}
-      className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4"
-    >
-      <Text className="font-bold">{item.Name}</Text>
-      <View className="flex flex-col">
-        <Text className="text-xs opacity-50">{item.ProductionYear}</Text>
-        <Text className="text-xs opacity-50">
-          {runtimeTicksToMinutes(item.RunTimeTicks)}
-        </Text>
-      </View>
+    <TouchableOpacity onPress={handleOpenFile} onLongPress={showActionSheet}>
+      {base64Image ? (
+        <View className="w-28 aspect-[10/15] rounded-lg overflow-hidden mr-2 border border-neutral-900">
+          <Image
+            source={{
+              uri: `data:image/jpeg;base64,${base64Image}`,
+            }}
+            style={{
+              width: "100%",
+              height: "100%",
+              resizeMode: "cover",
+            }}
+          />
+        </View>
+      ) : (
+        <View className="w-28 aspect-[10/15] rounded-lg bg-neutral-900 mr-2 flex items-center justify-center">
+          <Ionicons
+            name="image-outline"
+            size={24}
+            color="gray"
+            className="self-center mt-16"
+          />
+        </View>
+      )}
+      <ItemCardText item={item} />
     </TouchableOpacity>
   );
 };

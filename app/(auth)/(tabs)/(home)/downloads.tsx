@@ -7,10 +7,9 @@ import { queueAtom } from "@/utils/atoms/queue";
 import { useSettings } from "@/utils/atoms/settings";
 import { Ionicons } from "@expo/vector-icons";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
-import * as FileSystem from "expo-file-system";
 import { router } from "expo-router";
 import { useAtom } from "jotai";
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { ScrollView, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -45,8 +44,8 @@ const downloads: React.FC = () => {
         paddingBottom: 100,
       }}
     >
-      <View className="px-4 py-4">
-        <View className="mb-4 flex flex-col space-y-4">
+      <View className="py-4">
+        <View className="mb-4 flex flex-col space-y-4 px-4">
           {settings?.downloadMethod === "remux" && (
             <View className="bg-neutral-900 p-4 rounded-2xl">
               <Text className="text-lg font-bold">Queue</Text>
@@ -88,26 +87,31 @@ const downloads: React.FC = () => {
 
           <ActiveDownloads />
         </View>
+
         {movies.length > 0 && (
           <View className="mb-4">
-            <View className="flex flex-row items-center justify-between mb-2">
+            <View className="flex flex-row items-center justify-between mb-2 px-4">
               <Text className="text-lg font-bold">Movies</Text>
               <View className="bg-purple-600 rounded-full h-6 w-6 flex items-center justify-center">
                 <Text className="text-xs font-bold">{movies?.length}</Text>
               </View>
             </View>
-            {movies?.map((item: BaseItemDto) => (
-              <View className="mb-2 last:mb-0" key={item.Id}>
-                <MovieCard item={item} />
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <View className="px-4 flex flex-row">
+                {movies?.map((item: BaseItemDto) => (
+                  <View className="mb-2 last:mb-0" key={item.Id}>
+                    <MovieCard item={item} />
+                  </View>
+                ))}
               </View>
-            ))}
+            </ScrollView>
           </View>
         )}
         {groupedBySeries?.map((items: BaseItemDto[], index: number) => (
           <SeriesCard items={items} key={items[0].SeriesId} />
         ))}
         {downloadedFiles?.length === 0 && (
-          <View className="flex ">
+          <View className="flex px-4">
             <Text className="opacity-50">No downloaded items</Text>
           </View>
         )}

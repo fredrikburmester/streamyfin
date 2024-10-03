@@ -25,6 +25,7 @@ export interface JobStatus {
   item: Partial<BaseItemDto>;
   speed?: number;
   timestamp: Date;
+  base64Image?: string;
 }
 
 /**

@@ -169,7 +169,7 @@ export const ItemContent: React.FC<{ id: string }> = React.memo(({ id }) => {
     if (item?.Type === "Episode") headerHeightRef.current = 400;
     else if (item?.Type === "Movie") headerHeightRef.current = 500;
     else headerHeightRef.current = 400;
-  }, [item]);
+  }, [item, orientation]);
 
   const { data: sessionData } = useQuery({
     queryKey: ["sessionData", item?.Id],

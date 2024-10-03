@@ -1,7 +1,7 @@
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import * as Haptics from "expo-haptics";
-import React, { useCallback, useRef } from "react";
-import { TouchableOpacity } from "react-native";
+import React, { useCallback, useMemo, useRef } from "react";
+import { TouchableOpacity, View } from "react-native";
 import {
   ActionSheetProvider,
   useActionSheet,
@@ -10,6 +10,10 @@ import {
 import { useFileOpener } from "@/hooks/useDownloadedFileOpener";
 import { Text } from "../common/Text";
 import { useDownload } from "@/providers/DownloadProvider";
+import { storage } from "@/utils/mmkv";
+import { Image } from "expo-image";
+import { ItemCardText } from "../ItemCardText";
+import { Ionicons } from "@expo/vector-icons";
 
 interface EpisodeCardProps {
   item: BaseItemDto;
@@ -24,6 +28,10 @@ export const EpisodeCard: React.FC<EpisodeCardProps> = ({ item }) => {
   const { deleteFile } = useDownload();
   const { openFile } = useFileOpener();
   const { showActionSheetWithOptions } = useActionSheet();
+
+  const base64Image = useMemo(() => {
+    return storage.getString(item.Id!);
+  }, []);
 
   const handleOpenFile = useCallback(() => {
     openFile(item);
@@ -68,10 +76,32 @@ export const EpisodeCard: React.FC<EpisodeCardProps> = ({ item }) => {
     <TouchableOpacity
       onPress={handleOpenFile}
       onLongPress={showActionSheet}
-      className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4"
+      className="flex flex-col"
     >
-      <Text className="font-bold">{item.Name}</Text>
-      <Text className="text-xs opacity-50">Episode {item.IndexNumber}</Text>
+      {base64Image ? (
+        <View className="w-44 aspect-video rounded-lg overflow-hidden mr-2">
+          <Image
+            source={{
+              uri: `data:image/jpeg;base64,${base64Image}`,
+            }}
+            style={{
+              width: "100%",
+              height: "100%",
+              resizeMode: "cover",
+            }}
+          />
+        </View>
+      ) : (
+        <View className="w-44 aspect-video rounded-lg bg-neutral-900 mr-2 flex items-center justify-center">
+          <Ionicons
+            name="image-outline"
+            size={24}
+            color="gray"
+            className="self-center mt-16"
+          />
+        </View>
+      )}
+      <ItemCardText item={item} />
     </TouchableOpacity>
   );
 };
