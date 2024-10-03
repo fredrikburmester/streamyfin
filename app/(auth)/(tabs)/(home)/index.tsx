@@ -10,7 +10,10 @@ import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import { useSettings } from "@/utils/atoms/settings";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { Api } from "@jellyfin/sdk";
-import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
+import {
+  BaseItemDto,
+  BaseItemKind,
+} from "@jellyfin/sdk/lib/generated-client/models";
 import {
   getItemsApi,
   getSuggestionsApi,
@@ -20,8 +23,8 @@ import {
 } from "@jellyfin/sdk/lib/utils/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import NetInfo from "@react-native-community/netinfo";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigation, useRouter } from "expo-router";
+import { QueryFunction, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRouter, useNavigation } from "expo-router";
 import { useAtom } from "jotai";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -34,20 +37,18 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-type BaseSection = {
-  title: string;
-  queryKey: (string | undefined)[];
-};
-
-type ScrollingCollectionListSection = BaseSection & {
+type ScrollingCollectionListSection = {
   type: "ScrollingCollectionList";
-  queryFn: () => Promise<BaseItemDto[]>;
+  title?: string;
+  queryKey: (string | undefined | null)[];
+  queryFn: QueryFunction<BaseItemDto[]>;
   orientation?: "horizontal" | "vertical";
 };
 
-type MediaListSection = BaseSection & {
+type MediaListSection = {
   type: "MediaListSection";
-  queryFn: () => Promise<BaseItemDto>;
+  queryKey: (string | undefined)[];
+  queryFn: QueryFunction<BaseItemDto>;
 };
 
 type Section = ScrollingCollectionListSection | MediaListSection;
@@ -154,111 +155,106 @@ export default function index() {
     staleTime: 60 * 1000,
   });
 
-  const movieCollectionId = useMemo(() => {
-    return userViews?.find((c) => c.CollectionType === "movies")?.Id;
-  }, [userViews]);
-
-  const tvShowCollectionId = useMemo(() => {
-    return userViews?.find((c) => c.CollectionType === "tvshows")?.Id;
+  const collections = useMemo(() => {
+    const allow = ["movies", "tvshows"];
+    return (
+      userViews?.filter(
+        (c) => c.CollectionType && allow.includes(c.CollectionType)
+      ) || []
+    );
   }, [userViews]);
 
   const refetch = useCallback(async () => {
     setLoading(true);
     await queryClient.invalidateQueries();
-    // await queryClient.invalidateQueries({ queryKey: ["userViews"] });
-    // await queryClient.invalidateQueries({ queryKey: ["resumeItems"] });
-    // await queryClient.invalidateQueries({ queryKey: ["continueWatching"] });
-    // await queryClient.invalidateQueries({ queryKey: ["nextUp-all"] });
-    // await queryClient.invalidateQueries({
-    //   queryKey: ["recentlyAddedInMovies"],
-    // });
-    // await queryClient.invalidateQueries({
-    //   queryKey: ["recentlyAddedInTVShows"],
-    // });
-    // await queryClient.invalidateQueries({ queryKey: ["suggestions"] });
-    // await queryClient.invalidateQueries({
-    //   queryKey: ["sf_promoted"],
-    // });
-    // await queryClient.invalidateQueries({
-    //   queryKey: ["sf_carousel"],
-    // });
     setLoading(false);
   }, [queryClient, user?.Id]);
+
+  const createCollectionConfig = useCallback(
+    (
+      title: string,
+      queryKey: string[],
+      includeItemTypes: BaseItemKind[],
+      parentId: string | undefined
+    ): ScrollingCollectionListSection => ({
+      title,
+      queryKey,
+      queryFn: async () => {
+        if (!api) return [];
+        return (
+          (
+            await getUserLibraryApi(api).getLatestMedia({
+              userId: user?.Id,
+              limit: 50,
+              fields: ["PrimaryImageAspectRatio", "Path"],
+              imageTypeLimit: 1,
+              enableImageTypes: ["Primary", "Backdrop", "Thumb"],
+              includeItemTypes,
+              parentId,
+            })
+          ).data || []
+        );
+      },
+      type: "ScrollingCollectionList",
+    }),
+    [api, user?.Id]
+  );
 
   const sections = useMemo(() => {
     if (!api || !user?.Id) return [];
 
+    const latestMediaViews = collections.map((c) => {
+      const includeItemTypes: BaseItemKind[] =
+        c.CollectionType === "tvshows" ? ["Series"] : ["Movie"];
+      const title = "Recently Added in " + c.Name;
+      const queryKey = ["recentlyAddedIn" + c.CollectionType, user?.Id!, c.Id!];
+      return createCollectionConfig(
+        title || "",
+        queryKey,
+        includeItemTypes,
+        c.Id
+      );
+    });
+
     const ss: Section[] = [
-      // {
-      //   title: "Continue Watching",
-      //   queryKey: ["resumeItems", user.Id],
-      //   queryFn: async () =>
-      //     (
-      //       await getItemsApi(api).getResumeItems({
-      //         userId: user.Id,
-      //         enableImageTypes: ["Primary", "Backdrop", "Thumb"],
-      //       })
-      //     ).data.Items || [],
-      //   type: "ScrollingCollectionList",
-      //   orientation: "horizontal",
-      // },
-      // {
-      //   title: "Next Up",
-      //   queryKey: ["nextUp-all", user?.Id],
-      //   queryFn: async () =>
-      //     (
-      //       await getTvShowsApi(api).getNextUp({
-      //         userId: user?.Id,
-      //         fields: ["MediaSourceCount"],
-      //         limit: 20,
-      //         enableImageTypes: ["Primary", "Backdrop", "Thumb"],
-      //       })
-      //     ).data.Items || [],
-      //   type: "ScrollingCollectionList",
-      //   orientation: "horizontal",
-      // },
       {
-        title: "Recently Added in Movies",
-        queryKey: ["recentlyAddedInMovies", user?.Id, movieCollectionId],
+        title: "Continue Watching",
+        queryKey: ["resumeItems", user.Id],
         queryFn: async () =>
           (
-            await getUserLibraryApi(api).getLatestMedia({
-              userId: user?.Id,
-              limit: 50,
-              fields: ["PrimaryImageAspectRatio", "Path"],
-              imageTypeLimit: 1,
+            await getItemsApi(api).getResumeItems({
+              userId: user.Id,
               enableImageTypes: ["Primary", "Backdrop", "Thumb"],
-              includeItemTypes: ["Movie"],
-              parentId: movieCollectionId,
             })
-          ).data || [],
+          ).data.Items || [],
         type: "ScrollingCollectionList",
+        orientation: "horizontal",
       },
       {
-        title: "Recently Added in TV-Shows",
-        queryKey: ["recentlyAddedInTVShows", user?.Id, tvShowCollectionId],
+        title: "Next Up",
+        queryKey: ["nextUp-all", user?.Id],
         queryFn: async () =>
           (
-            await getUserLibraryApi(api).getLatestMedia({
+            await getTvShowsApi(api).getNextUp({
               userId: user?.Id,
-              limit: 50,
-              fields: ["PrimaryImageAspectRatio", "Path"],
-              imageTypeLimit: 1,
+              fields: ["MediaSourceCount"],
+              limit: 20,
               enableImageTypes: ["Primary", "Backdrop", "Thumb"],
-              includeItemTypes: ["Series"],
-              parentId: tvShowCollectionId,
             })
-          ).data || [],
+          ).data.Items || [],
         type: "ScrollingCollectionList",
+        orientation: "horizontal",
       },
+      ...latestMediaViews,
       ...(mediaListCollections?.map(
         (ml) =>
           ({
-            title: ml.Name || "",
-            queryKey: ["mediaList", ml.Id],
+            title: ml.Name,
+            queryKey: ["mediaList", ml.Id!],
             queryFn: async () => ml,
             type: "MediaListSection",
-          } as MediaListSection)
+            orientation: "vertical",
+          } as Section)
       ) || []),
       {
         title: "Suggested Movies",
@@ -297,13 +293,7 @@ export default function index() {
       },
     ];
     return ss;
-  }, [
-    api,
-    user?.Id,
-    movieCollectionId,
-    tvShowCollectionId,
-    mediaListCollections,
-  ]);
+  }, [api, user?.Id, collections, mediaListCollections]);
 
   if (isConnected === false) {
     return (
@@ -387,38 +377,6 @@ export default function index() {
       }}
     >
       <LargeMovieCarousel />
-
-      <ScrollingCollectionList
-        key="continueWatching"
-        title={"Continue Watching"}
-        queryKey={["continueWatching", user?.Id]}
-        queryFn={async () =>
-          (
-            await getItemsApi(api).getResumeItems({
-              userId: user?.Id,
-              enableImageTypes: ["Primary", "Backdrop", "Thumb"],
-            })
-          ).data.Items || []
-        }
-        orientation={"horizontal"}
-      />
-
-      <ScrollingCollectionList
-        key="nextUp"
-        title={"Next Up"}
-        queryKey={["nextUp-all", user?.Id]}
-        queryFn={async () =>
-          (
-            await getTvShowsApi(api).getNextUp({
-              userId: user?.Id,
-              fields: ["MediaSourceCount"],
-              limit: 20,
-              enableImageTypes: ["Primary", "Backdrop", "Thumb"],
-            })
-          ).data.Items || []
-        }
-        orientation={"horizontal"}
-      />
 
       {sections.map((section, index) => {
         if (section.type === "ScrollingCollectionList") {
