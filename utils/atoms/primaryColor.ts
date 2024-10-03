@@ -2,12 +2,10 @@ import { atom, useAtom } from "jotai";
 
 interface ThemeColors {
   primary: string;
-  secondary: string;
-  average: string;
   text: string;
 }
 
-const calculateTextColor = (backgroundColor: string): string => {
+export const calculateTextColor = (backgroundColor: string): string => {
   // Convert hex to RGB
   const r = parseInt(backgroundColor.slice(1, 3), 16);
   const g = parseInt(backgroundColor.slice(3, 5), 16);
@@ -48,7 +46,7 @@ const calculateRelativeLuminance = (rgb: number[]): number => {
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 };
 
-const isCloseToBlack = (color: string): boolean => {
+export const isCloseToBlack = (color: string): boolean => {
   const r = parseInt(color.slice(1, 3), 16);
   const g = parseInt(color.slice(3, 5), 16);
   const b = parseInt(color.slice(5, 7), 16);
@@ -57,33 +55,13 @@ const isCloseToBlack = (color: string): boolean => {
   return r < 20 && g < 20 && b < 20;
 };
 
-const adjustToNearBlack = (color: string): string => {
+export const adjustToNearBlack = (color: string): string => {
   return "#212121"; // A very dark gray, almost black
 };
 
-const baseThemeColorAtom = atom<ThemeColors>({
+export const itemThemeColorAtom = atom<ThemeColors>({
   primary: "#FFFFFF",
-  secondary: "#000000",
-  average: "#888888",
   text: "#000000",
 });
-
-export const itemThemeColorAtom = atom(
-  (get) => get(baseThemeColorAtom),
-  (get, set, update: Partial<ThemeColors>) => {
-    const currentColors = get(baseThemeColorAtom);
-    let newColors = { ...currentColors, ...update };
-
-    // Adjust primary color if it's too close to black
-    if (newColors.primary && isCloseToBlack(newColors.primary)) {
-      newColors.primary = adjustToNearBlack(newColors.primary);
-    }
-
-    // Recalculate text color if primary color changes
-    if (update.primary) newColors.text = calculateTextColor(newColors.primary);
-
-    set(baseThemeColorAtom, newColors);
-  }
-);
 
 export const useItemThemeColor = () => useAtom(itemThemeColorAtom);

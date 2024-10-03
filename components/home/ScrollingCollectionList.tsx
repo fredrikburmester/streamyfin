@@ -6,12 +6,13 @@ import {
   type QueryFunction,
   type QueryKey,
 } from "@tanstack/react-query";
-import { View, ViewProps } from "react-native";
+import { ScrollView, View, ViewProps } from "react-native";
 import ContinueWatchingPoster from "../ContinueWatchingPoster";
 import { ItemCardText } from "../ItemCardText";
 import { HorizontalScroll } from "../common/HorrizontalScroll";
 import { TouchableItemRouter } from "../common/TouchableItemRouter";
 import SeriesPoster from "../posters/SeriesPoster";
+import { FlashList } from "@shopify/flash-list";
 
 interface Props extends ViewProps {
   title?: string | null;
@@ -39,40 +40,70 @@ export const ScrollingCollectionList: React.FC<Props> = ({
   if (disabled || !title) return null;
 
   return (
-    <View {...props}>
+    <View {...props} className="">
       <Text className="px-4 text-lg font-bold mb-2 text-neutral-100">
         {title}
       </Text>
-      <HorizontalScroll
-        data={data}
-        extraData={[orientation, isLoading]}
-        loading={isLoading}
-        renderItem={(item, index) => (
-          <TouchableItemRouter
-            item={item}
-            key={index}
-            style={{
-              width: orientation === "horizontal" ? 176 : 112,
-              zIndex: 100,
-            }}
-          >
-            {item.Type === "Episode" && orientation === "horizontal" && (
-              <ContinueWatchingPoster item={item} />
-            )}
-            {item.Type === "Episode" && orientation === "vertical" && (
-              <SeriesPoster item={item} />
-            )}
-            {item.Type === "Movie" && orientation === "horizontal" && (
-              <ContinueWatchingPoster item={item} />
-            )}
-            {item.Type === "Movie" && orientation === "vertical" && (
-              <MoviePoster item={item} />
-            )}
-            {item.Type === "Series" && <SeriesPoster item={item} />}
-            <ItemCardText item={item} />
-          </TouchableItemRouter>
-        )}
-      />
+      {isLoading ? (
+        <View
+          className={`
+            flex flex-row gap-2 px-4
+        `}
+        >
+          {[1, 2, 3].map((i) => (
+            <View className="w-44" key={i}>
+              <View className="bg-neutral-900 h-24 w-full rounded-md mb-1"></View>
+              <View className="rounded-md overflow-hidden mb-1 self-start">
+                <Text
+                  className="text-neutral-900 bg-neutral-900 rounded-md"
+                  numberOfLines={1}
+                >
+                  Nisi mollit voluptate amet.
+                </Text>
+              </View>
+              <View className="rounded-md overflow-hidden self-start mb-1">
+                <Text
+                  className="text-neutral-900 bg-neutral-900 text-xs rounded-md "
+                  numberOfLines={1}
+                >
+                  Lorem ipsum
+                </Text>
+              </View>
+            </View>
+          ))}
+        </View>
+      ) : (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <View className="px-4 flex flex-row">
+            {data?.map((item, index) => (
+              <TouchableItemRouter
+                item={item}
+                key={index}
+                className={`
+              mr-2 
+
+              ${orientation === "horizontal" ? "w-44" : "w-28"}
+            `}
+              >
+                {item.Type === "Episode" && orientation === "horizontal" && (
+                  <ContinueWatchingPoster item={item} />
+                )}
+                {item.Type === "Episode" && orientation === "vertical" && (
+                  <SeriesPoster item={item} />
+                )}
+                {item.Type === "Movie" && orientation === "horizontal" && (
+                  <ContinueWatchingPoster item={item} />
+                )}
+                {item.Type === "Movie" && orientation === "vertical" && (
+                  <MoviePoster item={item} />
+                )}
+                {item.Type === "Series" && <SeriesPoster item={item} />}
+                <ItemCardText item={item} />
+              </TouchableItemRouter>
+            ))}
+          </View>
+        </ScrollView>
+      )}
     </View>
   );
 };

@@ -198,11 +198,11 @@ export const SeasonPicker: React.FC<Props> = ({ item, initialSeasonIndex }) => {
               key={e.Id}
               className="flex flex-col mb-4"
             >
-              <View className="flex flex-row items-center mb-2">
-                <View className="w-32 aspect-video overflow-hidden mr-2">
+              <View className="flex flex-row items-start mb-2">
+                <View className="mr-2">
                   <ContinueWatchingPoster
+                    size="small"
                     item={e}
-                    width={128}
                     useEpisodePoster
                   />
                 </View>
@@ -217,7 +217,7 @@ export const SeasonPicker: React.FC<Props> = ({ item, initialSeasonIndex }) => {
                     {runtimeTicksToSeconds(e.RunTimeTicks)}
                   </Text>
                 </View>
-                <View className="self-start ml-auto">
+                <View className="self-start ml-auto -mt-0.5">
                   <DownloadItem item={e} />
                 </View>
               </View>

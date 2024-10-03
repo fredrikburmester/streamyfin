@@ -23,7 +23,11 @@ export const ListItem: React.FC<PropsWithChildren<Props>> = ({
     >
       <View className="flex flex-col">
         <Text className="font-bold ">{title}</Text>
-        {subTitle && <Text className="text-xs">{subTitle}</Text>}
+        {subTitle && (
+          <Text className="text-xs" selectable>
+            {subTitle}
+          </Text>
+        )}
       </View>
       {iconAfter}
     </View>
