@@ -8,6 +8,7 @@ import { Loader } from "@/components/Loader";
 import AlbumCover from "@/components/posters/AlbumCover";
 import MoviePoster from "@/components/posters/MoviePoster";
 import SeriesPoster from "@/components/posters/SeriesPoster";
+import { TAB_HEIGHT } from "@/constants/Values";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import { useSettings } from "@/utils/atoms/settings";
 import { getUserItemData } from "@/utils/jellyfin/user-library/getUserItemData";
@@ -225,9 +226,13 @@ export default function search() {
         contentContainerStyle={{
           paddingLeft: insets.left,
           paddingRight: insets.right,
+          paddingBottom: 16,
+        }}
+        style={{
+          marginBottom: TAB_HEIGHT,
         }}
       >
-        <View className="flex flex-col pt-4 pb-32">
+        <View className="flex flex-col pt-2">
           {Platform.OS === "android" && (
             <View className="mb-4 px-4">
               <Input
@@ -250,165 +255,125 @@ export default function search() {
           <SearchItemWrapper
             header="Movies"
             ids={movies?.map((m) => m.Id!)}
-            renderItem={(data) => (
-              <HorizontalScroll
-                data={data}
-                renderItem={(item) => (
-                  <TouchableItemRouter
-                    key={item.Id}
-                    className="flex flex-col w-28"
-                    item={item}
-                  >
-                    <MoviePoster item={item} key={item.Id} />
-                    <Text numberOfLines={2} className="mt-2">
-                      {item.Name}
-                    </Text>
-                    <Text className="opacity-50 text-xs">
-                      {item.ProductionYear}
-                    </Text>
-                  </TouchableItemRouter>
-                )}
-              />
+            renderItem={(item) => (
+              <TouchableItemRouter
+                key={item.Id}
+                className="flex flex-col w-28 mr-2"
+                item={item}
+              >
+                <MoviePoster item={item} key={item.Id} />
+                <Text numberOfLines={2} className="mt-2">
+                  {item.Name}
+                </Text>
+                <Text className="opacity-50 text-xs">
+                  {item.ProductionYear}
+                </Text>
+              </TouchableItemRouter>
             )}
           />
           <SearchItemWrapper
             ids={series?.map((m) => m.Id!)}
             header="Series"
-            renderItem={(data) => (
-              <HorizontalScroll
-                data={data}
-                renderItem={(item) => (
-                  <TouchableItemRouter
-                    key={item.Id}
-                    item={item}
-                    className="flex flex-col w-28"
-                  >
-                    <SeriesPoster item={item} key={item.Id} />
-                    <Text numberOfLines={2} className="mt-2">
-                      {item.Name}
-                    </Text>
-                    <Text className="opacity-50 text-xs">
-                      {item.ProductionYear}
-                    </Text>
-                  </TouchableItemRouter>
-                )}
-              />
+            renderItem={(item) => (
+              <TouchableItemRouter
+                key={item.Id}
+                item={item}
+                className="flex flex-col w-28"
+              >
+                <SeriesPoster item={item} key={item.Id} />
+                <Text numberOfLines={2} className="mt-2">
+                  {item.Name}
+                </Text>
+                <Text className="opacity-50 text-xs">
+                  {item.ProductionYear}
+                </Text>
+              </TouchableItemRouter>
             )}
           />
           <SearchItemWrapper
             ids={episodes?.map((m) => m.Id!)}
             header="Episodes"
-            renderItem={(data) => (
-              <HorizontalScroll
-                data={data}
-                renderItem={(item) => (
-                  <TouchableItemRouter
-                    item={item}
-                    key={item.Id}
-                    className="flex flex-col w-44"
-                  >
-                    <ContinueWatchingPoster item={item} />
-                    <ItemCardText item={item} />
-                  </TouchableItemRouter>
-                )}
-              />
+            renderItem={(item) => (
+              <TouchableItemRouter
+                item={item}
+                key={item.Id}
+                className="flex flex-col w-44"
+              >
+                <ContinueWatchingPoster item={item} />
+                <ItemCardText item={item} />
+              </TouchableItemRouter>
             )}
           />
           <SearchItemWrapper
             ids={collections?.map((m) => m.Id!)}
             header="Collections"
-            renderItem={(data) => (
-              <HorizontalScroll
-                data={data}
-                renderItem={(item) => (
-                  <TouchableItemRouter
-                    key={item.Id}
-                    item={item}
-                    className="flex flex-col w-28"
-                  >
-                    <MoviePoster item={item} key={item.Id} />
-                    <Text numberOfLines={2} className="mt-2">
-                      {item.Name}
-                    </Text>
-                  </TouchableItemRouter>
-                )}
-              />
+            renderItem={(item) => (
+              <TouchableItemRouter
+                key={item.Id}
+                item={item}
+                className="flex flex-col w-28"
+              >
+                <MoviePoster item={item} key={item.Id} />
+                <Text numberOfLines={2} className="mt-2">
+                  {item.Name}
+                </Text>
+              </TouchableItemRouter>
             )}
           />
           <SearchItemWrapper
             ids={actors?.map((m) => m.Id!)}
             header="Actors"
-            renderItem={(data) => (
-              <HorizontalScroll
-                data={data}
-                renderItem={(item) => (
-                  <TouchableItemRouter
-                    item={item}
-                    key={item.Id}
-                    className="flex flex-col w-28"
-                  >
-                    <MoviePoster item={item} />
-                    <ItemCardText item={item} />
-                  </TouchableItemRouter>
-                )}
-              />
+            renderItem={(item) => (
+              <TouchableItemRouter
+                item={item}
+                key={item.Id}
+                className="flex flex-col w-28"
+              >
+                <MoviePoster item={item} />
+                <ItemCardText item={item} />
+              </TouchableItemRouter>
             )}
           />
           <SearchItemWrapper
             ids={artists?.map((m) => m.Id!)}
             header="Artists"
-            renderItem={(data) => (
-              <HorizontalScroll
-                data={data}
-                renderItem={(item) => (
-                  <TouchableItemRouter
-                    item={item}
-                    key={item.Id}
-                    className="flex flex-col w-28"
-                  >
-                    <AlbumCover id={item.Id} />
-                    <ItemCardText item={item} />
-                  </TouchableItemRouter>
-                )}
-              />
+            renderItem={(item) => (
+              <TouchableItemRouter
+                item={item}
+                key={item.Id}
+                className="flex flex-col w-28"
+              >
+                <AlbumCover id={item.Id} />
+                <ItemCardText item={item} />
+              </TouchableItemRouter>
             )}
           />
           <SearchItemWrapper
             ids={albums?.map((m) => m.Id!)}
             header="Albums"
-            renderItem={(data) => (
-              <HorizontalScroll
-                data={data}
-                renderItem={(item) => (
-                  <TouchableItemRouter
-                    item={item}
-                    key={item.Id}
-                    className="flex flex-col w-28"
-                  >
-                    <AlbumCover id={item.Id} />
-                    <ItemCardText item={item} />
-                  </TouchableItemRouter>
-                )}
-              />
+            renderItem={(item) => (
+              <TouchableItemRouter
+                item={item}
+                key={item.Id}
+                className="flex flex-col w-28"
+              >
+                <AlbumCover id={item.Id} />
+                <ItemCardText item={item} />
+              </TouchableItemRouter>
             )}
           />
           <SearchItemWrapper
             ids={songs?.map((m) => m.Id!)}
             header="Songs"
-            renderItem={(data) => (
-              <HorizontalScroll
-                data={data}
-                renderItem={(item) => (
-                  <TouchableItemRouter
-                    item={item}
-                    key={item.Id}
-                    className="flex flex-col w-28"
-                  >
-                    <AlbumCover id={item.AlbumId} />
-                    <ItemCardText item={item} />
-                  </TouchableItemRouter>
-                )}
-              />
+            renderItem={(item) => (
+              <TouchableItemRouter
+                item={item}
+                key={item.Id}
+                className="flex flex-col w-28"
+              >
+                <AlbumCover id={item.AlbumId} />
+                <ItemCardText item={item} />
+              </TouchableItemRouter>
             )}
           />
           {loading ? (
@@ -445,7 +410,7 @@ export default function search() {
 
 type Props = {
   ids?: string[] | null;
-  renderItem: (data: BaseItemDto[]) => React.ReactNode;
+  renderItem: (item: BaseItemDto) => React.ReactNode;
   header?: string;
 };
 
@@ -483,8 +448,14 @@ const SearchItemWrapper: React.FC<Props> = ({ ids, renderItem, header }) => {
 
   return (
     <>
-      <Text className="font-bold text-2xl px-4 my-2">{header}</Text>
-      {renderItem(data)}
+      <Text className="font-bold text-lg px-4 mb-2">{header}</Text>
+      <ScrollView
+        horizontal
+        className="px-4 mb-2"
+        showsHorizontalScrollIndicator={false}
+      >
+        {data.map((item) => renderItem(item))}
+      </ScrollView>
     </>
   );
 };

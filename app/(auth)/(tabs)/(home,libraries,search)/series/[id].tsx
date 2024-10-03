@@ -10,6 +10,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import { useLocalSearchParams } from "expo-router";
 import { useAtom } from "jotai";
+import React from "react";
 import { useEffect, useMemo } from "react";
 import { View } from "react-native";
 
@@ -19,8 +20,6 @@ const page: React.FC = () => {
     id: string;
     seasonIndex: string;
   };
-
-  console.log("seasonIndex", seasonIndex);
 
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);

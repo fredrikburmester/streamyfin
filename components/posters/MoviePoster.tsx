@@ -36,7 +36,7 @@ const MoviePoster: React.FC<MoviePosterProps> = ({
   }, [item]);
 
   return (
-    <View className="relative rounded-lg overflow-hidden border border-neutral-900">
+    <View className="relative rounded-lg overflow-hidden border border-neutral-900 w-28 aspect-[10/15]">
       <Image
         placeholder={{
           blurhash,
@@ -57,7 +57,6 @@ const MoviePoster: React.FC<MoviePosterProps> = ({
           width: "100%",
         }}
       />
-
       <WatchedIndicator item={item} />
       {showProgress && progress > 0 && (
         <View className="h-1 bg-red-600 w-full"></View>

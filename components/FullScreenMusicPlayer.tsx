@@ -40,7 +40,7 @@ import { Loader } from "./Loader";
 const windowDimensions = Dimensions.get("window");
 const screenDimensions = Dimensions.get("screen");
 
-export const FullScreenVideoPlayer: React.FC = () => {
+export const FullScreenMusicPlayer: React.FC = () => {
   const {
     currentlyPlaying,
     pauseVideo,
@@ -60,15 +60,9 @@ export const FullScreenVideoPlayer: React.FC = () => {
   const insets = useSafeAreaInsets();
 
   const { previousItem, nextItem } = useAdjacentEpisodes({ currentlyPlaying });
-  const { trickPlayUrl, calculateTrickplayUrl, trickplayInfo } =
-    useTrickplay(currentlyPlaying);
 
   const [showControls, setShowControls] = useState(true);
   const [isBuffering, setIsBufferingState] = useState(true);
-  const [ignoreSafeArea, setIgnoreSafeArea] = useState(false);
-  const [orientation, setOrientation] = useState(
-    ScreenOrientation.OrientationLock.UNKNOWN
-  );
 
   // Seconds
   const [currentTime, setCurrentTime] = useState(0);
@@ -87,29 +81,14 @@ export const FullScreenVideoPlayer: React.FC = () => {
   });
 
   useEffect(() => {
-    const dimensionsSubscription = Dimensions.addEventListener(
+    const subscription = Dimensions.addEventListener(
       "change",
       ({ window, screen }) => {
         setDimensions({ window, screen });
       }
     );
-
-    const orientationSubscription =
-      ScreenOrientation.addOrientationChangeListener((event) => {
-        setOrientation(
-          orientationToOrientationLock(event.orientationInfo.orientation)
-        );
-      });
-
-    ScreenOrientation.getOrientationAsync().then((orientation) => {
-      setOrientation(orientationToOrientationLock(orientation));
-    });
-
-    return () => {
-      dimensionsSubscription.remove();
-      orientationSubscription.remove();
-    };
-  }, []);
+    return () => subscription?.remove();
+  });
 
   const from = useMemo(() => segments[2], [segments]);
 
@@ -179,13 +158,6 @@ export const FullScreenVideoPlayer: React.FC = () => {
 
     return () => backHandler.remove();
   }, [currentlyPlaying, stopPlayback, router]);
-
-  const isLandscape = useMemo(() => {
-    return orientation === ScreenOrientation.OrientationLock.LANDSCAPE_LEFT ||
-      orientation === ScreenOrientation.OrientationLock.LANDSCAPE_RIGHT
-      ? true
-      : false;
-  }, [orientation]);
 
   const poster = useMemo(() => {
     if (!currentlyPlaying?.item || !api) return "";
@@ -264,9 +236,7 @@ export const FullScreenVideoPlayer: React.FC = () => {
     videoRef.current?.seek(value / 10000000);
   };
 
-  const handleSliderChange = (value: number) => {
-    calculateTrickplayUrl(value);
-  };
+  const handleSliderChange = (value: number) => {};
 
   const handleSliderStart = useCallback(() => {
     if (showControls === false) return;
@@ -313,10 +283,6 @@ export const FullScreenVideoPlayer: React.FC = () => {
     router.push(url);
   }, [nextItem, from, stopPlayback, router]);
 
-  const toggleIgnoreSafeArea = useCallback(() => {
-    setIgnoreSafeArea((prev) => !prev);
-  }, []);
-
   if (!currentlyPlaying) return null;
 
   return (
@@ -334,33 +300,44 @@ export const FullScreenVideoPlayer: React.FC = () => {
             position: "absolute",
             top: 0,
             bottom: 0,
-            left: ignoreSafeArea ? 0 : insets.left,
-            right: ignoreSafeArea ? 0 : insets.right,
-            width: ignoreSafeArea
-              ? dimensions.window.width
-              : dimensions.window.width - (insets.left + insets.right),
+            left: insets.left,
+            right: insets.right,
+            width: dimensions.window.width - (insets.left + insets.right),
           },
         ]}
       >
         {videoSource && (
-          <Video
-            ref={videoRef}
-            source={videoSource}
-            style={{ width: "100%", height: "100%" }}
-            resizeMode={ignoreSafeArea ? "cover" : "contain"}
-            onProgress={handleVideoProgress}
-            onLoad={(data) => (max.value = secondsToTicks(data.duration))}
-            onError={handleVideoError}
-            playWhenInactive={true}
-            allowsExternalPlayback={true}
-            playInBackground={true}
-            pictureInPicture={true}
-            showNotificationControls={true}
-            ignoreSilentSwitch="ignore"
-            fullscreen={false}
-          />
+          <>
+            <Video
+              ref={videoRef}
+              source={videoSource}
+              style={{ width: "100%", height: "100%" }}
+              resizeMode={"contain"}
+              onProgress={handleVideoProgress}
+              onLoad={(data) => (max.value = secondsToTicks(data.duration))}
+              onError={handleVideoError}
+              playWhenInactive={true}
+              allowsExternalPlayback={true}
+              playInBackground={true}
+              pictureInPicture={true}
+              showNotificationControls={true}
+              ignoreSilentSwitch="ignore"
+              fullscreen={false}
+            />
+          </>
         )}
       </Pressable>
+
+      <View pointerEvents="none" className="p-4">
+        <Image
+          source={poster ? { uri: poster } : undefined}
+          style={{
+            width: "100%",
+            height: "100%",
+            resizeMode: "contain",
+          }}
+        />
+      </View>
 
       {(showControls || isBuffering) && (
         <View
@@ -392,8 +369,8 @@ export const FullScreenVideoPlayer: React.FC = () => {
           style={[
             {
               position: "absolute",
-              bottom: isLandscape ? insets.bottom + 26 : insets.bottom + 70,
-              right: isLandscape ? insets.right + 32 : insets.right + 16,
+              bottom: insets.bottom + 70,
+              right: insets.right + 16,
               height: 70,
             },
           ]}
@@ -413,8 +390,8 @@ export const FullScreenVideoPlayer: React.FC = () => {
           style={[
             {
               position: "absolute",
-              bottom: isLandscape ? insets.bottom + 26 : insets.bottom + 70,
-              right: isLandscape ? insets.right + 32 : insets.right + 16,
+              bottom: insets.bottom + 70,
+              right: insets.right + 16,
               height: 70,
             },
           ]}
@@ -436,23 +413,13 @@ export const FullScreenVideoPlayer: React.FC = () => {
               {
                 position: "absolute",
                 top: insets.top,
-                right: isLandscape ? insets.right + 32 : insets.right + 16,
+                right: insets.right + 16,
                 height: 70,
                 zIndex: 10,
               },
             ]}
             className="flex flex-row items-center space-x-2 z-10"
           >
-            <TouchableOpacity
-              onPress={toggleIgnoreSafeArea}
-              className="aspect-square flex flex-col bg-neutral-800 rounded-xl items-center justify-center p-2"
-            >
-              <Ionicons
-                name={ignoreSafeArea ? "contract-outline" : "expand"}
-                size={24}
-                color="white"
-              />
-            </TouchableOpacity>
             <TouchableOpacity
               onPress={() => {
                 stopPlayback();
@@ -469,10 +436,9 @@ export const FullScreenVideoPlayer: React.FC = () => {
               {
                 position: "absolute",
                 bottom: insets.bottom + 8,
-                left: isLandscape ? insets.left + 32 : insets.left + 16,
-                width: isLandscape
-                  ? dimensions.window.width - insets.left - insets.right - 64
-                  : dimensions.window.width - insets.left - insets.right - 32,
+                left: insets.left + 16,
+                width:
+                  dimensions.window.width - insets.left - insets.right - 32,
               },
             ]}
           >
@@ -495,11 +461,7 @@ export const FullScreenVideoPlayer: React.FC = () => {
               )}
             </View>
             <View
-              className={`flex ${
-                isLandscape
-                  ? "flex-row space-x-6 py-2 px-4 rounded-full"
-                  : "flex-col-reverse py-4 px-4 rounded-2xl"
-              } 
+              className={`flex ${"flex-col-reverse py-4 px-4 rounded-2xl"} 
           items-center  bg-neutral-800`}
             >
               <View className="flex flex-row items-center space-x-4">
@@ -550,9 +512,6 @@ export const FullScreenVideoPlayer: React.FC = () => {
                     maximumTrackTintColor: "rgba(255,255,255,0.2)",
                     minimumTrackTintColor: "#fff",
                     cacheTrackTintColor: "rgba(255,255,255,0.3)",
-                    bubbleBackgroundColor: "#fff",
-                    bubbleTextColor: "#000",
-                    heartbeatColor: "#999",
                   }}
                   cache={cacheProgress}
                   onSlidingStart={handleSliderStart}
@@ -561,49 +520,9 @@ export const FullScreenVideoPlayer: React.FC = () => {
                   containerStyle={{
                     borderRadius: 100,
                   }}
-                  renderBubble={() => {
-                    if (!trickPlayUrl || !trickplayInfo) {
-                      return null;
-                    }
-                    const { x, y, url } = trickPlayUrl;
-
-                    const tileWidth = 150;
-                    const tileHeight = 150 / trickplayInfo.aspectRatio!;
-                    return (
-                      <View
-                        style={{
-                          position: "absolute",
-                          bottom: 0,
-                          left: 0,
-                          width: tileWidth,
-                          height: tileHeight,
-                          marginLeft: -tileWidth / 4,
-                          marginTop: -tileHeight / 4 - 60,
-                          zIndex: 10,
-                        }}
-                        className=" bg-neutral-800 overflow-hidden"
-                      >
-                        <Image
-                          cachePolicy={"memory-disk"}
-                          style={{
-                            width: 150 * trickplayInfo?.data.TileWidth!,
-                            height:
-                              (150 / trickplayInfo.aspectRatio!) *
-                              trickplayInfo?.data.TileHeight!,
-                            transform: [
-                              { translateX: -x * tileWidth },
-                              { translateY: -y * tileHeight },
-                            ],
-                          }}
-                          source={{ uri: url }}
-                          contentFit="cover"
-                        />
-                      </View>
-                    );
-                  }}
                   sliderHeight={10}
-                  thumbWidth={0}
                   progress={progress}
+                  thumbWidth={0}
                   minimumValue={min}
                   maximumValue={max}
                 />

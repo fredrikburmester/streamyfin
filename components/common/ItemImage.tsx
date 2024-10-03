@@ -22,7 +22,6 @@ interface Props extends ImageProps {
     | "Thumb";
   quality?: number;
   width?: number;
-  useThemeColor?: boolean;
   onError?: () => void;
 }
 
@@ -31,7 +30,6 @@ export const ItemImage: React.FC<Props> = ({
   variant = "Primary",
   quality = 90,
   width = 1000,
-  useThemeColor = false,
   onError,
   ...props
 }) => {
