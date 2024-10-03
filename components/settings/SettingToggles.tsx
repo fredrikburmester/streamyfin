@@ -50,41 +50,32 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
 
   const queryClient = useQueryClient();
 
-  const { data: optimizeServerStatistics } = useQuery({
-    queryKey: ["optimize-server", settings?.optimizedVersionsServerUrl],
-    queryFn: async () =>
-      getStatistics({
-        url: settings?.optimizedVersionsServerUrl,
-        authHeader: api?.accessToken,
-        deviceId: await getOrSetDeviceId(),
-      }),
-    refetchInterval: 1000,
-    staleTime: 0,
-    enabled:
-      !!settings?.optimizedVersionsServerUrl &&
-      settings.optimizedVersionsServerUrl.length > 0,
-  });
-
   /********************
    * Background task
    *******************/
-  useEffect(() => {
-    checkStatusAsync();
-  }, []);
-
   const checkStatusAsync = async () => {
     await BackgroundFetch.getStatusAsync();
-    await TaskManager.isTaskRegisteredAsync(BACKGROUND_FETCH_TASK);
+    return await TaskManager.isTaskRegisteredAsync(BACKGROUND_FETCH_TASK);
   };
 
   useEffect(() => {
-    if (settings?.autoDownload) {
-      registerBackgroundFetchAsync();
-    } else {
-      unregisterBackgroundFetchAsync();
-    }
+    (async () => {
+      const registered = await checkStatusAsync();
 
-    checkStatusAsync();
+      if (settings?.autoDownload === true && !registered) {
+        registerBackgroundFetchAsync();
+        toast.success("Background downlodas enabled");
+      } else if (settings?.autoDownload === false && registered) {
+        unregisterBackgroundFetchAsync();
+        toast.info("Background downloads disabled");
+      } else if (settings?.autoDownload === true && registered) {
+        // Don't to anything
+      } else if (settings?.autoDownload === false && !registered) {
+        // Don't to anything
+      } else {
+        updateSettings({ autoDownload: false });
+      }
+    })();
   }, [settings?.autoDownload]);
   /**********************
    *********************/
@@ -593,14 +584,6 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
                   <Text className="font-semibold">
                     Optimized versions server
                   </Text>
-                  <View
-                    className={`
-                      w-3 h-3 rounded-full
-                      ${
-                        optimizeServerStatistics ? "bg-green-600" : "bg-red-600"
-                      }
-                    `}
-                  ></View>
                 </View>
                 <Text className="text-xs opacity-50">
                   Set the URL for the optimized versions server for downloads.
@@ -620,8 +603,7 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
                 <Button
                   color="purple"
                   className="h-12 mt-2"
-                  onPress={() => {
-                    toast.info("Saved");
+                  onPress={async () => {
                     updateSettings({
                       optimizedVersionsServerUrl:
                         optimizedVersionsServerUrl.length === 0
@@ -630,6 +612,14 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
                           ? optimizedVersionsServerUrl
                           : optimizedVersionsServerUrl + "/",
                     });
+                    const res = await getStatistics({
+                      url: settings?.optimizedVersionsServerUrl,
+                      authHeader: api?.accessToken,
+                      deviceId: await getOrSetDeviceId(),
+                    });
+                    if (res) {
+                      toast.success("Connected");
+                    } else toast.error("Could not connect");
                   }}
                 >
                   Save

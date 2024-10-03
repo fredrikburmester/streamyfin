@@ -354,6 +354,7 @@ export default function index() {
         paddingLeft: insets.left,
         paddingRight: insets.right,
         paddingTop: 8,
+        paddingBottom: 8,
         rowGap: 8,
       }}
       style={{
