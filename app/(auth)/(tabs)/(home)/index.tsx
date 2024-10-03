@@ -5,6 +5,7 @@ import { ScrollingCollectionList } from "@/components/home/ScrollingCollectionLi
 import { Loader } from "@/components/Loader";
 import { MediaListSection } from "@/components/medialists/MediaListSection";
 import { TAB_HEIGHT } from "@/constants/Values";
+import { useDownload } from "@/providers/DownloadProvider";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import { useSettings } from "@/utils/atoms/settings";
 import { Feather, Ionicons } from "@expo/vector-icons";
@@ -72,55 +73,26 @@ export default function index() {
     setLoadingRetry(false);
   }, []);
 
+  const { downloadedFiles } = useDownload();
+
   useEffect(() => {
-    try {
-      // we check for downloaded files and turn the downloads button green if there are downloads
-      AsyncStorage.getItem("downloaded_files").then((value) => {
-        let downloadButtonColor = "white";
-        if (value) {
-          const files = JSON.parse(value) as BaseItemDto[];
-          if (files.length > 0) {
-            downloadButtonColor = "green";
-          } else {
-            downloadButtonColor = "white";
-          }
-        } else {
-          downloadButtonColor = "white";
-        }
-        console.log("color: ", downloadButtonColor);
-        navigation.setOptions({
-          headerLeft: () => (
-            <TouchableOpacity
-              style={{
-                marginRight: Platform.OS === "android" ? 17 : 0,
-              }}
-              onPress={() => {
-                router.push("/(auth)/downloads");
-              }}
-            >
-              <Feather name="download" color={downloadButtonColor} size={22} />
-            </TouchableOpacity>
-          ),
-        });
-      });
-    } catch (error) {
-      console.log(error);
-      navigation.setOptions({
-        headerLeft: () => (
-          <TouchableOpacity
-            style={{
-              marginRight: Platform.OS === "android" ? 17 : 0,
-            }}
-            onPress={() => {
-              router.push("/(auth)/downloads");
-            }}
-          >
-            <Feather name="download" color={"white"} size={22} />
-          </TouchableOpacity>
-        ),
-      });
-    }
-  }, [navigation.getState()]);
+    const color =
+      downloadedFiles && downloadedFiles?.length > 0 ? "#9334E9" : "white";
+    navigation.setOptions({
+      headerLeft: () => (
+        <TouchableOpacity
+          style={{
+            marginRight: Platform.OS === "android" ? 17 : 0,
+          }}
+          onPress={() => {
+            router.push("/(auth)/downloads");
+          }}
+        >
+          <Feather name="download" color={color} size={22} />
+        </TouchableOpacity>
+      ),
+    });
+  }, [downloadedFiles, navigation]);
 
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener((state) => {
