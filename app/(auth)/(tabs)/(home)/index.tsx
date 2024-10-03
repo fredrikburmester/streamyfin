@@ -20,33 +20,30 @@ import {
   getUserViewsApi,
 } from "@jellyfin/sdk/lib/utils/api";
 import NetInfo from "@react-native-community/netinfo";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { QueryFunction, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useAtom } from "jotai";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   RefreshControl,
-  SafeAreaView,
   ScrollView,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-type BaseSection = {
-  title: string;
-  queryKey: (string | undefined)[];
-};
-
-type ScrollingCollectionListSection = BaseSection & {
+type ScrollingCollectionListSection = {
   type: "ScrollingCollectionList";
-  queryFn: () => Promise<BaseItemDto[]>;
+  title?: string;
+  queryKey: (string | undefined | null)[];
+  queryFn: QueryFunction<BaseItemDto[]>;
   orientation?: "horizontal" | "vertical";
 };
 
-type MediaListSection = BaseSection & {
+type MediaListSection = {
   type: "MediaListSection";
-  queryFn: () => Promise<BaseItemDto>;
+  queryKey: (string | undefined)[];
+  queryFn: QueryFunction<BaseItemDto>;
 };
 
 type Section = ScrollingCollectionListSection | MediaListSection;
@@ -142,109 +139,95 @@ export default function index() {
 
   const refetch = useCallback(async () => {
     setLoading(true);
-    await queryClient.refetchQueries({ queryKey: ["userViews"] });
-    await queryClient.refetchQueries({ queryKey: ["resumeItems"] });
-    await queryClient.refetchQueries({ queryKey: ["nextUp-all"] });
-    await queryClient.refetchQueries({ queryKey: ["recentlyAddedInMovies"] });
-    await queryClient.refetchQueries({ queryKey: ["recentlyAddedInTVShows"] });
-    await queryClient.refetchQueries({ queryKey: ["suggestions"] });
-    await queryClient.refetchQueries({
-      queryKey: ["sf_promoted"],
-    });
-    await queryClient.refetchQueries({
-      queryKey: ["sf_carousel"],
-    });
+    await queryClient.invalidateQueries();
     setLoading(false);
   }, [queryClient, user?.Id]);
 
-  type queryKey = (string | undefined)[];
-  const createCollectionConfig = (
-    title: string,
-    queryKey: queryKey,
-    includeItemTypes: BaseItemKind[],
-    parentId: string | undefined
-  ): ScrollingCollectionListSection => ({
-    title,
-    queryKey,
-    queryFn: async () => {
-      if (!api) return [];
-      return (
-        (
-          await getUserLibraryApi(api).getLatestMedia({
-            userId: user?.Id,
-            limit: 50,
-            fields: ["PrimaryImageAspectRatio", "Path"],
-            imageTypeLimit: 1,
-            enableImageTypes: ["Primary", "Backdrop", "Thumb"],
-            includeItemTypes,
-            parentId,
-          })
-        ).data || []
-      );
-    },
-    type: "ScrollingCollectionList",
-  });
+  const createCollectionConfig = useCallback(
+    (
+      title: string,
+      queryKey: string[],
+      includeItemTypes: BaseItemKind[],
+      parentId: string | undefined
+    ): ScrollingCollectionListSection => ({
+      title,
+      queryKey,
+      queryFn: async () => {
+        if (!api) return [];
+        return (
+          (
+            await getUserLibraryApi(api).getLatestMedia({
+              userId: user?.Id,
+              limit: 50,
+              fields: ["PrimaryImageAspectRatio", "Path"],
+              imageTypeLimit: 1,
+              enableImageTypes: ["Primary", "Backdrop", "Thumb"],
+              includeItemTypes,
+              parentId,
+            })
+          ).data || []
+        );
+      },
+      type: "ScrollingCollectionList",
+    }),
+    [api, user?.Id]
+  );
 
   const sections = useMemo(() => {
     if (!api || !user?.Id) return [];
 
-    const latestMediaViews: ScrollingCollectionListSection[] = collections.map(
-      (c) => {
-        const includeItemTypes: BaseItemKind[] =
-          c.CollectionType === "tvshows" ? ["Series"] : ["Movie"];
-        const title = "Recently Added in " + c.Name;
-        const query: queryKey = [
-          "recentlyAddedIn" + c.CollectionType,
-          user?.Id,
-          c.Id,
-        ];
-        return createCollectionConfig(
-          title || "",
-          query,
-          includeItemTypes,
-          c.Id
-        );
-      }
-    );
+    const latestMediaViews = collections.map((c) => {
+      const includeItemTypes: BaseItemKind[] =
+        c.CollectionType === "tvshows" ? ["Series"] : ["Movie"];
+      const title = "Recently Added in " + c.Name;
+      const queryKey = ["recentlyAddedIn" + c.CollectionType, user?.Id!, c.Id!];
+      return createCollectionConfig(
+        title || "",
+        queryKey,
+        includeItemTypes,
+        c.Id
+      );
+    });
 
     const ss: Section[] = [
-      // {
-      //   title: "Continue Watching",
-      //   queryKey: ["resumeItems", user.Id],
-      //   queryFn: async () =>
-      //     (
-      //       await getItemsApi(api).getResumeItems({
-      //         userId: user.Id,
-      //         enableImageTypes: ["Primary", "Backdrop", "Thumb"],
-      //       })
-      //     ).data.Items || [],
-      //   type: "ScrollingCollectionList",
-      //   orientation: "horizontal",
-      // },
-      // {
-      //   title: "Next Up",
-      //   queryKey: ["nextUp-all", user?.Id],
-      //   queryFn: async () =>
-      //     (
-      //       await getTvShowsApi(api).getNextUp({
-      //         userId: user?.Id,
-      //         fields: ["MediaSourceCount"],
-      //         limit: 20,
-      //         enableImageTypes: ["Primary", "Backdrop", "Thumb"],
-      //       })
-      //     ).data.Items || [],
-      //   type: "ScrollingCollectionList",
-      //   orientation: "horizontal",
-      // },
+      {
+        title: "Continue Watching",
+        queryKey: ["resumeItems", user.Id],
+        queryFn: async () =>
+          (
+            await getItemsApi(api).getResumeItems({
+              userId: user.Id,
+              enableImageTypes: ["Primary", "Backdrop", "Thumb"],
+            })
+          ).data.Items || [],
+        type: "ScrollingCollectionList",
+        orientation: "horizontal",
+      },
+      {
+        title: "Next Up",
+        queryKey: ["nextUp-all", user?.Id],
+        queryFn: async () =>
+          (
+            await getTvShowsApi(api).getNextUp({
+              userId: user?.Id,
+              fields: ["MediaSourceCount"],
+              limit: 20,
+              enableImageTypes: ["Primary", "Backdrop", "Thumb"],
+            })
+          ).data.Items || [],
+        type: "ScrollingCollectionList",
+        orientation: "horizontal",
+      },
       ...latestMediaViews,
       ...(mediaListCollections?.map(
         (ml) =>
           ({
-            title: ml.Name || "",
-            queryKey: ["mediaList", ml.Id],
+            title: ml.Name,
+            queryKey: ["mediaList", ml.Id!],
             queryFn: async () => ml,
             type: "MediaListSection",
-          } as MediaListSection)
+            orientation: "vertical",
+          } as Section)
       ) || []),
       {
         title: "Suggested Movies",
@@ -283,7 +266,7 @@ export default function index() {
       },
     ];
     return ss;
-  }, [api, user?.Id, collections.map((c) => c.Id), mediaListCollections]);
+  }, [api, user?.Id, collections, mediaListCollections]);
 
   if (isConnected === false) {
     return (
@@ -361,38 +344,6 @@ export default function index() {
       className="flex flex-col space-y-4 mb-20"
     >
       <LargeMovieCarousel />
-
-      <ScrollingCollectionList
-        key="nextUp"
-        title={"Next Up"}
-        queryKey={["nextUp-all", user?.Id]}
-        queryFn={async () =>
-          (
-            await getTvShowsApi(api).getNextUp({
-              userId: user?.Id,
-              fields: ["MediaSourceCount"],
-              limit: 20,
-              enableImageTypes: ["Primary", "Backdrop", "Thumb"],
-            })
-          ).data.Items || []
-        }
-        orientation={"horizontal"}
-      />
-
-      <ScrollingCollectionList
-        key="continueWatching"
-        title={"Continue Watching"}
-        queryKey={["continueWatching", user?.Id]}
-        queryFn={async () =>
-          (
-            await getItemsApi(api).getResumeItems({
-              userId: user?.Id,
-              enableImageTypes: ["Primary", "Backdrop", "Thumb"],
-            })
-          ).data.Items || []
-        }
-        orientation={"horizontal"}
-      />
 
       {sections.map((section, index) => {
         if (section.type === "ScrollingCollectionList") {
