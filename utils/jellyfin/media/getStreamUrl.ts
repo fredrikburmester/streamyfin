@@ -109,5 +109,12 @@ export const getStreamUrl = async ({
 
   if (!url) throw new Error("No url");
 
+  console.log(
+    mediaSource.VideoType,
+    mediaSource.Container,
+    mediaSource.TranscodingContainer,
+    mediaSource.TranscodingSubProtocol
+  );
+
   return url;
 };

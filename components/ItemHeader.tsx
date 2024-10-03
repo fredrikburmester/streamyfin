@@ -4,6 +4,7 @@ import { MoviesTitleHeader } from "./movies/MoviesTitleHeader";
 import { Ratings } from "./Ratings";
 import { EpisodeTitleHeader } from "./series/EpisodeTitleHeader";
 import { GenreTags } from "./GenreTags";
+import React from "react";
 
 interface Props extends ViewProps {
   item?: BaseItemDto | null;

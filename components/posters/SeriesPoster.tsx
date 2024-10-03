@@ -32,7 +32,7 @@ const SeriesPoster: React.FC<MoviePosterProps> = ({ item }) => {
   }, [item]);
 
   return (
-    <View className="relative rounded-lg overflow-hidden border border-neutral-900">
+    <View className="w-28 aspect-[10/15] relative rounded-lg overflow-hidden border border-neutral-900 ">
       <Image
         placeholder={{
           blurhash,
@@ -49,7 +49,7 @@ const SeriesPoster: React.FC<MoviePosterProps> = ({ item }) => {
         cachePolicy={"memory-disk"}
         contentFit="cover"
         style={{
-          aspectRatio: "10/15",
+          height: "100%",
           width: "100%",
         }}
       />

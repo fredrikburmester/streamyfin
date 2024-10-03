@@ -4,10 +4,12 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as FileSystem from "expo-file-system";
 import { FFmpegKit, FFmpegKitConfig } from "ffmpeg-kit-react-native";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
-import { runningProcesses } from "@/utils/atoms/downloads";
 import { writeToLog } from "@/utils/log";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner-native";
+import { useDownload } from "@/providers/DownloadProvider";
+import { useRouter } from "expo-router";
+import { JobStatus } from "@/utils/optimize-server";
 
 /**
  * Custom hook for remuxing HLS to MP4 using FFmpeg.
@@ -17,8 +19,9 @@ import { toast } from "sonner-native";
  * @returns An object with remuxing-related functions
  */
 export const useRemuxHlsToMp4 = (item: BaseItemDto) => {
-  const [_, setProgress] = useAtom(runningProcesses);
   const queryClient = useQueryClient();
+  const { saveDownloadedItemInfo, setProcesses } = useDownload();
+  const router = useRouter();
 
   if (!item.Id || !item.Name) {
     writeToLog("ERROR", "useRemuxHlsToMp4 ~ missing arguments");
@@ -29,8 +32,16 @@ export const useRemuxHlsToMp4 = (item: BaseItemDto) => {
 
   const startRemuxing = useCallback(
     async (url: string) => {
-      toast.success("Download started", {
-        invert: true,
+      if (!item.Id) throw new Error("Item must have an Id");
+
+      toast.success(`Download started for ${item.Name}`, {
+        action: {
+          label: "Go to download",
+          onClick: () => {
+            router.push("/downloads");
+            toast.dismiss();
+          },
+        },
       });
 
       const command = `-y -loglevel quiet -thread_queue_size 512 -protocol_whitelist file,http,https,tcp,tls,crypto -multiple_requests 1 -tcp_nodelay 1 -fflags +genpts -i ${url} -c copy -bufsize 50M -max_muxing_queue_size 4096 ${output}`;
@@ -41,7 +52,20 @@ export const useRemuxHlsToMp4 = (item: BaseItemDto) => {
       );
 
       try {
-        setProgress({ item, progress: 0, startTime: new Date(), speed: 0 });
+        setProcesses((prev) => [
+          ...prev,
+          {
+            id: "",
+            deviceId: "",
+            inputUrl: "",
+            item,
+            itemId: item.Id,
+            outputPath: "",
+            progress: 0,
+            status: "downloading",
+            timestamp: new Date(),
+          } as JobStatus,
+        ]);
 
         FFmpegKitConfig.enableStatisticsCallback((statistics) => {
           const videoLength =
@@ -56,11 +80,19 @@ export const useRemuxHlsToMp4 = (item: BaseItemDto) => {
               ? Math.floor((processedFrames / totalFrames) * 100)
               : 0;
 
-          setProgress((prev) =>
-            prev?.item.Id === item.Id!
-              ? { ...prev, progress: percentage, speed }
-              : prev
-          );
+          if (!item.Id) throw new Error("Item is undefined");
+          setProcesses((prev) => {
+            return prev.map((process) => {
+              if (process.itemId === item.Id) {
+                return {
+                  ...process,
+                  progress: percentage,
+                  speed: Math.max(speed, 0),
+                };
+              }
+              return process;
+            });
+          });
         });
 
         // Await the execution of the FFmpeg command and ensure that the callback is awaited properly.
@@ -70,11 +102,16 @@ export const useRemuxHlsToMp4 = (item: BaseItemDto) => {
               const returnCode = await session.getReturnCode();
 
               if (returnCode.isValueSuccess()) {
-                await updateDownloadedFiles(item);
+                if (!item) throw new Error("Item is undefined");
+                await saveDownloadedItemInfo(item);
+                toast.success("Download completed");
                 writeToLog(
                   "INFO",
                   `useRemuxHlsToMp4 ~ remuxing completed successfully for item: ${item.Name}`
                 );
+                await queryClient.invalidateQueries({
+                  queryKey: ["downloadedItems"],
+                });
                 resolve();
               } else if (returnCode.isValueError()) {
                 writeToLog(
@@ -90,63 +127,35 @@ export const useRemuxHlsToMp4 = (item: BaseItemDto) => {
                 resolve();
               }
 
-              setProgress(null);
+              setProcesses((prev) => {
+                return prev.filter((process) => process.itemId !== item.Id);
+              });
             } catch (error) {
               reject(error);
             }
           });
         });
-
-        await queryClient.invalidateQueries({ queryKey: ["downloaded_files"] });
-        await queryClient.invalidateQueries({ queryKey: ["downloaded"] });
       } catch (error) {
         console.error("Failed to remux:", error);
         writeToLog(
           "ERROR",
           `useRemuxHlsToMp4 ~ remuxing failed for item: ${item.Name}`
         );
-        setProgress(null);
+        setProcesses((prev) => {
+          return prev.filter((process) => process.itemId !== item.Id);
+        });
         throw error; // Re-throw the error to propagate it to the caller
       }
     },
-    [output, item, setProgress]
+    [output, item]
   );
 
   const cancelRemuxing = useCallback(() => {
     FFmpegKit.cancel();
-    setProgress(null);
-    writeToLog(
-      "INFO",
-      `useRemuxHlsToMp4 ~ remuxing cancelled for item: ${item.Name}`
-    );
-  }, [item.Name, setProgress]);
+    setProcesses((prev) => {
+      return prev.filter((process) => process.itemId !== item.Id);
+    });
+  }, [item.Name]);
 
   return { startRemuxing, cancelRemuxing };
 };
-
-/**
- * Updates the list of downloaded files in AsyncStorage.
- *
- * @param item - The item to add to the downloaded files list
- */
-async function updateDownloadedFiles(item: BaseItemDto): Promise<void> {
-  try {
-    const currentFiles: BaseItemDto[] = JSON.parse(
-      (await AsyncStorage.getItem("downloaded_files")) || "[]"
-    );
-    const updatedFiles = [
-      ...currentFiles.filter((i) => i.Id !== item.Id),
-      item,
-    ];
-    await AsyncStorage.setItem(
-      "downloaded_files",
-      JSON.stringify(updatedFiles)
-    );
-  } catch (error) {
-    console.error("Error updating downloaded files:", error);
-    writeToLog(
-      "ERROR",
-      `Failed to update downloaded files for item: ${item.Name}`
-    );
-  }
-}
