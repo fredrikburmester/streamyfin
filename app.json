@@ -77,7 +77,7 @@
         "expo-build-properties",
         {
           "ios": {
-            "deploymentTarget": "14.0"
+            "deploymentTarget": "15.6"
           },
           "android": {
             "android": {
