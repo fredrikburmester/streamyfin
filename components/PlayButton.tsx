@@ -163,7 +163,6 @@ export const PlayButton: React.FC<Props> = ({ item, url, ...props }) => {
             });
             break;
           case 1:
-            console.log("Device");
             setCurrentlyPlayingState({ item, url });
             router.push("/play");
             break;

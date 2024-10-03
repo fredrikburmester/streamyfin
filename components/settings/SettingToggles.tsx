@@ -1,40 +1,84 @@
-import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
+import { useDownload } from "@/providers/DownloadProvider";
 import {
-  DefaultLanguageOption,
-  DownloadOptions,
-  ScreenOrientationEnum,
-  useSettings,
-} from "@/utils/atoms/settings";
+  apiAtom,
+  getOrSetDeviceId,
+  userAtom,
+} from "@/providers/JellyfinProvider";
+import { ScreenOrientationEnum, useSettings } from "@/utils/atoms/settings";
+import {
+  BACKGROUND_FETCH_TASK,
+  registerBackgroundFetchAsync,
+  unregisterBackgroundFetchAsync,
+} from "@/utils/background-tasks";
 import { getItemsApi } from "@jellyfin/sdk/lib/utils/api";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import * as BackgroundFetch from "expo-background-fetch";
+import * as ScreenOrientation from "expo-screen-orientation";
+import * as TaskManager from "expo-task-manager";
 import { useAtom } from "jotai";
+import { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Linking,
   Switch,
   TouchableOpacity,
   View,
   ViewProps,
 } from "react-native";
+import { toast } from "sonner-native";
 import * as DropdownMenu from "zeego/dropdown-menu";
+import { Button } from "../Button";
+import { Input } from "../common/Input";
 import { Text } from "../common/Text";
 import { Loader } from "../Loader";
-import { Input } from "../common/Input";
-import { useState } from "react";
-import { Button } from "../Button";
 import { MediaToggles } from "./MediaToggles";
-import * as ScreenOrientation from "expo-screen-orientation";
+import axios from "axios";
+import { getStatistics } from "@/utils/optimize-server";
 
 interface Props extends ViewProps {}
 
 export const SettingToggles: React.FC<Props> = ({ ...props }) => {
   const [settings, updateSettings] = useSettings();
+  const { setProcesses } = useDownload();
 
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
 
   const [marlinUrl, setMarlinUrl] = useState<string>("");
+  const [optimizedVersionsServerUrl, setOptimizedVersionsServerUrl] =
+    useState<string>(settings?.optimizedVersionsServerUrl || "");
 
   const queryClient = useQueryClient();
+
+  /********************
+   * Background task
+   *******************/
+  const checkStatusAsync = async () => {
+    await BackgroundFetch.getStatusAsync();
+    return await TaskManager.isTaskRegisteredAsync(BACKGROUND_FETCH_TASK);
+  };
+
+  useEffect(() => {
+    (async () => {
+      const registered = await checkStatusAsync();
+
+      if (settings?.autoDownload === true && !registered) {
+        registerBackgroundFetchAsync();
+        toast.success("Background downlodas enabled");
+      } else if (settings?.autoDownload === false && registered) {
+        unregisterBackgroundFetchAsync();
+        toast.info("Background downloads disabled");
+      } else if (settings?.autoDownload === true && registered) {
+        // Don't to anything
+      } else if (settings?.autoDownload === false && !registered) {
+        // Don't to anything
+      } else {
+        updateSettings({ autoDownload: false });
+      }
+    })();
+  }, [settings?.autoDownload]);
+  /**********************
+   *********************/
 
   const {
     data: mediaListCollections,
@@ -308,9 +352,9 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
 
           <View
             className={`
-        flex flex-row items-center space-x-2 justify-between bg-neutral-900 p-4
-        ${settings.forceDirectPlay ? "opacity-50 select-none" : ""}
-      `}
+              flex flex-row items-center space-x-2 justify-between bg-neutral-900 p-4
+              ${settings.forceDirectPlay ? "opacity-50 select-none" : ""}
+            `}
           >
             <View className="flex flex-col shrink">
               <Text className="font-semibold">Device profile</Text>
@@ -362,6 +406,7 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
               </DropdownMenu.Content>
             </DropdownMenu.Root>
           </View>
+
           <View className="flex flex-col">
             <View
               className={`
@@ -413,37 +458,174 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
             </View>
             {settings.searchEngine === "Marlin" && (
               <View className="flex flex-col bg-neutral-900 px-4 pb-4">
-                <>
-                  <View className="flex flex-row items-center space-x-2">
-                    <View className="grow">
-                      <Input
-                        placeholder="Marlin Server URL..."
-                        defaultValue={settings.marlinServerUrl}
-                        value={marlinUrl}
-                        keyboardType="url"
-                        returnKeyType="done"
-                        autoCapitalize="none"
-                        textContentType="URL"
-                        onChangeText={(text) => setMarlinUrl(text)}
-                      />
-                    </View>
-                    <Button
-                      color="purple"
-                      className="shrink w-16 h-12"
-                      onPress={() => {
-                        updateSettings({ marlinServerUrl: marlinUrl });
-                      }}
-                    >
-                      Save
-                    </Button>
+                <View className="flex flex-row items-center space-x-2">
+                  <View className="grow">
+                    <Input
+                      placeholder="Marlin Server URL..."
+                      defaultValue={settings.marlinServerUrl}
+                      value={marlinUrl}
+                      keyboardType="url"
+                      returnKeyType="done"
+                      autoCapitalize="none"
+                      textContentType="URL"
+                      onChangeText={(text) => setMarlinUrl(text)}
+                    />
                   </View>
+                  <Button
+                    color="purple"
+                    className="shrink w-16 h-12"
+                    onPress={() => {
+                      updateSettings({
+                        marlinServerUrl: marlinUrl.endsWith("/")
+                          ? marlinUrl
+                          : marlinUrl + "/",
+                      });
+                    }}
+                  >
+                    Save
+                  </Button>
+                </View>
 
+                {settings.marlinServerUrl && (
                   <Text className="text-neutral-500 mt-2">
-                    {settings.marlinServerUrl}
+                    Current: {settings.marlinServerUrl}
                   </Text>
-                </>
+                )}
               </View>
             )}
+          </View>
+        </View>
+      </View>
+
+      <View className="mt-4">
+        <Text className="text-lg font-bold mb-2">Downloads</Text>
+        <View className="flex flex-col rounded-xl overflow-hidden  divide-y-2 divide-solid divide-neutral-800">
+          <View
+            className={`
+                flex flex-row items-center space-x-2 justify-between bg-neutral-900 p-4
+              `}
+          >
+            <View className="flex flex-col shrink">
+              <Text className="font-semibold">Download method</Text>
+              <Text className="text-xs opacity-50">
+                Choose the download method to use. Optimized requires the
+                optimized server.
+              </Text>
+            </View>
+            <DropdownMenu.Root>
+              <DropdownMenu.Trigger>
+                <TouchableOpacity className="bg-neutral-800 rounded-lg border-neutral-900 border px-3 py-2 flex flex-row items-center justify-between">
+                  <Text>
+                    {settings.downloadMethod === "remux"
+                      ? "Default"
+                      : "Optimized"}
+                  </Text>
+                </TouchableOpacity>
+              </DropdownMenu.Trigger>
+              <DropdownMenu.Content
+                loop={true}
+                side="bottom"
+                align="start"
+                alignOffset={0}
+                avoidCollisions={true}
+                collisionPadding={8}
+                sideOffset={8}
+              >
+                <DropdownMenu.Label>Methods</DropdownMenu.Label>
+                <DropdownMenu.Item
+                  key="1"
+                  onSelect={() => {
+                    updateSettings({ downloadMethod: "remux" });
+                    setProcesses([]);
+                  }}
+                >
+                  <DropdownMenu.ItemTitle>Default</DropdownMenu.ItemTitle>
+                </DropdownMenu.Item>
+                <DropdownMenu.Item
+                  key="2"
+                  onSelect={() => {
+                    updateSettings({ downloadMethod: "optimized" });
+                    setProcesses([]);
+                    queryClient.invalidateQueries({ queryKey: ["search"] });
+                  }}
+                >
+                  <DropdownMenu.ItemTitle>Optimized</DropdownMenu.ItemTitle>
+                </DropdownMenu.Item>
+              </DropdownMenu.Content>
+            </DropdownMenu.Root>
+          </View>
+          <View className="flex flex-row space-x-2 items-center justify-between bg-neutral-900 p-4">
+            <View className="flex flex-col shrink">
+              <Text className="font-semibold">Auto download</Text>
+              <Text className="text-xs opacity-50 shrink">
+                This will automatically download the media file when it's
+                finished optimizing on the server.
+              </Text>
+            </View>
+            <Switch
+              value={settings.autoDownload}
+              onValueChange={(value) => updateSettings({ autoDownload: value })}
+            />
+          </View>
+          <View
+            pointerEvents={
+              settings.downloadMethod === "optimized" ? "auto" : "none"
+            }
+            className={`
+              ${
+                settings.downloadMethod === "optimized"
+                  ? "opacity-100"
+                  : "opacity-50"
+              }`}
+          >
+            <View className="flex flex-col bg-neutral-900 px-4 py-4">
+              <View className="flex flex-col shrink mb-2">
+                <View className="flex flex-row justify-between items-center">
+                  <Text className="font-semibold">
+                    Optimized versions server
+                  </Text>
+                </View>
+                <Text className="text-xs opacity-50">
+                  Set the URL for the optimized versions server for downloads.
+                </Text>
+              </View>
+              <View></View>
+              <View className="flex flex-col">
+                <Input
+                  placeholder="Optimized versions server URL..."
+                  value={optimizedVersionsServerUrl}
+                  keyboardType="url"
+                  returnKeyType="done"
+                  autoCapitalize="none"
+                  textContentType="URL"
+                  onChangeText={(text) => setOptimizedVersionsServerUrl(text)}
+                />
+                <Button
+                  color="purple"
+                  className="h-12 mt-2"
+                  onPress={async () => {
+                    updateSettings({
+                      optimizedVersionsServerUrl:
+                        optimizedVersionsServerUrl.length === 0
+                          ? null
+                          : optimizedVersionsServerUrl.endsWith("/")
+                          ? optimizedVersionsServerUrl
+                          : optimizedVersionsServerUrl + "/",
+                    });
+                    const res = await getStatistics({
+                      url: settings?.optimizedVersionsServerUrl,
+                      authHeader: api?.accessToken,
+                      deviceId: await getOrSetDeviceId(),
+                    });
+                    if (res) {
+                      toast.success("Connected");
+                    } else toast.error("Could not connect");
+                  }}
+                >
+                  Save
+                </Button>
+              </View>
+            </View>
           </View>
         </View>
       </View>

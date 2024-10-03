@@ -11,6 +11,7 @@ import React, {
 
 import { useSettings } from "@/utils/atoms/settings";
 import { getDeviceId } from "@/utils/device";
+import { SubtitleTrack } from "@/utils/hls/parseM3U8ForSubtitles";
 import { reportPlaybackProgress } from "@/utils/jellyfin/playstate/reportPlaybackProgress";
 import { reportPlaybackStopped } from "@/utils/jellyfin/playstate/reportPlaybackStopped";
 import { postCapabilities } from "@/utils/jellyfin/session/capabilities";
@@ -20,15 +21,12 @@ import {
 } from "@jellyfin/sdk/lib/generated-client/models";
 import { getMediaInfoApi } from "@jellyfin/sdk/lib/utils/api";
 import * as Linking from "expo-linking";
+import { useRouter } from "expo-router";
 import { useAtom } from "jotai";
 import { debounce } from "lodash";
 import { Alert } from "react-native";
 import { OnProgressData, type VideoRef } from "react-native-video";
 import { apiAtom, userAtom } from "./JellyfinProvider";
-import {
-  parseM3U8ForSubtitles,
-  SubtitleTrack,
-} from "@/utils/hls/parseM3U8ForSubtitles";
 
 export type CurrentlyPlayingState = {
   url: string;
@@ -69,6 +67,8 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
 }) => {
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
+
+  const router = useRouter();
 
   const videoRef = useRef<VideoRef | null>(null);
 
@@ -137,6 +137,7 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
             api,
             itemId: state.item.Id,
             sessionId: res.data.PlaySessionId,
+            deviceProfile: settings?.deviceProfile,
           });
 
           setSession(res.data);
@@ -326,6 +327,7 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
       } else if (command === "Stop") {
         console.log("Command ~ Stop");
         stopPlayback();
+        router.canGoBack() && router.back();
       } else if (command === "Mute") {
         console.log("Command ~ Mute");
         setVolume(0);
