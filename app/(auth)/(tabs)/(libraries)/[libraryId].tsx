@@ -69,13 +69,11 @@ const Page = () => {
   useEffect(() => {
     const sop = getSortOrderPreference(libraryId, sortOrderPreference);
     if (sop) {
-      console.log("getSortOrderPreference ~", sop, libraryId);
       _setSortOrder([sop]);
     } else {
       _setSortOrder([SortOrderOption.Ascending]);
     }
     const obp = getSortByPreference(libraryId, sortByPreference);
-    console.log("getSortByPreference ~", obp, libraryId);
     if (obp) {
       _setSortBy([obp]);
     } else {
@@ -87,7 +85,6 @@ const Page = () => {
     (sortBy: SortByOption[]) => {
       const sop = getSortByPreference(libraryId, sortByPreference);
       if (sortBy[0] !== sop) {
-        console.log("setSortByPreference ~", sortBy[0], libraryId);
         setSortByPreference({ ...sortByPreference, [libraryId]: sortBy[0] });
       }
       _setSortBy(sortBy);
@@ -99,7 +96,6 @@ const Page = () => {
     (sortOrder: SortOrderOption[]) => {
       const sop = getSortOrderPreference(libraryId, sortOrderPreference);
       if (sortOrder[0] !== sop) {
-        console.log("setSortOrderPreference ~", sortOrder[0], libraryId);
         setOderByPreference({
           ...sortOrderPreference,
           [libraryId]: sortOrder[0],

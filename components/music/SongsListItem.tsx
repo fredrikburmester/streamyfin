@@ -8,6 +8,7 @@ import { runtimeTicksToSeconds } from "@/utils/time";
 import { useActionSheet } from "@expo/react-native-action-sheet";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import { getMediaInfoApi } from "@jellyfin/sdk/lib/utils/api";
+import { useRouter } from "expo-router";
 import { useAtom } from "jotai";
 import { TouchableOpacity, TouchableOpacityProps, View } from "react-native";
 import CastContext, {
@@ -35,7 +36,7 @@ export const SongsListItem: React.FC<Props> = ({
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
   const castDevice = useCastDevice();
-
+  const router = useRouter();
   const client = useRemoteMediaClient();
   const { showActionSheetWithOptions } = useActionSheet();
 
@@ -123,6 +124,7 @@ export const SongsListItem: React.FC<Props> = ({
         item,
         url,
       });
+      router.push("/play-music");
     }
   };
 

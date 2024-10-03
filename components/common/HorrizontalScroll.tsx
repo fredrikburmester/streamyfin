@@ -98,7 +98,6 @@ export const HorizontalScroll = forwardRef<
             </Text>
           </View>
         )}
-        {...props}
       />
     );
   }
