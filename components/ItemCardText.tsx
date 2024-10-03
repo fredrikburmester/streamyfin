@@ -10,7 +10,7 @@ type ItemCardProps = {
 
 export const ItemCardText: React.FC<ItemCardProps> = ({ item }) => {
   return (
-    <View className="mt-2 flex flex-col h-12">
+    <View className="mt-2 flex flex-col">
       {item.Type === "Episode" ? (
         <>
           <Text numberOfLines={2} className="">

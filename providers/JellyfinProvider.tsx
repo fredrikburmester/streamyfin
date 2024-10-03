@@ -40,17 +40,6 @@ const JellyfinContext = createContext<JellyfinContextValue | undefined>(
   undefined
 );
 
-const getOrSetDeviceId = async () => {
-  let deviceId = await AsyncStorage.getItem("deviceId");
-
-  if (!deviceId) {
-    deviceId = uuid.v4() as string;
-    await AsyncStorage.setItem("deviceId", deviceId);
-  }
-
-  return deviceId;
-};
-
 export const JellyfinProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
@@ -63,7 +52,7 @@ export const JellyfinProvider: React.FC<{ children: ReactNode }> = ({
       setJellyfin(
         () =>
           new Jellyfin({
-            clientInfo: { name: "Streamyfin", version: "0.15.0" },
+            clientInfo: { name: "Streamyfin", version: "0.16.0" },
             deviceInfo: { name: Platform.OS === "ios" ? "iOS" : "Android", id },
           })
       );
@@ -97,7 +86,7 @@ export const JellyfinProvider: React.FC<{ children: ReactNode }> = ({
     return {
       authorization: `MediaBrowser Client="Streamyfin", Device=${
         Platform.OS === "android" ? "Android" : "iOS"
-      }, DeviceId="${deviceId}", Version="0.15.0"`,
+      }, DeviceId="${deviceId}", Version="0.16.0"`,
     };
   }, [deviceId]);
 
@@ -269,10 +258,10 @@ export const JellyfinProvider: React.FC<{ children: ReactNode }> = ({
     ],
     queryFn: async () => {
       try {
-        const token = await AsyncStorage.getItem("token");
-        const serverUrl = await AsyncStorage.getItem("serverUrl");
+        const token = await getTokenFromStoraage();
+        const serverUrl = await getServerUrlFromStorage();
         const user = JSON.parse(
-          (await AsyncStorage.getItem("user")) as string
+          (await getUserFromStorage()) as string
         ) as UserDto;
 
         if (serverUrl && token && user.Id && jellyfin) {
@@ -330,4 +319,27 @@ function useProtectedRoute(user: UserDto | null, loading = false) {
       router.replace("/(auth)/(tabs)/(home)/");
     }
   }, [user, segments, loading]);
+}
+
+export async function getTokenFromStoraage() {
+  return await AsyncStorage.getItem("token");
+}
+
+export async function getUserFromStorage() {
+  return await AsyncStorage.getItem("user");
+}
+
+export async function getServerUrlFromStorage() {
+  return await AsyncStorage.getItem("serverUrl");
+}
+
+export async function getOrSetDeviceId() {
+  let deviceId = await AsyncStorage.getItem("deviceId");
+
+  if (!deviceId) {
+    deviceId = uuid.v4() as string;
+    await AsyncStorage.setItem("deviceId", deviceId);
+  }
+
+  return deviceId;
 }

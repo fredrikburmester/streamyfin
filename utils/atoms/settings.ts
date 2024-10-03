@@ -54,7 +54,7 @@ export type DefaultLanguageOption = {
   label: string;
 };
 
-type Settings = {
+export type Settings = {
   autoRotate?: boolean;
   forceLandscapeInVideoPlayer?: boolean;
   usePopularPlugin?: boolean;
@@ -72,6 +72,9 @@ type Settings = {
   defaultVideoOrientation: ScreenOrientation.OrientationLock;
   forwardSkipTime: number;
   rewindSkipTime: number;
+  optimizedVersionsServerUrl?: string | null;
+  downloadMethod: "optimized" | "remux";
+  autoDownload: boolean;
 };
 /**
  *
@@ -106,6 +109,9 @@ const loadSettings = async (): Promise<Settings> => {
     defaultVideoOrientation: ScreenOrientation.OrientationLock.DEFAULT,
     forwardSkipTime: 30,
     rewindSkipTime: 10,
+    optimizedVersionsServerUrl: null,
+    downloadMethod: "remux",
+    autoDownload: false,
   };
 
   try {

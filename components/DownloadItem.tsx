@@ -1,6 +1,6 @@
 import { useRemuxHlsToMp4 } from "@/hooks/useRemuxHlsToMp4";
+import { useDownload } from "@/providers/DownloadProvider";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
-import { runningProcesses } from "@/utils/atoms/downloads";
 import { queueActions, queueAtom } from "@/utils/atoms/queue";
 import { useSettings } from "@/utils/atoms/settings";
 import ios from "@/utils/profiles/ios";
@@ -17,8 +17,6 @@ import {
   BaseItemDto,
   MediaSourceInfo,
 } from "@jellyfin/sdk/lib/generated-client/models";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { useAtom } from "jotai";
 import { useCallback, useMemo, useRef, useState } from "react";
@@ -31,6 +29,7 @@ import { Loader } from "./Loader";
 import { MediaSourceSelector } from "./MediaSourceSelector";
 import ProgressCircle from "./ProgressCircle";
 import { SubtitleTrackSelector } from "./SubtitleTrackSelector";
+import { toast } from "sonner-native";
 
 interface DownloadProps extends ViewProps {
   item: BaseItemDto;
@@ -39,10 +38,10 @@ interface DownloadProps extends ViewProps {
 export const DownloadItem: React.FC<DownloadProps> = ({ item, ...props }) => {
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
-  const [process] = useAtom(runningProcesses);
   const [queue, setQueue] = useAtom(queueAtom);
   const [settings] = useSettings();
-  const { startRemuxing } = useRemuxHlsToMp4(item);
+  const { processes, startBackgroundDownload } = useDownload();
+  const { startRemuxing, cancelRemuxing } = useRemuxHlsToMp4(item);
 
   const [selectedMediaSource, setSelectedMediaSource] =
     useState<MediaSourceInfo | null>(null);
@@ -67,9 +66,7 @@ export const DownloadItem: React.FC<DownloadProps> = ({ item, ...props }) => {
     bottomSheetModalRef.current?.present();
   }, []);
 
-  const handleSheetChanges = useCallback((index: number) => {
-    console.log("handleSheetChanges", index);
-  }, []);
+  const handleSheetChanges = useCallback((index: number) => {}, []);
 
   const closeModal = useCallback(() => {
     bottomSheetModalRef.current?.dismiss();
@@ -115,6 +112,7 @@ export const DownloadItem: React.FC<DownloadProps> = ({ item, ...props }) => {
     );
 
     let url: string | undefined = undefined;
+    let fileExtension: string | undefined | null = "mp4";
 
     const mediaSource: MediaSourceInfo = response.data.MediaSources.find(
       (source: MediaSourceInfo) => source.Id === selectedMediaSource?.Id
@@ -149,38 +147,39 @@ export const DownloadItem: React.FC<DownloadProps> = ({ item, ...props }) => {
       }
     } else if (mediaSource.TranscodingUrl) {
       url = `${api.basePath}${mediaSource.TranscodingUrl}`;
+      fileExtension = mediaSource.TranscodingContainer;
     }
 
     if (!url) throw new Error("No url");
+    if (!fileExtension) throw new Error("No file extension");
 
-    return await startRemuxing(url);
+    if (settings?.downloadMethod === "optimized") {
+      return await startBackgroundDownload(url, item, fileExtension);
+    } else {
+      return await startRemuxing(url);
+    }
   }, [
     api,
     item,
-    startRemuxing,
+    startBackgroundDownload,
     user?.Id,
     selectedMediaSource,
     selectedAudioStream,
     selectedSubtitleStream,
     maxBitrate,
+    settings?.downloadMethod,
   ]);
 
   /**
    * Check if item is downloaded
    */
-  const { data: downloaded, isFetching } = useQuery({
-    queryKey: ["downloaded", item.Id],
-    queryFn: async () => {
-      if (!item.Id) return false;
+  const { downloadedFiles } = useDownload();
 
-      const data: BaseItemDto[] = JSON.parse(
-        (await AsyncStorage.getItem("downloaded_files")) || "[]"
-      );
+  const isDownloaded = useMemo(() => {
+    if (!downloadedFiles) return false;
 
-      return data.some((d) => d.Id === item.Id);
-    },
-    enabled: !!item.Id,
-  });
+    return downloadedFiles.some((file) => file.Id === item.Id);
+  }, [downloadedFiles, item.Id]);
 
   const renderBackdrop = useCallback(
     (props: BottomSheetBackdropProps) => (
@@ -193,14 +192,18 @@ export const DownloadItem: React.FC<DownloadProps> = ({ item, ...props }) => {
     []
   );
 
+  const process = useMemo(() => {
+    if (!processes) return null;
+
+    return processes.find((process) => process?.item?.Id === item.Id);
+  }, [processes, item.Id]);
+
   return (
     <View
       className="bg-neutral-800/80 rounded-full h-10 w-10 flex items-center justify-center"
       {...props}
     >
-      {isFetching ? (
-        <Loader />
-      ) : process && process?.item.Id === item.Id ? (
+      {process && process?.item.Id === item.Id ? (
         <TouchableOpacity
           onPress={() => {
             router.push("/downloads");
@@ -228,7 +231,7 @@ export const DownloadItem: React.FC<DownloadProps> = ({ item, ...props }) => {
         >
           <Ionicons name="hourglass" size={24} color="white" />
         </TouchableOpacity>
-      ) : downloaded ? (
+      ) : isDownloaded ? (
         <TouchableOpacity
           onPress={() => {
             router.push("/downloads");
@@ -288,25 +291,36 @@ export const DownloadItem: React.FC<DownloadProps> = ({ item, ...props }) => {
               className="mt-auto"
               onPress={() => {
                 if (userCanDownload === true) {
+                  if (!item.Id) {
+                    throw new Error("No item id");
+                  }
                   closeModal();
-                  queueActions.enqueue(queue, setQueue, {
-                    id: item.Id!,
-                    execute: async () => {
-                      await initiateDownload();
-                    },
-                    item,
-                  });
+                  if (settings?.downloadMethod === "remux") {
+                    queueActions.enqueue(queue, setQueue, {
+                      id: item.Id,
+                      execute: async () => {
+                        await initiateDownload();
+                      },
+                      item,
+                    });
+                  } else {
+                    initiateDownload();
+                  }
                 } else {
-                  Alert.alert(
-                    "Disabled",
-                    "This user is not allowed to download files."
-                  );
+                  toast.error("You are not allowed to download files.");
                 }
               }}
               color="purple"
             >
               Download
             </Button>
+            <View className="opacity-70 text-center w-full flex items-center">
+              {settings?.downloadMethod === "optimized" ? (
+                <Text className="text-xs">Using optimized server</Text>
+              ) : (
+                <Text className="text-xs">Using default method</Text>
+              )}
+            </View>
           </View>
         </BottomSheetView>
       </BottomSheetModal>

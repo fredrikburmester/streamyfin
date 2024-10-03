@@ -1,16 +1,17 @@
+import { Settings } from "@/utils/atoms/settings";
+import ios from "@/utils/profiles/ios";
+import native from "@/utils/profiles/native";
+import old from "@/utils/profiles/old";
 import { Api } from "@jellyfin/sdk";
-import {
-  SessionApi,
-  SessionApiPostCapabilitiesRequest,
-} from "@jellyfin/sdk/lib/generated-client/api/session-api";
-import { getSessionApi } from "@jellyfin/sdk/lib/utils/api";
 import { AxiosError, AxiosResponse } from "axios";
+import { useMemo } from "react";
 import { getAuthHeaders } from "../jellyfin";
 
 interface PostCapabilitiesParams {
   api: Api | null | undefined;
   itemId: string | null | undefined;
   sessionId: string | null | undefined;
+  deviceProfile: Settings["deviceProfile"];
 }
 
 /**
@@ -23,16 +24,26 @@ export const postCapabilities = async ({
   api,
   itemId,
   sessionId,
+  deviceProfile,
 }: PostCapabilitiesParams): Promise<AxiosResponse> => {
   if (!api || !itemId || !sessionId) {
     throw new Error("Missing parameters for marking item as not played");
+  }
+
+  let profile: any = ios;
+
+  if (deviceProfile === "Native") {
+    profile = native;
+  }
+  if (deviceProfile === "Old") {
+    profile = old;
   }
 
   try {
     const d = api.axiosInstance.post(
       api.basePath + "/Sessions/Capabilities/Full",
       {
-        playableMediaTypes: ["Audio", "Video", "Audio"],
+        playableMediaTypes: ["Audio", "Video"],
         supportedCommands: [
           "PlayState",
           "Play",
@@ -45,6 +56,7 @@ export const postCapabilities = async ({
         ],
         supportsMediaControl: true,
         id: sessionId,
+        DeviceProfile: profile,
       },
       {
         headers: getAuthHeaders(api),
