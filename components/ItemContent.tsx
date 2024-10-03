@@ -125,6 +125,7 @@ export const ItemContent: React.FC<{ id: string }> = React.memo(({ id }) => {
   });
 
   const [localItem, setLocalItem] = useState(item);
+  useImageColors(item);
 
   useEffect(() => {
     if (item) {
@@ -234,18 +235,6 @@ export const ItemContent: React.FC<{ id: string }> = React.memo(({ id }) => {
   });
 
   const logoUrl = useMemo(() => getLogoImageUrlById({ api, item }), [item]);
-  const themeImageColorSource = useMemo(() => {
-    if (!api || !item) return;
-    return getItemImage({
-      item,
-      api,
-      variant: "Primary",
-      quality: 80,
-      width: 300,
-    });
-  }, [api, item]);
-
-  useImageColors(themeImageColorSource?.uri);
 
   const loading = useMemo(() => {
     return Boolean(isLoading || isFetching || (logoUrl && loadingLogo));
@@ -274,7 +263,6 @@ export const ItemContent: React.FC<{ id: string }> = React.memo(({ id }) => {
             <Animated.View style={[animatedStyle, { flex: 1 }]}>
               {localItem && (
                 <ItemImage
-                  useThemeColor
                   variant={
                     localItem.Type === "Movie" && logoUrl
                       ? "Backdrop"
@@ -357,7 +345,7 @@ export const ItemContent: React.FC<{ id: string }> = React.memo(({ id }) => {
             <SeasonEpisodesCarousel item={item} loading={loading} />
           )}
 
-          <OverviewText text={item?.Overview} className="px-4 mb-4" />
+          <OverviewText text={item?.Overview} className="px-4 my-4" />
 
           <CastAndCrew item={item} className="mb-4" loading={loading} />
 

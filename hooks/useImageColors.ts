@@ -1,46 +1,95 @@
-import { itemThemeColorAtom } from "@/utils/atoms/primaryColor";
+import { apiAtom } from "@/providers/JellyfinProvider";
+import {
+  adjustToNearBlack,
+  calculateTextColor,
+  isCloseToBlack,
+  itemThemeColorAtom,
+} from "@/utils/atoms/primaryColor";
+import { getItemImage } from "@/utils/getItemImage";
+import { storage } from "@/utils/mmkv";
+import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client";
 import { useAtom } from "jotai";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { getColors } from "react-native-image-colors";
 
-export const useImageColors = (
-  uri: string | undefined | null,
-  disabled = false
-) => {
+/**
+ * Custom hook to extract and manage image colors for a given item.
+ *
+ * @param item - The BaseItemDto object representing the item.
+ * @param disabled - A boolean flag to disable color extraction.
+ *
+ */
+export const useImageColors = (item?: BaseItemDto | null, disabled = false) => {
+  const [api] = useAtom(apiAtom);
   const [, setPrimaryColor] = useAtom(itemThemeColorAtom);
+
+  const source = useMemo(() => {
+    if (!api || !item) return;
+    return getItemImage({
+      item,
+      api,
+      variant: "Primary",
+      quality: 80,
+      width: 300,
+    });
+  }, [api, item]);
 
   useEffect(() => {
     if (disabled) return;
-    if (uri) {
-      getColors(uri, {
+    if (source?.uri) {
+      // Check if colors are already cached in storage
+      const _primary = storage.getString(`${source.uri}-primary`);
+      const _text = storage.getString(`${source.uri}-text`);
+
+      // If colors are cached, use them and exit
+      if (_primary && _text) {
+        console.info("[useImageColors] Using cached colors for performance.");
+        setPrimaryColor({
+          primary: _primary,
+          text: _text,
+        });
+        return;
+      }
+
+      // Extract colors from the image
+      getColors(source.uri, {
         fallback: "#fff",
         cache: true,
-        key: uri,
+        key: source.uri,
       })
         .then((colors) => {
           let primary: string = "#fff";
-          let average: string = "#fff";
-          let secondary: string = "#fff";
+          let text: string = "#000";
 
+          // Select the appropriate color based on the platform
           if (colors.platform === "android") {
             primary = colors.dominant;
-            average = colors.average;
-            secondary = colors.muted;
           } else if (colors.platform === "ios") {
             primary = colors.primary;
-            secondary = colors.secondary;
-            average = colors.background;
           }
+
+          // Adjust the primary color if it's too close to black
+          if (primary && isCloseToBlack(primary)) {
+            primary = adjustToNearBlack(primary);
+          }
+
+          // Calculate the text color based on the primary color
+          if (primary) text = calculateTextColor(primary);
 
           setPrimaryColor({
             primary,
-            secondary,
-            average,
+            text,
           });
+
+          // Cache the colors in storage
+          if (source.uri && primary) {
+            storage.set(`${source.uri}-primary`, primary);
+            storage.set(`${source.uri}-text`, text);
+          }
         })
         .catch((error) => {
           console.error("Error getting colors", error);
         });
     }
-  }, [uri, setPrimaryColor, disabled]);
+  }, [source?.uri, setPrimaryColor, disabled]);
 };

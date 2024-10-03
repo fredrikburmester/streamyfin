@@ -9,13 +9,14 @@ import React from "react";
 
 type ContinueWatchingPosterProps = {
   item: BaseItemDto;
-  width?: number;
   useEpisodePoster?: boolean;
+  size?: "small" | "normal";
 };
 
 const ContinueWatchingPoster: React.FC<ContinueWatchingPosterProps> = ({
   item,
   useEpisodePoster = false,
+  size = "normal",
 }) => {
   const [api] = useAtom(apiAtom);
 
@@ -51,7 +52,12 @@ const ContinueWatchingPoster: React.FC<ContinueWatchingPosterProps> = ({
     );
 
   return (
-    <View className="relative w-44 aspect-video rounded-lg overflow-hidden border border-neutral-800">
+    <View
+      className={`
+      relative w-44 aspect-video rounded-lg overflow-hidden border border-neutral-800
+      ${size === "small" ? "w-32" : "w-44"}
+    `}
+    >
       <Image
         key={item.Id}
         id={item.Id}

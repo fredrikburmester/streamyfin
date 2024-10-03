@@ -51,10 +51,24 @@ export const ScrollingCollectionList: React.FC<Props> = ({
         `}
         >
           {[1, 2, 3].map((i) => (
-            <View className="w-44 mb-2">
-              <View className="bg-neutral-800 h-24 w-full rounded-md mb-2"></View>
-              <View className="bg-neutral-800 h-4 w-full rounded-md mb-2"></View>
-              <View className="bg-neutral-800 h-4 w-1/2 rounded-md"></View>
+            <View className="w-44" key={i}>
+              <View className="bg-neutral-900 h-24 w-full rounded-md mb-1"></View>
+              <View className="rounded-md overflow-hidden mb-1 self-start">
+                <Text
+                  className="text-neutral-900 bg-neutral-900 rounded-md"
+                  numberOfLines={1}
+                >
+                  Nisi mollit voluptate amet.
+                </Text>
+              </View>
+              <View className="rounded-md overflow-hidden self-start mb-1">
+                <Text
+                  className="text-neutral-900 bg-neutral-900 text-xs rounded-md "
+                  numberOfLines={1}
+                >
+                  Lorem ipsum
+                </Text>
+              </View>
             </View>
           ))}
         </View>
