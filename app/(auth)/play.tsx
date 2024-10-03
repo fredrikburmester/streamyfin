@@ -1,10 +1,10 @@
 import { FullScreenVideoPlayer } from "@/components/FullScreenVideoPlayer";
 import { useSettings } from "@/utils/atoms/settings";
 import * as NavigationBar from "expo-navigation-bar";
-import { StatusBar } from "expo-status-bar";
-import { useEffect, useState } from "react";
-import { Platform, View, ViewProps } from "react-native";
 import * as ScreenOrientation from "expo-screen-orientation";
+import { StatusBar } from "expo-status-bar";
+import { useEffect } from "react";
+import { Platform, View, ViewProps } from "react-native";
 
 interface Props extends ViewProps {}
 

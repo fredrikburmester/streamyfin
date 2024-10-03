@@ -19,6 +19,9 @@ import {
 } from "react-native";
 import { toast } from "sonner-native";
 import { Button } from "../Button";
+import { Image } from "expo-image";
+import { useMemo } from "react";
+import { storage } from "@/utils/mmkv";
 
 interface Props extends ViewProps {}
 
@@ -95,6 +98,10 @@ const DownloadCard = ({ process, ...props }: DownloadCardProps) => {
     return formatTimeString(timeLeft, true);
   };
 
+  const base64Image = useMemo(() => {
+    return storage.getString(process.item.Id!);
+  }, []);
+
   return (
     <TouchableOpacity
       onPress={() => router.push(`/(auth)/items/page?id=${process.item.Id}`)}
@@ -114,15 +121,29 @@ const DownloadCard = ({ process, ...props }: DownloadCardProps) => {
           }}
         ></View>
       )}
-      <View className="p-4 flex flex-col w-full">
-        <View className="flex flex-row items-center justify-between w-full">
-          <View className="shrink">
+      <View className="px-3 py-1.5 flex flex-col w-full">
+        <View className="flex flex-row items-center w-full">
+          {base64Image && (
+            <View className="w-14 aspect-[10/15] rounded-lg overflow-hidden mr-4">
+              <Image
+                source={{
+                  uri: `data:image/jpeg;base64,${base64Image}`,
+                }}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  resizeMode: "cover",
+                }}
+              />
+            </View>
+          )}
+          <View className="shrink mb-1">
             <Text className="text-xs opacity-50">{process.item.Type}</Text>
             <Text className="font-semibold shrink">{process.item.Name}</Text>
             <Text className="text-xs opacity-50">
               {process.item.ProductionYear}
             </Text>
-            <View className="flex flex-row items-center space-x-2 mt-2 text-purple-600">
+            <View className="flex flex-row items-center space-x-2 mt-1 text-purple-600">
               {process.progress === 0 ? (
                 <ActivityIndicator size={"small"} color={"white"} />
               ) : (
@@ -143,6 +164,7 @@ const DownloadCard = ({ process, ...props }: DownloadCardProps) => {
           <TouchableOpacity
             disabled={cancelJobMutation.isPending}
             onPress={() => cancelJobMutation.mutate(process.id)}
+            className="ml-auto"
           >
             {cancelJobMutation.isPending ? (
               <ActivityIndicator size="small" color="white" />

@@ -38,6 +38,8 @@ import { AppState, AppStateStatus } from "react-native";
 import { toast } from "sonner-native";
 import { apiAtom } from "./JellyfinProvider";
 import * as Notifications from "expo-notifications";
+import { getItemImage } from "@/utils/getItemImage";
+import useImageStorage from "@/hooks/useImageStorage";
 
 function onAppStateChange(status: AppStateStatus) {
   focusManager.setFocused(status === "active");
@@ -52,6 +54,9 @@ function useDownloadProvider() {
   const [settings] = useSettings();
   const router = useRouter();
   const [api] = useAtom(apiAtom);
+
+  const { loadImage, saveImage, image2Base64, saveBase64Image } =
+    useImageStorage();
 
   const [processes, setProcesses] = useState<JobStatus[]>([]);
 
@@ -294,11 +299,30 @@ function useDownloadProvider() {
 
   const startBackgroundDownload = useCallback(
     async (url: string, item: BaseItemDto, fileExtension: string) => {
+      if (!api || !item.Id || !authHeader)
+        throw new Error("startBackgroundDownload ~ Missing required params");
+
       try {
         const deviceId = await getOrSetDeviceId();
+        const itemImage = getItemImage({
+          item,
+          api,
+          variant: "Primary",
+          quality: 90,
+          width: 500,
+        });
+
+        await saveImage(item.Id, itemImage?.uri);
+
         const response = await axios.post(
           settings?.optimizedVersionsServerUrl + "optimize-version",
-          { url, fileExtension, deviceId, itemId: item.Id, item },
+          {
+            url,
+            fileExtension,
+            deviceId,
+            itemId: item.Id,
+            item,
+          },
           {
             headers: {
               "Content-Type": "application/json",

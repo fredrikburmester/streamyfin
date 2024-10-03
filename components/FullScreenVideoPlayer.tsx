@@ -87,14 +87,29 @@ export const FullScreenVideoPlayer: React.FC = () => {
   });
 
   useEffect(() => {
-    const subscription = Dimensions.addEventListener(
+    const dimensionsSubscription = Dimensions.addEventListener(
       "change",
       ({ window, screen }) => {
         setDimensions({ window, screen });
       }
     );
-    return () => subscription?.remove();
-  });
+
+    const orientationSubscription =
+      ScreenOrientation.addOrientationChangeListener((event) => {
+        setOrientation(
+          orientationToOrientationLock(event.orientationInfo.orientation)
+        );
+      });
+
+    ScreenOrientation.getOrientationAsync().then((orientation) => {
+      setOrientation(orientationToOrientationLock(orientation));
+    });
+
+    return () => {
+      dimensionsSubscription.remove();
+      orientationSubscription.remove();
+    };
+  }, []);
 
   const from = useMemo(() => segments[2], [segments]);
 
@@ -164,24 +179,6 @@ export const FullScreenVideoPlayer: React.FC = () => {
 
     return () => backHandler.remove();
   }, [currentlyPlaying, stopPlayback, router]);
-
-  useEffect(() => {
-    const subscription = ScreenOrientation.addOrientationChangeListener(
-      (event) => {
-        setOrientation(
-          orientationToOrientationLock(event.orientationInfo.orientation)
-        );
-      }
-    );
-
-    ScreenOrientation.getOrientationAsync().then((orientation) => {
-      setOrientation(orientationToOrientationLock(orientation));
-    });
-
-    return () => {
-      subscription.remove();
-    };
-  }, []);
 
   const isLandscape = useMemo(() => {
     return orientation === ScreenOrientation.OrientationLock.LANDSCAPE_LEFT ||
