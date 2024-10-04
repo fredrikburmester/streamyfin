@@ -4,6 +4,7 @@ import { usePlayback } from "@/providers/PlaybackProvider";
 import { getStreamUrl } from "@/utils/jellyfin/media/getStreamUrl";
 import { chromecastProfile } from "@/utils/profiles/chromecast";
 import ios from "@/utils/profiles/ios";
+import iosFmp4 from "@/utils/profiles/iosFmp4";
 import { runtimeTicksToSeconds } from "@/utils/time";
 import { useActionSheet } from "@expo/react-native-action-sheet";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
@@ -90,7 +91,7 @@ export const SongsListItem: React.FC<Props> = ({
       item,
       startTimeTicks: item?.UserData?.PlaybackPositionTicks || 0,
       sessionData,
-      deviceProfile: castDevice?.deviceId ? chromecastProfile : ios,
+      deviceProfile: castDevice?.deviceId ? chromecastProfile : iosFmp4,
       mediaSourceId: item.Id,
     });
 

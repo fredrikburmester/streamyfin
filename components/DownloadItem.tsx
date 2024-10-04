@@ -30,6 +30,7 @@ import { MediaSourceSelector } from "./MediaSourceSelector";
 import ProgressCircle from "./ProgressCircle";
 import { SubtitleTrackSelector } from "./SubtitleTrackSelector";
 import { toast } from "sonner-native";
+import iosFmp4 from "@/utils/profiles/iosFmp4";
 
 interface DownloadProps extends ViewProps {
   item: BaseItemDto;
@@ -82,7 +83,7 @@ export const DownloadItem: React.FC<DownloadProps> = ({ item, ...props }) => {
       );
     }
 
-    let deviceProfile: any = ios;
+    let deviceProfile: any = iosFmp4;
 
     if (settings?.deviceProfile === "Native") {
       deviceProfile = native;
