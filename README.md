@@ -12,6 +12,7 @@ Welcome to Streamyfin, a simple and user-friendly Jellyfin client built with Exp
 </div>
 
 ## 🌟 Features
+
 - 🚀 **Skp intro / credits support**
 - 🖼️ **Trickplay images**: The new golden standard for chapter previews when seeking.
 - 📺 **Picture in Picture** (iPhone only): Watch movies in PiP mode on your iPhone.
@@ -153,3 +154,7 @@ I'd like to thank the following people and projects for their contributions to S
 - [Reiverr](https://github.com/aleksilassila/reiverr) for great help with understanding the Jellyfin API.
 - [Jellyfin TS SDK](https://github.com/jellyfin/jellyfin-sdk-typescript) for the TypeScript SDK.
 - The Jellyfin devs for always being helpful in the Discord.
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=fredrikburmester/streamyfin&type=Date)](https://star-history.com/#fredrikburmester/streamyfin&Date)
