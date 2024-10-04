@@ -32,7 +32,7 @@ import {
   useSharedValue,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Video, { OnProgressData } from "react-native-video";
+import Video, { OnProgressData, ReactVideoProps } from "react-native-video";
 import { Text } from "./common/Text";
 import { itemRouter } from "./common/TouchableItemRouter";
 import { Loader } from "./Loader";
@@ -199,8 +199,8 @@ export const FullScreenVideoPlayer: React.FC = () => {
         });
   }, [currentlyPlaying?.item, api]);
 
-  const videoSource = useMemo(() => {
-    if (!api || !currentlyPlaying || !poster) return null;
+  const videoSource: ReactVideoProps["source"] = useMemo(() => {
+    if (!api || !currentlyPlaying || !poster) return undefined;
     const startPosition = currentlyPlaying.item?.UserData?.PlaybackPositionTicks
       ? Math.round(currentlyPlaying.item.UserData.PlaybackPositionTicks / 10000)
       : 0;
@@ -342,24 +342,25 @@ export const FullScreenVideoPlayer: React.FC = () => {
           },
         ]}
       >
-        {videoSource && (
-          <Video
-            ref={videoRef}
-            source={videoSource}
-            style={{ width: "100%", height: "100%" }}
-            resizeMode={ignoreSafeArea ? "cover" : "contain"}
-            onProgress={handleVideoProgress}
-            onLoad={(data) => (max.value = secondsToTicks(data.duration))}
-            onError={handleVideoError}
-            playWhenInactive={true}
-            allowsExternalPlayback={true}
-            playInBackground={true}
-            pictureInPicture={true}
-            showNotificationControls={true}
-            ignoreSilentSwitch="ignore"
-            fullscreen={false}
-          />
-        )}
+        <Video
+          ref={videoRef}
+          source={videoSource}
+          style={{ width: "100%", height: "100%" }}
+          resizeMode={ignoreSafeArea ? "cover" : "contain"}
+          onProgress={handleVideoProgress}
+          onLoad={(data) => (max.value = secondsToTicks(data.duration))}
+          onError={handleVideoError}
+          playWhenInactive={true}
+          allowsExternalPlayback={true}
+          playInBackground={true}
+          pictureInPicture={true}
+          showNotificationControls={true}
+          ignoreSilentSwitch="ignore"
+          fullscreen={false}
+          onVideoTracks={(d) => {
+            console.log("onVideoTracks ~", d);
+          }}
+        />
       </Pressable>
 
       {(showControls || isBuffering) && (
