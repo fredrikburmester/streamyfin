@@ -135,7 +135,7 @@ Key points of the MPL-2.0:
 
 ## 🌐 Connect with Us
 
-Join our Discord: [https://discord.gg/zyGKHJZvv4](https://discord.gg/aJvAYeycyY)
+Join our Discord: [https://discord.gg/BuGG9ZNhaE](https://discord.gg/BuGG9ZNhaE)
 
 If you have questions or need support, feel free to reach out:
 
