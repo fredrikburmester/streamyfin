@@ -20,6 +20,7 @@ import { getStreamUrl } from "@/utils/jellyfin/media/getStreamUrl";
 import { getUserItemData } from "@/utils/jellyfin/user-library/getUserItemData";
 import { chromecastProfile } from "@/utils/profiles/chromecast";
 import ios from "@/utils/profiles/ios";
+import iosFmp4 from "@/utils/profiles/iosFmp4";
 import native from "@/utils/profiles/native";
 import old from "@/utils/profiles/old";
 import { MediaSourceInfo } from "@jellyfin/sdk/lib/generated-client/models";
@@ -201,7 +202,7 @@ export const ItemContent: React.FC<{ id: string }> = React.memo(({ id }) => {
       if (!api || !user?.Id || !sessionData || !selectedMediaSource?.Id)
         return null;
 
-      let deviceProfile: any = ios;
+      let deviceProfile: any = iosFmp4;
 
       if (castDevice?.deviceId) {
         deviceProfile = chromecastProfile;

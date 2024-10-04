@@ -6,6 +6,7 @@ import {
   PlaybackInfoResponse,
 } from "@jellyfin/sdk/lib/generated-client/models";
 import { getAuthHeaders } from "../jellyfin";
+import iosFmp4 from "@/utils/profiles/iosFmp4";
 
 export const getStreamUrl = async ({
   api,
@@ -14,7 +15,7 @@ export const getStreamUrl = async ({
   startTimeTicks = 0,
   maxStreamingBitrate,
   sessionData,
-  deviceProfile = ios,
+  deviceProfile = iosFmp4,
   audioStreamIndex = 0,
   subtitleStreamIndex = undefined,
   forceDirectPlay = false,
