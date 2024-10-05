@@ -44,6 +44,11 @@ export const ScrollingCollectionList: React.FC<Props> = ({
       <Text className="px-4 text-lg font-bold mb-2 text-neutral-100">
         {title}
       </Text>
+      {isLoading === false && data?.length === 0 && (
+        <View className="px-4">
+          <Text className="text-neutral-500">No items</Text>
+        </View>
+      )}
       {isLoading ? (
         <View
           className={`
@@ -98,6 +103,9 @@ export const ScrollingCollectionList: React.FC<Props> = ({
                   <MoviePoster item={item} />
                 )}
                 {item.Type === "Series" && <SeriesPoster item={item} />}
+                {item.Type === "Program" && (
+                  <ContinueWatchingPoster item={item} />
+                )}
                 <ItemCardText item={item} />
               </TouchableItemRouter>
             ))}

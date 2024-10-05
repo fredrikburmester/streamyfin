@@ -1,5 +1,3 @@
-import { Stack } from "expo-router";
-import { Chromecast } from "../Chromecast";
 import { HeaderBackButton } from "../common/HeaderBackButton";
 
 const commonScreenOptions = {
