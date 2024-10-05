@@ -6,17 +6,21 @@ import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import { getLiveTvApi } from "@jellyfin/sdk/lib/utils/api";
 import { useQuery } from "@tanstack/react-query";
 import { useAtom } from "jotai";
-import React, { useState } from "react";
-import { Dimensions, ScrollView, View } from "react-native";
+import React, { useCallback, useMemo, useState } from "react";
+import { Button, Dimensions, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const HOUR_HEIGHT = 30;
+const ITEMS_PER_PAGE = 20;
+
+const MemoizedLiveTVGuideRow = React.memo(LiveTVGuideRow);
 
 export default function page() {
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
   const insets = useSafeAreaInsets();
   const [date, setDate] = useState<Date>(new Date());
+  const [currentPage, setCurrentPage] = useState(1);
 
   const { data: guideInfo } = useQuery({
     queryKey: ["livetv", "guideInfo"],
@@ -27,11 +31,11 @@ export default function page() {
   });
 
   const { data: channels } = useQuery({
-    queryKey: ["livetv", "channels"],
+    queryKey: ["livetv", "channels", currentPage],
     queryFn: async () => {
       const res = await getLiveTvApi(api!).getLiveTvChannels({
-        startIndex: 0,
-        limit: 500,
+        startIndex: (currentPage - 1) * ITEMS_PER_PAGE,
+        limit: ITEMS_PER_PAGE,
         enableFavoriteSorting: true,
         userId: user?.Id,
         addCurrentProgram: false,
@@ -43,7 +47,7 @@ export default function page() {
   });
 
   const { data: programs } = useQuery({
-    queryKey: ["livetv", "programs", date],
+    queryKey: ["livetv", "programs", date, currentPage],
     queryFn: async () => {
       const startOfDay = new Date(date);
       startOfDay.setHours(0, 0, 0, 0);
@@ -74,7 +78,17 @@ export default function page() {
 
   const screenWidth = Dimensions.get("window").width;
 
+  const memoizedChannels = useMemo(() => channels?.Items || [], [channels]);
+
   const [scrollX, setScrollX] = useState(0);
+
+  const handleNextPage = useCallback(() => {
+    setCurrentPage((prev) => prev + 1);
+  }, []);
+
+  const handlePrevPage = useCallback(() => {
+    setCurrentPage((prev) => Math.max(1, prev - 1));
+  }, []);
 
   return (
     <ScrollView
@@ -90,12 +104,28 @@ export default function page() {
         marginBottom: TAB_HEIGHT,
       }}
     >
+      <View className="flex flex-row  bg-neutral-800 w-full items-end">
+        <Button
+          title="Previous"
+          onPress={handlePrevPage}
+          disabled={currentPage === 1}
+        />
+        <Button
+          title="Next"
+          onPress={handleNextPage}
+          disabled={
+            !channels || (channels?.Items?.length || 0) < ITEMS_PER_PAGE
+          }
+        />
+      </View>
+
       <View className="flex flex-row">
         <View className="flex flex-col w-[64px]">
           <View
             style={{
               height: HOUR_HEIGHT,
             }}
+            className="bg-neutral-800"
           ></View>
           {channels?.Items?.map((c, i) => (
             <View className="h-16 w-16 mr-4 rounded-lg overflow-hidden" key={i}>
@@ -123,7 +153,7 @@ export default function page() {
           <View className="flex flex-col">
             <HourHeader height={HOUR_HEIGHT} />
             {channels?.Items?.map((c, i) => (
-              <LiveTVGuideRow
+              <MemoizedLiveTVGuideRow
                 channel={c}
                 programs={programs?.Items}
                 key={c.Id}
