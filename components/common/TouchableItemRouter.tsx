@@ -9,6 +9,10 @@ interface Props extends TouchableOpacityProps {
 }
 
 export const itemRouter = (item: BaseItemDto, from: string) => {
+  if (item.CollectionType === "livetv") {
+    return `/(auth)/(tabs)/${from}/livetv`;
+  }
+
   if (item.Type === "Series") {
     return `/(auth)/(tabs)/${from}/series/${item.Id}`;
   }
