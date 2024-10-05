@@ -1,17 +1,13 @@
-import { Text } from "@/components/common/Text";
 import { ScrollingCollectionList } from "@/components/home/ScrollingCollectionList";
 import { TAB_HEIGHT } from "@/constants/Values";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client";
 import { getLiveTvApi } from "@jellyfin/sdk/lib/utils/api";
-import { useQuery } from "@tanstack/react-query";
 import { useAtom } from "jotai";
 import React from "react";
 import {
-  RefreshControl,
   ScrollView,
-  SectionListComponent,
-  View,
+  View
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 

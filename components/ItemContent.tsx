@@ -248,8 +248,8 @@ export const ItemContent: React.FC<{ item: BaseItemDto }> = React.memo(
         >
           <View className="flex flex-col bg-transparent shrink">
             <View className="flex flex-col px-4 w-full space-y-2 pt-2 mb-2 shrink">
-              <Animated.View style={[{ flex: 1 }]}>
-                <ItemHeader item={item} className="mb-4" />
+              <ItemHeader item={item} className="mb-4" />
+              {item.Type !== "Program" && (
                 <View className="flex flex-row items-center justify-start w-full h-16">
                   <BitrateSelector
                     className="mr-1"
@@ -278,7 +278,7 @@ export const ItemContent: React.FC<{ item: BaseItemDto }> = React.memo(
                     </>
                   )}
                 </View>
-              </Animated.View>
+              )}
 
               <PlayButton item={item} url={playbackUrl} className="grow" />
             </View>
@@ -288,27 +288,30 @@ export const ItemContent: React.FC<{ item: BaseItemDto }> = React.memo(
             )}
 
             <OverviewText text={item.Overview} className="px-4 my-4" />
+            {item.Type !== "Program" && (
+              <>
+                <CastAndCrew item={item} className="mb-4" loading={loading} />
 
-            <CastAndCrew item={item} className="mb-4" loading={loading} />
+                {item.People && item.People.length > 0 && (
+                  <View className="mb-4">
+                    {item.People.slice(0, 3).map((person) => (
+                      <MoreMoviesWithActor
+                        currentItem={item}
+                        key={person.Id}
+                        actorId={person.Id!}
+                        className="mb-4"
+                      />
+                    ))}
+                  </View>
+                )}
 
-            {item.People && item.People.length > 0 && (
-              <View className="mb-4">
-                {item.People.slice(0, 3).map((person) => (
-                  <MoreMoviesWithActor
-                    currentItem={item}
-                    key={person.Id}
-                    actorId={person.Id!}
-                    className="mb-4"
-                  />
-                ))}
-              </View>
+                {item.Type === "Episode" && (
+                  <CurrentSeries item={item} className="mb-4" />
+                )}
+
+                <SimilarItems itemId={item.Id} />
+              </>
             )}
-
-            {item.Type === "Episode" && (
-              <CurrentSeries item={item} className="mb-4" />
-            )}
-
-            <SimilarItems itemId={item.Id} />
 
             <View className="h-16"></View>
           </View>
