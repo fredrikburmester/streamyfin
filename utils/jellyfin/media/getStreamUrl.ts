@@ -7,6 +7,7 @@ import {
 } from "@jellyfin/sdk/lib/generated-client/models";
 import { getAuthHeaders } from "../jellyfin";
 import iosFmp4 from "@/utils/profiles/iosFmp4";
+import { getItemsApi, getMediaInfoApi } from "@jellyfin/sdk/lib/utils/api";
 
 export const getStreamUrl = async ({
   api,
@@ -19,7 +20,6 @@ export const getStreamUrl = async ({
   audioStreamIndex = 0,
   subtitleStreamIndex = undefined,
   forceDirectPlay = false,
-  height,
   mediaSourceId,
 }: {
   api: Api | null | undefined;
@@ -27,24 +27,40 @@ export const getStreamUrl = async ({
   userId: string | null | undefined;
   startTimeTicks: number;
   maxStreamingBitrate?: number;
-  sessionData: PlaybackInfoResponse;
+  sessionData?: PlaybackInfoResponse | null;
   deviceProfile: any;
   audioStreamIndex?: number;
   subtitleStreamIndex?: number;
   forceDirectPlay?: boolean;
   height?: number;
-  mediaSourceId: string | null;
+  mediaSourceId?: string | null;
 }) => {
-  if (!api || !userId || !item?.Id || !mediaSourceId) {
+  if (!api || !userId || !item?.Id) {
     return null;
   }
 
+  console.log("[0] getStreamUrl ~");
+
   const itemId = item.Id;
 
-  /**
-   * Build the stream URL for videos
-   */
-  const response = await api.axiosInstance.post(
+  console.log("[1] getStreamUrl ~");
+  const res1 = await api.axiosInstance.post(
+    `${api.basePath}/Items/${itemId}/PlaybackInfo`,
+    {
+      UserId: itemId,
+      StartTimeTicks: 0,
+      IsPlayback: true,
+      AutoOpenLiveStream: true,
+      MaxStreamingBitrate: 140000000,
+    },
+    {
+      headers: getAuthHeaders(api),
+    }
+  );
+
+  console.log("[2] getStreamUrl ~", res1.status, res1.statusText);
+
+  const res2 = await api.axiosInstance.post(
     `${api.basePath}/Items/${itemId}/PlaybackInfo`,
     {
       DeviceProfile: deviceProfile,
@@ -67,23 +83,23 @@ export const getStreamUrl = async ({
     }
   );
 
-  const mediaSource: MediaSourceInfo = response.data.MediaSources.find(
-    (source: MediaSourceInfo) => source.Id === mediaSourceId
+  console.log("[3] getStreamUrl ~");
+
+  console.log(
+    `${api.basePath}/Items/${itemId}/PlaybackInfo`,
+    res2.status,
+    res2.statusText
   );
 
-  if (!mediaSource) {
-    throw new Error("No media source");
-  }
-
-  if (!sessionData.PlaySessionId) {
-    throw new Error("no PlaySessionId");
-  }
+  const mediaSource: MediaSourceInfo = res2.data.MediaSources.find(
+    (source: MediaSourceInfo) => source.Id === mediaSourceId
+  );
 
   let url: string | null | undefined;
 
   if (mediaSource.SupportsDirectPlay || forceDirectPlay === true) {
     if (item.MediaType === "Video") {
-      url = `${api.basePath}/Videos/${itemId}/stream.mp4?playSessionId=${sessionData.PlaySessionId}&mediaSourceId=${mediaSource.Id}&static=true&subtitleStreamIndex=${subtitleStreamIndex}&audioStreamIndex=${audioStreamIndex}&deviceId=${api.deviceInfo.id}&api_key=${api.accessToken}`;
+      url = `${api.basePath}/Videos/${itemId}/stream.mp4?playSessionId=${sessionData?.PlaySessionId}&mediaSourceId=${mediaSource.Id}&static=true&subtitleStreamIndex=${subtitleStreamIndex}&audioStreamIndex=${audioStreamIndex}&deviceId=${api.deviceInfo.id}&api_key=${api.accessToken}`;
     } else if (item.MediaType === "Audio") {
       const searchParams = new URLSearchParams({
         UserId: userId,
@@ -95,7 +111,7 @@ export const getStreamUrl = async ({
         TranscodingProtocol: "hls",
         AudioCodec: "aac",
         api_key: api.accessToken,
-        PlaySessionId: sessionData.PlaySessionId,
+        PlaySessionId: sessionData?.PlaySessionId || "",
         StartTimeTicks: "0",
         EnableRedirection: "true",
         EnableRemoteMedia: "false",
