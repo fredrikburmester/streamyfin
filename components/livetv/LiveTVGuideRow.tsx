@@ -8,10 +8,12 @@ export const LiveTVGuideRow = ({
   channel,
   programs,
   scrollX = 0,
+  isVisible = true,
 }: {
   channel: BaseItemDto;
   programs?: BaseItemDto[] | null;
   scrollX?: number;
+  isVisible?: boolean;
 }) => {
   const positionRefs = useRef<{ [key: string]: number }>({});
   const screenWidth = Dimensions.get("window").width;
@@ -45,6 +47,10 @@ export const LiveTVGuideRow = ({
     const end = new Date(program.EndDate);
     return now >= start && now <= end;
   };
+
+  if (!isVisible) {
+    return <View style={{ height: 64 }} />;
+  }
 
   return (
     <View key={channel.ChannelNumber} className="flex flex-row h-16">

@@ -23,7 +23,7 @@ export const HourHeader = ({ height }: { height: number }) => {
 };
 
 const HourCell = ({ hour }: { hour: Date }) => (
-  <View className="w-[200px] flex items-center justify-center border-r border-gray-300">
+  <View className="w-[200px] flex items-center justify-center bg-neutral-800">
     <Text className="text-xs text-gray-600">
       {hour.toLocaleTimeString([], {
         hour: "2-digit",
