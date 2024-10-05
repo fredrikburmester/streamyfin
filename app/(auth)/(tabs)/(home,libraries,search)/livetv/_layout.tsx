@@ -37,8 +37,6 @@ const Layout = () => {
       <Tab.Screen name="guide" />
       <Tab.Screen name="channels" />
       <Tab.Screen name="recordings" />
-      <Tab.Screen name="schedule" />
-      <Tab.Screen name="series" />
     </Tab>
   );
 };

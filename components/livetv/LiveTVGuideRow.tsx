@@ -50,7 +50,7 @@ export const LiveTVGuideRow = ({
   return (
     <View key={channel.ChannelNumber} className="flex flex-row h-16">
       {programsWithPositions?.map((p) => (
-        <TouchableItemRouter item={p}>
+        <TouchableItemRouter item={p} key={p.Id}>
           <View
             style={{
               width: p.width,
