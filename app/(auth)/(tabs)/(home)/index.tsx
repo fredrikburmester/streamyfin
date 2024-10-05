@@ -169,7 +169,7 @@ export default function index() {
     setLoading(true);
     await queryClient.invalidateQueries();
     setLoading(false);
-  }, [queryClient, user?.Id]);
+  }, []);
 
   const createCollectionConfig = useCallback(
     (

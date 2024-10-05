@@ -337,6 +337,7 @@ function Layout() {
                           name="(auth)/play"
                           options={{
                             headerShown: false,
+                            autoHideHomeIndicator: true,
                             title: "",
                             animation: "fade",
                           }}
@@ -345,6 +346,7 @@ function Layout() {
                           name="(auth)/play-music"
                           options={{
                             headerShown: false,
+                            autoHideHomeIndicator: true,
                             title: "",
                             animation: "fade",
                           }}
