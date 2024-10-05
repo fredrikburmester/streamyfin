@@ -40,9 +40,9 @@ export default function page() {
       source={videoSource}
       style={{ width: "100%", height: "100%" }}
       resizeMode={ignoreSafeArea ? "cover" : "contain"}
-      onProgress={handleVideoProgress}
-      onLoad={(data) => (max.value = secondsToTicks(data.duration))}
-      onError={handleVideoError}
+      onProgress={() => {}}
+      onLoad={(data) => {}}
+      onError={() => {}}
       playWhenInactive={true}
       allowsExternalPlayback={true}
       playInBackground={true}
