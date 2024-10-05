@@ -15,7 +15,7 @@ import React, { useState } from "react";
 import { Dimensions, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const HOUR_HEIGHT = 30
+const HOUR_HEIGHT = 30;
 
 export default function page() {
   const [api] = useAtom(apiAtom);
@@ -102,7 +102,7 @@ export default function page() {
             }}
           ></View>
           {channels?.Items?.map((c, i) => (
-            <View className="h-16 w-16 mr-4 rounded-lg overflow-hidden">
+            <View className="h-16 w-16 mr-4 rounded-lg overflow-hidden" key={i}>
               <ItemImage
                 style={{
                   width: "100%",
