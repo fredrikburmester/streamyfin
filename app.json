@@ -10,7 +10,7 @@
     "splash": {
       "image": "./assets/images/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#29164B"
+      "backgroundColor": "#2E2E2E"
     },
     "jsEngine": "hermes",
     "assetBundlePatterns": ["**/*"],
@@ -35,7 +35,7 @@
       "jsEngine": "hermes",
       "versionCode": 42,
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/icon.png"
+        "foregroundImage": "./assets/images/adaptive_icon.png"
       },
       "package": "com.fredrikburmester.streamyfin",
       "permissions": [
