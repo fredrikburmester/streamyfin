@@ -1,11 +1,9 @@
 import { ItemImage } from "@/components/common/ItemImage";
 import { Text } from "@/components/common/Text";
-import { ItemPoster } from "@/components/posters/ItemPoster";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import { getLiveTvApi } from "@jellyfin/sdk/lib/utils/api";
 import { FlashList } from "@shopify/flash-list";
 import { useQuery } from "@tanstack/react-query";
-import { Image } from "expo-image";
 import { useAtom } from "jotai";
 import React from "react";
 import { View } from "react-native";
@@ -19,21 +17,23 @@ export default function page() {
   const { data: channels } = useQuery({
     queryKey: ["livetv", "channels"],
     queryFn: async () => {
-      if (!api) return [];
-      const res = await getLiveTvApi(api).getLiveTvChannels({
+      const res = await getLiveTvApi(api!).getLiveTvChannels({
         startIndex: 0,
-        fields: ["PrimaryImageAspectRatio"],
-        limit: 100,
+        limit: 500,
+        enableFavoriteSorting: true,
         userId: user?.Id,
+        addCurrentProgram: false,
+        enableUserData: false,
+        enableImageTypes: ["Primary"],
       });
-      return res.data.Items;
+      return res.data;
     },
   });
 
   return (
     <View className="flex flex-1">
       <FlashList
-        data={channels}
+        data={channels?.Items}
         estimatedItemSize={76}
         renderItem={({ item }) => (
           <View className="flex flex-row items-center px-4 mb-2">

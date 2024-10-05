@@ -1,6 +1,5 @@
 import { Text } from "@/components/common/Text";
 import { ItemContent } from "@/components/ItemContent";
-import { Loader } from "@/components/Loader";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import { getUserItemData } from "@/utils/jellyfin/user-library/getUserItemData";
 import { useQuery } from "@tanstack/react-query";
@@ -14,7 +13,6 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
-import { opacity } from "react-native-reanimated/lib/typescript/Colors";
 
 const Page: React.FC = () => {
   const [api] = useAtom(apiAtom);

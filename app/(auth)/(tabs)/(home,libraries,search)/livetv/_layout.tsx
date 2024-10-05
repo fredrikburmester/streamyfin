@@ -1,8 +1,8 @@
-import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
 import type {
-  MaterialTopTabNavigationOptions,
   MaterialTopTabNavigationEventMap,
+  MaterialTopTabNavigationOptions,
 } from "@react-navigation/material-top-tabs";
+import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
 import { ParamListBase, TabNavigationState } from "@react-navigation/native";
 import { Stack, withLayoutContext } from "expo-router";
 import React from "react";
