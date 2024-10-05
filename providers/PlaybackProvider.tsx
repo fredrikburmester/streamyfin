@@ -128,10 +128,17 @@ export const PlaybackProvider: React.FC<{ children: ReactNode }> = ({
             return;
           }
 
-          const res = await getMediaInfoApi(api!).getPlaybackInfo({
-            itemId: state.item.Id,
-            userId: user.Id,
-          });
+          // Support live tv
+          const res =
+            state.item.Type !== "Program"
+              ? await getMediaInfoApi(api!).getPlaybackInfo({
+                  itemId: state.item.Id,
+                  userId: user.Id,
+                })
+              : await getMediaInfoApi(api!).getPlaybackInfo({
+                  itemId: state.item.ChannelId!,
+                  userId: user.Id,
+                });
 
           await postCapabilities({
             api,

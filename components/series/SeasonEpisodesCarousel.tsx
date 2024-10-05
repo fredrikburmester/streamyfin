@@ -85,7 +85,7 @@ export const SeasonEpisodesCarousel: React.FC<Props> = ({
             userId: user?.Id,
             itemId: previousId,
           }),
-        staleTime: 60 * 1000,
+        staleTime: 60 * 1000 * 5,
       });
     }
 
@@ -101,7 +101,7 @@ export const SeasonEpisodesCarousel: React.FC<Props> = ({
             userId: user?.Id,
             itemId: nextId,
           }),
-        staleTime: 60 * 1000,
+        staleTime: 60 * 1000 * 5,
       });
     }
   }, [episodes, api, user?.Id, item]);
