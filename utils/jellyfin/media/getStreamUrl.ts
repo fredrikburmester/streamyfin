@@ -8,6 +8,8 @@ import {
 import { getAuthHeaders } from "../jellyfin";
 import iosFmp4 from "@/utils/profiles/iosFmp4";
 import { getItemsApi, getMediaInfoApi } from "@jellyfin/sdk/lib/utils/api";
+import { isPlainObject } from "lodash";
+import { Alert } from "react-native";
 
 export const getStreamUrl = async ({
   api,
@@ -39,26 +41,41 @@ export const getStreamUrl = async ({
     return null;
   }
 
-  console.log("[0] getStreamUrl ~");
+  let mediaSource: MediaSourceInfo | undefined;
+  let url: string | null | undefined;
+
+  if (item.Type === "Program") {
+    const res0 = await getMediaInfoApi(api).getPlaybackInfo(
+      {
+        userId,
+        itemId: item.ChannelId!,
+      },
+      {
+        method: "POST",
+        params: {
+          startTimeTicks: 0,
+          isPlayback: true,
+          autoOpenLiveStream: true,
+          maxStreamingBitrate,
+          audioStreamIndex,
+        },
+        data: {
+          deviceProfile,
+        },
+      }
+    );
+
+    const mediaSourceId = res0.data.MediaSources?.[0].Id;
+    const liveStreamId = res0.data.MediaSources?.[0].LiveStreamId;
+
+    const transcodeUrl = res0.data.MediaSources?.[0].TranscodingUrl;
+
+    console.log("transcodeUrl", transcodeUrl);
+
+    if (transcodeUrl) return `${api.basePath}${transcodeUrl}`;
+  }
 
   const itemId = item.Id;
-
-  console.log("[1] getStreamUrl ~");
-  const res1 = await api.axiosInstance.post(
-    `${api.basePath}/Items/${itemId}/PlaybackInfo`,
-    {
-      UserId: itemId,
-      StartTimeTicks: 0,
-      IsPlayback: true,
-      AutoOpenLiveStream: true,
-      MaxStreamingBitrate: 140000000,
-    },
-    {
-      headers: getAuthHeaders(api),
-    }
-  );
-
-  console.log("[2] getStreamUrl ~", res1.status, res1.statusText);
 
   const res2 = await api.axiosInstance.post(
     `${api.basePath}/Items/${itemId}/PlaybackInfo`,
@@ -83,23 +100,13 @@ export const getStreamUrl = async ({
     }
   );
 
-  console.log("[3] getStreamUrl ~");
-
-  console.log(
-    `${api.basePath}/Items/${itemId}/PlaybackInfo`,
-    res2.status,
-    res2.statusText
-  );
-
-  const mediaSource: MediaSourceInfo = res2.data.MediaSources.find(
+  mediaSource = res2.data.MediaSources.find(
     (source: MediaSourceInfo) => source.Id === mediaSourceId
   );
 
-  let url: string | null | undefined;
-
-  if (mediaSource.SupportsDirectPlay || forceDirectPlay === true) {
+  if (mediaSource?.SupportsDirectPlay || forceDirectPlay === true) {
     if (item.MediaType === "Video") {
-      url = `${api.basePath}/Videos/${itemId}/stream.mp4?playSessionId=${sessionData?.PlaySessionId}&mediaSourceId=${mediaSource.Id}&static=true&subtitleStreamIndex=${subtitleStreamIndex}&audioStreamIndex=${audioStreamIndex}&deviceId=${api.deviceInfo.id}&api_key=${api.accessToken}`;
+      url = `${api.basePath}/Videos/${itemId}/stream.mp4?playSessionId=${sessionData?.PlaySessionId}&mediaSourceId=${mediaSource?.Id}&static=true&subtitleStreamIndex=${subtitleStreamIndex}&audioStreamIndex=${audioStreamIndex}&deviceId=${api.deviceInfo.id}&api_key=${api.accessToken}`;
     } else if (item.MediaType === "Audio") {
       const searchParams = new URLSearchParams({
         UserId: userId,
@@ -120,18 +127,11 @@ export const getStreamUrl = async ({
         api.basePath
       }/Audio/${itemId}/universal?${searchParams.toString()}`;
     }
-  } else if (mediaSource.TranscodingUrl) {
+  } else if (mediaSource?.TranscodingUrl) {
     url = `${api.basePath}${mediaSource.TranscodingUrl}`;
   }
 
   if (!url) throw new Error("No url");
-
-  console.log(
-    mediaSource.VideoType,
-    mediaSource.Container,
-    mediaSource.TranscodingContainer,
-    mediaSource.TranscodingSubProtocol
-  );
 
   return url;
 };

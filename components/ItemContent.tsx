@@ -126,7 +126,7 @@ export const ItemContent: React.FC<{ id: string }> = React.memo(({ id }) => {
   });
 
   const [localItem, setLocalItem] = useState(item);
-  useImageColors(item);
+  useImageColors({ item });
 
   useEffect(() => {
     if (item) {
@@ -180,10 +180,15 @@ export const ItemContent: React.FC<{ id: string }> = React.memo(({ id }) => {
     queryKey: ["sessionData", item?.Id],
     queryFn: async () => {
       if (!api || !user?.Id || !item?.Id) return null;
-      const playbackData = await getMediaInfoApi(api!).getPlaybackInfo({
-        itemId: item?.Id,
-        userId: user?.Id,
-      });
+      const playbackData = await getMediaInfoApi(api!).getPlaybackInfo(
+        {
+          itemId: item?.Id,
+          userId: user?.Id,
+        },
+        {
+          method: "POST",
+        }
+      );
 
       return playbackData.data;
     },
