@@ -155,8 +155,12 @@ export const ItemContent: React.FC<{ id: string }> = React.memo(({ id }) => {
         item && (
           <View className="flex flex-row items-center space-x-2">
             <Chromecast background="blur" width={22} height={22} />
-            <DownloadItem item={item} />
-            <PlayedStatus item={item} />
+            {item.Type !== "Program" && (
+              <>
+                <DownloadItem item={item} />
+                <PlayedStatus item={item} />
+              </>
+            )}
           </View>
         ),
     });
@@ -199,8 +203,24 @@ export const ItemContent: React.FC<{ id: string }> = React.memo(({ id }) => {
       settings,
     ],
     queryFn: async () => {
-      if (!api || !user?.Id || !sessionData || !selectedMediaSource?.Id)
+      if (!api || !user?.Id) {
+        console.warn("No api, userid or selected media source", {
+          api: api,
+          user: user,
+        });
         return null;
+      }
+
+      if (
+        item?.Type !== "Program" &&
+        (!sessionData || !selectedMediaSource?.Id)
+      ) {
+        console.warn("No session data or media source", {
+          sessionData: sessionData,
+          selectedMediaSource: selectedMediaSource,
+        });
+        return null;
+      }
 
       let deviceProfile: any = iosFmp4;
 
@@ -211,6 +231,8 @@ export const ItemContent: React.FC<{ id: string }> = React.memo(({ id }) => {
       } else if (settings?.deviceProfile === "Old") {
         deviceProfile = old;
       }
+
+      console.log("playbackUrl...");
 
       const url = await getStreamUrl({
         api,
@@ -224,14 +246,14 @@ export const ItemContent: React.FC<{ id: string }> = React.memo(({ id }) => {
         subtitleStreamIndex: selectedSubtitleStream,
         forceDirectPlay: settings?.forceDirectPlay,
         height: maxBitrate.height,
-        mediaSourceId: selectedMediaSource.Id,
+        mediaSourceId: selectedMediaSource?.Id,
       });
 
       console.info("Stream URL:", url);
 
       return url;
     },
-    enabled: !!sessionData && !!api && !!user?.Id && !!item?.Id,
+    enabled: !!api && !!user?.Id && !!item?.Id,
     staleTime: 0,
   });
 
