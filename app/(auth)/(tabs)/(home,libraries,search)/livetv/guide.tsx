@@ -1,13 +1,8 @@
 import { ItemImage } from "@/components/common/ItemImage";
-import { Text } from "@/components/common/Text";
 import { HourHeader } from "@/components/livetv/HourHeader";
 import { LiveTVGuideRow } from "@/components/livetv/LiveTVGuideRow";
 import { TAB_HEIGHT } from "@/constants/Values";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
-import {
-  BaseItemDto,
-  BaseItemDtoQueryResult,
-} from "@jellyfin/sdk/lib/generated-client";
 import { getLiveTvApi } from "@jellyfin/sdk/lib/utils/api";
 import { useQuery } from "@tanstack/react-query";
 import { useAtom } from "jotai";
@@ -30,6 +25,7 @@ export default function page() {
       return res.data;
     },
   });
+
   const { data: channels } = useQuery({
     queryKey: ["livetv", "channels"],
     queryFn: async () => {

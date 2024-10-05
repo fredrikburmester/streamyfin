@@ -1,8 +1,7 @@
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client";
-import { View, ScrollView, Dimensions } from "react-native";
-import { ItemImage } from "../common/ItemImage";
+import { useMemo, useRef } from "react";
+import { Dimensions, View } from "react-native";
 import { Text } from "../common/Text";
-import { useCallback, useMemo, useRef, useState } from "react";
 import { TouchableItemRouter } from "../common/TouchableItemRouter";
 
 export const LiveTVGuideRow = ({
