@@ -13,13 +13,14 @@ import { CurrentSeries } from "@/components/series/CurrentSeries";
 import { SeasonEpisodesCarousel } from "@/components/series/SeasonEpisodesCarousel";
 import { useImageColors } from "@/hooks/useImageColors";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
+import { usePlaySettings } from "@/providers/PlaySettingsProvider";
 import { useSettings } from "@/utils/atoms/settings";
 import { getLogoImageUrlById } from "@/utils/jellyfin/image/getLogoImageUrlById";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import { Image } from "expo-image";
 import { useNavigation } from "expo-router";
 import * as ScreenOrientation from "expo-screen-orientation";
-import { useAtom, useAtomValue } from "jotai";
+import { useAtom } from "jotai";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { View } from "react-native";
 import { useCastDevice } from "react-native-google-cast";
@@ -29,7 +30,6 @@ import { Chromecast } from "./Chromecast";
 import { ItemHeader } from "./ItemHeader";
 import { MediaSourceSelector } from "./MediaSourceSelector";
 import { MoreMoviesWithActor } from "./MoreMoviesWithActor";
-import { usePlaySettings } from "@/providers/PlaySettingsProvider";
 
 export const ItemContent: React.FC<{ item: BaseItemDto }> = React.memo(
   ({ item }) => {
@@ -112,14 +112,6 @@ export const ItemContent: React.FC<{ item: BaseItemDto }> = React.memo(
 
     const insets = useSafeAreaInsets();
 
-    // useFocusEffect(
-    //   useCallback(() => {
-    //     return () => {
-    //       setPlaySettings(null);
-    //     };
-    //   }, [setPlaySettings])
-    // );
-
     return (
       <View
         className="flex-1 relative"
@@ -171,11 +163,7 @@ export const ItemContent: React.FC<{ item: BaseItemDto }> = React.memo(
               <ItemHeader item={item} className="mb-4" />
               {item.Type !== "Program" && (
                 <View className="flex flex-row items-center justify-start w-full h-16">
-                  <BitrateSelector
-                    className="mr-1"
-                    onChange={(val) => setMaxBitrate(val)}
-                    selected={maxBitrate}
-                  />
+                  <BitrateSelector className="mr-1" />
                   <MediaSourceSelector className="mr-1" />
                   <AudioTrackSelector className="mr-1" />
                   <SubtitleTrackSelector />

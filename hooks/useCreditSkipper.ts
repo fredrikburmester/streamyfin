@@ -63,6 +63,9 @@ export const useCreditSkipper = (
     if (!creditTimestamps || !videoRef.current) return;
     try {
       videoRef.current.seek(creditTimestamps.Credits.End);
+      setTimeout(() => {
+        videoRef.current?.resume();
+      }, 200);
     } catch (error) {
       writeToLog("ERROR", "Error skipping intro", error);
     }

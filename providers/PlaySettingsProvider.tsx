@@ -17,13 +17,14 @@ import native from "@/utils/profiles/native";
 import old from "@/utils/profiles/old";
 import { getStreamUrl } from "@/utils/jellyfin/media/getStreamUrl";
 import { reportPlaybackStopped } from "@/utils/jellyfin/playstate/reportPlaybackStopped";
+import { Bitrate } from "@/components/BitrateSelector";
 
 export type PlaybackType = {
   item?: BaseItemDto | null;
   mediaSource?: MediaSourceInfo | null;
   subtitleIndex?: number | null;
   audioIndex?: number | null;
-  quality?: any | null;
+  bitrate?: Bitrate | null;
 };
 
 type PlaySettingsContextType = {
@@ -64,6 +65,7 @@ export const PlaySettingsProvider: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     const fetchPlayUrl = async () => {
+      console.log("something changed, fetching url", playSettings?.item?.Id);
       if (!api || !user || !settings) {
         setPlayUrl(null);
         return;
@@ -80,7 +82,7 @@ export const PlaySettingsProvider: React.FC<{ children: React.ReactNode }> = ({
         item: playSettings?.item,
         mediaSourceId: playSettings?.mediaSource?.Id,
         startTimeTicks: 0,
-        maxStreamingBitrate: 0,
+        maxStreamingBitrate: playSettings?.bitrate?.value,
         audioStreamIndex: playSettings?.audioIndex
           ? playSettings?.audioIndex
           : 0,

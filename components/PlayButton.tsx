@@ -63,7 +63,10 @@ export const PlayButton: React.FC<Props> = ({ item, url, ...props }) => {
   }, [url]);
 
   const onPress = async () => {
-    if (!url || !item) return;
+    if (!url || !item) {
+      console.warn("No URL or item provided to PlayButton");
+      return;
+    }
     if (!client) {
       router.push("/play-video");
       return;
