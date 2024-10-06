@@ -19,19 +19,30 @@ import { getColors } from "react-native-image-colors";
  * @param disabled - A boolean flag to disable color extraction.
  *
  */
-export const useImageColors = (item?: BaseItemDto | null, disabled = false) => {
+export const useImageColors = ({
+  item,
+  url,
+  disabled,
+}: {
+  item?: BaseItemDto | null;
+  url?: string | null;
+  disabled?: boolean;
+}) => {
   const [api] = useAtom(apiAtom);
   const [, setPrimaryColor] = useAtom(itemThemeColorAtom);
 
   const source = useMemo(() => {
-    if (!api || !item) return;
-    return getItemImage({
-      item,
-      api,
-      variant: "Primary",
-      quality: 80,
-      width: 300,
-    });
+    if (!api) return;
+    if (url) return { uri: url };
+    else if (item)
+      return getItemImage({
+        item,
+        api,
+        variant: "Primary",
+        quality: 80,
+        width: 300,
+      });
+    else return;
   }, [api, item]);
 
   useEffect(() => {

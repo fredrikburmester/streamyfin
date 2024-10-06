@@ -40,11 +40,26 @@ const ContinueWatchingPoster: React.FC<ContinueWatchingPosterProps> = ({
       else
         return `${api?.basePath}/Items/${item.Id}/Images/Primary?fillHeight=389&quality=80`;
     }
+    if (item.Type === "Program") {
+      if (item.ImageTags?.["Thumb"])
+        return `${api?.basePath}/Items/${item.Id}/Images/Thumb?fillHeight=389&quality=80&tag=${item.ImageTags?.["Thumb"]}`;
+      else
+        return `${api?.basePath}/Items/${item.Id}/Images/Primary?fillHeight=389&quality=80`;
+    }
   }, [item]);
 
-  const [progress, setProgress] = useState(
-    item.UserData?.PlayedPercentage || 0
-  );
+  const progress = useMemo(() => {
+    if (item.Type === "Program") {
+      const startDate = new Date(item.StartDate || "");
+      const endDate = new Date(item.EndDate || "");
+      const now = new Date();
+      const total = endDate.getTime() - startDate.getTime();
+      const elapsed = now.getTime() - startDate.getTime();
+      return (elapsed / total) * 100;
+    } else {
+      return item.UserData?.PlayedPercentage || 0;
+    }
+  }, []);
 
   if (!url)
     return (

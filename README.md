@@ -12,6 +12,7 @@ Welcome to Streamyfin, a simple and user-friendly Jellyfin client built with Exp
 </div>
 
 ## 🌟 Features
+
 - 🚀 **Skp intro / credits support**
 - 🖼️ **Trickplay images**: The new golden standard for chapter previews when seeking.
 - 📺 **Picture in Picture** (iPhone only): Watch movies in PiP mode on your iPhone.
@@ -61,7 +62,7 @@ Check out our [Roadmap](https://github.com/users/fredrikburmester/projects/5) to
 ## Get it now
 
 <div style="display: flex; gap: 5px;">
-  <a href="https://apps.apple.com/se/app/streamyfin/id6593660679?l=en-GB"><img height=50 alt="Get Streamyfin on App Store" src="./assets/Download_on_the_App_Store_Badge.png"/></a>
+  <a href="https://apps.apple.com/app/streamyfin/id6593660679?l=en-GB"><img height=50 alt="Get Streamyfin on App Store" src="./assets/Download_on_the_App_Store_Badge.png"/></a>
   <a href="https://play.google.com/store/apps/details?id=com.fredrikburmester.streamyfin"><img height=50 alt="Get the beta on Google Play" src="./assets/Google_Play_Store_badge_EN.svg"/></a>
 </div>
 
@@ -135,7 +136,7 @@ Key points of the MPL-2.0:
 
 ## 🌐 Connect with Us
 
-Join our Discord: [https://discord.gg/zyGKHJZvv4](https://discord.gg/aJvAYeycyY)
+Join our Discord: [https://discord.gg/BuGG9ZNhaE](https://discord.gg/BuGG9ZNhaE)
 
 If you have questions or need support, feel free to reach out:
 
@@ -153,3 +154,7 @@ I'd like to thank the following people and projects for their contributions to S
 - [Reiverr](https://github.com/aleksilassila/reiverr) for great help with understanding the Jellyfin API.
 - [Jellyfin TS SDK](https://github.com/jellyfin/jellyfin-sdk-typescript) for the TypeScript SDK.
 - The Jellyfin devs for always being helpful in the Discord.
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=fredrikburmester/streamyfin&type=Date)](https://star-history.com/#fredrikburmester/streamyfin&Date)

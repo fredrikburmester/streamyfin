@@ -2,7 +2,7 @@
   "expo": {
     "name": "Streamyfin",
     "slug": "streamyfin",
-    "version": "0.16.0",
+    "version": "0.17.0",
     "orientation": "default",
     "icon": "./assets/images/icon.png",
     "scheme": "streamyfin",
@@ -10,7 +10,7 @@
     "splash": {
       "image": "./assets/images/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#29164B"
+      "backgroundColor": "#2E2E2E"
     },
     "jsEngine": "hermes",
     "assetBundlePatterns": ["**/*"],
@@ -33,9 +33,9 @@
     },
     "android": {
       "jsEngine": "hermes",
-      "versionCode": 42,
+      "versionCode": 43,
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/icon.png"
+        "foregroundImage": "./assets/images/adaptive_icon.png"
       },
       "package": "com.fredrikburmester.streamyfin",
       "permissions": [

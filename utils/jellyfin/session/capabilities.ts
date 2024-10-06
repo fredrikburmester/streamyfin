@@ -6,6 +6,7 @@ import { Api } from "@jellyfin/sdk";
 import { AxiosError, AxiosResponse } from "axios";
 import { useMemo } from "react";
 import { getAuthHeaders } from "../jellyfin";
+import iosFmp4 from "@/utils/profiles/iosFmp4";
 
 interface PostCapabilitiesParams {
   api: Api | null | undefined;
@@ -30,7 +31,7 @@ export const postCapabilities = async ({
     throw new Error("Missing parameters for marking item as not played");
   }
 
-  let profile: any = ios;
+  let profile: any = iosFmp4;
 
   if (deviceProfile === "Native") {
     profile = native;

@@ -44,7 +44,7 @@ export const SeriesCard: React.FC<{ items: BaseItemDto[] }> = ({ items }) => {
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <View className="px-4 flex flex-row">
               {seasonItems.sort(sortByIndex)?.map((item, index) => (
-                <EpisodeCard item={item} />
+                <EpisodeCard item={item} key={index} />
               ))}
             </View>
           </ScrollView>

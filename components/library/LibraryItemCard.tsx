@@ -15,16 +15,12 @@ import { useEffect, useMemo, useState } from "react";
 import { TouchableOpacityProps, View } from "react-native";
 import { getColors } from "react-native-image-colors";
 import { TouchableItemRouter } from "../common/TouchableItemRouter";
+import { useImageColors } from "@/hooks/useImageColors";
+import { itemThemeColorAtom } from "@/utils/atoms/primaryColor";
 
 interface Props extends TouchableOpacityProps {
   library: BaseItemDto;
 }
-
-type LibraryColor = {
-  dominantColor: string;
-  averageColor: string;
-  secondary: string;
-};
 
 type IconName = React.ComponentProps<typeof Ionicons>["name"];
 
@@ -48,12 +44,6 @@ export const LibraryItemCard: React.FC<Props> = ({ library, ...props }) => {
   const [user] = useAtom(userAtom);
   const [settings] = useSettings();
 
-  const [imageInfo, setImageInfo] = useState<LibraryColor>({
-    dominantColor: "#fff",
-    averageColor: "#fff",
-    secondary: "#fff",
-  });
-
   const url = useMemo(
     () =>
       getPrimaryImageUrl({
@@ -62,6 +52,10 @@ export const LibraryItemCard: React.FC<Props> = ({ library, ...props }) => {
       }),
     [library]
   );
+
+  // If we want to use image colors for library cards
+  // const [color] = useAtom(itemThemeColorAtom)
+  // useImageColors({ url });
 
   const { data: itemsCount } = useQuery({
     queryKey: ["library-count", library.Id],
@@ -75,40 +69,6 @@ export const LibraryItemCard: React.FC<Props> = ({ library, ...props }) => {
       return response.data.TotalRecordCount;
     },
   });
-
-  useEffect(() => {
-    if (url) {
-      getColors(url, {
-        fallback: "#fff",
-        cache: true,
-        key: url,
-      })
-        .then((colors) => {
-          let dominantColor: string = "#fff";
-          let averageColor: string = "#fff";
-          let secondary: string = "#fff";
-
-          if (colors.platform === "android") {
-            dominantColor = colors.dominant;
-            averageColor = colors.average;
-            secondary = colors.muted;
-          } else if (colors.platform === "ios") {
-            dominantColor = colors.primary;
-            averageColor = colors.background;
-            secondary = colors.detail;
-          }
-
-          setImageInfo({
-            dominantColor,
-            averageColor,
-            secondary,
-          });
-        })
-        .catch((error) => {
-          console.error("Error getting colors", error);
-        });
-    }
-  }, [url]);
 
   if (!url) return null;
 
