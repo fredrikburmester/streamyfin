@@ -1,5 +1,4 @@
 import { apiAtom } from "@/providers/JellyfinProvider";
-import { usePlayback } from "@/providers/PlaybackProvider";
 import { itemThemeColorAtom } from "@/utils/atoms/primaryColor";
 import { getParentBackdropImageUrl } from "@/utils/jellyfin/image/getParentBackdropImageUrl";
 import { getPrimaryImageUrl } from "@/utils/jellyfin/image/getPrimaryImageUrl";
@@ -40,7 +39,6 @@ const MIN_PLAYBACK_WIDTH = 15;
 export const PlayButton: React.FC<Props> = ({ item, url, ...props }) => {
   const { showActionSheetWithOptions } = useActionSheet();
   const client = useRemoteMediaClient();
-  const { setCurrentlyPlayingState } = usePlayback();
   const mediaStatus = useMediaStatus();
 
   const [colorAtom] = useAtom(itemThemeColorAtom);
@@ -64,7 +62,11 @@ export const PlayButton: React.FC<Props> = ({ item, url, ...props }) => {
 
   const onPress = async () => {
     if (!url || !item) {
-      console.warn("No URL or item provided to PlayButton");
+      console.warn(
+        "No URL or item provided to PlayButton",
+        url?.slice(0, 100),
+        item?.Id
+      );
       return;
     }
     if (!client) {

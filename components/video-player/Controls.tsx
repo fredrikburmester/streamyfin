@@ -19,7 +19,13 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { Dimensions, Pressable, TouchableOpacity, View } from "react-native";
+import {
+  Dimensions,
+  Platform,
+  Pressable,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { Slider } from "react-native-awesome-slider";
 import Animated, {
   runOnJS,
@@ -34,6 +40,7 @@ import { VideoRef } from "react-native-video";
 import { Text } from "../common/Text";
 import { itemRouter } from "../common/TouchableItemRouter";
 import { Loader } from "../Loader";
+import { TAB_HEIGHT } from "@/constants/Values";
 
 interface Props {
   item: BaseItemDto;
@@ -67,12 +74,12 @@ export const Controls: React.FC<Props> = ({
   setIgnoreSafeAreas,
 }) => {
   const [settings] = useSettings();
-  const [api] = useAtom(apiAtom);
   const router = useRouter();
   const segments = useSegments();
   const insets = useSafeAreaInsets();
 
   const screenDimensions = Dimensions.get("screen");
+  const windowDimensions = Dimensions.get("window");
 
   const op = useSharedValue<number>(1);
   const tr = useSharedValue<number>(10);
@@ -243,8 +250,8 @@ export const Controls: React.FC<Props> = ({
           position: "absolute",
           top: 0,
           left: 0,
-          width: screenDimensions.width,
-          height: screenDimensions.height,
+          width: windowDimensions.width,
+          height: windowDimensions.height,
         },
       ]}
     >
@@ -299,8 +306,8 @@ export const Controls: React.FC<Props> = ({
               position: "absolute",
               top: 0,
               left: 0,
-              width: screenDimensions.width,
-              height: screenDimensions.height,
+              width: windowDimensions.width + 100,
+              height: windowDimensions.height + 100,
             },
             animatedStyles,
           ]}
@@ -313,8 +320,8 @@ export const Controls: React.FC<Props> = ({
           position: "absolute",
           top: 0,
           left: 0,
-          width: screenDimensions.width,
-          height: screenDimensions.height,
+          width: windowDimensions.width,
+          height: windowDimensions.height,
         }}
         pointerEvents="none"
         className={`flex flex-col items-center justify-center
@@ -338,7 +345,7 @@ export const Controls: React.FC<Props> = ({
       >
         <TouchableOpacity
           onPress={toggleIgnoreSafeAreas}
-          className="aspect-square flex flex-col bg-neutral-800 rounded-xl items-center justify-center p-2"
+          className="aspect-square flex flex-col bg-neutral-800/90 rounded-xl items-center justify-center p-2"
         >
           <Ionicons
             name={ignoreSafeAreas ? "contract-outline" : "expand"}
@@ -350,7 +357,7 @@ export const Controls: React.FC<Props> = ({
           onPress={() => {
             router.back();
           }}
-          className="aspect-square flex flex-col bg-neutral-800 rounded-xl items-center justify-center p-2"
+          className="aspect-square flex flex-col bg-neutral-800/90 rounded-xl items-center justify-center p-2"
         >
           <Ionicons name="close" size={24} color="white" />
         </TouchableOpacity>
@@ -360,10 +367,10 @@ export const Controls: React.FC<Props> = ({
         style={[
           {
             position: "absolute",
-            width: screenDimensions.width - insets.left - insets.right,
-            maxHeight: screenDimensions.height,
+            width: windowDimensions.width - insets.left - insets.right,
+            maxHeight: windowDimensions.height,
             left: insets.left,
-            bottom: insets.bottom,
+            bottom: Platform.OS === "ios" ? insets.bottom : insets.bottom,
           },
           animatedBottomStyles,
         ]}
@@ -388,7 +395,7 @@ export const Controls: React.FC<Props> = ({
               ? "flex-row space-x-6 py-2 px-4 rounded-full"
               : "flex-col-reverse py-4 px-4 rounded-2xl"
           } 
-              items-center  bg-neutral-800`}
+              items-center  bg-neutral-800/90`}
         >
           <View className="flex flex-row items-center space-x-4">
             <TouchableOpacity
