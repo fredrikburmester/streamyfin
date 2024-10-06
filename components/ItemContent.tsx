@@ -15,21 +15,11 @@ import { useImageColors } from "@/hooks/useImageColors";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import { useSettings } from "@/utils/atoms/settings";
 import { getLogoImageUrlById } from "@/utils/jellyfin/image/getLogoImageUrlById";
-import { getStreamUrl } from "@/utils/jellyfin/media/getStreamUrl";
-import { chromecastProfile } from "@/utils/profiles/chromecast";
-import iosFmp4 from "@/utils/profiles/iosFmp4";
-import native from "@/utils/profiles/native";
-import old from "@/utils/profiles/old";
-import {
-  BaseItemDto,
-  MediaSourceInfo,
-} from "@jellyfin/sdk/lib/generated-client/models";
-import { getMediaInfoApi } from "@jellyfin/sdk/lib/utils/api";
-import { useQuery } from "@tanstack/react-query";
+import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import { Image } from "expo-image";
 import { useNavigation } from "expo-router";
 import * as ScreenOrientation from "expo-screen-orientation";
-import { useAtom } from "jotai";
+import { useAtom, useAtomValue } from "jotai";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { View } from "react-native";
 import { useCastDevice } from "react-native-google-cast";
@@ -39,20 +29,18 @@ import { Chromecast } from "./Chromecast";
 import { ItemHeader } from "./ItemHeader";
 import { MediaSourceSelector } from "./MediaSourceSelector";
 import { MoreMoviesWithActor } from "./MoreMoviesWithActor";
+import { usePlaySettings } from "@/providers/PlaySettingsProvider";
 
 export const ItemContent: React.FC<{ item: BaseItemDto }> = React.memo(
   ({ item }) => {
     const [api] = useAtom(apiAtom);
     const [user] = useAtom(userAtom);
+    const { playSettings, setPlaySettings, playUrl } = usePlaySettings();
 
     const castDevice = useCastDevice();
     const navigation = useNavigation();
     const [settings] = useSettings();
-    const [selectedMediaSource, setSelectedMediaSource] =
-      useState<MediaSourceInfo | null>(null);
-    const [selectedAudioStream, setSelectedAudioStream] = useState<number>(-1);
-    const [selectedSubtitleStream, setSelectedSubtitleStream] =
-      useState<number>(-1);
+
     const [maxBitrate, setMaxBitrate] = useState<Bitrate>({
       key: "Max",
       value: undefined,
@@ -99,6 +87,11 @@ export const ItemContent: React.FC<{ item: BaseItemDto }> = React.memo(
             </View>
           ),
       });
+
+      setPlaySettings((prev) => ({
+        ...prev,
+        item,
+      }));
     }, [item]);
 
     useEffect(() => {
@@ -111,87 +104,6 @@ export const ItemContent: React.FC<{ item: BaseItemDto }> = React.memo(
       else headerHeightRef.current = 400;
     }, [item, orientation]);
 
-    const { data: sessionData } = useQuery({
-      queryKey: ["sessionData", item.Id],
-      queryFn: async () => {
-        if (!api || !user?.Id || !item.Id) {
-          return null;
-        }
-        const playbackData = await getMediaInfoApi(api!).getPlaybackInfo(
-          {
-            itemId: item.Id,
-            userId: user?.Id,
-          },
-          {
-            method: "POST",
-          }
-        );
-
-        return playbackData.data;
-      },
-      enabled: !!item.Id && !!api && !!user?.Id,
-      staleTime: 0,
-    });
-
-    const { data: playbackUrl } = useQuery({
-      queryKey: [
-        "playbackUrl",
-        item.Id,
-        maxBitrate,
-        castDevice?.deviceId,
-        selectedMediaSource?.Id,
-        selectedAudioStream,
-        selectedSubtitleStream,
-        settings,
-        sessionData?.PlaySessionId,
-      ],
-      queryFn: async () => {
-        if (!api || !user?.Id) {
-          return null;
-        }
-
-        if (
-          item.Type !== "Program" &&
-          (!sessionData || !selectedMediaSource?.Id)
-        ) {
-          return null;
-        }
-
-        let deviceProfile: any = iosFmp4;
-
-        if (castDevice?.deviceId) {
-          deviceProfile = chromecastProfile;
-        } else if (settings?.deviceProfile === "Native") {
-          deviceProfile = native;
-        } else if (settings?.deviceProfile === "Old") {
-          deviceProfile = old;
-        }
-
-        console.log("playbackUrl...");
-
-        const url = await getStreamUrl({
-          api,
-          userId: user.Id,
-          item,
-          startTimeTicks: item.UserData?.PlaybackPositionTicks || 0,
-          maxStreamingBitrate: maxBitrate.value,
-          sessionData,
-          deviceProfile,
-          audioStreamIndex: selectedAudioStream,
-          subtitleStreamIndex: selectedSubtitleStream,
-          forceDirectPlay: settings?.forceDirectPlay,
-          height: maxBitrate.height,
-          mediaSourceId: selectedMediaSource?.Id,
-        });
-
-        console.info("Stream URL:", url);
-
-        return url;
-      },
-      enabled: !!api && !!user?.Id && !!item.Id,
-      staleTime: 0,
-    });
-
     const logoUrl = useMemo(() => getLogoImageUrlById({ api, item }), [item]);
 
     const loading = useMemo(() => {
@@ -199,6 +111,14 @@ export const ItemContent: React.FC<{ item: BaseItemDto }> = React.memo(
     }, [loadingLogo, logoUrl]);
 
     const insets = useSafeAreaInsets();
+
+    // useFocusEffect(
+    //   useCallback(() => {
+    //     return () => {
+    //       setPlaySettings(null);
+    //     };
+    //   }, [setPlaySettings])
+    // );
 
     return (
       <View
@@ -256,31 +176,13 @@ export const ItemContent: React.FC<{ item: BaseItemDto }> = React.memo(
                     onChange={(val) => setMaxBitrate(val)}
                     selected={maxBitrate}
                   />
-                  <MediaSourceSelector
-                    className="mr-1"
-                    item={item}
-                    onChange={setSelectedMediaSource}
-                    selected={selectedMediaSource}
-                  />
-                  {selectedMediaSource && (
-                    <>
-                      <AudioTrackSelector
-                        className="mr-1"
-                        source={selectedMediaSource}
-                        onChange={setSelectedAudioStream}
-                        selected={selectedAudioStream}
-                      />
-                      <SubtitleTrackSelector
-                        source={selectedMediaSource}
-                        onChange={setSelectedSubtitleStream}
-                        selected={selectedSubtitleStream}
-                      />
-                    </>
-                  )}
+                  <MediaSourceSelector className="mr-1" />
+                  <AudioTrackSelector className="mr-1" />
+                  <SubtitleTrackSelector />
                 </View>
               )}
 
-              <PlayButton item={item} url={playbackUrl} className="grow" />
+              <PlayButton item={item} url={playUrl} className="grow" />
             </View>
 
             {item.Type === "Episode" && (

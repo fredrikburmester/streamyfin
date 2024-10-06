@@ -1,15 +1,12 @@
-import ios from "@/utils/profiles/ios";
+import iosFmp4 from "@/utils/profiles/iosFmp4";
 import { Api } from "@jellyfin/sdk";
 import {
   BaseItemDto,
   MediaSourceInfo,
   PlaybackInfoResponse,
 } from "@jellyfin/sdk/lib/generated-client/models";
+import { getMediaInfoApi } from "@jellyfin/sdk/lib/utils/api";
 import { getAuthHeaders } from "../jellyfin";
-import iosFmp4 from "@/utils/profiles/iosFmp4";
-import { getItemsApi, getMediaInfoApi } from "@jellyfin/sdk/lib/utils/api";
-import { isPlainObject } from "lodash";
-import { Alert } from "react-native";
 
 export const getStreamUrl = async ({
   api,
@@ -64,14 +61,7 @@ export const getStreamUrl = async ({
         },
       }
     );
-
-    const mediaSourceId = res0.data.MediaSources?.[0].Id;
-    const liveStreamId = res0.data.MediaSources?.[0].LiveStreamId;
-
     const transcodeUrl = res0.data.MediaSources?.[0].TranscodingUrl;
-
-    console.log("transcodeUrl", transcodeUrl);
-
     if (transcodeUrl) return `${api.basePath}${transcodeUrl}`;
   }
 
@@ -131,7 +121,9 @@ export const getStreamUrl = async ({
     url = `${api.basePath}${mediaSource.TranscodingUrl}`;
   }
 
-  if (!url) throw new Error("No url");
+  if (!url) {
+    return null;
+  }
 
   return url;
 };

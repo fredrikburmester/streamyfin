@@ -6,6 +6,7 @@ import {
 } from "@/providers/JellyfinProvider";
 import { JobQueueProvider } from "@/providers/JobQueueProvider";
 import { PlaybackProvider } from "@/providers/PlaybackProvider";
+import { PlaySettingsProvider } from "@/providers/PlaySettingsProvider";
 import { orientationAtom } from "@/utils/atoms/orientation";
 import { Settings, useSettings } from "@/utils/atoms/settings";
 import { BACKGROUND_FETCH_TASK } from "@/utils/background-tasks";
@@ -317,62 +318,68 @@ function Layout() {
             <ActionSheetProvider>
               <BottomSheetModalProvider>
                 <JellyfinProvider>
-                  <PlaybackProvider>
-                    <StatusBar style="light" backgroundColor="#000" />
-                    <ThemeProvider value={DarkTheme}>
-                      <Stack
-                        initialRouteName="/home"
-                        screenOptions={{
-                          autoHideHomeIndicator: true,
-                        }}
-                      >
-                        <Stack.Screen
-                          name="(auth)/(tabs)"
-                          options={{
-                            headerShown: false,
-                            title: "",
+                  <PlaySettingsProvider>
+                    <PlaybackProvider>
+                      <StatusBar style="light" backgroundColor="#000" />
+                      <ThemeProvider value={DarkTheme}>
+                        <Stack initialRouteName="/home">
+                          <Stack.Screen
+                            name="(auth)/(tabs)"
+                            options={{
+                              headerShown: false,
+                              title: "",
+                            }}
+                          />
+                          <Stack.Screen
+                            name="(auth)/play"
+                            options={{
+                              headerShown: false,
+                              autoHideHomeIndicator: true,
+                              title: "",
+                              animation: "fade",
+                            }}
+                          />
+                          <Stack.Screen
+                            name="(auth)/play-video"
+                            options={{
+                              headerShown: false,
+                              autoHideHomeIndicator: true,
+                              title: "",
+                              animation: "fade",
+                            }}
+                          />
+                          <Stack.Screen
+                            name="(auth)/play-music"
+                            options={{
+                              headerShown: false,
+                              autoHideHomeIndicator: true,
+                              title: "",
+                              animation: "fade",
+                            }}
+                          />
+                          <Stack.Screen
+                            name="login"
+                            options={{ headerShown: false, title: "Login" }}
+                          />
+                          <Stack.Screen name="+not-found" />
+                        </Stack>
+                        <Toaster
+                          duration={4000}
+                          toastOptions={{
+                            style: {
+                              backgroundColor: "#262626",
+                              borderColor: "#363639",
+                              borderWidth: 1,
+                            },
+                            titleStyle: {
+                              color: "white",
+                            },
                           }}
+                          closeButton
                         />
-                        <Stack.Screen
-                          name="(auth)/play"
-                          options={{
-                            headerShown: false,
-                            autoHideHomeIndicator: true,
-                            title: "",
-                            animation: "fade",
-                          }}
-                        />
-                        <Stack.Screen
-                          name="(auth)/play-music"
-                          options={{
-                            headerShown: false,
-                            autoHideHomeIndicator: true,
-                            title: "",
-                            animation: "fade",
-                          }}
-                        />
-                        <Stack.Screen
-                          name="login"
-                          options={{ headerShown: false, title: "Login" }}
-                        />
-                        <Stack.Screen name="+not-found" />
-                      </Stack>
-                      <Toaster
-                        duration={4000}
-                        toastOptions={{
-                          style: {
-                            backgroundColor: "#262626",
-                            borderColor: "#363639",
-                            borderWidth: 1,
-                          },
-                          titleStyle: {
-                            color: "white",
-                          },
-                        }}
-                        closeButton
-                      />
-                    </ThemeProvider>
-                  </PlaybackProvider>
+                      </ThemeProvider>
+                    </PlaybackProvider>
+                  </PlaySettingsProvider>
                 </JellyfinProvider>
               </BottomSheetModalProvider>
             </ActionSheetProvider>
