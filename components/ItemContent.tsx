@@ -12,23 +12,18 @@ import { CastAndCrew } from "@/components/series/CastAndCrew";
 import { CurrentSeries } from "@/components/series/CurrentSeries";
 import { SeasonEpisodesCarousel } from "@/components/series/SeasonEpisodesCarousel";
 import { useImageColors } from "@/hooks/useImageColors";
-import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
+import { apiAtom } from "@/providers/JellyfinProvider";
 import { usePlaySettings } from "@/providers/PlaySettingsProvider";
-import { useSettings } from "@/utils/atoms/settings";
 import { getLogoImageUrlById } from "@/utils/jellyfin/image/getLogoImageUrlById";
-import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
+import {
+  BaseItemDto,
+  MediaSourceInfo,
+} from "@jellyfin/sdk/lib/generated-client/models";
 import { Image } from "expo-image";
 import { useNavigation } from "expo-router";
 import * as ScreenOrientation from "expo-screen-orientation";
 import { useAtom } from "jotai";
-import React, {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { View } from "react-native";
 import { useCastDevice } from "react-native-google-cast";
 import Animated from "react-native-reanimated";
@@ -41,7 +36,7 @@ import { MoreMoviesWithActor } from "./MoreMoviesWithActor";
 export const ItemContent: React.FC<{ item: BaseItemDto }> = React.memo(
   ({ item }) => {
     const [api] = useAtom(apiAtom);
-    const { setPlaySettings, playUrl } = usePlaySettings();
+    const { setPlaySettings, playUrl, playSettings } = usePlaySettings();
 
     const castDevice = useCastDevice();
     const navigation = useNavigation();
@@ -51,6 +46,51 @@ export const ItemContent: React.FC<{ item: BaseItemDto }> = React.memo(
     const [orientation, setOrientation] = useState(
       ScreenOrientation.Orientation.PORTRAIT_UP
     );
+
+    const selectedMediaSource = useMemo(() => {
+      return playSettings?.mediaSource || undefined;
+    }, [playSettings?.mediaSource]);
+
+    const setSelectedMediaSource = (mediaSource: MediaSourceInfo) => {
+      setPlaySettings((prev) => ({
+        ...prev,
+        mediaSource,
+      }));
+    };
+
+    const selectedAudioStream = useMemo(() => {
+      return playSettings?.audioIndex;
+    }, [playSettings?.audioIndex]);
+
+    const setSelectedAudioStream = (audioIndex: number | undefined) => {
+      setPlaySettings((prev) => ({
+        ...prev,
+        audioIndex,
+      }));
+    };
+
+    const selectedSubtitleStream = useMemo(() => {
+      return playSettings?.subtitleIndex;
+    }, [playSettings?.subtitleIndex]);
+
+    const setSelectedSubtitleStream = (subtitleIndex: number | undefined) => {
+      setPlaySettings((prev) => ({
+        ...prev,
+        subtitleIndex,
+      }));
+    };
+
+    const maxBitrate = useMemo(() => {
+      return playSettings?.bitrate;
+    }, [playSettings?.bitrate]);
+
+    const setMaxBitrate = (bitrate: Bitrate | undefined) => {
+      console.log("setMaxBitrate", bitrate);
+      setPlaySettings((prev) => ({
+        ...prev,
+        bitrate,
+      }));
+    };
 
     useEffect(() => {
       const subscription = ScreenOrientation.addOrientationChangeListener(
@@ -79,21 +119,22 @@ export const ItemContent: React.FC<{ item: BaseItemDto }> = React.memo(
             <View className="flex flex-row items-center space-x-2">
               <Chromecast background="blur" width={22} height={22} />
               {item.Type !== "Program" && (
-                <>
+                <View className="flex flex-row items-center space-x-2">
                   <DownloadItem item={item} />
                   <PlayedStatus item={item} />
-                </>
+                </View>
               )}
             </View>
           ),
       });
 
       setPlaySettings((prev) => ({
+        ...prev,
         audioIndex: undefined,
         subtitleIndex: undefined,
         mediaSourceId: undefined,
         bitrate: undefined,
-        mediaSource: undefined,
+        mediaSource: item.MediaSources?.[0],
         item,
       }));
     }, [item]);
@@ -167,10 +208,32 @@ export const ItemContent: React.FC<{ item: BaseItemDto }> = React.memo(
               <ItemHeader item={item} className="mb-4" />
               {item.Type !== "Program" && (
                 <View className="flex flex-row items-center justify-start w-full h-16">
-                  <BitrateSelector className="mr-1" />
-                  <MediaSourceSelector className="mr-1" />
-                  <AudioTrackSelector className="mr-1" />
-                  <SubtitleTrackSelector />
+                  <BitrateSelector
+                    className="mr-1"
+                    onChange={(val) => setMaxBitrate(val)}
+                    selected={maxBitrate}
+                  />
+                  <MediaSourceSelector
+                    className="mr-1"
+                    item={item}
+                    onChange={setSelectedMediaSource}
+                    selected={selectedMediaSource}
+                  />
+                  {selectedMediaSource && (
+                    <>
+                      <AudioTrackSelector
+                        className="mr-1"
+                        source={selectedMediaSource}
+                        onChange={setSelectedAudioStream}
+                        selected={selectedAudioStream}
+                      />
+                      <SubtitleTrackSelector
+                        source={selectedMediaSource}
+                        onChange={setSelectedSubtitleStream}
+                        selected={selectedSubtitleStream}
+                      />
+                    </>
+                  )}
                 </View>
               )}
 

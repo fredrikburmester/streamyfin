@@ -1,8 +1,7 @@
 import { TouchableOpacity, View } from "react-native";
 import * as DropdownMenu from "zeego/dropdown-menu";
 import { Text } from "./common/Text";
-import { useEffect, useMemo } from "react";
-import { usePlaySettings } from "@/providers/PlaySettingsProvider";
+import { useMemo } from "react";
 
 export type Bitrate = {
   key: string;
@@ -10,7 +9,7 @@ export type Bitrate = {
   height?: number;
 };
 
-export const BITRATES: Bitrate[] = [
+const BITRATES: Bitrate[] = [
   {
     key: "Max",
     value: undefined,
@@ -43,11 +42,17 @@ export const BITRATES: Bitrate[] = [
 ];
 
 interface Props extends React.ComponentProps<typeof View> {
-  inverted?: boolean;
+  onChange: (value: Bitrate) => void;
+  selected?: Bitrate | null;
+  inverted?: boolean | null;
 }
 
-export const BitrateSelector: React.FC<Props> = ({ inverted, ...props }) => {
-  const { setPlaySettings, playSettings } = usePlaySettings();
+export const BitrateSelector: React.FC<Props> = ({
+  onChange,
+  selected,
+  inverted,
+  ...props
+}) => {
   const sorted = useMemo(() => {
     if (inverted)
       return BITRATES.sort(
@@ -56,18 +61,6 @@ export const BitrateSelector: React.FC<Props> = ({ inverted, ...props }) => {
     return BITRATES.sort(
       (a, b) => (b.value || Infinity) - (a.value || Infinity)
     );
-  }, []);
-
-  const selected = useMemo(() => {
-    return sorted.find((b) => b.value === playSettings?.bitrate?.value);
-  }, [playSettings?.bitrate]);
-
-  // Set default bitrate on load
-  useEffect(() => {
-    setPlaySettings((prev) => ({
-      ...prev,
-      bitrate: BITRATES[0],
-    }));
   }, []);
 
   return (
@@ -84,7 +77,7 @@ export const BitrateSelector: React.FC<Props> = ({ inverted, ...props }) => {
             <Text className="opacity-50 mb-1 text-xs">Quality</Text>
             <TouchableOpacity className="bg-neutral-900 h-10 rounded-xl border-neutral-800 border px-3 py-2 flex flex-row items-center justify-between">
               <Text style={{}} className="" numberOfLines={1}>
-                {selected?.key}
+                {BITRATES.find((b) => b.value === selected?.value)?.key}
               </Text>
             </TouchableOpacity>
           </View>
@@ -103,10 +96,7 @@ export const BitrateSelector: React.FC<Props> = ({ inverted, ...props }) => {
             <DropdownMenu.Item
               key={b.key}
               onSelect={() => {
-                setPlaySettings((prev) => ({
-                  ...prev,
-                  bitrate: b,
-                }));
+                onChange(b);
               }}
             >
               <DropdownMenu.ItemTitle>{b.key}</DropdownMenu.ItemTitle>

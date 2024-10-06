@@ -1,25 +1,24 @@
-import React, {
-  createContext,
-  useState,
-  useContext,
-  useEffect,
-  useCallback,
-} from "react";
+import { Bitrate } from "@/components/BitrateSelector";
+import { settingsAtom } from "@/utils/atoms/settings";
+import { getStreamUrl } from "@/utils/jellyfin/media/getStreamUrl";
+import { reportPlaybackStopped } from "@/utils/jellyfin/playstate/reportPlaybackStopped";
+import ios from "@/utils/profiles/ios";
+import native from "@/utils/profiles/native";
+import old from "@/utils/profiles/old";
 import {
   BaseItemDto,
   MediaSourceInfo,
 } from "@jellyfin/sdk/lib/generated-client";
-import { settingsAtom } from "@/utils/atoms/settings";
-import { apiAtom, userAtom } from "./JellyfinProvider";
-import { useAtomValue } from "jotai";
-import iosFmp4 from "@/utils/profiles/iosFmp4";
-import native from "@/utils/profiles/native";
-import old from "@/utils/profiles/old";
-import { getStreamUrl } from "@/utils/jellyfin/media/getStreamUrl";
-import { reportPlaybackStopped } from "@/utils/jellyfin/playstate/reportPlaybackStopped";
-import { Bitrate } from "@/components/BitrateSelector";
-import ios from "@/utils/profiles/ios";
 import { getSessionApi } from "@jellyfin/sdk/lib/utils/api";
+import { useAtomValue } from "jotai";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
+import { apiAtom, userAtom } from "./JellyfinProvider";
 
 export type PlaybackType = {
   item?: BaseItemDto | null;
@@ -32,8 +31,10 @@ export type PlaybackType = {
 type PlaySettingsContextType = {
   playSettings: PlaybackType | null;
   setPlaySettings: React.Dispatch<React.SetStateAction<PlaybackType | null>>;
+  setOfflineSettings: (data: PlaybackType) => void;
   playUrl?: string | null;
   reportStopPlayback: (ticks: number) => Promise<void>;
+  setPlayUrl: React.Dispatch<React.SetStateAction<string | null>>;
 };
 
 const PlaySettingsContext = createContext<PlaySettingsContextType | undefined>(
@@ -43,7 +44,7 @@ const PlaySettingsContext = createContext<PlaySettingsContextType | undefined>(
 export const PlaySettingsProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [playSettings, setPlaySettings] = useState<PlaybackType | null>(null);
+  const [playSettings, _setPlaySettings] = useState<PlaybackType | null>(null);
   const [playUrl, setPlayUrl] = useState<string | null>(null);
 
   const api = useAtomValue(apiAtom);
@@ -65,44 +66,56 @@ export const PlaySettingsProvider: React.FC<{ children: React.ReactNode }> = ({
     [playSettings?.item?.Id, api]
   );
 
-  useEffect(() => {
-    const fetchPlayUrl = async () => {
-      if (!api || !user || !settings || !playSettings) {
-        console.log("fetchPlayUrl ~ missing params");
-        setPlayUrl(null);
-        return;
-      }
+  const setOfflineSettings = useCallback((data: PlaybackType) => {
+    _setPlaySettings(data);
+  }, []);
 
-      console.log("fetchPlayUrl ~ fetching url", playSettings?.item?.Id);
+  const setPlaySettings = useCallback(
+    async (
+      dataOrUpdater:
+        | PlaybackType
+        | null
+        | ((prev: PlaybackType | null) => PlaybackType | null)
+    ) => {
+      _setPlaySettings((prevSettings) => {
+        const newSettings =
+          typeof dataOrUpdater === "function"
+            ? dataOrUpdater(prevSettings)
+            : dataOrUpdater;
 
-      // Determine the device profile
-      let deviceProfile: any = ios;
-      if (settings?.deviceProfile === "Native") deviceProfile = native;
-      if (settings?.deviceProfile === "Old") deviceProfile = old;
+        if (!api || !user || !settings || newSettings === null) {
+          return newSettings;
+        }
 
-      const url = await getStreamUrl({
-        api,
-        deviceProfile,
-        item: playSettings?.item,
-        mediaSourceId: playSettings?.mediaSource?.Id,
-        startTimeTicks: 0,
-        maxStreamingBitrate: playSettings?.bitrate?.value,
-        audioStreamIndex: playSettings?.audioIndex
-          ? playSettings?.audioIndex
-          : 0,
-        subtitleStreamIndex: playSettings?.subtitleIndex
-          ? playSettings?.subtitleIndex
-          : -1,
-        userId: user.Id,
-        forceDirectPlay: false,
-        sessionData: null,
+        let deviceProfile: any = ios;
+        if (settings?.deviceProfile === "Native") deviceProfile = native;
+        if (settings?.deviceProfile === "Old") deviceProfile = old;
+
+        getStreamUrl({
+          api,
+          deviceProfile,
+          item: newSettings?.item,
+          mediaSourceId: newSettings?.mediaSource?.Id,
+          startTimeTicks: 0,
+          maxStreamingBitrate: newSettings?.bitrate?.value,
+          audioStreamIndex: newSettings?.audioIndex
+            ? newSettings?.audioIndex
+            : 0,
+          subtitleStreamIndex: newSettings?.subtitleIndex
+            ? newSettings?.subtitleIndex
+            : -1,
+          userId: user.Id,
+          forceDirectPlay: false,
+          sessionData: null,
+        }).then((url) => {
+          if (url) setPlayUrl(url);
+        });
+
+        return newSettings;
       });
-
-      setPlayUrl(url);
-    };
-
-    fetchPlayUrl();
-  }, [api, settings, user, playSettings]);
+    },
+    [api, user, settings, setPlayUrl]
+  );
 
   useEffect(() => {
     let deviceProfile: any = ios;
@@ -130,7 +143,14 @@ export const PlaySettingsProvider: React.FC<{ children: React.ReactNode }> = ({
 
   return (
     <PlaySettingsContext.Provider
-      value={{ playSettings, setPlaySettings, playUrl, reportStopPlayback }}
+      value={{
+        playSettings,
+        setPlaySettings,
+        playUrl,
+        reportStopPlayback,
+        setPlayUrl,
+        setOfflineSettings,
+      }}
     >
       {children}
     </PlaySettingsContext.Provider>

@@ -55,7 +55,6 @@ interface Props {
   setShowControls: (shown: boolean) => void;
   ignoreSafeAreas?: boolean;
   setIgnoreSafeAreas: React.Dispatch<React.SetStateAction<boolean>>;
-  isLandscape: boolean;
 }
 
 export const Controls: React.FC<Props> = ({
@@ -69,7 +68,6 @@ export const Controls: React.FC<Props> = ({
   cacheProgress,
   showControls,
   setShowControls,
-  isLandscape,
   ignoreSafeAreas,
   setIgnoreSafeAreas,
 }) => {
@@ -259,8 +257,8 @@ export const Controls: React.FC<Props> = ({
         style={[
           {
             position: "absolute",
-            bottom: isLandscape ? insets.bottom + 55 : insets.bottom + 97,
-            right: isLandscape ? insets.right : insets.right,
+            bottom: insets.bottom + 97,
+            right: insets.right,
           },
         ]}
         className={`z-10 p-4
@@ -278,8 +276,8 @@ export const Controls: React.FC<Props> = ({
       <View
         style={{
           position: "absolute",
-          bottom: isLandscape ? insets.bottom + 52 : insets.bottom + 94,
-          right: isLandscape ? insets.right : insets.right,
+          bottom: insets.bottom + 94,
+          right: insets.right,
           height: 70,
         }}
         pointerEvents={showSkipCreditButton ? "auto" : "none"}
@@ -390,12 +388,7 @@ export const Controls: React.FC<Props> = ({
           )}
         </View>
         <View
-          className={`flex ${
-            isLandscape
-              ? "flex-row space-x-6 py-2 px-4 rounded-full"
-              : "flex-col-reverse py-4 px-4 rounded-2xl"
-          } 
-              items-center  bg-neutral-800/90`}
+          className={`flex flex-col-reverse py-4 px-4 rounded-2xl items-center  bg-neutral-800/90`}
         >
           <View className="flex flex-row items-center space-x-4">
             <TouchableOpacity
