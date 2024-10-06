@@ -1,41 +1,43 @@
-import { tc } from "@/utils/textTools";
-import {
-  BaseItemDto,
-  MediaSourceInfo,
-} from "@jellyfin/sdk/lib/generated-client/models";
+import { convertBitsToMegabitsOrGigabits } from "@/utils/bToMb";
+import { useAtom } from "jotai";
 import { useEffect, useMemo } from "react";
 import { TouchableOpacity, View } from "react-native";
 import * as DropdownMenu from "zeego/dropdown-menu";
 import { Text } from "./common/Text";
-import { convertBitsToMegabitsOrGigabits } from "@/utils/bToMb";
+import { usePlaySettings } from "@/providers/PlaySettingsProvider";
 
-interface Props extends React.ComponentProps<typeof View> {
-  item: BaseItemDto;
-  onChange: (value: MediaSourceInfo) => void;
-  selected: MediaSourceInfo | null;
-}
+interface Props extends React.ComponentProps<typeof View> {}
 
-export const MediaSourceSelector: React.FC<Props> = ({
-  item,
-  onChange,
-  selected,
-  ...props
-}) => {
-  const mediaSources = useMemo(() => {
-    return item.MediaSources;
-  }, [item]);
+export const MediaSourceSelector: React.FC<Props> = ({ ...props }) => {
+  const { playSettings, setPlaySettings, playUrl } = usePlaySettings();
 
-  const selectedMediaSource = useMemo(
-    () =>
-      mediaSources
-        ?.find((x) => x.Id === selected?.Id)
-        ?.MediaStreams?.find((x) => x.Type === "Video")?.DisplayTitle || "",
-    [mediaSources, selected]
-  );
+  const selectedMediaSource = useMemo(() => {
+    console.log(
+      "selectedMediaSource",
+      playSettings?.mediaSource?.MediaStreams?.length
+    );
+    return (
+      playSettings?.mediaSource?.MediaStreams?.find((x) => x.Type === "Video")
+        ?.DisplayTitle || "N/A"
+    );
+  }, [playSettings?.mediaSource]);
 
+  // Set default media source on component mount
   useEffect(() => {
-    if (mediaSources?.length) onChange(mediaSources[0]);
-  }, [mediaSources]);
+    if (
+      playSettings?.item?.MediaSources?.length &&
+      !playSettings?.mediaSource
+    ) {
+      console.log(
+        "Setting default media source",
+        playSettings?.item?.MediaSources?.[0].Id
+      );
+      setPlaySettings((prev) => ({
+        ...prev,
+        mediaSource: playSettings?.item?.MediaSources?.[0],
+      }));
+    }
+  }, [playSettings?.item?.MediaSources, setPlaySettings]);
 
   const name = (name?: string | null) => {
     if (name && name.length > 40)
@@ -71,11 +73,14 @@ export const MediaSourceSelector: React.FC<Props> = ({
           sideOffset={8}
         >
           <DropdownMenu.Label>Media sources</DropdownMenu.Label>
-          {mediaSources?.map((source, idx: number) => (
+          {playSettings?.item?.MediaSources?.map((source, idx: number) => (
             <DropdownMenu.Item
               key={idx.toString()}
               onSelect={() => {
-                onChange(source);
+                setPlaySettings((prev) => ({
+                  ...prev,
+                  mediaSource: source,
+                }));
               }}
             >
               <DropdownMenu.ItemTitle>

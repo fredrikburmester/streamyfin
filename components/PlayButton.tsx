@@ -65,8 +65,7 @@ export const PlayButton: React.FC<Props> = ({ item, url, ...props }) => {
   const onPress = async () => {
     if (!url || !item) return;
     if (!client) {
-      setCurrentlyPlayingState({ item, url });
-      router.push("/play");
+      router.push("/play-video");
       return;
     }
     const options = ["Chromecast", "Device", "Cancel"];
@@ -163,8 +162,7 @@ export const PlayButton: React.FC<Props> = ({ item, url, ...props }) => {
             });
             break;
           case 1:
-            setCurrentlyPlayingState({ item, url });
-            router.push("/play");
+            router.push("/play-video");
             break;
           case cancelButtonIndex:
             break;

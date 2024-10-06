@@ -7,69 +7,59 @@ import { useAtom } from "jotai";
 import { apiAtom } from "@/providers/JellyfinProvider";
 
 interface AdjacentEpisodesProps {
-  currentlyPlaying?: CurrentlyPlayingState | null;
+  item?: BaseItemDto | null;
 }
 
-export const useAdjacentEpisodes = ({
-  currentlyPlaying,
-}: AdjacentEpisodesProps) => {
+export const useAdjacentEpisodes = ({ item }: AdjacentEpisodesProps) => {
   const [api] = useAtom(apiAtom);
 
   const { data: previousItem } = useQuery({
-    queryKey: [
-      "previousItem",
-      currentlyPlaying?.item.ParentId,
-      currentlyPlaying?.item.IndexNumber,
-    ],
+    queryKey: ["previousItem", item?.ParentId, item?.IndexNumber],
     queryFn: async (): Promise<BaseItemDto | null> => {
       if (
         !api ||
-        !currentlyPlaying?.item.ParentId ||
-        currentlyPlaying?.item.IndexNumber === undefined ||
-        currentlyPlaying?.item.IndexNumber === null ||
-        currentlyPlaying.item.IndexNumber - 2 < 0
+        !item?.ParentId ||
+        item?.IndexNumber === undefined ||
+        item?.IndexNumber === null ||
+        item?.IndexNumber - 2 < 0
       ) {
         console.log("No previous item");
         return null;
       }
 
       const res = await getItemsApi(api).getItems({
-        parentId: currentlyPlaying.item.ParentId!,
-        startIndex: currentlyPlaying.item.IndexNumber! - 2,
+        parentId: item.ParentId!,
+        startIndex: item.IndexNumber! - 2,
         limit: 1,
       });
 
       return res.data.Items?.[0] || null;
     },
-    enabled: currentlyPlaying?.item.Type === "Episode",
+    enabled: item?.Type === "Episode",
   });
 
   const { data: nextItem } = useQuery({
-    queryKey: [
-      "nextItem",
-      currentlyPlaying?.item.ParentId,
-      currentlyPlaying?.item.IndexNumber,
-    ],
+    queryKey: ["nextItem", item?.ParentId, item?.IndexNumber],
     queryFn: async (): Promise<BaseItemDto | null> => {
       if (
         !api ||
-        !currentlyPlaying?.item.ParentId ||
-        currentlyPlaying?.item.IndexNumber === undefined ||
-        currentlyPlaying?.item.IndexNumber === null
+        !item?.ParentId ||
+        item?.IndexNumber === undefined ||
+        item?.IndexNumber === null
       ) {
         console.log("No next item");
         return null;
       }
 
       const res = await getItemsApi(api).getItems({
-        parentId: currentlyPlaying.item.ParentId!,
-        startIndex: currentlyPlaying.item.IndexNumber!,
+        parentId: item.ParentId!,
+        startIndex: item.IndexNumber!,
         limit: 1,
       });
 
       return res.data.Items?.[0] || null;
     },
-    enabled: currentlyPlaying?.item.Type === "Episode",
+    enabled: item?.Type === "Episode",
   });
 
   return { previousItem, nextItem };

@@ -1,11 +1,9 @@
 // hooks/useTrickplay.ts
 
-import { useState, useCallback, useMemo, useRef } from "react";
-import { Api } from "@jellyfin/sdk";
-import { SharedValue } from "react-native-reanimated";
-import { CurrentlyPlayingState } from "@/providers/PlaybackProvider";
-import { useAtom } from "jotai";
 import { apiAtom } from "@/providers/JellyfinProvider";
+import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client";
+import { useAtom } from "jotai";
+import { useCallback, useMemo, useRef, useState } from "react";
 
 interface TrickplayData {
   Interval?: number;
@@ -28,21 +26,19 @@ interface TrickplayUrl {
   url: string;
 }
 
-export const useTrickplay = (
-  currentlyPlaying?: CurrentlyPlayingState | null
-) => {
+export const useTrickplay = (item: BaseItemDto) => {
   const [api] = useAtom(apiAtom);
   const [trickPlayUrl, setTrickPlayUrl] = useState<TrickplayUrl | null>(null);
   const lastCalculationTime = useRef(0);
   const throttleDelay = 200; // 200ms throttle
 
   const trickplayInfo = useMemo(() => {
-    if (!currentlyPlaying?.item.Id || !currentlyPlaying?.item.Trickplay) {
+    if (!item.Id || !item.Trickplay) {
       return null;
     }
 
-    const mediaSourceId = currentlyPlaying.item.Id;
-    const trickplayData = currentlyPlaying.item.Trickplay[mediaSourceId];
+    const mediaSourceId = item.Id;
+    const trickplayData = item.Trickplay[mediaSourceId];
 
     if (!trickplayData) {
       return null;
@@ -59,7 +55,7 @@ export const useTrickplay = (
           data: trickplayData[firstResolution],
         }
       : null;
-  }, [currentlyPlaying]);
+  }, [item]);
 
   const calculateTrickplayUrl = useCallback(
     (progress: number) => {
@@ -69,7 +65,7 @@ export const useTrickplay = (
       }
       lastCalculationTime.current = now;
 
-      if (!trickplayInfo || !api || !currentlyPlaying?.item.Id) {
+      if (!trickplayInfo || !api || !item.Id) {
         return null;
       }
 
@@ -95,13 +91,13 @@ export const useTrickplay = (
       const newTrickPlayUrl = {
         x: rowInTile,
         y: colInTile,
-        url: `${api.basePath}/Videos/${currentlyPlaying.item.Id}/Trickplay/${resolution}/${tileIndex}.jpg?api_key=${api.accessToken}`,
+        url: `${api.basePath}/Videos/${item.Id}/Trickplay/${resolution}/${tileIndex}.jpg?api_key=${api.accessToken}`,
       };
 
       setTrickPlayUrl(newTrickPlayUrl);
       return newTrickPlayUrl;
     },
-    [trickplayInfo, currentlyPlaying, api]
+    [trickplayInfo, item, api]
   );
 
   return { trickPlayUrl, calculateTrickplayUrl, trickplayInfo };

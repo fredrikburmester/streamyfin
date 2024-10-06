@@ -1,55 +1,46 @@
-import { TouchableOpacity, View } from "react-native";
+import { usePlaySettings } from "@/providers/PlaySettingsProvider";
+import { useSettings } from "@/utils/atoms/settings";
+import { tc } from "@/utils/textTools";
+import { useEffect, useMemo } from "react";
+import { TouchableOpacity, View, ViewProps } from "react-native";
 import * as DropdownMenu from "zeego/dropdown-menu";
 import { Text } from "./common/Text";
-import { atom, useAtom } from "jotai";
-import {
-  BaseItemDto,
-  MediaSourceInfo,
-} from "@jellyfin/sdk/lib/generated-client/models";
-import { useEffect, useMemo } from "react";
-import { MediaStream } from "@jellyfin/sdk/lib/generated-client/models";
-import { tc } from "@/utils/textTools";
-import { useSettings } from "@/utils/atoms/settings";
 
-interface Props extends React.ComponentProps<typeof View> {
-  source: MediaSourceInfo;
-  onChange: (value: number) => void;
-  selected: number;
-}
+interface Props extends ViewProps {}
 
-export const SubtitleTrackSelector: React.FC<Props> = ({
-  source,
-  onChange,
-  selected,
-  ...props
-}) => {
+export const SubtitleTrackSelector: React.FC<Props> = ({ ...props }) => {
+  const { playSettings, setPlaySettings, playUrl } = usePlaySettings();
   const [settings] = useSettings();
 
   const subtitleStreams = useMemo(
-    () => source.MediaStreams?.filter((x) => x.Type === "Subtitle") ?? [],
-    [source]
+    () =>
+      playSettings?.mediaSource?.MediaStreams?.filter(
+        (x) => x.Type === "Subtitle"
+      ) ?? [],
+    [playSettings?.mediaSource]
   );
 
   const selectedSubtitleSteam = useMemo(
-    () => subtitleStreams.find((x) => x.Index === selected),
-    [subtitleStreams, selected]
+    () => subtitleStreams.find((x) => x.Index === playSettings?.subtitleIndex),
+    [subtitleStreams, playSettings?.subtitleIndex]
   );
 
   useEffect(() => {
-    // const index = source.DefaultAudioStreamIndex;
-    // if (index !== undefined && index !== null) {
-    //   onChange(index);
-    //   return;
-    // }
     const defaultSubIndex = subtitleStreams?.find(
       (x) => x.Language === settings?.defaultSubtitleLanguage?.value
     )?.Index;
     if (defaultSubIndex !== undefined && defaultSubIndex !== null) {
-      onChange(defaultSubIndex);
+      setPlaySettings((prev) => ({
+        ...prev,
+        subtitleIndex: defaultSubIndex,
+      }));
       return;
     }
 
-    onChange(-1);
+    setPlaySettings((prev) => ({
+      ...prev,
+      subtitleIndex: -1,
+    }));
   }, [subtitleStreams, settings]);
 
   if (subtitleStreams.length === 0) return null;
@@ -88,7 +79,10 @@ export const SubtitleTrackSelector: React.FC<Props> = ({
           <DropdownMenu.Item
             key={"-1"}
             onSelect={() => {
-              onChange(-1);
+              setPlaySettings((prev) => ({
+                ...prev,
+                subtitleIndex: -1,
+              }));
             }}
           >
             <DropdownMenu.ItemTitle>None</DropdownMenu.ItemTitle>
@@ -98,7 +92,10 @@ export const SubtitleTrackSelector: React.FC<Props> = ({
               key={idx.toString()}
               onSelect={() => {
                 if (subtitle.Index !== undefined && subtitle.Index !== null)
-                  onChange(subtitle.Index);
+                  setPlaySettings((prev) => ({
+                    ...prev,
+                    subtitleIndex: subtitle.Index,
+                  }));
               }}
             >
               <DropdownMenu.ItemTitle>
