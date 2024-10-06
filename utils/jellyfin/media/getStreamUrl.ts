@@ -35,6 +35,11 @@ export const getStreamUrl = async ({
   mediaSourceId?: string | null;
 }) => {
   if (!api || !userId || !item?.Id) {
+    console.log("getStreamUrl: missing params", {
+      api: api?.basePath,
+      userId,
+      item: item?.Id,
+    });
     return null;
   }
 
@@ -122,6 +127,12 @@ export const getStreamUrl = async ({
   }
 
   if (!url) {
+    console.log("getStreamUrl: no url found", {
+      api: api.basePath,
+      userId,
+      item: item.Id,
+      mediaSourceId,
+    });
     return null;
   }
 

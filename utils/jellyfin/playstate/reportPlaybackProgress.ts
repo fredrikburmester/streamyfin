@@ -2,6 +2,16 @@ import { Api } from "@jellyfin/sdk";
 import { getAuthHeaders } from "../jellyfin";
 import { postCapabilities } from "../session/capabilities";
 import { Settings } from "@/utils/atoms/settings";
+import {
+  getMediaInfoApi,
+  getPlaystateApi,
+  getSessionApi,
+} from "@jellyfin/sdk/lib/utils/api";
+import { DeviceProfile } from "@jellyfin/sdk/lib/generated-client";
+import { getOrSetDeviceId } from "@/providers/JellyfinProvider";
+import ios from "@/utils/profiles/ios";
+import native from "@/utils/profiles/native";
+import old from "@/utils/profiles/old";
 
 interface ReportPlaybackProgressParams {
   api?: Api | null;
@@ -33,31 +43,29 @@ export const reportPlaybackProgress = async ({
   console.info("reportPlaybackProgress ~ IsPaused", IsPaused);
 
   try {
-    await postCapabilities({
-      api,
+    await getPlaystateApi(api).onPlaybackProgress({
       itemId,
-      sessionId,
-      deviceProfile,
+      audioStreamIndex: 0,
+      subtitleStreamIndex: 0,
+      mediaSourceId: itemId,
+      positionTicks: Math.round(positionTicks),
+      isPaused: IsPaused,
+      isMuted: false,
+      playMethod: "Transcode",
     });
-  } catch (error) {
-    console.error("Failed to post capabilities.", error);
-    throw new Error("Failed to post capabilities.");
-  }
-
-  try {
-    await api.axiosInstance.post(
-      `${api.basePath}/Sessions/Playing/Progress`,
-      {
-        ItemId: itemId,
-        PlaySessionId: sessionId,
-        IsPaused,
-        PositionTicks: Math.round(positionTicks),
-        CanSeek: true,
-        MediaSourceId: itemId,
-        EventName: "timeupdate",
-      },
-      { headers: getAuthHeaders(api) }
-    );
+    // await api.axiosInstance.post(
+    //   `${api.basePath}/Sessions/Playing/Progress`,
+    //   {
+    //     ItemId: itemId,
+    //     PlaySessionId: sessionId,
+    //     IsPaused,
+    //     PositionTicks: Math.round(positionTicks),
+    //     CanSeek: true,
+    //     MediaSourceId: itemId,
+    //     EventName: "timeupdate",
+    //   },
+    //   { headers: getAuthHeaders(api) }
+    // );
   } catch (error) {
     console.error(error);
   }

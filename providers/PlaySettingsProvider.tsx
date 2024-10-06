@@ -18,6 +18,8 @@ import old from "@/utils/profiles/old";
 import { getStreamUrl } from "@/utils/jellyfin/media/getStreamUrl";
 import { reportPlaybackStopped } from "@/utils/jellyfin/playstate/reportPlaybackStopped";
 import { Bitrate } from "@/components/BitrateSelector";
+import ios from "@/utils/profiles/ios";
+import { getSessionApi } from "@jellyfin/sdk/lib/utils/api";
 
 export type PlaybackType = {
   item?: BaseItemDto | null;
@@ -30,7 +32,7 @@ export type PlaybackType = {
 type PlaySettingsContextType = {
   playSettings: PlaybackType | null;
   setPlaySettings: React.Dispatch<React.SetStateAction<PlaybackType | null>>;
-  playUrl: string | null;
+  playUrl?: string | null;
   reportStopPlayback: (ticks: number) => Promise<void>;
 };
 
@@ -65,14 +67,16 @@ export const PlaySettingsProvider: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     const fetchPlayUrl = async () => {
-      console.log("something changed, fetching url", playSettings?.item?.Id);
-      if (!api || !user || !settings) {
+      if (!api || !user || !settings || !playSettings) {
+        console.log("fetchPlayUrl ~ missing params");
         setPlayUrl(null);
         return;
       }
 
+      console.log("fetchPlayUrl ~ fetching url", playSettings?.item?.Id);
+
       // Determine the device profile
-      let deviceProfile: any = iosFmp4;
+      let deviceProfile: any = ios;
       if (settings?.deviceProfile === "Native") deviceProfile = native;
       if (settings?.deviceProfile === "Old") deviceProfile = old;
 
@@ -99,6 +103,30 @@ export const PlaySettingsProvider: React.FC<{ children: React.ReactNode }> = ({
 
     fetchPlayUrl();
   }, [api, settings, user, playSettings]);
+
+  useEffect(() => {
+    let deviceProfile: any = ios;
+    if (settings?.deviceProfile === "Native") deviceProfile = native;
+    if (settings?.deviceProfile === "Old") deviceProfile = old;
+
+    const postCaps = async () => {
+      if (!api) return;
+      await getSessionApi(api).postFullCapabilities({
+        clientCapabilitiesDto: {
+          AppStoreUrl: "https://apps.apple.com/us/app/streamyfin/id6593660679",
+          DeviceProfile: deviceProfile,
+          IconUrl:
+            "https://github.com/fredrikburmester/streamyfin/blob/master/assets/images/adaptive_icon.png",
+          PlayableMediaTypes: ["Audio", "Video"],
+          SupportedCommands: ["Play"],
+          SupportsMediaControl: true,
+          SupportsPersistentIdentifier: true,
+        },
+      });
+    };
+
+    postCaps();
+  }, [settings]);
 
   return (
     <PlaySettingsContext.Provider

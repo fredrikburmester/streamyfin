@@ -21,7 +21,14 @@ import { Image } from "expo-image";
 import { useNavigation } from "expo-router";
 import * as ScreenOrientation from "expo-screen-orientation";
 import { useAtom } from "jotai";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { View } from "react-native";
 import { useCastDevice } from "react-native-google-cast";
 import Animated from "react-native-reanimated";
@@ -34,17 +41,10 @@ import { MoreMoviesWithActor } from "./MoreMoviesWithActor";
 export const ItemContent: React.FC<{ item: BaseItemDto }> = React.memo(
   ({ item }) => {
     const [api] = useAtom(apiAtom);
-    const [user] = useAtom(userAtom);
-    const { playSettings, setPlaySettings, playUrl } = usePlaySettings();
+    const { setPlaySettings, playUrl } = usePlaySettings();
 
     const castDevice = useCastDevice();
     const navigation = useNavigation();
-    const [settings] = useSettings();
-
-    const [maxBitrate, setMaxBitrate] = useState<Bitrate>({
-      key: "Max",
-      value: undefined,
-    });
 
     const [loadingLogo, setLoadingLogo] = useState(true);
 
@@ -89,7 +89,11 @@ export const ItemContent: React.FC<{ item: BaseItemDto }> = React.memo(
       });
 
       setPlaySettings((prev) => ({
-        ...prev,
+        audioIndex: undefined,
+        subtitleIndex: undefined,
+        mediaSourceId: undefined,
+        bitrate: undefined,
+        mediaSource: undefined,
         item,
       }));
     }, [item]);
