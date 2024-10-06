@@ -1,31 +1,30 @@
+import { Controls } from "@/components/video-player/Controls";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
-import { settingsAtom, useSettings } from "@/utils/atoms/settings";
-import { getBackdropUrl } from "@/utils/jellyfin/image/getBackdropUrl";
-import { getAuthHeaders } from "@/utils/jellyfin/jellyfin";
-import { getStreamUrl } from "@/utils/jellyfin/media/getStreamUrl";
-import { Api } from "@jellyfin/sdk";
-import {
-  BaseItemDto,
-  MediaSourceInfo,
-} from "@jellyfin/sdk/lib/generated-client";
-import { useRouter } from "expo-router";
-import { atom, useAtom } from "jotai";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Video, { OnProgressData, VideoRef } from "react-native-video";
-import settings from "./(tabs)/(home)/settings";
-import iosFmp4 from "@/utils/profiles/iosFmp4";
-import native from "@/utils/profiles/native";
-import old from "@/utils/profiles/old";
 import {
   PlaybackType,
   usePlaySettings,
 } from "@/providers/PlaySettingsProvider";
-import { StatusBar, View } from "react-native";
-import React from "react";
-import { Controls } from "@/components/video-player/Controls";
+import { useSettings } from "@/utils/atoms/settings";
+import { getBackdropUrl } from "@/utils/jellyfin/image/getBackdropUrl";
+import { getAuthHeaders } from "@/utils/jellyfin/jellyfin";
 import { reportPlaybackProgress } from "@/utils/jellyfin/playstate/reportPlaybackProgress";
-import { useSharedValue } from "react-native-reanimated";
+import orientationToOrientationLock from "@/utils/OrientationLockConverter";
 import { secondsToTicks } from "@/utils/secondsToTicks";
+import { Api } from "@jellyfin/sdk";
+import * as Haptics from "expo-haptics";
+import { useRouter } from "expo-router";
+import * as ScreenOrientation from "expo-screen-orientation";
+import { useAtom } from "jotai";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { Dimensions, Pressable, StatusBar, View } from "react-native";
+import { useSharedValue } from "react-native-reanimated";
+import Video, { OnProgressData, VideoRef } from "react-native-video";
 
 export default function page() {
   const { playSettings, setPlaySettings, playUrl, reportStopPlayback } =
@@ -38,24 +37,31 @@ export default function page() {
   const poster = usePoster(playSettings, api);
   const videoSource = useVideoSource(playSettings, api, poster, playUrl);
 
+  const windowDimensions = Dimensions.get("window");
+  const screenDimensions = Dimensions.get("screen");
+
+  const [showControls, setShowControls] = useState(true);
+  const [ignoreSafeAreas, setIgnoreSafeAreas] = useState(false);
   const [ignoreSafeArea, setIgnoreSafeArea] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isBuffering, setIsBuffering] = useState(true);
+  const [orientation, setOrientation] = useState(
+    ScreenOrientation.OrientationLock.UNKNOWN
+  );
 
   const progress = useSharedValue(0);
   const isSeeking = useSharedValue(false);
   const cacheProgress = useSharedValue(0);
-
-  useEffect(() => {
-    console.log("play-video ~", playUrl);
-  });
 
   if (!playSettings || !playUrl || !api || !videoSource || !playSettings.item)
     return null;
 
   const togglePlay = useCallback(
     (ticks: number) => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      console.log("togglePlay", ticks);
       if (isPlaying) {
+        setIsPlaying(false);
         videoRef.current?.pause();
         reportPlaybackProgress({
           api,
@@ -65,6 +71,7 @@ export default function page() {
           IsPaused: true,
         });
       } else {
+        setIsPlaying(true);
         videoRef.current?.resume();
         reportPlaybackProgress({
           api,
@@ -78,15 +85,19 @@ export default function page() {
     [isPlaying, api, playSettings?.item?.Id, videoRef]
   );
 
+  const play = useCallback(() => {
+    setIsPlaying(true);
+    videoRef.current?.resume();
+  }, [videoRef]);
+
   useEffect(() => {
-    if (!isPlaying) {
-      togglePlay(playSettings.item?.UserData?.PlaybackPositionTicks || 0);
-    }
-  }, [isPlaying]);
+    play();
+  }, []);
 
   const onProgress = useCallback(
     (data: OnProgressData) => {
       if (isSeeking.value === true) return;
+
       progress.value = secondsToTicks(data.currentTime);
       cacheProgress.value = secondsToTicks(data.playableDuration);
       setIsBuffering(data.playableDuration === 0);
@@ -104,27 +115,65 @@ export default function page() {
     [playSettings?.item.Id, isPlaying, api]
   );
 
+  useEffect(() => {
+    const orientationSubscription =
+      ScreenOrientation.addOrientationChangeListener((event) => {
+        setOrientation(
+          orientationToOrientationLock(event.orientationInfo.orientation)
+        );
+      });
+
+    ScreenOrientation.getOrientationAsync().then((orientation) => {
+      setOrientation(orientationToOrientationLock(orientation));
+    });
+
+    return () => {
+      orientationSubscription.remove();
+    };
+  }, []);
+
+  const isLandscape = useMemo(() => {
+    return orientation === ScreenOrientation.OrientationLock.LANDSCAPE_LEFT ||
+      orientation === ScreenOrientation.OrientationLock.LANDSCAPE_RIGHT
+      ? true
+      : false;
+  }, [orientation]);
+
   return (
-    <View className="relative h-screen w-screen flex flex-col items-center justify-center">
+    <View
+      style={{
+        width: screenDimensions.width,
+        height: screenDimensions.height,
+        position: "relative",
+      }}
+      className="flex flex-col items-center justify-center"
+    >
       <StatusBar hidden />
-      <Video
-        ref={videoRef}
-        source={videoSource}
-        paused={!isPlaying}
-        style={{ width: "100%", height: "100%" }}
-        resizeMode={ignoreSafeArea ? "cover" : "contain"}
-        onProgress={onProgress}
-        onLoad={(data) => {}}
-        onError={() => {}}
-        playWhenInactive={true}
-        allowsExternalPlayback={true}
-        playInBackground={true}
-        pictureInPicture={true}
-        showNotificationControls={true}
-        ignoreSilentSwitch="ignore"
-        fullscreen={false}
-        onPlaybackStateChanged={(state) => setIsPlaying(state.isPlaying)}
-      />
+      <Pressable
+        onPress={() => {
+          setShowControls(!showControls);
+        }}
+        className="absolute z-0 h-full w-full"
+      >
+        <Video
+          ref={videoRef}
+          source={videoSource}
+          paused={!isPlaying}
+          style={{ width: "100%", height: "100%" }}
+          resizeMode={ignoreSafeAreas ? "cover" : "contain"}
+          onProgress={onProgress}
+          onError={() => {}}
+          playWhenInactive={true}
+          allowsExternalPlayback={true}
+          playInBackground={true}
+          pictureInPicture={true}
+          showNotificationControls={true}
+          ignoreSilentSwitch="ignore"
+          fullscreen={false}
+          onPlaybackStateChanged={(state) => setIsPlaying(state.isPlaying)}
+        />
+      </Pressable>
+
       <Controls
         item={playSettings.item}
         videoRef={videoRef}
@@ -133,6 +182,12 @@ export default function page() {
         isSeeking={isSeeking}
         progress={progress}
         cacheProgress={cacheProgress}
+        isBuffering={isBuffering}
+        showControls={showControls}
+        setShowControls={setShowControls}
+        isLandscape={isLandscape}
+        setIgnoreSafeAreas={setIgnoreSafeAreas}
+        ignoreSafeAreas={ignoreSafeAreas}
       />
     </View>
   );
