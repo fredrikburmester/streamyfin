@@ -5,7 +5,6 @@ import {
   JellyfinProvider,
 } from "@/providers/JellyfinProvider";
 import { JobQueueProvider } from "@/providers/JobQueueProvider";
-import { PlaybackProvider } from "@/providers/PlaybackProvider";
 import { PlaySettingsProvider } from "@/providers/PlaySettingsProvider";
 import { orientationAtom } from "@/utils/atoms/orientation";
 import { Settings, useSettings } from "@/utils/atoms/settings";
@@ -313,12 +312,12 @@ function Layout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <QueryClientProvider client={queryClientRef.current}>
-        <JobQueueProvider>
-          <DownloadProvider>
-            <ActionSheetProvider>
-              <BottomSheetModalProvider>
-                <JellyfinProvider>
-                  <PlaySettingsProvider>
+        <ActionSheetProvider>
+          <JobQueueProvider>
+            <JellyfinProvider>
+              <PlaySettingsProvider>
+                <DownloadProvider>
+                  <BottomSheetModalProvider>
                     <StatusBar style="light" backgroundColor="#000" />
                     <ThemeProvider value={DarkTheme}>
                       <Stack initialRouteName="/home">
@@ -330,7 +329,7 @@ function Layout() {
                           }}
                         />
                         <Stack.Screen
-                          name="(auth)/play"
+                          name="(auth)/play-video"
                           options={{
                             headerShown: false,
                             autoHideHomeIndicator: true,
@@ -339,7 +338,7 @@ function Layout() {
                           }}
                         />
                         <Stack.Screen
-                          name="(auth)/play-video"
+                          name="(auth)/play-offline-video"
                           options={{
                             headerShown: false,
                             autoHideHomeIndicator: true,
@@ -377,12 +376,12 @@ function Layout() {
                         closeButton
                       />
                     </ThemeProvider>
-                  </PlaySettingsProvider>
-                </JellyfinProvider>
-              </BottomSheetModalProvider>
-            </ActionSheetProvider>
-          </DownloadProvider>
-        </JobQueueProvider>
+                  </BottomSheetModalProvider>
+                </DownloadProvider>
+              </PlaySettingsProvider>
+            </JellyfinProvider>
+          </JobQueueProvider>
+        </ActionSheetProvider>
       </QueryClientProvider>
     </GestureHandlerRootView>
   );

@@ -26,14 +26,17 @@ import { Dimensions, Platform, Pressable, StatusBar, View } from "react-native";
 import { useSharedValue } from "react-native-reanimated";
 import Video, { OnProgressData, VideoRef } from "react-native-video";
 import * as NavigationBar from "expo-navigation-bar";
+import { useLocalSearchParams, useGlobalSearchParams, Link } from "expo-router";
+
+import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client";
 
 export default function page() {
   const { playSettings, playUrl } = usePlaySettings();
+
   const api = useAtomValue(apiAtom);
   const [settings] = useSettings();
   const videoRef = useRef<VideoRef | null>(null);
-  const poster = usePoster(playSettings, api);
-  const videoSource = useVideoSource(playSettings, api, poster, playUrl);
+  const videoSource = useVideoSource(playSettings, api, playUrl);
   const firstTime = useRef(true);
 
   const screenDimensions = Dimensions.get("screen");
@@ -53,120 +56,33 @@ export default function page() {
   if (!playSettings || !playUrl || !api || !videoSource || !playSettings.item)
     return null;
 
-  const togglePlay = useCallback(
-    async (ticks: number) => {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      if (isPlaying) {
-        setIsPlaying(false);
-        videoRef.current?.pause();
-        await getPlaystateApi(api).onPlaybackProgress({
-          itemId: playSettings.item?.Id!,
-          audioStreamIndex: playSettings.audioIndex
-            ? playSettings.audioIndex
-            : undefined,
-          subtitleStreamIndex: playSettings.subtitleIndex
-            ? playSettings.subtitleIndex
-            : undefined,
-          mediaSourceId: playSettings.mediaSource?.Id!,
-          positionTicks: Math.round(ticks),
-          isPaused: true,
-          playMethod: playUrl.includes("m3u8") ? "Transcode" : "DirectStream",
-        });
-      } else {
-        setIsPlaying(true);
-        videoRef.current?.resume();
-        await getPlaystateApi(api).onPlaybackProgress({
-          itemId: playSettings.item?.Id!,
-          audioStreamIndex: playSettings.audioIndex
-            ? playSettings.audioIndex
-            : undefined,
-          subtitleStreamIndex: playSettings.subtitleIndex
-            ? playSettings.subtitleIndex
-            : undefined,
-          mediaSourceId: playSettings.mediaSource?.Id!,
-          positionTicks: Math.round(ticks),
-          isPaused: false,
-          playMethod: playUrl.includes("m3u8") ? "Transcode" : "DirectStream",
-        });
-      }
-    },
-    [isPlaying, api, playSettings?.item?.Id, videoRef, settings]
-  );
+  const togglePlay = useCallback(async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (isPlaying) {
+      setIsPlaying(false);
+      videoRef.current?.pause();
+    } else {
+      setIsPlaying(true);
+      videoRef.current?.resume();
+    }
+  }, [isPlaying, api, playSettings?.item?.Id, videoRef, settings]);
 
   const play = useCallback(() => {
     setIsPlaying(true);
     videoRef.current?.resume();
-    reportPlaybackStart();
-  }, [videoRef]);
-
-  const pause = useCallback(() => {
-    setIsPlaying(false);
-    videoRef.current?.pause();
   }, [videoRef]);
 
   const stop = useCallback(() => {
     setIsPlaying(false);
     videoRef.current?.pause();
-    reportPlaybackStopped();
   }, [videoRef]);
-
-  const reportPlaybackStopped = async () => {
-    await getPlaystateApi(api).onPlaybackStopped({
-      itemId: playSettings?.item?.Id!,
-      mediaSourceId: playSettings.mediaSource?.Id!,
-      positionTicks: progress.value,
-    });
-  };
-
-  const reportPlaybackStart = async () => {
-    await getPlaystateApi(api).onPlaybackStart({
-      itemId: playSettings?.item?.Id!,
-      audioStreamIndex: playSettings.audioIndex
-        ? playSettings.audioIndex
-        : undefined,
-      subtitleStreamIndex: playSettings.subtitleIndex
-        ? playSettings.subtitleIndex
-        : undefined,
-      mediaSourceId: playSettings.mediaSource?.Id!,
-      playMethod: playUrl.includes("m3u8") ? "Transcode" : "DirectStream",
-    });
-  };
-
-  const onProgress = useCallback(
-    async (data: OnProgressData) => {
-      if (isSeeking.value === true) return;
-
-      const ticks = data.currentTime * 10000000;
-
-      progress.value = secondsToTicks(data.currentTime);
-      cacheProgress.value = secondsToTicks(data.playableDuration);
-      setIsBuffering(data.playableDuration === 0);
-
-      if (!playSettings?.item?.Id || data.currentTime === 0) return;
-
-      await getPlaystateApi(api).onPlaybackProgress({
-        itemId: playSettings.item.Id,
-        audioStreamIndex: playSettings.audioIndex
-          ? playSettings.audioIndex
-          : undefined,
-        subtitleStreamIndex: playSettings.subtitleIndex
-          ? playSettings.subtitleIndex
-          : undefined,
-        mediaSourceId: playSettings.mediaSource?.Id!,
-        positionTicks: Math.round(ticks),
-        isPaused: !isPlaying,
-        playMethod: playUrl.includes("m3u8") ? "Transcode" : "DirectStream",
-      });
-    },
-    [playSettings?.item.Id, isPlaying, api]
-  );
 
   useEffect(() => {
     play();
     return () => {
       stop();
     };
-  }, []);
+  });
 
   useEffect(() => {
     const orientationSubscription =
@@ -213,12 +129,15 @@ export default function page() {
     };
   }, [settings]);
 
-  useWebSocket({
-    isPlaying: isPlaying,
-    pauseVideo: pause,
-    playVideo: play,
-    stopPlayback: stop,
-  });
+  const onProgress = useCallback(
+    async (data: OnProgressData) => {
+      if (isSeeking.value === true) return;
+      progress.value = secondsToTicks(data.currentTime);
+      cacheProgress.value = secondsToTicks(data.playableDuration);
+      setIsBuffering(data.playableDuration === 0);
+    },
+    [playSettings?.item.Id, isPlaying, api]
+  );
 
   return (
     <View
@@ -301,7 +220,6 @@ export function usePoster(
 export function useVideoSource(
   playSettings: PlaybackType | null,
   api: Api | null,
-  poster: string | undefined,
   playUrl?: string | null
 ) {
   const videoSource = useMemo(() => {
@@ -309,24 +227,20 @@ export function useVideoSource(
       return null;
     }
 
-    const startPosition = playSettings.item?.UserData?.PlaybackPositionTicks
-      ? Math.round(playSettings.item.UserData.PlaybackPositionTicks / 10000)
-      : 0;
+    const startPosition = 0;
 
     return {
       uri: playUrl,
-      isNetwork: true,
+      isNetwork: false,
       startPosition,
-      headers: getAuthHeaders(api),
       metadata: {
         artist: playSettings.item?.AlbumArtist ?? undefined,
         title: playSettings.item?.Name || "Unknown",
         description: playSettings.item?.Overview ?? undefined,
-        imageUri: poster,
         subtitle: playSettings.item?.Album ?? undefined,
       },
     };
-  }, [playSettings, api, poster]);
+  }, [playSettings, api]);
 
   return videoSource;
 }

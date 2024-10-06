@@ -1,6 +1,6 @@
 import { Text } from "@/components/common/Text";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
-import { usePlayback } from "@/providers/PlaybackProvider";
+import { usePlaySettings } from "@/providers/PlaySettingsProvider";
 import { getStreamUrl } from "@/utils/jellyfin/media/getStreamUrl";
 import { chromecastProfile } from "@/utils/profiles/chromecast";
 import ios from "@/utils/profiles/ios";
@@ -41,7 +41,7 @@ export const SongsListItem: React.FC<Props> = ({
   const client = useRemoteMediaClient();
   const { showActionSheetWithOptions } = useActionSheet();
 
-  const { setCurrentlyPlayingState } = usePlayback();
+  const { playSettings, setPlaySettings } = usePlaySettings();
 
   const openSelect = () => {
     if (!castDevice?.deviceId) {
@@ -121,9 +121,8 @@ export const SongsListItem: React.FC<Props> = ({
       });
     } else {
       console.log("Playing on device", url, item.Id);
-      setCurrentlyPlayingState({
+      setPlaySettings({
         item,
-        url,
       });
       router.push("/play-music");
     }
