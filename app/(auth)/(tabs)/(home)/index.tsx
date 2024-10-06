@@ -4,9 +4,12 @@ import { LargeMovieCarousel } from "@/components/home/LargeMovieCarousel";
 import { ScrollingCollectionList } from "@/components/home/ScrollingCollectionList";
 import { Loader } from "@/components/Loader";
 import { MediaListSection } from "@/components/medialists/MediaListSection";
+import { Colors } from "@/constants/Colors";
+import { TAB_HEIGHT } from "@/constants/Values";
+import { useDownload } from "@/providers/DownloadProvider";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import { useSettings } from "@/utils/atoms/settings";
-import { Ionicons } from "@expo/vector-icons";
+import { Feather, Ionicons } from "@expo/vector-icons";
 import { Api } from "@jellyfin/sdk";
 import {
   BaseItemDto,
@@ -21,13 +24,15 @@ import {
 } from "@jellyfin/sdk/lib/utils/api";
 import NetInfo from "@react-native-community/netinfo";
 import { QueryFunction, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "expo-router";
+import { useNavigation, useRouter } from "expo-router";
 import { useAtom } from "jotai";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Platform,
   RefreshControl,
   ScrollView,
+  TouchableOpacity,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -60,6 +65,29 @@ export default function index() {
 
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
   const [loadingRetry, setLoadingRetry] = useState(false);
+
+  const { downloadedFiles } = useDownload();
+  const navigation = useNavigation();
+
+  useEffect(() => {
+    const hasDownloads = downloadedFiles && downloadedFiles.length > 0;
+    navigation.setOptions({
+      headerLeft: () => (
+        <TouchableOpacity
+          onPress={() => {
+            router.push("/(auth)/downloads");
+          }}
+          className="p-2"
+        >
+          <Feather
+            name="download"
+            color={hasDownloads ? Colors.primary : "white"}
+            size={22}
+          />
+        </TouchableOpacity>
+      ),
+    });
+  }, [downloadedFiles, navigation, router]);
 
   const checkConnection = useCallback(async () => {
     setLoadingRetry(true);
@@ -141,7 +169,7 @@ export default function index() {
     setLoading(true);
     await queryClient.invalidateQueries();
     setLoading(false);
-  }, [queryClient, user?.Id]);
+  }, []);
 
   const createCollectionConfig = useCallback(
     (
@@ -340,33 +368,38 @@ export default function index() {
       contentContainerStyle={{
         paddingLeft: insets.left,
         paddingRight: insets.right,
+        paddingBottom: 16,
       }}
-      className="flex flex-col space-y-4 mb-20"
+      style={{
+        marginBottom: TAB_HEIGHT,
+      }}
     >
-      <LargeMovieCarousel />
+      <View className="flex flex-col space-y-4">
+        <LargeMovieCarousel />
 
-      {sections.map((section, index) => {
-        if (section.type === "ScrollingCollectionList") {
-          return (
-            <ScrollingCollectionList
-              key={index}
-              title={section.title}
-              queryKey={section.queryKey}
-              queryFn={section.queryFn}
-              orientation={section.orientation}
-            />
-          );
-        } else if (section.type === "MediaListSection") {
-          return (
-            <MediaListSection
-              key={index}
-              queryKey={section.queryKey}
-              queryFn={section.queryFn}
-            />
-          );
-        }
-        return null;
-      })}
+        {sections.map((section, index) => {
+          if (section.type === "ScrollingCollectionList") {
+            return (
+              <ScrollingCollectionList
+                key={index}
+                title={section.title}
+                queryKey={section.queryKey}
+                queryFn={section.queryFn}
+                orientation={section.orientation}
+              />
+            );
+          } else if (section.type === "MediaListSection") {
+            return (
+              <MediaListSection
+                key={index}
+                queryKey={section.queryKey}
+                queryFn={section.queryFn}
+              />
+            );
+          }
+          return null;
+        })}
+      </View>
     </ScrollView>
   );
 }
