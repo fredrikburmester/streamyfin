@@ -8,7 +8,7 @@ import { useCallback } from "react";
 
 export const useFileOpener = () => {
   const router = useRouter();
-  const { setPlaySettings, setPlayUrl, setOfflineSettings } = usePlaySettings();
+  const { setPlayUrl, setOfflineSettings } = usePlaySettings();
 
   const openFile = useCallback(async (item: BaseItemDto) => {
     const directory = FileSystem.documentDirectory;

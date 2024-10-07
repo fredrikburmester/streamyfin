@@ -33,18 +33,17 @@ export const getStreamUrl = async ({
   forceDirectPlay?: boolean;
   height?: number;
   mediaSourceId?: string | null;
-}) => {
+}): Promise<{
+  url: string | null | undefined;
+  sessionId: string | null | undefined;
+} | null> => {
   if (!api || !userId || !item?.Id) {
-    console.log("getStreamUrl: missing params", {
-      api: api?.basePath,
-      userId,
-      item: item?.Id,
-    });
     return null;
   }
 
   let mediaSource: MediaSourceInfo | undefined;
   let url: string | null | undefined;
+  let sessionId: string | null | undefined;
 
   if (item.Type === "Program") {
     const res0 = await getMediaInfoApi(api).getPlaybackInfo(
@@ -67,35 +66,67 @@ export const getStreamUrl = async ({
       }
     );
     const transcodeUrl = res0.data.MediaSources?.[0].TranscodingUrl;
-    if (transcodeUrl) return `${api.basePath}${transcodeUrl}`;
+    sessionId = res0.data.PlaySessionId;
+
+    if (transcodeUrl) {
+      return { url: `${api.basePath}${transcodeUrl}`, sessionId };
+    }
   }
 
   const itemId = item.Id;
 
-  const res2 = await api.axiosInstance.post(
-    `${api.basePath}/Items/${itemId}/PlaybackInfo`,
+  // const res2 = await api.axiosInstance.post(
+  //   `${api.basePath}/Items/${itemId}/PlaybackInfo`,
+  //   {
+  //     DeviceProfile: deviceProfile,
+  //     UserId: userId,
+  //     MaxStreamingBitrate: maxStreamingBitrate,
+  //     StartTimeTicks: startTimeTicks,
+  //     EnableTranscoding: maxStreamingBitrate ? true : undefined,
+  //     AutoOpenLiveStream: true,
+  //     MediaSourceId: mediaSourceId,
+  //     AllowVideoStreamCopy: maxStreamingBitrate ? false : true,
+  //     AudioStreamIndex: audioStreamIndex,
+  //     SubtitleStreamIndex: subtitleStreamIndex,
+  //     DeInterlace: true,
+  //     BreakOnNonKeyFrames: false,
+  //     CopyTimestamps: false,
+  //     EnableMpegtsM2TsMode: false,
+  //   },
+  //   {
+  //     headers: getAuthHeaders(api),
+  //   }
+  // );
+
+  const res2 = await getMediaInfoApi(api).getPlaybackInfo(
     {
-      DeviceProfile: deviceProfile,
-      UserId: userId,
-      MaxStreamingBitrate: maxStreamingBitrate,
-      StartTimeTicks: startTimeTicks,
-      EnableTranscoding: maxStreamingBitrate ? true : undefined,
-      AutoOpenLiveStream: true,
-      MediaSourceId: mediaSourceId,
-      AllowVideoStreamCopy: maxStreamingBitrate ? false : true,
-      AudioStreamIndex: audioStreamIndex,
-      SubtitleStreamIndex: subtitleStreamIndex,
-      DeInterlace: true,
-      BreakOnNonKeyFrames: false,
-      CopyTimestamps: false,
-      EnableMpegtsM2TsMode: false,
+      userId,
+      itemId: item.Id!,
     },
     {
-      headers: getAuthHeaders(api),
+      method: "POST",
+      data: {
+        deviceProfile,
+        userId,
+        maxStreamingBitrate,
+        startTimeTicks,
+        enableTranscoding: maxStreamingBitrate ? true : undefined,
+        autoOpenLiveStream: true,
+        mediaSourceId,
+        allowVideoStreamCopy: maxStreamingBitrate ? false : true,
+        audioStreamIndex,
+        subtitleStreamIndex,
+        deInterlace: true,
+        breakOnNonKeyFrames: false,
+        copyTimestamps: false,
+        enableMpegtsM2TsMode: false,
+      },
     }
   );
 
-  mediaSource = res2.data.MediaSources.find(
+  sessionId = res2.data.PlaySessionId;
+
+  mediaSource = res2.data.MediaSources?.find(
     (source: MediaSourceInfo) => source.Id === mediaSourceId
   );
 
@@ -136,5 +167,8 @@ export const getStreamUrl = async ({
     return null;
   }
 
-  return url;
+  return {
+    url,
+    sessionId,
+  };
 };
