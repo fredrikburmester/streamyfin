@@ -1,7 +1,6 @@
 import { Bitrate } from "@/components/BitrateSelector";
 import { settingsAtom } from "@/utils/atoms/settings";
 import { getStreamUrl } from "@/utils/jellyfin/media/getStreamUrl";
-import { reportPlaybackStopped } from "@/utils/jellyfin/playstate/reportPlaybackStopped";
 import ios from "@/utils/profiles/ios";
 import native from "@/utils/profiles/native";
 import old from "@/utils/profiles/old";
@@ -9,7 +8,7 @@ import {
   BaseItemDto,
   MediaSourceInfo,
 } from "@jellyfin/sdk/lib/generated-client";
-import { getSessionApi } from "@jellyfin/sdk/lib/utils/api";
+import { getPlaystateApi, getSessionApi } from "@jellyfin/sdk/lib/utils/api";
 import { useAtomValue } from "jotai";
 import React, {
   createContext,
@@ -18,7 +17,7 @@ import React, {
   useEffect,
   useState,
 } from "react";
-import { apiAtom, userAtom } from "./JellyfinProvider";
+import { apiAtom, getOrSetDeviceId, userAtom } from "./JellyfinProvider";
 
 export type PlaybackType = {
   item?: BaseItemDto | null;
@@ -31,10 +30,10 @@ export type PlaybackType = {
 type PlaySettingsContextType = {
   playSettings: PlaybackType | null;
   setPlaySettings: React.Dispatch<React.SetStateAction<PlaybackType | null>>;
-  setOfflineSettings: (data: PlaybackType) => void;
   playUrl?: string | null;
-  reportStopPlayback: (ticks: number) => Promise<void>;
   setPlayUrl: React.Dispatch<React.SetStateAction<string | null>>;
+  playSessionId?: string | null;
+  setOfflineSettings: (data: PlaybackType) => void;
 };
 
 const PlaySettingsContext = createContext<PlaySettingsContextType | undefined>(
@@ -46,25 +45,11 @@ export const PlaySettingsProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [playSettings, _setPlaySettings] = useState<PlaybackType | null>(null);
   const [playUrl, setPlayUrl] = useState<string | null>(null);
+  const [playSessionId, setPlaySessionId] = useState<string | null>(null);
 
   const api = useAtomValue(apiAtom);
   const settings = useAtomValue(settingsAtom);
   const user = useAtomValue(userAtom);
-
-  const reportStopPlayback = useCallback(
-    async (ticks: number) => {
-      const id = playSettings?.item?.Id;
-      setPlaySettings(null);
-
-      await reportPlaybackStopped({
-        api,
-        itemId: id,
-        sessionId: undefined,
-        positionTicks: ticks,
-      });
-    },
-    [playSettings?.item?.Id, api]
-  );
 
   const setOfflineSettings = useCallback((data: PlaybackType) => {
     _setPlaySettings(data);
@@ -107,8 +92,9 @@ export const PlaySettingsProvider: React.FC<{ children: React.ReactNode }> = ({
           userId: user.Id,
           forceDirectPlay: false,
           sessionData: null,
-        }).then((url) => {
-          if (url) setPlayUrl(url);
+        }).then((data) => {
+          setPlayUrl(data?.url!);
+          setPlaySessionId(data?.sessionId!);
         });
 
         return newSettings;
@@ -129,7 +115,7 @@ export const PlaySettingsProvider: React.FC<{ children: React.ReactNode }> = ({
           AppStoreUrl: "https://apps.apple.com/us/app/streamyfin/id6593660679",
           DeviceProfile: deviceProfile,
           IconUrl:
-            "https://github.com/fredrikburmester/streamyfin/blob/master/assets/images/adaptive_icon.png",
+            "https://raw.githubusercontent.com/retardgerman/streamyfinweb/refs/heads/redesign/public/assets/images/icon_new_withoutBackground.png",
           PlayableMediaTypes: ["Audio", "Video"],
           SupportedCommands: ["Play"],
           SupportsMediaControl: true,
@@ -139,7 +125,7 @@ export const PlaySettingsProvider: React.FC<{ children: React.ReactNode }> = ({
     };
 
     postCaps();
-  }, [settings]);
+  }, [settings, api]);
 
   return (
     <PlaySettingsContext.Provider
@@ -147,9 +133,9 @@ export const PlaySettingsProvider: React.FC<{ children: React.ReactNode }> = ({
         playSettings,
         setPlaySettings,
         playUrl,
-        reportStopPlayback,
         setPlayUrl,
         setOfflineSettings,
+        playSessionId,
       }}
     >
       {children}

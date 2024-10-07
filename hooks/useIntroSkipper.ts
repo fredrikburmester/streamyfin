@@ -44,6 +44,7 @@ export const useIntroSkipper = (
       return res?.data;
     },
     enabled: !!itemId,
+    retry: false,
   });
 
   useEffect(() => {

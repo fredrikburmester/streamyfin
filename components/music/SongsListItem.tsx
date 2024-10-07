@@ -41,7 +41,7 @@ export const SongsListItem: React.FC<Props> = ({
   const client = useRemoteMediaClient();
   const { showActionSheetWithOptions } = useActionSheet();
 
-  const { playSettings, setPlaySettings } = usePlaySettings();
+  const { setPlaySettings } = usePlaySettings();
 
   const openSelect = () => {
     if (!castDevice?.deviceId) {
@@ -85,7 +85,7 @@ export const SongsListItem: React.FC<Props> = ({
 
     const sessionData = response.data;
 
-    const url = await getStreamUrl({
+    const data = await getStreamUrl({
       api,
       userId: user.Id,
       item,
@@ -95,8 +95,8 @@ export const SongsListItem: React.FC<Props> = ({
       mediaSourceId: item.Id,
     });
 
-    if (!url || !item) {
-      console.warn("No url or item", url, item.Id);
+    if (!data?.url || !item) {
+      console.warn("No url or item", data?.url, item.Id);
       return;
     }
 
@@ -107,7 +107,7 @@ export const SongsListItem: React.FC<Props> = ({
         else {
           client.loadMedia({
             mediaInfo: {
-              contentUrl: url,
+              contentUrl: data.url!,
               contentType: "video/mp4",
               metadata: {
                 type: item.Type === "Episode" ? "tvShow" : "movie",
@@ -120,7 +120,7 @@ export const SongsListItem: React.FC<Props> = ({
         }
       });
     } else {
-      console.log("Playing on device", url, item.Id);
+      console.log("Playing on device", data.url, item.Id);
       setPlaySettings({
         item,
       });

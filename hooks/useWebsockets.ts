@@ -103,7 +103,7 @@ export const useWebSocket = ({
         console.log("Command ~ DisplayMessage");
         const title = json?.Data?.Arguments?.Header;
         const body = json?.Data?.Arguments?.Text;
-        Alert.alert(title, body);
+        Alert.alert("Message from server: " + title, body);
       }
     };
   }, [ws, stopPlayback, playVideo, pauseVideo, isPlaying, router]);

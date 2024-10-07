@@ -26,9 +26,10 @@ import { Dimensions, Platform, Pressable, StatusBar, View } from "react-native";
 import { useSharedValue } from "react-native-reanimated";
 import Video, { OnProgressData, VideoRef } from "react-native-video";
 import * as NavigationBar from "expo-navigation-bar";
+import { useFocusEffect } from "expo-router";
 
 export default function page() {
-  const { playSettings, playUrl } = usePlaySettings();
+  const { playSettings, playUrl, playSessionId } = usePlaySettings();
   const api = useAtomValue(apiAtom);
   const [settings] = useSettings();
   const videoRef = useRef<VideoRef | null>(null);
@@ -38,6 +39,7 @@ export default function page() {
 
   const screenDimensions = Dimensions.get("screen");
 
+  const [isPlaybackStopped, setIsPlaybackStopped] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const [ignoreSafeAreas, setIgnoreSafeAreas] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -68,9 +70,10 @@ export default function page() {
             ? playSettings.subtitleIndex
             : undefined,
           mediaSourceId: playSettings.mediaSource?.Id!,
-          positionTicks: Math.round(ticks),
+          positionTicks: Math.floor(ticks),
           isPaused: true,
           playMethod: playUrl.includes("m3u8") ? "Transcode" : "DirectStream",
+          playSessionId: playSessionId ? playSessionId : undefined,
         });
       } else {
         setIsPlaying(true);
@@ -84,9 +87,10 @@ export default function page() {
             ? playSettings.subtitleIndex
             : undefined,
           mediaSourceId: playSettings.mediaSource?.Id!,
-          positionTicks: Math.round(ticks),
+          positionTicks: Math.floor(ticks),
           isPaused: false,
           playMethod: playUrl.includes("m3u8") ? "Transcode" : "DirectStream",
+          playSessionId: playSessionId ? playSessionId : undefined,
         });
       }
     },
@@ -105,6 +109,7 @@ export default function page() {
   }, [videoRef]);
 
   const stop = useCallback(() => {
+    setIsPlaybackStopped(true);
     setIsPlaying(false);
     videoRef.current?.pause();
     reportPlaybackStopped();
@@ -114,7 +119,8 @@ export default function page() {
     await getPlaystateApi(api).onPlaybackStopped({
       itemId: playSettings?.item?.Id!,
       mediaSourceId: playSettings.mediaSource?.Id!,
-      positionTicks: progress.value,
+      positionTicks: Math.floor(progress.value),
+      playSessionId: playSessionId ? playSessionId : undefined,
     });
   };
 
@@ -129,12 +135,14 @@ export default function page() {
         : undefined,
       mediaSourceId: playSettings.mediaSource?.Id!,
       playMethod: playUrl.includes("m3u8") ? "Transcode" : "DirectStream",
+      playSessionId: playSessionId ? playSessionId : undefined,
     });
   };
 
   const onProgress = useCallback(
     async (data: OnProgressData) => {
       if (isSeeking.value === true) return;
+      if (isPlaybackStopped) return;
 
       const ticks = data.currentTime * 10000000;
 
@@ -156,17 +164,21 @@ export default function page() {
         positionTicks: Math.round(ticks),
         isPaused: !isPlaying,
         playMethod: playUrl.includes("m3u8") ? "Transcode" : "DirectStream",
+        playSessionId: playSessionId ? playSessionId : undefined,
       });
     },
-    [playSettings?.item.Id, isPlaying, api]
+    [playSettings?.item.Id, isPlaying, api, isPlaybackStopped]
   );
 
-  useEffect(() => {
-    play();
-    return () => {
-      stop();
-    };
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      play();
+
+      return () => {
+        stop();
+      };
+    }, [play, stop])
+  );
 
   useEffect(() => {
     const orientationSubscription =
@@ -250,6 +262,7 @@ export default function page() {
               firstTime.current = false;
             }
           }}
+          progressUpdateInterval={500}
           playWhenInactive={true}
           allowsExternalPlayback={true}
           playInBackground={true}

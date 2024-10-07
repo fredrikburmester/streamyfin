@@ -48,6 +48,7 @@ export const useCreditSkipper = (
       return res?.data;
     },
     enabled: !!itemId,
+    retry: false,
   });
 
   useEffect(() => {
