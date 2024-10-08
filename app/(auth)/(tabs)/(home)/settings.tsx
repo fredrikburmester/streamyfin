@@ -143,7 +143,9 @@ export default function settings() {
                 >
                   {log.level}
                 </Text>
-                <Text className="text-xs">{log.message}</Text>
+                <Text uiTextView selectable className="text-xs">
+                  {log.message}
+                </Text>
               </View>
             ))}
             {logs?.length === 0 && (
