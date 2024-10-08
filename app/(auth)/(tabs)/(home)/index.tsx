@@ -264,6 +264,7 @@ export default function index() {
               fields: ["MediaSourceCount"],
               limit: 20,
               enableImageTypes: ["Primary", "Backdrop", "Thumb"],
+              enableResumable: false,
             })
           ).data.Items || [],
         type: "ScrollingCollectionList",
