@@ -12,28 +12,21 @@ import { CastAndCrew } from "@/components/series/CastAndCrew";
 import { CurrentSeries } from "@/components/series/CurrentSeries";
 import { SeasonEpisodesCarousel } from "@/components/series/SeasonEpisodesCarousel";
 import { useImageColors } from "@/hooks/useImageColors";
-import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
+import { apiAtom } from "@/providers/JellyfinProvider";
+import { usePlaySettings } from "@/providers/PlaySettingsProvider";
 import { useSettings } from "@/utils/atoms/settings";
+import { getDefaultPlaySettings } from "@/utils/jellyfin/getDefaultPlaySettings";
 import { getLogoImageUrlById } from "@/utils/jellyfin/image/getLogoImageUrlById";
-import { getStreamUrl } from "@/utils/jellyfin/media/getStreamUrl";
-import { chromecastProfile } from "@/utils/profiles/chromecast";
-import iosFmp4 from "@/utils/profiles/iosFmp4";
-import native from "@/utils/profiles/native";
-import old from "@/utils/profiles/old";
 import {
   BaseItemDto,
   MediaSourceInfo,
 } from "@jellyfin/sdk/lib/generated-client/models";
-import { getMediaInfoApi } from "@jellyfin/sdk/lib/utils/api";
-import { useQuery } from "@tanstack/react-query";
 import { Image } from "expo-image";
-import { useNavigation } from "expo-router";
+import { useFocusEffect, useNavigation } from "expo-router";
 import * as ScreenOrientation from "expo-screen-orientation";
 import { useAtom } from "jotai";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { View } from "react-native";
-import { useCastDevice } from "react-native-google-cast";
-import Animated from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Chromecast } from "./Chromecast";
 import { ItemHeader } from "./ItemHeader";
@@ -43,26 +36,76 @@ import { MoreMoviesWithActor } from "./MoreMoviesWithActor";
 export const ItemContent: React.FC<{ item: BaseItemDto }> = React.memo(
   ({ item }) => {
     const [api] = useAtom(apiAtom);
-    const [user] = useAtom(userAtom);
-
-    const castDevice = useCastDevice();
-    const navigation = useNavigation();
+    const { setPlaySettings, playUrl, playSettings } = usePlaySettings();
     const [settings] = useSettings();
-    const [selectedMediaSource, setSelectedMediaSource] =
-      useState<MediaSourceInfo | null>(null);
-    const [selectedAudioStream, setSelectedAudioStream] = useState<number>(-1);
-    const [selectedSubtitleStream, setSelectedSubtitleStream] =
-      useState<number>(-1);
-    const [maxBitrate, setMaxBitrate] = useState<Bitrate>({
-      key: "Max",
-      value: undefined,
-    });
+    const navigation = useNavigation();
 
     const [loadingLogo, setLoadingLogo] = useState(true);
 
     const [orientation, setOrientation] = useState(
       ScreenOrientation.Orientation.PORTRAIT_UP
     );
+
+    useFocusEffect(
+      useCallback(() => {
+        if (!settings) return;
+        const { bitrate, mediaSource, audioIndex, subtitleIndex } =
+          getDefaultPlaySettings(item, settings);
+
+        setPlaySettings({
+          item,
+          bitrate,
+          mediaSource,
+          audioIndex,
+          subtitleIndex,
+        });
+      }, [item, settings])
+    );
+
+    const selectedMediaSource = useMemo(() => {
+      return playSettings?.mediaSource || undefined;
+    }, [playSettings?.mediaSource]);
+
+    const setSelectedMediaSource = (mediaSource: MediaSourceInfo) => {
+      setPlaySettings((prev) => ({
+        ...prev,
+        mediaSource,
+      }));
+    };
+
+    const selectedAudioStream = useMemo(() => {
+      return playSettings?.audioIndex;
+    }, [playSettings?.audioIndex]);
+
+    const setSelectedAudioStream = (audioIndex: number) => {
+      setPlaySettings((prev) => ({
+        ...prev,
+        audioIndex,
+      }));
+    };
+
+    const selectedSubtitleStream = useMemo(() => {
+      return playSettings?.subtitleIndex;
+    }, [playSettings?.subtitleIndex]);
+
+    const setSelectedSubtitleStream = (subtitleIndex: number) => {
+      setPlaySettings((prev) => ({
+        ...prev,
+        subtitleIndex,
+      }));
+    };
+
+    const maxBitrate = useMemo(() => {
+      return playSettings?.bitrate;
+    }, [playSettings?.bitrate]);
+
+    const setMaxBitrate = (bitrate: Bitrate | undefined) => {
+      console.log("setMaxBitrate", bitrate);
+      setPlaySettings((prev) => ({
+        ...prev,
+        bitrate,
+      }));
+    };
 
     useEffect(() => {
       const subscription = ScreenOrientation.addOrientationChangeListener(
@@ -80,7 +123,7 @@ export const ItemContent: React.FC<{ item: BaseItemDto }> = React.memo(
       };
     }, []);
 
-    const headerHeightRef = useRef(400);
+    const [headerHeight, setHeaderHeight] = useState(350);
 
     useImageColors({ item });
 
@@ -91,10 +134,10 @@ export const ItemContent: React.FC<{ item: BaseItemDto }> = React.memo(
             <View className="flex flex-row items-center space-x-2">
               <Chromecast background="blur" width={22} height={22} />
               {item.Type !== "Program" && (
-                <>
+                <View className="flex flex-row items-center space-x-2">
                   <DownloadItem item={item} />
                   <PlayedStatus item={item} />
-                </>
+                </View>
               )}
             </View>
           ),
@@ -102,95 +145,15 @@ export const ItemContent: React.FC<{ item: BaseItemDto }> = React.memo(
     }, [item]);
 
     useEffect(() => {
+      // If landscape
       if (orientation !== ScreenOrientation.Orientation.PORTRAIT_UP) {
-        headerHeightRef.current = 230;
+        setHeaderHeight(230);
         return;
       }
-      if (item.Type === "Episode") headerHeightRef.current = 400;
-      else if (item.Type === "Movie") headerHeightRef.current = 500;
-      else headerHeightRef.current = 400;
-    }, [item, orientation]);
 
-    const { data: sessionData } = useQuery({
-      queryKey: ["sessionData", item.Id],
-      queryFn: async () => {
-        if (!api || !user?.Id || !item.Id) {
-          return null;
-        }
-        const playbackData = await getMediaInfoApi(api!).getPlaybackInfo(
-          {
-            itemId: item.Id,
-            userId: user?.Id,
-          },
-          {
-            method: "POST",
-          }
-        );
-
-        return playbackData.data;
-      },
-      enabled: !!item.Id && !!api && !!user?.Id,
-      staleTime: 0,
-    });
-
-    const { data: playbackUrl } = useQuery({
-      queryKey: [
-        "playbackUrl",
-        item.Id,
-        maxBitrate,
-        castDevice?.deviceId,
-        selectedMediaSource?.Id,
-        selectedAudioStream,
-        selectedSubtitleStream,
-        settings,
-        sessionData?.PlaySessionId,
-      ],
-      queryFn: async () => {
-        if (!api || !user?.Id) {
-          return null;
-        }
-
-        if (
-          item.Type !== "Program" &&
-          (!sessionData || !selectedMediaSource?.Id)
-        ) {
-          return null;
-        }
-
-        let deviceProfile: any = iosFmp4;
-
-        if (castDevice?.deviceId) {
-          deviceProfile = chromecastProfile;
-        } else if (settings?.deviceProfile === "Native") {
-          deviceProfile = native;
-        } else if (settings?.deviceProfile === "Old") {
-          deviceProfile = old;
-        }
-
-        console.log("playbackUrl...");
-
-        const url = await getStreamUrl({
-          api,
-          userId: user.Id,
-          item,
-          startTimeTicks: item.UserData?.PlaybackPositionTicks || 0,
-          maxStreamingBitrate: maxBitrate.value,
-          sessionData,
-          deviceProfile,
-          audioStreamIndex: selectedAudioStream,
-          subtitleStreamIndex: selectedSubtitleStream,
-          forceDirectPlay: settings?.forceDirectPlay,
-          height: maxBitrate.height,
-          mediaSourceId: selectedMediaSource?.Id,
-        });
-
-        console.info("Stream URL:", url);
-
-        return url;
-      },
-      enabled: !!api && !!user?.Id && !!item.Id,
-      staleTime: 0,
-    });
+      if (item.Type === "Movie") setHeaderHeight(500);
+      else setHeaderHeight(350);
+    }, [item.Type, orientation]);
 
     const logoUrl = useMemo(() => getLogoImageUrlById({ api, item }), [item]);
 
@@ -210,22 +173,20 @@ export const ItemContent: React.FC<{ item: BaseItemDto }> = React.memo(
       >
         <ParallaxScrollView
           className={`flex-1 ${loading ? "opacity-0" : "opacity-100"}`}
-          headerHeight={headerHeightRef.current}
+          headerHeight={headerHeight}
           headerImage={
-            <>
-              <Animated.View style={[{ flex: 1 }]}>
-                <ItemImage
-                  variant={
-                    item.Type === "Movie" && logoUrl ? "Backdrop" : "Primary"
-                  }
-                  item={item}
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                  }}
-                />
-              </Animated.View>
-            </>
+            <View style={[{ flex: 1 }]}>
+              <ItemImage
+                variant={
+                  item.Type === "Movie" && logoUrl ? "Backdrop" : "Primary"
+                }
+                item={item}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                }}
+              />
+            </View>
           }
           logo={
             <>
@@ -280,7 +241,7 @@ export const ItemContent: React.FC<{ item: BaseItemDto }> = React.memo(
                 </View>
               )}
 
-              <PlayButton item={item} url={playbackUrl} className="grow" />
+              <PlayButton item={item} url={playUrl} className="grow" />
             </View>
 
             {item.Type === "Episode" && (

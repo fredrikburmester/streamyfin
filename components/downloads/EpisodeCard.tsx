@@ -76,10 +76,10 @@ export const EpisodeCard: React.FC<EpisodeCardProps> = ({ item }) => {
     <TouchableOpacity
       onPress={handleOpenFile}
       onLongPress={showActionSheet}
-      className="flex flex-col"
+      className="flex flex-col w-44 mr-2"
     >
       {base64Image ? (
-        <View className="w-44 aspect-video rounded-lg overflow-hidden mr-2">
+        <View className="w-44 aspect-video rounded-lg overflow-hidden">
           <Image
             source={{
               uri: `data:image/jpeg;base64,${base64Image}`,
@@ -92,7 +92,7 @@ export const EpisodeCard: React.FC<EpisodeCardProps> = ({ item }) => {
           />
         </View>
       ) : (
-        <View className="w-44 aspect-video rounded-lg bg-neutral-900 mr-2 flex items-center justify-center">
+        <View className="w-44 aspect-video rounded-lg bg-neutral-900 flex items-center justify-center">
           <Ionicons
             name="image-outline"
             size={24}

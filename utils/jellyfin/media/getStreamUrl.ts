@@ -1,15 +1,12 @@
-import ios from "@/utils/profiles/ios";
+import iosFmp4 from "@/utils/profiles/iosFmp4";
 import { Api } from "@jellyfin/sdk";
 import {
   BaseItemDto,
   MediaSourceInfo,
   PlaybackInfoResponse,
 } from "@jellyfin/sdk/lib/generated-client/models";
+import { getMediaInfoApi } from "@jellyfin/sdk/lib/utils/api";
 import { getAuthHeaders } from "../jellyfin";
-import iosFmp4 from "@/utils/profiles/iosFmp4";
-import { getItemsApi, getMediaInfoApi } from "@jellyfin/sdk/lib/utils/api";
-import { isPlainObject } from "lodash";
-import { Alert } from "react-native";
 
 export const getStreamUrl = async ({
   api,
@@ -36,13 +33,17 @@ export const getStreamUrl = async ({
   forceDirectPlay?: boolean;
   height?: number;
   mediaSourceId?: string | null;
-}) => {
+}): Promise<{
+  url: string | null;
+  sessionId: string | null;
+} | null> => {
   if (!api || !userId || !item?.Id) {
     return null;
   }
 
   let mediaSource: MediaSourceInfo | undefined;
   let url: string | null | undefined;
+  let sessionId: string | null | undefined;
 
   if (item.Type === "Program") {
     const res0 = await getMediaInfoApi(api).getPlaybackInfo(
@@ -64,74 +65,96 @@ export const getStreamUrl = async ({
         },
       }
     );
-
-    const mediaSourceId = res0.data.MediaSources?.[0].Id;
-    const liveStreamId = res0.data.MediaSources?.[0].LiveStreamId;
-
     const transcodeUrl = res0.data.MediaSources?.[0].TranscodingUrl;
+    sessionId = res0.data.PlaySessionId || null;
 
-    console.log("transcodeUrl", transcodeUrl);
-
-    if (transcodeUrl) return `${api.basePath}${transcodeUrl}`;
+    if (transcodeUrl) {
+      return { url: `${api.basePath}${transcodeUrl}`, sessionId };
+    }
   }
 
   const itemId = item.Id;
 
-  const res2 = await api.axiosInstance.post(
-    `${api.basePath}/Items/${itemId}/PlaybackInfo`,
+  const res2 = await getMediaInfoApi(api).getPlaybackInfo(
     {
-      DeviceProfile: deviceProfile,
-      UserId: userId,
-      MaxStreamingBitrate: maxStreamingBitrate,
-      StartTimeTicks: startTimeTicks,
-      EnableTranscoding: maxStreamingBitrate ? true : undefined,
-      AutoOpenLiveStream: true,
-      MediaSourceId: mediaSourceId,
-      AllowVideoStreamCopy: maxStreamingBitrate ? false : true,
-      AudioStreamIndex: audioStreamIndex,
-      SubtitleStreamIndex: subtitleStreamIndex,
-      DeInterlace: true,
-      BreakOnNonKeyFrames: false,
-      CopyTimestamps: false,
-      EnableMpegtsM2TsMode: false,
+      userId,
+      itemId: item.Id!,
     },
     {
-      headers: getAuthHeaders(api),
+      method: "POST",
+      data: {
+        deviceProfile,
+        userId,
+        maxStreamingBitrate,
+        startTimeTicks,
+        enableTranscoding: maxStreamingBitrate ? true : undefined,
+        autoOpenLiveStream: true,
+        mediaSourceId,
+        allowVideoStreamCopy: maxStreamingBitrate ? false : true,
+        audioStreamIndex,
+        subtitleStreamIndex,
+        deInterlace: true,
+        breakOnNonKeyFrames: false,
+        copyTimestamps: false,
+        enableMpegtsM2TsMode: false,
+
+      },
     }
   );
 
-  mediaSource = res2.data.MediaSources.find(
+  sessionId = res2.data.PlaySessionId || null;
+
+  mediaSource = res2.data.MediaSources?.find(
     (source: MediaSourceInfo) => source.Id === mediaSourceId
   );
 
-  if (mediaSource?.SupportsDirectPlay || forceDirectPlay === true) {
-    if (item.MediaType === "Video") {
-      url = `${api.basePath}/Videos/${itemId}/stream.mp4?playSessionId=${sessionData?.PlaySessionId}&mediaSourceId=${mediaSource?.Id}&static=true&subtitleStreamIndex=${subtitleStreamIndex}&audioStreamIndex=${audioStreamIndex}&deviceId=${api.deviceInfo.id}&api_key=${api.accessToken}`;
-    } else if (item.MediaType === "Audio") {
-      const searchParams = new URLSearchParams({
-        UserId: userId,
-        DeviceId: api.deviceInfo.id,
-        MaxStreamingBitrate: "140000000",
-        Container:
-          "opus,webm|opus,mp3,aac,m4a|aac,m4b|aac,flac,webma,webm|webma,wav,ogg",
-        TranscodingContainer: "mp4",
-        TranscodingProtocol: "hls",
-        AudioCodec: "aac",
-        api_key: api.accessToken,
-        PlaySessionId: sessionData?.PlaySessionId || "",
-        StartTimeTicks: "0",
-        EnableRedirection: "true",
-        EnableRemoteMedia: "false",
-      });
-      url = `${
-        api.basePath
-      }/Audio/${itemId}/universal?${searchParams.toString()}`;
+  console.log("getStreamUrl ~ ", item.MediaType);
+
+  if (item.MediaType === "Video") {
+    if (mediaSource?.TranscodingUrl) {
+      return {
+        url: `${api.basePath}${mediaSource.TranscodingUrl}`,
+        sessionId: sessionId,
+      };
     }
-  } else if (mediaSource?.TranscodingUrl) {
-    url = `${api.basePath}${mediaSource.TranscodingUrl}`;
+
+    if (mediaSource?.SupportsDirectPlay || forceDirectPlay === true) {
+      return {
+        url: `${api.basePath}/Videos/${itemId}/stream.mp4?playSessionId=${sessionData?.PlaySessionId}&mediaSourceId=${mediaSource?.Id}&static=true&subtitleStreamIndex=${subtitleStreamIndex}&audioStreamIndex=${audioStreamIndex}&deviceId=${api.deviceInfo.id}&api_key=${api.accessToken}`,
+        sessionId: sessionId,
+      };
+    }
   }
 
-  if (!url) throw new Error("No url");
+  if (item.MediaType === "Audio") {
+    console.log("getStreamUrl ~ Audio");
 
-  return url;
+    if (mediaSource?.TranscodingUrl) {
+      return { url: `${api.basePath}${mediaSource.TranscodingUrl}`, sessionId };
+    }
+
+    const searchParams = new URLSearchParams({
+      UserId: userId,
+      DeviceId: api.deviceInfo.id,
+      MaxStreamingBitrate: "140000000",
+      Container:
+        "opus,webm|opus,mp3,aac,m4a|aac,m4b|aac,flac,webma,webm|webma,wav,ogg",
+      TranscodingContainer: "mp4",
+      TranscodingProtocol: "hls",
+      AudioCodec: "aac",
+      api_key: api.accessToken,
+      PlaySessionId: sessionData?.PlaySessionId || "",
+      StartTimeTicks: "0",
+      EnableRedirection: "true",
+      EnableRemoteMedia: "false",
+    });
+    return {
+      url: `${
+        api.basePath
+      }/Audio/${itemId}/universal?${searchParams.toString()}`,
+      sessionId,
+    };
+  }
+
+  throw new Error("Unsupported media type");
 };

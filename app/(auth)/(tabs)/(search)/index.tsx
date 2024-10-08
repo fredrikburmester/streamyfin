@@ -278,7 +278,7 @@ export default function search() {
               <TouchableItemRouter
                 key={item.Id}
                 item={item}
-                className="flex flex-col w-28"
+                className="flex flex-col w-28 mr-2"
               >
                 <SeriesPoster item={item} key={item.Id} />
                 <Text numberOfLines={2} className="mt-2">
@@ -297,7 +297,7 @@ export default function search() {
               <TouchableItemRouter
                 item={item}
                 key={item.Id}
-                className="flex flex-col w-44"
+                className="flex flex-col w-44 mr-2"
               >
                 <ContinueWatchingPoster item={item} />
                 <ItemCardText item={item} />
@@ -311,7 +311,7 @@ export default function search() {
               <TouchableItemRouter
                 key={item.Id}
                 item={item}
-                className="flex flex-col w-28"
+                className="flex flex-col w-28 mr-2"
               >
                 <MoviePoster item={item} key={item.Id} />
                 <Text numberOfLines={2} className="mt-2">
@@ -327,7 +327,7 @@ export default function search() {
               <TouchableItemRouter
                 item={item}
                 key={item.Id}
-                className="flex flex-col w-28"
+                className="flex flex-col w-28 mr-2"
               >
                 <MoviePoster item={item} />
                 <ItemCardText item={item} />
@@ -341,7 +341,7 @@ export default function search() {
               <TouchableItemRouter
                 item={item}
                 key={item.Id}
-                className="flex flex-col w-28"
+                className="flex flex-col w-28 mr-2"
               >
                 <AlbumCover id={item.Id} />
                 <ItemCardText item={item} />
@@ -355,7 +355,7 @@ export default function search() {
               <TouchableItemRouter
                 item={item}
                 key={item.Id}
-                className="flex flex-col w-28"
+                className="flex flex-col w-28 mr-2"
               >
                 <AlbumCover id={item.Id} />
                 <ItemCardText item={item} />
@@ -369,7 +369,7 @@ export default function search() {
               <TouchableItemRouter
                 item={item}
                 key={item.Id}
-                className="flex flex-col w-28"
+                className="flex flex-col w-28 mr-2"
               >
                 <AlbumCover id={item.AlbumId} />
                 <ItemCardText item={item} />

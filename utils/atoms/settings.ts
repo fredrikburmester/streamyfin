@@ -133,7 +133,7 @@ const saveSettings = async (settings: Settings) => {
 };
 
 // Create an atom to store the settings in memory
-const settingsAtom = atom<Settings | null>(null);
+export const settingsAtom = atom<Settings | null>(null);
 
 // A hook to manage settings, loading them on initial mount and providing a way to update them
 export const useSettings = () => {

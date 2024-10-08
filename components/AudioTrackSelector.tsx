@@ -1,20 +1,13 @@
+import { MediaSourceInfo } from "@jellyfin/sdk/lib/generated-client/models";
+import { useMemo } from "react";
 import { TouchableOpacity, View } from "react-native";
 import * as DropdownMenu from "zeego/dropdown-menu";
 import { Text } from "./common/Text";
-import { atom, useAtom } from "jotai";
-import {
-  BaseItemDto,
-  MediaSourceInfo,
-} from "@jellyfin/sdk/lib/generated-client/models";
-import { useEffect, useMemo } from "react";
-import { MediaStream } from "@jellyfin/sdk/lib/generated-client/models";
-import { tc } from "@/utils/textTools";
-import { useSettings } from "@/utils/atoms/settings";
 
 interface Props extends React.ComponentProps<typeof View> {
   source: MediaSourceInfo;
   onChange: (value: number) => void;
-  selected: number;
+  selected?: number | null;
 }
 
 export const AudioTrackSelector: React.FC<Props> = ({
@@ -23,8 +16,6 @@ export const AudioTrackSelector: React.FC<Props> = ({
   selected,
   ...props
 }) => {
-  const [settings] = useSettings();
-
   const audioStreams = useMemo(
     () => source.MediaStreams?.filter((x) => x.Type === "Audio"),
     [source]
@@ -34,23 +25,6 @@ export const AudioTrackSelector: React.FC<Props> = ({
     () => audioStreams?.find((x) => x.Index === selected),
     [audioStreams, selected]
   );
-
-  useEffect(() => {
-    const defaultAudioIndex = audioStreams?.find(
-      (x) => x.Language === settings?.defaultAudioLanguage
-    )?.Index;
-    if (defaultAudioIndex !== undefined && defaultAudioIndex !== null) {
-      onChange(defaultAudioIndex);
-      return;
-    }
-    const index = source.DefaultAudioStreamIndex;
-    if (index !== undefined && index !== null) {
-      onChange(index);
-      return;
-    }
-
-    onChange(0);
-  }, [audioStreams, settings]);
 
   return (
     <View

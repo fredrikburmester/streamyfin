@@ -5,10 +5,11 @@ import {
   JellyfinProvider,
 } from "@/providers/JellyfinProvider";
 import { JobQueueProvider } from "@/providers/JobQueueProvider";
-import { PlaybackProvider } from "@/providers/PlaybackProvider";
+import { PlaySettingsProvider } from "@/providers/PlaySettingsProvider";
 import { orientationAtom } from "@/utils/atoms/orientation";
 import { Settings, useSettings } from "@/utils/atoms/settings";
 import { BACKGROUND_FETCH_TASK } from "@/utils/background-tasks";
+import { writeToLog } from "@/utils/log";
 import { cancelJobById, getAllJobsByDeviceId } from "@/utils/optimize-server";
 import { ActionSheetProvider } from "@expo/react-native-action-sheet";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
@@ -198,8 +199,10 @@ const checkAndRequestPermissions = async () => {
       const { status } = await Notifications.requestPermissionsAsync();
 
       if (status === "granted") {
+        writeToLog("INFO", "Notification permissions granted.");
         console.log("Notification permissions granted.");
       } else {
+        writeToLog("ERROR", "Notification permissions denied.");
         console.log("Notification permissions denied.");
       }
 
@@ -208,6 +211,11 @@ const checkAndRequestPermissions = async () => {
       console.log("Already asked for notification permissions before.");
     }
   } catch (error) {
+    writeToLog(
+      "ERROR",
+      "Error checking/requesting notification permissions:",
+      error
+    );
     console.error("Error checking/requesting notification permissions:", error);
   }
 };
@@ -312,20 +320,15 @@ function Layout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <QueryClientProvider client={queryClientRef.current}>
-        <JobQueueProvider>
-          <DownloadProvider>
-            <ActionSheetProvider>
-              <BottomSheetModalProvider>
-                <JellyfinProvider>
-                  <PlaybackProvider>
+        <ActionSheetProvider>
+          <JobQueueProvider>
+            <JellyfinProvider>
+              <PlaySettingsProvider>
+                <DownloadProvider>
+                  <BottomSheetModalProvider>
                     <StatusBar style="light" backgroundColor="#000" />
                     <ThemeProvider value={DarkTheme}>
-                      <Stack
-                        initialRouteName="/home"
-                        screenOptions={{
-                          autoHideHomeIndicator: true,
-                        }}
-                      >
+                      <Stack initialRouteName="/home">
                         <Stack.Screen
                           name="(auth)/(tabs)"
                           options={{
@@ -334,7 +337,16 @@ function Layout() {
                           }}
                         />
                         <Stack.Screen
-                          name="(auth)/play"
+                          name="(auth)/play-video"
+                          options={{
+                            headerShown: false,
+                            autoHideHomeIndicator: true,
+                            title: "",
+                            animation: "fade",
+                          }}
+                        />
+                        <Stack.Screen
+                          name="(auth)/play-offline-video"
                           options={{
                             headerShown: false,
                             autoHideHomeIndicator: true,
@@ -372,12 +384,12 @@ function Layout() {
                         closeButton
                       />
                     </ThemeProvider>
-                  </PlaybackProvider>
-                </JellyfinProvider>
-              </BottomSheetModalProvider>
-            </ActionSheetProvider>
-          </DownloadProvider>
-        </JobQueueProvider>
+                  </BottomSheetModalProvider>
+                </DownloadProvider>
+              </PlaySettingsProvider>
+            </JellyfinProvider>
+          </JobQueueProvider>
+        </ActionSheetProvider>
       </QueryClientProvider>
     </GestureHandlerRootView>
   );
@@ -399,6 +411,7 @@ async function saveDownloadedItemInfo(item: BaseItemDto) {
 
     await AsyncStorage.setItem("downloadedItems", JSON.stringify(items));
   } catch (error) {
+    writeToLog("ERROR", "Failed to save downloaded item information:", error);
     console.error("Failed to save downloaded item information:", error);
   }
 }

@@ -8,7 +8,7 @@ import {
 import { getItemImage } from "@/utils/getItemImage";
 import { storage } from "@/utils/mmkv";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client";
-import { useAtom } from "jotai";
+import { useAtom, useAtomValue } from "jotai";
 import { useEffect, useMemo } from "react";
 import { getColors } from "react-native-image-colors";
 
@@ -28,7 +28,7 @@ export const useImageColors = ({
   url?: string | null;
   disabled?: boolean;
 }) => {
-  const [api] = useAtom(apiAtom);
+  const api = useAtomValue(apiAtom);
   const [, setPrimaryColor] = useAtom(itemThemeColorAtom);
 
   const source = useMemo(() => {
@@ -42,7 +42,7 @@ export const useImageColors = ({
         quality: 80,
         width: 300,
       });
-    else return;
+    else return null;
   }, [api, item]);
 
   useEffect(() => {
@@ -54,7 +54,7 @@ export const useImageColors = ({
 
       // If colors are cached, use them and exit
       if (_primary && _text) {
-        console.info("[useImageColors] Using cached colors for performance.");
+        console.info("useImageColors ~ Using cached colors for performance.");
         setPrimaryColor({
           primary: _primary,
           text: _text,
@@ -65,22 +65,25 @@ export const useImageColors = ({
       // Extract colors from the image
       getColors(source.uri, {
         fallback: "#fff",
-        cache: true,
-        key: source.uri,
+        cache: false,
       })
         .then((colors) => {
           let primary: string = "#fff";
           let text: string = "#000";
+          let backup: string = "#fff";
 
           // Select the appropriate color based on the platform
           if (colors.platform === "android") {
             primary = colors.dominant;
+            backup = colors.vibrant;
           } else if (colors.platform === "ios") {
-            primary = colors.primary;
+            primary = colors.detail;
+            backup = colors.primary;
           }
 
           // Adjust the primary color if it's too close to black
           if (primary && isCloseToBlack(primary)) {
+            if (backup && !isCloseToBlack(backup)) primary = backup;
             primary = adjustToNearBlack(primary);
           }
 

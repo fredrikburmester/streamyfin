@@ -12,7 +12,7 @@ import { convertBitsToMegabitsOrGigabits } from "@/utils/bToMb";
 interface Props extends React.ComponentProps<typeof View> {
   item: BaseItemDto;
   onChange: (value: MediaSourceInfo) => void;
-  selected: MediaSourceInfo | null;
+  selected?: MediaSourceInfo | null;
 }
 
 export const MediaSourceSelector: React.FC<Props> = ({
@@ -21,21 +21,19 @@ export const MediaSourceSelector: React.FC<Props> = ({
   selected,
   ...props
 }) => {
-  const mediaSources = useMemo(() => {
-    return item.MediaSources;
-  }, [item]);
-
-  const selectedMediaSource = useMemo(
+  const selectedName = useMemo(
     () =>
-      mediaSources
-        ?.find((x) => x.Id === selected?.Id)
-        ?.MediaStreams?.find((x) => x.Type === "Video")?.DisplayTitle || "",
-    [mediaSources, selected]
+      item.MediaSources?.find((x) => x.Id === selected?.Id)?.MediaStreams?.find(
+        (x) => x.Type === "Video"
+      )?.DisplayTitle || "",
+    [item.MediaSources, selected]
   );
 
   useEffect(() => {
-    if (mediaSources?.length) onChange(mediaSources[0]);
-  }, [mediaSources]);
+    if (!selected && item.MediaSources && item.MediaSources.length > 0) {
+      onChange(item.MediaSources[0]);
+    }
+  }, [item.MediaSources, selected]);
 
   const name = (name?: string | null) => {
     if (name && name.length > 40)
@@ -56,8 +54,8 @@ export const MediaSourceSelector: React.FC<Props> = ({
         <DropdownMenu.Trigger>
           <View className="flex flex-col" {...props}>
             <Text className="opacity-50 mb-1 text-xs">Video</Text>
-            <TouchableOpacity className="bg-neutral-900 h-10 rounded-xl border-neutral-800 border px-3 py-2 flex flex-row items-center ">
-              <Text numberOfLines={1}>{selectedMediaSource}</Text>
+            <TouchableOpacity className="bg-neutral-900 h-10 rounded-xl border-neutral-800 border px-3 py-2 flex flex-row items-center">
+              <Text numberOfLines={1}>{selectedName}</Text>
             </TouchableOpacity>
           </View>
         </DropdownMenu.Trigger>
@@ -71,7 +69,7 @@ export const MediaSourceSelector: React.FC<Props> = ({
           sideOffset={8}
         >
           <DropdownMenu.Label>Media sources</DropdownMenu.Label>
-          {mediaSources?.map((source, idx: number) => (
+          {item.MediaSources?.map((source, idx: number) => (
             <DropdownMenu.Item
               key={idx.toString()}
               onSelect={() => {

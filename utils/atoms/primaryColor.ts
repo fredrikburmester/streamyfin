@@ -56,7 +56,7 @@ export const isCloseToBlack = (color: string): boolean => {
 };
 
 export const adjustToNearBlack = (color: string): string => {
-  return "#212121"; // A very dark gray, almost black
+  return "#313131"; // A very dark gray, almost black
 };
 
 export const itemThemeColorAtom = atom<ThemeColors>({
