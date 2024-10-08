@@ -44,6 +44,7 @@ export const useIntroSkipper = (
       return res?.data;
     },
     enabled: !!itemId,
+    retry: false,
   });
 
   useEffect(() => {
@@ -56,9 +57,13 @@ export const useIntroSkipper = (
   }, [introTimestamps, currentTime]);
 
   const skipIntro = useCallback(() => {
+    console.log("skipIntro");
     if (!introTimestamps || !videoRef.current) return;
     try {
       videoRef.current.seek(introTimestamps.IntroEnd);
+      setTimeout(() => {
+        videoRef.current?.resume();
+      }, 200);
     } catch (error) {
       writeToLog("ERROR", "Error skipping intro", error);
     }

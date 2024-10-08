@@ -1,75 +1,98 @@
-import { Api } from "@jellyfin/sdk";
-import { getItemsApi } from "@jellyfin/sdk/lib/utils/api/items-api";
-import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client";
-import { useQuery } from "@tanstack/react-query";
-import { CurrentlyPlayingState } from "@/providers/PlaybackProvider";
-import { useAtom } from "jotai";
+import index from "@/app/(auth)/(tabs)/(home)";
 import { apiAtom } from "@/providers/JellyfinProvider";
+import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client";
+import { getItemsApi } from "@jellyfin/sdk/lib/utils/api/items-api";
+import { useQuery } from "@tanstack/react-query";
+import { useAtomValue } from "jotai";
 
 interface AdjacentEpisodesProps {
-  currentlyPlaying?: CurrentlyPlayingState | null;
+  item?: BaseItemDto | null;
 }
 
-export const useAdjacentEpisodes = ({
-  currentlyPlaying,
-}: AdjacentEpisodesProps) => {
-  const [api] = useAtom(apiAtom);
+export const useAdjacentItems = ({ item }: AdjacentEpisodesProps) => {
+  const api = useAtomValue(apiAtom);
 
   const { data: previousItem } = useQuery({
-    queryKey: [
-      "previousItem",
-      currentlyPlaying?.item.ParentId,
-      currentlyPlaying?.item.IndexNumber,
-    ],
+    queryKey: ["previousItem", item?.Id, item?.ParentId, item?.IndexNumber],
     queryFn: async (): Promise<BaseItemDto | null> => {
+      const parentId = item?.AlbumId || item?.ParentId;
+      const indexNumber = item?.IndexNumber;
+
+      console.log("Getting previous item for " + indexNumber);
       if (
         !api ||
-        !currentlyPlaying?.item.ParentId ||
-        currentlyPlaying?.item.IndexNumber === undefined ||
-        currentlyPlaying?.item.IndexNumber === null ||
-        currentlyPlaying.item.IndexNumber - 2 < 0
+        !parentId ||
+        indexNumber === undefined ||
+        indexNumber === null ||
+        indexNumber - 1 < 1
       ) {
-        console.log("No previous item");
+        console.log("No previous item", {
+          itemIndex: indexNumber,
+          itemId: item?.Id,
+          parentId: parentId,
+          indexNumber: indexNumber,
+        });
         return null;
       }
 
+      const newIndexNumber = indexNumber - 2;
+
       const res = await getItemsApi(api).getItems({
-        parentId: currentlyPlaying.item.ParentId!,
-        startIndex: currentlyPlaying.item.IndexNumber! - 2,
+        parentId: parentId!,
+        startIndex: newIndexNumber,
         limit: 1,
+        sortBy: ["IndexNumber"],
+        includeItemTypes: ["Episode", "Audio"],
+        fields: ["MediaSources", "MediaStreams", "ParentId"],
       });
+
+      if (res.data.Items?.[0]?.IndexNumber !== indexNumber - 1) {
+        throw new Error("Previous item is not correct");
+      }
 
       return res.data.Items?.[0] || null;
     },
-    enabled: currentlyPlaying?.item.Type === "Episode",
+    enabled: item?.Type === "Episode" || item?.Type === "Audio",
+    staleTime: 0,
   });
 
   const { data: nextItem } = useQuery({
-    queryKey: [
-      "nextItem",
-      currentlyPlaying?.item.ParentId,
-      currentlyPlaying?.item.IndexNumber,
-    ],
+    queryKey: ["nextItem", item?.Id, item?.ParentId, item?.IndexNumber],
     queryFn: async (): Promise<BaseItemDto | null> => {
+      const parentId = item?.AlbumId || item?.ParentId;
+      const indexNumber = item?.IndexNumber;
+
       if (
         !api ||
-        !currentlyPlaying?.item.ParentId ||
-        currentlyPlaying?.item.IndexNumber === undefined ||
-        currentlyPlaying?.item.IndexNumber === null
+        !parentId ||
+        indexNumber === undefined ||
+        indexNumber === null
       ) {
-        console.log("No next item");
+        console.log("No next item", {
+          itemId: item?.Id,
+          parentId: parentId,
+          indexNumber: indexNumber,
+        });
         return null;
       }
 
       const res = await getItemsApi(api).getItems({
-        parentId: currentlyPlaying.item.ParentId!,
-        startIndex: currentlyPlaying.item.IndexNumber!,
+        parentId: parentId!,
+        startIndex: indexNumber,
+        sortBy: ["IndexNumber"],
         limit: 1,
+        includeItemTypes: ["Episode", "Audio"],
+        fields: ["MediaSources", "MediaStreams", "ParentId"],
       });
+
+      if (res.data.Items?.[0]?.IndexNumber !== indexNumber + 1) {
+        throw new Error("Previous item is not correct");
+      }
 
       return res.data.Items?.[0] || null;
     },
-    enabled: currentlyPlaying?.item.Type === "Episode",
+    enabled: item?.Type === "Episode" || item?.Type === "Audio",
+    staleTime: 0,
   });
 
   return { previousItem, nextItem };

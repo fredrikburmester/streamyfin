@@ -48,6 +48,7 @@ export const useCreditSkipper = (
       return res?.data;
     },
     enabled: !!itemId,
+    retry: false,
   });
 
   useEffect(() => {
@@ -60,9 +61,13 @@ export const useCreditSkipper = (
   }, [creditTimestamps, currentTime]);
 
   const skipCredit = useCallback(() => {
+    console.log("skipCredits");
     if (!creditTimestamps || !videoRef.current) return;
     try {
       videoRef.current.seek(creditTimestamps.Credits.End);
+      setTimeout(() => {
+        videoRef.current?.resume();
+      }, 200);
     } catch (error) {
       writeToLog("ERROR", "Error skipping intro", error);
     }

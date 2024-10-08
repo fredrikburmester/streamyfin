@@ -13,7 +13,7 @@ interface Props extends React.ComponentProps<typeof Button> {
   type?: "next" | "previous";
 }
 
-export const NextEpisodeButton: React.FC<Props> = ({
+export const NextItemButton: React.FC<Props> = ({
   item,
   type = "next",
   ...props
@@ -23,8 +23,8 @@ export const NextEpisodeButton: React.FC<Props> = ({
   const [user] = useAtom(userAtom);
   const [api] = useAtom(apiAtom);
 
-  const { data: nextEpisode } = useQuery({
-    queryKey: ["nextEpisode", item.Id, item.ParentId, type],
+  const { data: nextItem } = useQuery({
+    queryKey: ["nextItem", item.Id, item.ParentId, type],
     queryFn: async () => {
       if (
         !api ||
@@ -47,16 +47,16 @@ export const NextEpisodeButton: React.FC<Props> = ({
   });
 
   const disabled = useMemo(() => {
-    if (!nextEpisode) return true;
-    if (nextEpisode.Id === item.Id) return true;
+    if (!nextItem) return true;
+    if (nextItem.Id === item.Id) return true;
     return false;
-  }, [nextEpisode, type]);
+  }, [nextItem, type]);
 
   if (item.Type !== "Episode") return null;
 
   return (
     <Button
-      onPress={() => router.setParams({ id: nextEpisode?.Id })}
+      onPress={() => router.setParams({ id: nextItem?.Id })}
       className={`h-12 aspect-square`}
       disabled={disabled}
       {...props}

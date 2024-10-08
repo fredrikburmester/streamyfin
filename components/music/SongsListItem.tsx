@@ -1,16 +1,12 @@
 import { Text } from "@/components/common/Text";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
-import { usePlayback } from "@/providers/PlaybackProvider";
-import { getStreamUrl } from "@/utils/jellyfin/media/getStreamUrl";
-import { chromecastProfile } from "@/utils/profiles/chromecast";
-import ios from "@/utils/profiles/ios";
-import iosFmp4 from "@/utils/profiles/iosFmp4";
+import { usePlaySettings } from "@/providers/PlaySettingsProvider";
 import { runtimeTicksToSeconds } from "@/utils/time";
 import { useActionSheet } from "@expo/react-native-action-sheet";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
-import { getMediaInfoApi } from "@jellyfin/sdk/lib/utils/api";
 import { useRouter } from "expo-router";
 import { useAtom } from "jotai";
+import { useCallback } from "react";
 import { TouchableOpacity, TouchableOpacityProps, View } from "react-native";
 import CastContext, {
   PlayServicesState,
@@ -41,7 +37,7 @@ export const SongsListItem: React.FC<Props> = ({
   const client = useRemoteMediaClient();
   const { showActionSheetWithOptions } = useActionSheet();
 
-  const { setCurrentlyPlayingState } = usePlayback();
+  const { setPlaySettings } = usePlaySettings();
 
   const openSelect = () => {
     if (!castDevice?.deviceId) {
@@ -72,32 +68,18 @@ export const SongsListItem: React.FC<Props> = ({
     );
   };
 
-  const play = async (type: "device" | "cast") => {
+  const play = useCallback(async (type: "device" | "cast") => {
     if (!user?.Id || !api || !item.Id) {
       console.warn("No user, api or item", user, api, item.Id);
       return;
     }
 
-    const response = await getMediaInfoApi(api!).getPlaybackInfo({
-      itemId: item?.Id,
-      userId: user?.Id,
-    });
-
-    const sessionData = response.data;
-
-    const url = await getStreamUrl({
-      api,
-      userId: user.Id,
+    const data = await setPlaySettings({
       item,
-      startTimeTicks: item?.UserData?.PlaybackPositionTicks || 0,
-      sessionData,
-      deviceProfile: castDevice?.deviceId ? chromecastProfile : iosFmp4,
-      mediaSourceId: item.Id,
     });
 
-    if (!url || !item) {
-      console.warn("No url or item", url, item.Id);
-      return;
+    if (!data?.url) {
+      throw new Error("play-music ~ No stream url");
     }
 
     if (type === "cast" && client) {
@@ -107,7 +89,7 @@ export const SongsListItem: React.FC<Props> = ({
         else {
           client.loadMedia({
             mediaInfo: {
-              contentUrl: url,
+              contentUrl: data.url!,
               contentType: "video/mp4",
               metadata: {
                 type: item.Type === "Episode" ? "tvShow" : "movie",
@@ -120,14 +102,10 @@ export const SongsListItem: React.FC<Props> = ({
         }
       });
     } else {
-      console.log("Playing on device", url, item.Id);
-      setCurrentlyPlayingState({
-        item,
-        url,
-      });
+      console.log("Playing on device", data.url, item.Id);
       router.push("/play-music");
     }
-  };
+  }, []);
 
   return (
     <TouchableOpacity

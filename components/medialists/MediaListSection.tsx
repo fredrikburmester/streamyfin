@@ -31,10 +31,10 @@ export const MediaListSection: React.FC<Props> = ({
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
 
-  const { data: collection, isLoading } = useQuery({
+  const { data: collection } = useQuery({
     queryKey,
     queryFn,
-    staleTime: 60 * 1000,
+    staleTime: 0,
   });
 
   const fetchItems = useCallback(

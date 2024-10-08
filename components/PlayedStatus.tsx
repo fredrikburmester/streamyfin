@@ -44,6 +44,9 @@ export const PlayedStatus: React.FC<Props> = ({ item, ...props }) => {
     queryClient.invalidateQueries({
       queryKey: ["nextUp-all"],
     });
+    queryClient.invalidateQueries({
+      queryKey: ["home"],
+    });
   };
 
   return (

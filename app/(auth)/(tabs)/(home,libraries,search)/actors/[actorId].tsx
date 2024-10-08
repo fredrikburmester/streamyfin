@@ -50,7 +50,7 @@ const page: React.FC = () => {
         userId: user.Id,
         personIds: [actorId],
         startIndex: pageParam,
-        limit: 8,
+        limit: 16,
         sortOrder: ["Descending", "Descending", "Ascending"],
         includeItemTypes: ["Movie", "Series"],
         recursive: true,
