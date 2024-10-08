@@ -9,10 +9,10 @@ interface Props extends ViewProps {
 export const MoviesTitleHeader: React.FC<Props> = ({ item, ...props }) => {
   return (
     <View {...props}>
-      <Text className=" font-bold text-2xl mb-1" selectable>
+      <Text uiTextView selectable className="font-bold text-2xl mb-1">
         {item?.Name}
       </Text>
-      <Text className=" opacity-50">{item?.ProductionYear}</Text>
+      <Text className="opacity-50">{item?.ProductionYear}</Text>
     </View>
   );
 };
