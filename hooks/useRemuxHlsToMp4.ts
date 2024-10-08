@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { useAtom } from "jotai";
+import { useAtom, useAtomValue } from "jotai";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as FileSystem from "expo-file-system";
 import { FFmpegKit, FFmpegKitConfig } from "ffmpeg-kit-react-native";
@@ -10,6 +10,9 @@ import { toast } from "sonner-native";
 import { useDownload } from "@/providers/DownloadProvider";
 import { useRouter } from "expo-router";
 import { JobStatus } from "@/utils/optimize-server";
+import useImageStorage from "./useImageStorage";
+import { getItemImage } from "@/utils/getItemImage";
+import { apiAtom } from "@/providers/JellyfinProvider";
 
 /**
  * Custom hook for remuxing HLS to MP4 using FFmpeg.
@@ -19,9 +22,12 @@ import { JobStatus } from "@/utils/optimize-server";
  * @returns An object with remuxing-related functions
  */
 export const useRemuxHlsToMp4 = (item: BaseItemDto) => {
+  const api = useAtomValue(apiAtom);
   const queryClient = useQueryClient();
   const { saveDownloadedItemInfo, setProcesses } = useDownload();
   const router = useRouter();
+  const { loadImage, saveImage, image2Base64, saveBase64Image } =
+    useImageStorage();
 
   if (!item.Id || !item.Name) {
     writeToLog("ERROR", "useRemuxHlsToMp4 ~ missing arguments");
@@ -32,7 +38,18 @@ export const useRemuxHlsToMp4 = (item: BaseItemDto) => {
 
   const startRemuxing = useCallback(
     async (url: string) => {
+      if (!api) throw new Error("API is not defined");
       if (!item.Id) throw new Error("Item must have an Id");
+
+      const itemImage = getItemImage({
+        item,
+        api,
+        variant: "Primary",
+        quality: 90,
+        width: 500,
+      });
+
+      await saveImage(item.Id, itemImage?.uri);
 
       toast.success(`Download started for ${item.Name}`, {
         action: {

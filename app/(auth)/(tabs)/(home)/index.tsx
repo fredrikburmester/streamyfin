@@ -25,7 +25,7 @@ import {
 import NetInfo from "@react-native-community/netinfo";
 import { QueryFunction, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigation, useRouter } from "expo-router";
-import { useAtom } from "jotai";
+import { useAtom, useAtomValue } from "jotai";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -57,8 +57,8 @@ export default function index() {
   const queryClient = useQueryClient();
   const router = useRouter();
 
-  const [api] = useAtom(apiAtom);
-  const [user] = useAtom(userAtom);
+  const api = useAtomValue(apiAtom);
+  const user = useAtomValue(userAtom);
 
   const [loading, setLoading] = useState(false);
   const [settings, _] = useSettings();
@@ -226,6 +226,7 @@ export default function index() {
             await getItemsApi(api).getResumeItems({
               userId: user.Id,
               enableImageTypes: ["Primary", "Backdrop", "Thumb"],
+              includeItemTypes: ["Movie", "Series", "Episode"],
             })
           ).data.Items || [],
         type: "ScrollingCollectionList",
@@ -340,7 +341,7 @@ export default function index() {
 
   const insets = useSafeAreaInsets();
 
-  if (e1 || e2 || !api)
+  if (e1 || e2)
     return (
       <View className="flex flex-col items-center justify-center h-full -mt-6">
         <Text className="text-3xl font-bold mb-2">Oops!</Text>

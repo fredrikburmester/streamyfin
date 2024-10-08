@@ -26,14 +26,14 @@ interface TrickplayUrl {
   url: string;
 }
 
-export const useTrickplay = (item: BaseItemDto) => {
+export const useTrickplay = (item: BaseItemDto, enabled = true) => {
   const [api] = useAtom(apiAtom);
   const [trickPlayUrl, setTrickPlayUrl] = useState<TrickplayUrl | null>(null);
   const lastCalculationTime = useRef(0);
   const throttleDelay = 200; // 200ms throttle
 
   const trickplayInfo = useMemo(() => {
-    if (!item.Id || !item.Trickplay) {
+    if (!enabled || !item.Id || !item.Trickplay) {
       return null;
     }
 
@@ -55,10 +55,14 @@ export const useTrickplay = (item: BaseItemDto) => {
           data: trickplayData[firstResolution],
         }
       : null;
-  }, [item]);
+  }, [item, enabled]);
 
   const calculateTrickplayUrl = useCallback(
     (progress: number) => {
+      if (!enabled) {
+        return null;
+      }
+
       const now = Date.now();
       if (now - lastCalculationTime.current < throttleDelay) {
         return null;
@@ -97,8 +101,12 @@ export const useTrickplay = (item: BaseItemDto) => {
       setTrickPlayUrl(newTrickPlayUrl);
       return newTrickPlayUrl;
     },
-    [trickplayInfo, item, api]
+    [trickplayInfo, item, api, enabled]
   );
 
-  return { trickPlayUrl, calculateTrickplayUrl, trickplayInfo };
+  return {
+    trickPlayUrl: enabled ? trickPlayUrl : null,
+    calculateTrickplayUrl: enabled ? calculateTrickplayUrl : () => null,
+    trickplayInfo: enabled ? trickplayInfo : null,
+  };
 };

@@ -9,6 +9,7 @@ import { PlaySettingsProvider } from "@/providers/PlaySettingsProvider";
 import { orientationAtom } from "@/utils/atoms/orientation";
 import { Settings, useSettings } from "@/utils/atoms/settings";
 import { BACKGROUND_FETCH_TASK } from "@/utils/background-tasks";
+import { writeToLog } from "@/utils/log";
 import { cancelJobById, getAllJobsByDeviceId } from "@/utils/optimize-server";
 import { ActionSheetProvider } from "@expo/react-native-action-sheet";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
@@ -198,8 +199,10 @@ const checkAndRequestPermissions = async () => {
       const { status } = await Notifications.requestPermissionsAsync();
 
       if (status === "granted") {
+        writeToLog("INFO", "Notification permissions granted.");
         console.log("Notification permissions granted.");
       } else {
+        writeToLog("ERROR", "Notification permissions denied.");
         console.log("Notification permissions denied.");
       }
 
@@ -208,6 +211,11 @@ const checkAndRequestPermissions = async () => {
       console.log("Already asked for notification permissions before.");
     }
   } catch (error) {
+    writeToLog(
+      "ERROR",
+      "Error checking/requesting notification permissions:",
+      error
+    );
     console.error("Error checking/requesting notification permissions:", error);
   }
 };
@@ -403,6 +411,7 @@ async function saveDownloadedItemInfo(item: BaseItemDto) {
 
     await AsyncStorage.setItem("downloadedItems", JSON.stringify(items));
   } catch (error) {
+    writeToLog("ERROR", "Failed to save downloaded item information:", error);
     console.error("Failed to save downloaded item information:", error);
   }
 }

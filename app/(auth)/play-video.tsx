@@ -1,4 +1,7 @@
 import { Controls } from "@/components/video-player/Controls";
+import { useAndroidNavigationBar } from "@/hooks/useAndroidNavigationBar";
+import { useOrientation } from "@/hooks/useOrientation";
+import { useOrientationSettings } from "@/hooks/useOrientationSettings";
 import { useWebSocket } from "@/hooks/useWebsockets";
 import { apiAtom } from "@/providers/JellyfinProvider";
 import {
@@ -8,25 +11,22 @@ import {
 import { useSettings } from "@/utils/atoms/settings";
 import { getBackdropUrl } from "@/utils/jellyfin/image/getBackdropUrl";
 import { getAuthHeaders } from "@/utils/jellyfin/jellyfin";
-import orientationToOrientationLock from "@/utils/OrientationLockConverter";
 import { secondsToTicks } from "@/utils/secondsToTicks";
 import { Api } from "@jellyfin/sdk";
 import { getPlaystateApi } from "@jellyfin/sdk/lib/utils/api";
 import * as Haptics from "expo-haptics";
-import * as ScreenOrientation from "expo-screen-orientation";
-import { useAtomValue } from "jotai";
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import { Dimensions, Platform, Pressable, StatusBar, View } from "react-native";
-import { useSharedValue } from "react-native-reanimated";
-import Video, { OnProgressData, VideoRef } from "react-native-video";
-import * as NavigationBar from "expo-navigation-bar";
 import { useFocusEffect } from "expo-router";
+import { useAtomValue } from "jotai";
+import React, { useCallback, useMemo, useRef, useState } from "react";
+import { Dimensions, Pressable, StatusBar, View } from "react-native";
+import { useSharedValue } from "react-native-reanimated";
+import Video, {
+  OnProgressData,
+  VideoRef,
+  SelectedTrack,
+  SelectedTrackType,
+} from "react-native-video";
+import { WithDefault } from "react-native/Libraries/Types/CodegenTypes";
 
 export default function page() {
   const { playSettings, playUrl, playSessionId } = usePlaySettings();
@@ -44,9 +44,6 @@ export default function page() {
   const [ignoreSafeAreas, setIgnoreSafeAreas] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isBuffering, setIsBuffering] = useState(true);
-  const [orientation, setOrientation] = useState(
-    ScreenOrientation.OrientationLock.UNKNOWN
-  );
 
   const progress = useSharedValue(0);
   const isSeeking = useSharedValue(false);
@@ -59,7 +56,6 @@ export default function page() {
     async (ticks: number) => {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       if (isPlaying) {
-        setIsPlaying(false);
         videoRef.current?.pause();
         await getPlaystateApi(api).onPlaybackProgress({
           itemId: playSettings.item?.Id!,
@@ -76,7 +72,6 @@ export default function page() {
           playSessionId: playSessionId ? playSessionId : undefined,
         });
       } else {
-        setIsPlaying(true);
         videoRef.current?.resume();
         await getPlaystateApi(api).onPlaybackProgress({
           itemId: playSettings.item?.Id!,
@@ -98,19 +93,16 @@ export default function page() {
   );
 
   const play = useCallback(() => {
-    setIsPlaying(true);
     videoRef.current?.resume();
     reportPlaybackStart();
   }, [videoRef]);
 
   const pause = useCallback(() => {
-    setIsPlaying(false);
     videoRef.current?.pause();
   }, [videoRef]);
 
   const stop = useCallback(() => {
     setIsPlaybackStopped(true);
-    setIsPlaying(false);
     videoRef.current?.pause();
     reportPlaybackStopped();
   }, [videoRef]);
@@ -142,7 +134,7 @@ export default function page() {
   const onProgress = useCallback(
     async (data: OnProgressData) => {
       if (isSeeking.value === true) return;
-      if (isPlaybackStopped) return;
+      if (isPlaybackStopped === true) return;
 
       const ticks = data.currentTime * 10000000;
 
@@ -180,50 +172,9 @@ export default function page() {
     }, [play, stop])
   );
 
-  useEffect(() => {
-    const orientationSubscription =
-      ScreenOrientation.addOrientationChangeListener((event) => {
-        setOrientation(
-          orientationToOrientationLock(event.orientationInfo.orientation)
-        );
-      });
-
-    ScreenOrientation.getOrientationAsync().then((orientation) => {
-      setOrientation(orientationToOrientationLock(orientation));
-    });
-
-    return () => {
-      orientationSubscription.remove();
-    };
-  }, []);
-
-  useEffect(() => {
-    if (settings?.autoRotate) {
-      // Don't need to do anything
-    } else if (settings?.defaultVideoOrientation) {
-      ScreenOrientation.lockAsync(settings.defaultVideoOrientation);
-    }
-
-    if (Platform.OS === "android") {
-      NavigationBar.setVisibilityAsync("hidden");
-      NavigationBar.setBehaviorAsync("overlay-swipe");
-    }
-
-    return () => {
-      if (settings?.autoRotate) {
-        ScreenOrientation.unlockAsync();
-      } else {
-        ScreenOrientation.lockAsync(
-          ScreenOrientation.OrientationLock.PORTRAIT_UP
-        );
-      }
-
-      if (Platform.OS === "android") {
-        NavigationBar.setVisibilityAsync("visible");
-        NavigationBar.setBehaviorAsync("inset-swipe");
-      }
-    };
-  }, [settings]);
+  const { orientation } = useOrientation();
+  useOrientationSettings();
+  useAndroidNavigationBar();
 
   useWebSocket({
     isPlaying: isPlaying,
@@ -231,6 +182,36 @@ export default function page() {
     playVideo: play,
     stopPlayback: stop,
   });
+
+  const selectedSubtitleTrack = useMemo(() => {
+    const a = playSettings?.mediaSource?.MediaStreams?.find(
+      (s) => s.Index === playSettings.subtitleIndex
+    );
+    console.log(a);
+    return a;
+  }, [playSettings]);
+
+  const [hlsSubTracks, setHlsSubTracks] = useState<
+    {
+      index: number;
+      language?: string | undefined;
+      selected?: boolean | undefined;
+      title?: string | undefined;
+      type: any;
+    }[]
+  >([]);
+
+  const selectedTextTrack = useMemo(() => {
+    for (let st of hlsSubTracks) {
+      if (st.title === selectedSubtitleTrack?.DisplayTitle) {
+        return {
+          type: SelectedTrackType.TITLE,
+          value: selectedSubtitleTrack?.DisplayTitle ?? "",
+        };
+      }
+    }
+    return undefined;
+  }, [hlsSubTracks]);
 
   return (
     <View
@@ -251,7 +232,6 @@ export default function page() {
         <Video
           ref={videoRef}
           source={videoSource}
-          paused={!isPlaying}
           style={{ width: "100%", height: "100%" }}
           resizeMode={ignoreSafeAreas ? "cover" : "contain"}
           onProgress={onProgress}
@@ -270,7 +250,14 @@ export default function page() {
           showNotificationControls={true}
           ignoreSilentSwitch="ignore"
           fullscreen={false}
-          onPlaybackStateChanged={(state) => setIsPlaying(state.isPlaying)}
+          onPlaybackStateChanged={(state) => {
+            if (isSeeking.value === false) setIsPlaying(state.isPlaying);
+          }}
+          onTextTracks={(data) => {
+            console.log("onTextTracks ~", data);
+            setHlsSubTracks(data.textTracks as any);
+          }}
+          selectedTextTrack={selectedTextTrack}
         />
       </Pressable>
 

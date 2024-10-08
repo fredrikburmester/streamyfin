@@ -61,6 +61,7 @@ export const useCreditSkipper = (
   }, [creditTimestamps, currentTime]);
 
   const skipCredit = useCallback(() => {
+    console.log("skipCredits");
     if (!creditTimestamps || !videoRef.current) return;
     try {
       videoRef.current.seek(creditTimestamps.Credits.End);

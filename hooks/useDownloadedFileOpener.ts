@@ -1,6 +1,7 @@
 // hooks/useFileOpener.ts
 
 import { usePlaySettings } from "@/providers/PlaySettingsProvider";
+import { writeToLog } from "@/utils/log";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client";
 import * as FileSystem from "expo-file-system";
 import { useRouter } from "expo-router";
@@ -42,8 +43,8 @@ export const useFileOpener = () => {
 
       router.push("/play-offline-video");
     } catch (error) {
+      writeToLog("ERROR", "Error opening file", error);
       console.error("Error opening file:", error);
-      // Handle the error appropriately, e.g., show an error message to the user
     }
   }, []);
 

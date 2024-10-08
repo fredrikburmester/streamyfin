@@ -74,7 +74,7 @@ export default function settings() {
           registerBackgroundFetchAsync
         </Button> */}
         <View>
-          <Text className="font-bold text-lg mb-2">Information</Text>
+          <Text className="font-bold text-lg mb-2">User Info</Text>
 
           <View className="flex flex-col rounded-xl overflow-hidden border-neutral-800 divide-y-2 divide-solid divide-neutral-800 ">
             <ListItem title="User" subTitle={user?.Name} />
