@@ -1,7 +1,7 @@
 import { apiAtom } from "@/providers/JellyfinProvider";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import { Image } from "expo-image";
-import { useAtom } from "jotai";
+import { useAtom, useAtomValue } from "jotai";
 import { useMemo, useState } from "react";
 import { View } from "react-native";
 import { WatchedIndicator } from "./WatchedIndicator";
@@ -18,7 +18,7 @@ const ContinueWatchingPoster: React.FC<ContinueWatchingPosterProps> = ({
   useEpisodePoster = false,
   size = "normal",
 }) => {
-  const [api] = useAtom(apiAtom);
+  const api = useAtomValue(apiAtom);
 
   /**
    * Get horrizontal poster for movie and episode, with failover to primary.
@@ -59,7 +59,7 @@ const ContinueWatchingPoster: React.FC<ContinueWatchingPosterProps> = ({
     } else {
       return item.UserData?.PlayedPercentage || 0;
     }
-  }, []);
+  }, [item]);
 
   if (!url)
     return (

@@ -117,7 +117,7 @@ export default function index() {
     isError: e1,
     isLoading: l1,
   } = useQuery({
-    queryKey: ["userViews", user?.Id],
+    queryKey: ["home", "userViews", user?.Id],
     queryFn: async () => {
       if (!api || !user?.Id) {
         return null;
@@ -138,7 +138,7 @@ export default function index() {
     isError: e2,
     isLoading: l2,
   } = useQuery({
-    queryKey: ["sf_promoted", user?.Id, settings?.usePopularPlugin],
+    queryKey: ["home", "sf_promoted", user?.Id, settings?.usePopularPlugin],
     queryFn: async () => {
       if (!api || !user?.Id) return [];
 
@@ -167,9 +167,26 @@ export default function index() {
 
   const refetch = useCallback(async () => {
     setLoading(true);
-    await queryClient.invalidateQueries();
+    await queryClient.invalidateQueries({
+      queryKey: ["home"],
+      refetchType: "all",
+      type: "all",
+      exact: false,
+    });
+    await queryClient.invalidateQueries({
+      queryKey: ["home"],
+      refetchType: "all",
+      type: "all",
+      exact: false,
+    });
+    await queryClient.invalidateQueries({
+      queryKey: ["item"],
+      refetchType: "all",
+      type: "all",
+      exact: false,
+    });
     setLoading(false);
-  }, []);
+  }, [queryClient]);
 
   const createCollectionConfig = useCallback(
     (
@@ -208,7 +225,12 @@ export default function index() {
       const includeItemTypes: BaseItemKind[] =
         c.CollectionType === "tvshows" ? ["Series"] : ["Movie"];
       const title = "Recently Added in " + c.Name;
-      const queryKey = ["recentlyAddedIn" + c.CollectionType, user?.Id!, c.Id!];
+      const queryKey = [
+        "home",
+        "recentlyAddedIn" + c.CollectionType,
+        user?.Id!,
+        c.Id!,
+      ];
       return createCollectionConfig(
         title || "",
         queryKey,
@@ -220,7 +242,7 @@ export default function index() {
     const ss: Section[] = [
       {
         title: "Continue Watching",
-        queryKey: ["resumeItems", user.Id],
+        queryKey: ["home", "resumeItems", user.Id],
         queryFn: async () =>
           (
             await getItemsApi(api).getResumeItems({
@@ -234,7 +256,7 @@ export default function index() {
       },
       {
         title: "Next Up",
-        queryKey: ["nextUp-all", user?.Id],
+        queryKey: ["home", "nextUp-all", user?.Id],
         queryFn: async () =>
           (
             await getTvShowsApi(api).getNextUp({
@@ -252,7 +274,7 @@ export default function index() {
         (ml) =>
           ({
             title: ml.Name,
-            queryKey: ["mediaList", ml.Id!],
+            queryKey: ["home", "mediaList", ml.Id!],
             queryFn: async () => ml,
             type: "MediaListSection",
             orientation: "vertical",
@@ -260,7 +282,7 @@ export default function index() {
       ) || []),
       {
         title: "Suggested Movies",
-        queryKey: ["suggestedMovies", user?.Id],
+        queryKey: ["home", "suggestedMovies", user?.Id],
         queryFn: async () =>
           (
             await getSuggestionsApi(api).getSuggestions({
@@ -275,7 +297,7 @@ export default function index() {
       },
       {
         title: "Suggested Episodes",
-        queryKey: ["suggestedEpisodes", user?.Id],
+        queryKey: ["home", "suggestedEpisodes", user?.Id],
         queryFn: async () => {
           try {
             const suggestions = await getSuggestions(api, user.Id);
