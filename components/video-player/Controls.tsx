@@ -1,24 +1,17 @@
-import { useAdjacentEpisodes } from "@/hooks/useAdjacentEpisodes";
+import { useAdjacentItems } from "@/hooks/useAdjacentEpisodes";
 import { useCreditSkipper } from "@/hooks/useCreditSkipper";
 import { useIntroSkipper } from "@/hooks/useIntroSkipper";
 import { useTrickplay } from "@/hooks/useTrickplay";
-import { apiAtom } from "@/providers/JellyfinProvider";
+import { usePlaySettings } from "@/providers/PlaySettingsProvider";
 import { useSettings } from "@/utils/atoms/settings";
+import { getDefaultPlaySettings } from "@/utils/jellyfin/getDefaultPlaySettings";
 import { writeToLog } from "@/utils/log";
 import { formatTimeString, ticksToSeconds } from "@/utils/time";
 import { Ionicons } from "@expo/vector-icons";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client";
 import { Image } from "expo-image";
-import { useRouter, useSegments } from "expo-router";
-import * as ScreenOrientation from "expo-screen-orientation";
-import { useAtom } from "jotai";
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useRouter } from "expo-router";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Dimensions,
   Platform,
@@ -38,23 +31,22 @@ import Animated, {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { VideoRef } from "react-native-video";
 import { Text } from "../common/Text";
-import { itemRouter } from "../common/TouchableItemRouter";
 import { Loader } from "../Loader";
-import { TAB_HEIGHT } from "@/constants/Values";
 
 interface Props {
   item: BaseItemDto;
   videoRef: React.MutableRefObject<VideoRef | null>;
   isPlaying: boolean;
-  togglePlay: (ticks: number) => void;
   isSeeking: SharedValue<boolean>;
   cacheProgress: SharedValue<number>;
   progress: SharedValue<number>;
   isBuffering: boolean;
   showControls: boolean;
-  setShowControls: (shown: boolean) => void;
   ignoreSafeAreas?: boolean;
   setIgnoreSafeAreas: React.Dispatch<React.SetStateAction<boolean>>;
+  enableTrickplay?: boolean;
+  togglePlay: (ticks: number) => void;
+  setShowControls: (shown: boolean) => void;
 }
 
 export const Controls: React.FC<Props> = ({
@@ -70,13 +62,13 @@ export const Controls: React.FC<Props> = ({
   setShowControls,
   ignoreSafeAreas,
   setIgnoreSafeAreas,
+  enableTrickplay = true,
 }) => {
   const [settings] = useSettings();
   const router = useRouter();
-  const segments = useSegments();
   const insets = useSafeAreaInsets();
+  const { setPlaySettings } = usePlaySettings();
 
-  const screenDimensions = Dimensions.get("screen");
   const windowDimensions = Dimensions.get("window");
 
   const op = useSharedValue<number>(1);
@@ -117,9 +109,11 @@ export const Controls: React.FC<Props> = ({
     }
   }, [showControls, isBuffering]);
 
-  const { previousItem, nextItem } = useAdjacentEpisodes({ item });
-  const { trickPlayUrl, calculateTrickplayUrl, trickplayInfo } =
-    useTrickplay(item);
+  const { previousItem, nextItem } = useAdjacentItems({ item });
+  const { trickPlayUrl, calculateTrickplayUrl, trickplayInfo } = useTrickplay(
+    item,
+    enableTrickplay
+  );
 
   const [currentTime, setCurrentTime] = useState(0); // Seconds
   const [remainingTime, setRemainingTime] = useState(0); // Seconds
@@ -127,7 +121,7 @@ export const Controls: React.FC<Props> = ({
   const min = useSharedValue(0);
   const max = useSharedValue(item.RunTimeTicks || 0);
 
-  const from = useMemo(() => segments[2], [segments]);
+  const wasPlayingRef = useRef(false);
 
   const updateTimes = useCallback(
     (currentProgress: number, maxValue: number) => {
@@ -152,6 +146,40 @@ export const Controls: React.FC<Props> = ({
     videoRef
   );
 
+  const goToPreviousItem = useCallback(() => {
+    if (!previousItem || !settings) return;
+
+    const { bitrate, mediaSource, audioIndex, subtitleIndex } =
+      getDefaultPlaySettings(previousItem, settings);
+
+    setPlaySettings({
+      item: previousItem,
+      bitrate,
+      mediaSource,
+      audioIndex,
+      subtitleIndex,
+    });
+
+    router.replace("/play-video");
+  }, [previousItem, settings]);
+
+  const goToNextItem = useCallback(() => {
+    if (!nextItem || !settings) return;
+
+    const { bitrate, mediaSource, audioIndex, subtitleIndex } =
+      getDefaultPlaySettings(nextItem, settings);
+
+    setPlaySettings({
+      item: nextItem,
+      bitrate,
+      mediaSource,
+      audioIndex,
+      subtitleIndex,
+    });
+
+    router.replace("/play-video");
+  }, [nextItem, settings]);
+
   useAnimatedReaction(
     () => ({
       progress: progress.value,
@@ -175,14 +203,12 @@ export const Controls: React.FC<Props> = ({
 
   const toggleControls = () => setShowControls(!showControls);
 
-  const handleSliderComplete = (value: number) => {
+  const handleSliderComplete = useCallback((value: number) => {
     progress.value = value;
     isSeeking.value = false;
-    videoRef.current?.seek(value / 10000000);
-    setTimeout(() => {
-      videoRef.current?.resume();
-    }, 200);
-  };
+    videoRef.current?.seek(Math.max(0, Math.floor(value / 10000000)));
+    if (wasPlayingRef.current === true) videoRef.current?.resume();
+  }, []);
 
   const handleSliderChange = (value: number) => {
     calculateTrickplayUrl(value);
@@ -190,52 +216,44 @@ export const Controls: React.FC<Props> = ({
 
   const handleSliderStart = useCallback(() => {
     if (showControls === false) return;
+    wasPlayingRef.current = isPlaying;
+    videoRef.current?.pause();
     isSeeking.value = true;
-  }, [showControls]);
+  }, [showControls, isPlaying]);
 
   const handleSkipBackward = useCallback(async () => {
-    if (!settings) return;
+    console.log("handleSkipBackward");
+    if (!settings?.rewindSkipTime) return;
+    wasPlayingRef.current = isPlaying;
     try {
       const curr = await videoRef.current?.getCurrentPosition();
       if (curr !== undefined) {
         videoRef.current?.seek(Math.max(0, curr - settings.rewindSkipTime));
         setTimeout(() => {
-          videoRef.current?.resume();
-        }, 200);
+          if (wasPlayingRef.current === true) videoRef.current?.resume();
+        }, 10);
       }
     } catch (error) {
       writeToLog("ERROR", "Error seeking video backwards", error);
     }
-  }, [settings]);
+  }, [settings, isPlaying]);
 
   const handleSkipForward = useCallback(async () => {
-    if (!settings) return;
+    console.log("handleSkipForward");
+    if (!settings?.forwardSkipTime) return;
+    wasPlayingRef.current = isPlaying;
     try {
       const curr = await videoRef.current?.getCurrentPosition();
       if (curr !== undefined) {
         videoRef.current?.seek(Math.max(0, curr + settings.forwardSkipTime));
         setTimeout(() => {
-          videoRef.current?.resume();
-        }, 200);
+          if (wasPlayingRef.current === true) videoRef.current?.resume();
+        }, 10);
       }
     } catch (error) {
       writeToLog("ERROR", "Error seeking video forwards", error);
     }
-  }, [settings]);
-
-  const handleGoToPreviousItem = useCallback(() => {
-    if (!previousItem || !from) return;
-    const url = itemRouter(previousItem, from);
-    // @ts-ignore
-    router.push(url);
-  }, [previousItem, from, router]);
-
-  const handleGoToNextItem = useCallback(() => {
-    if (!nextItem || !from) return;
-    const url = itemRouter(nextItem, from);
-    // @ts-ignore
-    router.push(url);
-  }, [nextItem, from, router]);
+  }, [settings, isPlaying]);
 
   const toggleIgnoreSafeAreas = useCallback(() => {
     setIgnoreSafeAreas((prev) => !prev);
@@ -395,7 +413,7 @@ export const Controls: React.FC<Props> = ({
               style={{
                 opacity: !previousItem ? 0.5 : 1,
               }}
-              onPress={handleGoToPreviousItem}
+              onPress={goToPreviousItem}
             >
               <Ionicons name="play-skip-back" size={24} color="white" />
             </TouchableOpacity>
@@ -427,7 +445,7 @@ export const Controls: React.FC<Props> = ({
               style={{
                 opacity: !nextItem ? 0.5 : 1,
               }}
-              onPress={handleGoToNextItem}
+              onPress={goToNextItem}
             >
               <Ionicons name="play-skip-forward" size={24} color="white" />
             </TouchableOpacity>

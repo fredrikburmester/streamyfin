@@ -1,5 +1,9 @@
 import { AudioTrackSelector } from "@/components/AudioTrackSelector";
-import { Bitrate, BitrateSelector } from "@/components/BitrateSelector";
+import {
+  Bitrate,
+  BITRATES,
+  BitrateSelector,
+} from "@/components/BitrateSelector";
 import { DownloadItem } from "@/components/DownloadItem";
 import { OverviewText } from "@/components/OverviewText";
 import { ParallaxScrollView } from "@/components/ParallaxPage";
@@ -20,10 +24,16 @@ import {
   MediaSourceInfo,
 } from "@jellyfin/sdk/lib/generated-client/models";
 import { Image } from "expo-image";
-import { useNavigation } from "expo-router";
+import { useFocusEffect, useNavigation } from "expo-router";
 import * as ScreenOrientation from "expo-screen-orientation";
 import { useAtom } from "jotai";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { View } from "react-native";
 import { useCastDevice } from "react-native-google-cast";
 import Animated from "react-native-reanimated";
@@ -32,19 +42,36 @@ import { Chromecast } from "./Chromecast";
 import { ItemHeader } from "./ItemHeader";
 import { MediaSourceSelector } from "./MediaSourceSelector";
 import { MoreMoviesWithActor } from "./MoreMoviesWithActor";
+import { useSettings } from "@/utils/atoms/settings";
+import { getDefaultPlaySettings } from "@/utils/jellyfin/getDefaultPlaySettings";
 
 export const ItemContent: React.FC<{ item: BaseItemDto }> = React.memo(
   ({ item }) => {
     const [api] = useAtom(apiAtom);
     const { setPlaySettings, playUrl, playSettings } = usePlaySettings();
-
-    const castDevice = useCastDevice();
+    const [settings] = useSettings();
     const navigation = useNavigation();
 
     const [loadingLogo, setLoadingLogo] = useState(true);
 
     const [orientation, setOrientation] = useState(
       ScreenOrientation.Orientation.PORTRAIT_UP
+    );
+
+    useFocusEffect(
+      useCallback(() => {
+        if (!settings) return;
+        const { bitrate, mediaSource, audioIndex, subtitleIndex } =
+          getDefaultPlaySettings(item, settings);
+
+        setPlaySettings({
+          item,
+          bitrate,
+          mediaSource,
+          audioIndex,
+          subtitleIndex,
+        });
+      }, [item, settings])
     );
 
     const selectedMediaSource = useMemo(() => {
@@ -62,7 +89,7 @@ export const ItemContent: React.FC<{ item: BaseItemDto }> = React.memo(
       return playSettings?.audioIndex;
     }, [playSettings?.audioIndex]);
 
-    const setSelectedAudioStream = (audioIndex: number | undefined) => {
+    const setSelectedAudioStream = (audioIndex: number) => {
       setPlaySettings((prev) => ({
         ...prev,
         audioIndex,
@@ -73,7 +100,7 @@ export const ItemContent: React.FC<{ item: BaseItemDto }> = React.memo(
       return playSettings?.subtitleIndex;
     }, [playSettings?.subtitleIndex]);
 
-    const setSelectedSubtitleStream = (subtitleIndex: number | undefined) => {
+    const setSelectedSubtitleStream = (subtitleIndex: number) => {
       setPlaySettings((prev) => ({
         ...prev,
         subtitleIndex,
@@ -128,15 +155,14 @@ export const ItemContent: React.FC<{ item: BaseItemDto }> = React.memo(
           ),
       });
 
-      setPlaySettings((prev) => ({
-        ...prev,
-        audioIndex: undefined,
-        subtitleIndex: undefined,
-        mediaSourceId: undefined,
-        bitrate: undefined,
-        mediaSource: item.MediaSources?.[0],
-        item,
-      }));
+      // setPlaySettings((prev) => ({
+      //   audioIndex: undefined,
+      //   subtitleIndex: undefined,
+      //   mediaSourceId: undefined,
+      //   bitrate: undefined,
+      //   mediaSource: item.MediaSources?.[0],
+      //   item,
+      // }));
     }, [item]);
 
     useEffect(() => {

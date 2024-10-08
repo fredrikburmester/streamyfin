@@ -345,6 +345,7 @@ function useDownloadProvider() {
           },
         });
       } catch (error) {
+        writeToLog("ERROR", "Error in startBackgroundDownload", error);
         console.error("Error in startBackgroundDownload:", error);
         if (axios.isAxiosError(error)) {
           console.error("Axios error details:", {

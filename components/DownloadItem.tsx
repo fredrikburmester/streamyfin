@@ -17,12 +17,12 @@ import {
   BaseItemDto,
   MediaSourceInfo,
 } from "@jellyfin/sdk/lib/generated-client/models";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { useAtom } from "jotai";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { Alert, TouchableOpacity, View, ViewProps } from "react-native";
 import { AudioTrackSelector } from "./AudioTrackSelector";
-import { Bitrate, BitrateSelector } from "./BitrateSelector";
+import { Bitrate, BITRATES, BitrateSelector } from "./BitrateSelector";
 import { Button } from "./Button";
 import { Text } from "./common/Text";
 import { Loader } from "./Loader";
@@ -31,6 +31,7 @@ import ProgressCircle from "./ProgressCircle";
 import { SubtitleTrackSelector } from "./SubtitleTrackSelector";
 import { toast } from "sonner-native";
 import iosFmp4 from "@/utils/profiles/iosFmp4";
+import { getDefaultPlaySettings } from "@/utils/jellyfin/getDefaultPlaySettings";
 
 interface DownloadProps extends ViewProps {
   item: BaseItemDto;
@@ -42,10 +43,11 @@ export const DownloadItem: React.FC<DownloadProps> = ({ item, ...props }) => {
   const [queue, setQueue] = useAtom(queueAtom);
   const [settings] = useSettings();
   const { processes, startBackgroundDownload } = useDownload();
-  const { startRemuxing, cancelRemuxing } = useRemuxHlsToMp4(item);
+  const { startRemuxing } = useRemuxHlsToMp4(item);
 
-  const [selectedMediaSource, setSelectedMediaSource] =
-    useState<MediaSourceInfo | null>(null);
+  const [selectedMediaSource, setSelectedMediaSource] = useState<
+    MediaSourceInfo | undefined
+  >(undefined);
   const [selectedAudioStream, setSelectedAudioStream] = useState<number>(-1);
   const [selectedSubtitleStream, setSelectedSubtitleStream] =
     useState<number>(0);
@@ -53,6 +55,20 @@ export const DownloadItem: React.FC<DownloadProps> = ({ item, ...props }) => {
     key: "Max",
     value: undefined,
   });
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!settings) return;
+      const { bitrate, mediaSource, audioIndex, subtitleIndex } =
+        getDefaultPlaySettings(item, settings);
+
+      // 4. Set states
+      setSelectedMediaSource(mediaSource);
+      setSelectedAudioStream(audioIndex ?? 0);
+      setSelectedSubtitleStream(subtitleIndex ?? -1);
+      setMaxBitrate(bitrate);
+    }, [item, settings])
+  );
 
   const userCanDownload = useMemo(() => {
     return user?.Policy?.EnableContentDownloading;

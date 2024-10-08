@@ -57,6 +57,7 @@ export const useIntroSkipper = (
   }, [introTimestamps, currentTime]);
 
   const skipIntro = useCallback(() => {
+    console.log("skipIntro");
     if (!introTimestamps || !videoRef.current) return;
     try {
       videoRef.current.seek(introTimestamps.IntroEnd);

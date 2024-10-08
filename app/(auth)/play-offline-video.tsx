@@ -1,5 +1,7 @@
 import { Controls } from "@/components/video-player/Controls";
-import { useWebSocket } from "@/hooks/useWebsockets";
+import { useAndroidNavigationBar } from "@/hooks/useAndroidNavigationBar";
+import { useOrientation } from "@/hooks/useOrientation";
+import { useOrientationSettings } from "@/hooks/useOrientationSettings";
 import { apiAtom } from "@/providers/JellyfinProvider";
 import {
   PlaybackType,
@@ -7,17 +9,18 @@ import {
 } from "@/providers/PlaySettingsProvider";
 import { useSettings } from "@/utils/atoms/settings";
 import { getBackdropUrl } from "@/utils/jellyfin/image/getBackdropUrl";
-import { getAuthHeaders } from "@/utils/jellyfin/jellyfin";
 import orientationToOrientationLock from "@/utils/OrientationLockConverter";
 import { secondsToTicks } from "@/utils/secondsToTicks";
 import { Api } from "@jellyfin/sdk";
-import { getPlaystateApi } from "@jellyfin/sdk/lib/utils/api";
 import * as Haptics from "expo-haptics";
+import * as NavigationBar from "expo-navigation-bar";
+import { useFocusEffect } from "expo-router";
 import * as ScreenOrientation from "expo-screen-orientation";
 import { useAtomValue } from "jotai";
 import React, {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -25,16 +28,11 @@ import React, {
 import { Dimensions, Platform, Pressable, StatusBar, View } from "react-native";
 import { useSharedValue } from "react-native-reanimated";
 import Video, { OnProgressData, VideoRef } from "react-native-video";
-import * as NavigationBar from "expo-navigation-bar";
-import { useLocalSearchParams, useGlobalSearchParams, Link } from "expo-router";
-
-import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client";
 
 export default function page() {
   const { playSettings, playUrl } = usePlaySettings();
 
   const api = useAtomValue(apiAtom);
-  const [settings] = useSettings();
   const videoRef = useRef<VideoRef | null>(null);
   const videoSource = useVideoSource(playSettings, api, playUrl);
   const firstTime = useRef(true);
@@ -45,27 +43,19 @@ export default function page() {
   const [ignoreSafeAreas, setIgnoreSafeAreas] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isBuffering, setIsBuffering] = useState(true);
-  const [orientation, setOrientation] = useState(
-    ScreenOrientation.OrientationLock.UNKNOWN
-  );
 
   const progress = useSharedValue(0);
   const isSeeking = useSharedValue(false);
   const cacheProgress = useSharedValue(0);
 
-  if (!playSettings || !playUrl || !api || !videoSource || !playSettings.item)
-    return null;
-
   const togglePlay = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (isPlaying) {
-      setIsPlaying(false);
       videoRef.current?.pause();
     } else {
-      setIsPlaying(true);
       videoRef.current?.resume();
     }
-  }, [isPlaying, api, playSettings?.item?.Id, videoRef, settings]);
+  }, [isPlaying]);
 
   const play = useCallback(() => {
     setIsPlaying(true);
@@ -77,67 +67,29 @@ export default function page() {
     videoRef.current?.pause();
   }, [videoRef]);
 
-  useEffect(() => {
-    play();
-    return () => {
-      stop();
-    };
-  });
+  useFocusEffect(
+    useCallback(() => {
+      play();
 
-  useEffect(() => {
-    const orientationSubscription =
-      ScreenOrientation.addOrientationChangeListener((event) => {
-        setOrientation(
-          orientationToOrientationLock(event.orientationInfo.orientation)
-        );
-      });
+      return () => {
+        stop();
+      };
+    }, [play, stop])
+  );
 
-    ScreenOrientation.getOrientationAsync().then((orientation) => {
-      setOrientation(orientationToOrientationLock(orientation));
-    });
+  const { orientation } = useOrientation();
+  useOrientationSettings();
+  useAndroidNavigationBar();
 
-    return () => {
-      orientationSubscription.remove();
-    };
+  const onProgress = useCallback(async (data: OnProgressData) => {
+    if (isSeeking.value === true) return;
+    progress.value = secondsToTicks(data.currentTime);
+    cacheProgress.value = secondsToTicks(data.playableDuration);
+    setIsBuffering(data.playableDuration === 0);
   }, []);
 
-  useEffect(() => {
-    if (settings?.autoRotate) {
-      // Don't need to do anything
-    } else if (settings?.defaultVideoOrientation) {
-      ScreenOrientation.lockAsync(settings.defaultVideoOrientation);
-    }
-
-    if (Platform.OS === "android") {
-      NavigationBar.setVisibilityAsync("hidden");
-      NavigationBar.setBehaviorAsync("overlay-swipe");
-    }
-
-    return () => {
-      if (settings?.autoRotate) {
-        ScreenOrientation.unlockAsync();
-      } else {
-        ScreenOrientation.lockAsync(
-          ScreenOrientation.OrientationLock.PORTRAIT_UP
-        );
-      }
-
-      if (Platform.OS === "android") {
-        NavigationBar.setVisibilityAsync("visible");
-        NavigationBar.setBehaviorAsync("inset-swipe");
-      }
-    };
-  }, [settings]);
-
-  const onProgress = useCallback(
-    async (data: OnProgressData) => {
-      if (isSeeking.value === true) return;
-      progress.value = secondsToTicks(data.currentTime);
-      cacheProgress.value = secondsToTicks(data.playableDuration);
-      setIsBuffering(data.playableDuration === 0);
-    },
-    [playSettings?.item.Id, isPlaying, api]
-  );
+  if (!playSettings || !playUrl || !api || !videoSource || !playSettings.item)
+    return null;
 
   return (
     <View
@@ -158,7 +110,6 @@ export default function page() {
         <Video
           ref={videoRef}
           source={videoSource}
-          paused={!isPlaying}
           style={{ width: "100%", height: "100%" }}
           resizeMode={ignoreSafeAreas ? "cover" : "contain"}
           onProgress={onProgress}
@@ -176,7 +127,9 @@ export default function page() {
           showNotificationControls={true}
           ignoreSilentSwitch="ignore"
           fullscreen={false}
-          onPlaybackStateChanged={(state) => setIsPlaying(state.isPlaying)}
+          onPlaybackStateChanged={(state) => {
+            if (isSeeking.value === false) setIsPlaying(state.isPlaying);
+          }}
         />
       </Pressable>
 
@@ -196,25 +149,6 @@ export default function page() {
       />
     </View>
   );
-}
-
-export function usePoster(
-  playSettings: PlaybackType | null,
-  api: Api | null
-): string | undefined {
-  const poster = useMemo(() => {
-    if (!playSettings?.item || !api) return undefined;
-    return playSettings.item.Type === "Audio"
-      ? `${api.basePath}/Items/${playSettings.item.AlbumId}/Images/Primary?tag=${playSettings.item.AlbumPrimaryImageTag}&quality=90&maxHeight=200&maxWidth=200`
-      : getBackdropUrl({
-          api,
-          item: playSettings.item,
-          quality: 70,
-          width: 200,
-        });
-  }, [playSettings?.item, api]);
-
-  return poster ?? undefined;
 }
 
 export function useVideoSource(

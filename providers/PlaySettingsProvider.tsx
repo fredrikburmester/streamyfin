@@ -8,7 +8,7 @@ import {
   BaseItemDto,
   MediaSourceInfo,
 } from "@jellyfin/sdk/lib/generated-client";
-import { getPlaystateApi, getSessionApi } from "@jellyfin/sdk/lib/utils/api";
+import { getSessionApi } from "@jellyfin/sdk/lib/utils/api";
 import { useAtomValue } from "jotai";
 import React, {
   createContext,
@@ -17,7 +17,8 @@ import React, {
   useEffect,
   useState,
 } from "react";
-import { apiAtom, getOrSetDeviceId, userAtom } from "./JellyfinProvider";
+import { apiAtom, userAtom } from "./JellyfinProvider";
+import iosFmp4 from "@/utils/profiles/iosFmp4";
 
 export type PlaybackType = {
   item?: BaseItemDto | null;
@@ -29,11 +30,17 @@ export type PlaybackType = {
 
 type PlaySettingsContextType = {
   playSettings: PlaybackType | null;
-  setPlaySettings: React.Dispatch<React.SetStateAction<PlaybackType | null>>;
+  setPlaySettings: (
+    dataOrUpdater:
+      | PlaybackType
+      | null
+      | ((prev: PlaybackType | null) => PlaybackType | null)
+  ) => Promise<{ url: string | null; sessionId: string | null } | null>;
   playUrl?: string | null;
   setPlayUrl: React.Dispatch<React.SetStateAction<string | null>>;
   playSessionId?: string | null;
   setOfflineSettings: (data: PlaybackType) => void;
+  setMusicPlaySettings: (item: BaseItemDto, url: string) => void;
 };
 
 const PlaySettingsContext = createContext<PlaySettingsContextType | undefined>(
@@ -55,52 +62,69 @@ export const PlaySettingsProvider: React.FC<{ children: React.ReactNode }> = ({
     _setPlaySettings(data);
   }, []);
 
+  const setMusicPlaySettings = (item: BaseItemDto, url: string) => {
+    setPlaySettings({
+      item: item,
+    });
+    setPlayUrl(url);
+  };
+
   const setPlaySettings = useCallback(
     async (
       dataOrUpdater:
         | PlaybackType
         | null
         | ((prev: PlaybackType | null) => PlaybackType | null)
-    ) => {
-      _setPlaySettings((prevSettings) => {
-        const newSettings =
-          typeof dataOrUpdater === "function"
-            ? dataOrUpdater(prevSettings)
-            : dataOrUpdater;
+    ): Promise<{ url: string | null; sessionId: string | null } | null> => {
+      if (!api || !user || !settings) {
+        _setPlaySettings(null);
+        return null;
+      }
 
-        if (!api || !user || !settings || newSettings === null) {
-          return newSettings;
-        }
+      const newSettings =
+        typeof dataOrUpdater === "function"
+          ? dataOrUpdater(playSettings)
+          : dataOrUpdater;
 
-        let deviceProfile: any = ios;
-        if (settings?.deviceProfile === "Native") deviceProfile = native;
-        if (settings?.deviceProfile === "Old") deviceProfile = old;
+      if (newSettings === null) {
+        _setPlaySettings(null);
+        return null;
+      }
 
-        getStreamUrl({
+      let deviceProfile: any = iosFmp4;
+      if (settings?.deviceProfile === "Native") deviceProfile = native;
+      if (settings?.deviceProfile === "Old") deviceProfile = old;
+
+      console.log("Selected sub index: ", newSettings?.subtitleIndex);
+
+      try {
+        const data = await getStreamUrl({
           api,
           deviceProfile,
           item: newSettings?.item,
           mediaSourceId: newSettings?.mediaSource?.Id,
           startTimeTicks: 0,
           maxStreamingBitrate: newSettings?.bitrate?.value,
-          audioStreamIndex: newSettings?.audioIndex
-            ? newSettings?.audioIndex
-            : 0,
-          subtitleStreamIndex: newSettings?.subtitleIndex
-            ? newSettings?.subtitleIndex
-            : -1,
+          audioStreamIndex: newSettings?.audioIndex ?? 0,
+          subtitleStreamIndex: newSettings?.subtitleIndex ?? -1,
           userId: user.Id,
           forceDirectPlay: false,
           sessionData: null,
-        }).then((data) => {
-          setPlayUrl(data?.url!);
-          setPlaySessionId(data?.sessionId!);
         });
 
-        return newSettings;
-      });
+        console.log("getStreamUrl ~ ", data?.url);
+
+        _setPlaySettings(newSettings);
+        setPlayUrl(data?.url!);
+        setPlaySessionId(data?.sessionId!);
+
+        return data;
+      } catch (error) {
+        console.warn("Error getting stream URL:", error);
+        return null;
+      }
     },
-    [api, user, settings, setPlayUrl]
+    [api, user, settings, playSettings]
   );
 
   useEffect(() => {
@@ -134,6 +158,7 @@ export const PlaySettingsProvider: React.FC<{ children: React.ReactNode }> = ({
         setPlaySettings,
         playUrl,
         setPlayUrl,
+        setMusicPlaySettings,
         setOfflineSettings,
         playSessionId,
       }}

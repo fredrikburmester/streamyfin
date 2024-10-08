@@ -9,7 +9,7 @@ export type Bitrate = {
   height?: number;
 };
 
-const BITRATES: Bitrate[] = [
+export const BITRATES: Bitrate[] = [
   {
     key: "Max",
     value: undefined,
@@ -39,7 +39,7 @@ const BITRATES: Bitrate[] = [
     value: 250000,
     height: 480,
   },
-];
+].sort((a, b) => (b.value || Infinity) - (a.value || Infinity));
 
 interface Props extends React.ComponentProps<typeof View> {
   onChange: (value: Bitrate) => void;

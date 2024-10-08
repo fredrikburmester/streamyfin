@@ -1,6 +1,7 @@
 import { itemRouter } from "@/components/common/TouchableItemRouter";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client";
 import axios from "axios";
+import { writeToLog } from "./log";
 
 interface IJobInput {
   deviceId?: string | null;
@@ -108,6 +109,7 @@ export async function cancelAllJobs({ authHeader, url, deviceId }: IJobInput) {
       });
     });
   } catch (error) {
+    writeToLog("ERROR", "Failed to cancel all jobs", error);
     console.error(error);
     return false;
   }
