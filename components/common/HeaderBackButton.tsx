@@ -24,14 +24,14 @@ export const HeaderBackButton: React.FC<Props> = ({
 
   if (background === "transparent" && Platform.OS !== "android")
     return (
-      <BlurView
-        {...props}
-        intensity={100}
-        className="overflow-hidden rounded-full p-2"
+      <TouchableOpacity
+        onPress={() => router.back()}
+        {...touchableOpacityProps}
       >
-        <TouchableOpacity
-          onPress={() => router.back()}
-          {...touchableOpacityProps}
+        <BlurView
+          {...props}
+          intensity={100}
+          className="overflow-hidden rounded-full p-2"
         >
           <Ionicons
             className="drop-shadow-2xl"
@@ -39,8 +39,8 @@ export const HeaderBackButton: React.FC<Props> = ({
             size={24}
             color="white"
           />
-        </TouchableOpacity>
-      </BlurView>
+        </BlurView>
+      </TouchableOpacity>
     );
 
   return (
