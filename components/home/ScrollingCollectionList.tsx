@@ -9,10 +9,8 @@ import {
 import { ScrollView, View, ViewProps } from "react-native";
 import ContinueWatchingPoster from "../ContinueWatchingPoster";
 import { ItemCardText } from "../ItemCardText";
-import { HorizontalScroll } from "../common/HorrizontalScroll";
 import { TouchableItemRouter } from "../common/TouchableItemRouter";
 import SeriesPoster from "../posters/SeriesPoster";
-import { FlashList } from "@shopify/flash-list";
 
 interface Props extends ViewProps {
   title?: string | null;
@@ -34,7 +32,7 @@ export const ScrollingCollectionList: React.FC<Props> = ({
     queryKey,
     queryFn,
     enabled: !disabled,
-    staleTime: 60 * 1000,
+    staleTime: 0,
   });
 
   if (disabled || !title) return null;

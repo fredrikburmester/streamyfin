@@ -95,8 +95,6 @@ export const PlaySettingsProvider: React.FC<{ children: React.ReactNode }> = ({
       if (settings?.deviceProfile === "Native") deviceProfile = native;
       if (settings?.deviceProfile === "Old") deviceProfile = old;
 
-      console.log("Selected sub index: ", newSettings?.subtitleIndex);
-
       try {
         const data = await getStreamUrl({
           api,
@@ -108,8 +106,7 @@ export const PlaySettingsProvider: React.FC<{ children: React.ReactNode }> = ({
           audioStreamIndex: newSettings?.audioIndex ?? 0,
           subtitleStreamIndex: newSettings?.subtitleIndex ?? -1,
           userId: user.Id,
-          forceDirectPlay: false,
-          sessionData: null,
+          forceDirectPlay: settings.forceDirectPlay,
         });
 
         console.log("getStreamUrl ~ ", data?.url);

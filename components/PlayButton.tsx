@@ -4,11 +4,11 @@ import { getParentBackdropImageUrl } from "@/utils/jellyfin/image/getParentBackd
 import { getPrimaryImageUrl } from "@/utils/jellyfin/image/getPrimaryImageUrl";
 import { runtimeTicksToMinutes } from "@/utils/time";
 import { useActionSheet } from "@expo/react-native-action-sheet";
-import { Feather, Ionicons } from "@expo/vector-icons";
+import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
 import { useAtom } from "jotai";
 import { useEffect, useMemo } from "react";
-import { TouchableOpacity, View } from "react-native";
+import { Linking, TouchableOpacity, View } from "react-native";
 import CastContext, {
   PlayServicesState,
   useMediaStatus,
@@ -27,6 +27,7 @@ import Animated, {
 import { Button } from "./Button";
 import { Text } from "./common/Text";
 import { useRouter } from "expo-router";
+import { useSettings } from "@/utils/atoms/settings";
 
 interface Props extends React.ComponentProps<typeof Button> {
   item?: BaseItemDto | null;
@@ -55,6 +56,7 @@ export const PlayButton: React.FC<Props> = ({ item, url, ...props }) => {
   const startColor = useSharedValue(memoizedColor);
   const widthProgress = useSharedValue(0);
   const colorChangeProgress = useSharedValue(0);
+  const [settings] = useSettings();
 
   const directStream = useMemo(() => {
     return !url?.includes("m3u8");
@@ -69,10 +71,18 @@ export const PlayButton: React.FC<Props> = ({ item, url, ...props }) => {
       );
       return;
     }
+
     if (!client) {
+      const vlcLink = "vlc://" + url;
+      if (vlcLink && settings?.openInVLC) {
+        Linking.openURL(vlcLink);
+        return;
+      }
+
       router.push("/play-video");
       return;
     }
+
     const options = ["Chromecast", "Device", "Cancel"];
     const cancelButtonIndex = 2;
     showActionSheetWithOptions(
@@ -308,6 +318,15 @@ export const PlayButton: React.FC<Props> = ({ item, url, ...props }) => {
             {client && (
               <Animated.Text style={animatedTextStyle}>
                 <Feather name="cast" size={22} />
+              </Animated.Text>
+            )}
+            {!client && settings?.openInVLC && (
+              <Animated.Text style={animatedTextStyle}>
+                <MaterialCommunityIcons
+                  name="vlc"
+                  size={18}
+                  color={animatedTextStyle.color}
+                />
               </Animated.Text>
             )}
           </View>

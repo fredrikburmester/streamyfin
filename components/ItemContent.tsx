@@ -1,9 +1,5 @@
 import { AudioTrackSelector } from "@/components/AudioTrackSelector";
-import {
-  Bitrate,
-  BITRATES,
-  BitrateSelector,
-} from "@/components/BitrateSelector";
+import { Bitrate, BitrateSelector } from "@/components/BitrateSelector";
 import { DownloadItem } from "@/components/DownloadItem";
 import { OverviewText } from "@/components/OverviewText";
 import { ParallaxScrollView } from "@/components/ParallaxPage";
@@ -18,6 +14,8 @@ import { SeasonEpisodesCarousel } from "@/components/series/SeasonEpisodesCarous
 import { useImageColors } from "@/hooks/useImageColors";
 import { apiAtom } from "@/providers/JellyfinProvider";
 import { usePlaySettings } from "@/providers/PlaySettingsProvider";
+import { useSettings } from "@/utils/atoms/settings";
+import { getDefaultPlaySettings } from "@/utils/jellyfin/getDefaultPlaySettings";
 import { getLogoImageUrlById } from "@/utils/jellyfin/image/getLogoImageUrlById";
 import {
   BaseItemDto,
@@ -27,23 +25,13 @@ import { Image } from "expo-image";
 import { useFocusEffect, useNavigation } from "expo-router";
 import * as ScreenOrientation from "expo-screen-orientation";
 import { useAtom } from "jotai";
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { View } from "react-native";
-import { useCastDevice } from "react-native-google-cast";
-import Animated from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Chromecast } from "./Chromecast";
 import { ItemHeader } from "./ItemHeader";
 import { MediaSourceSelector } from "./MediaSourceSelector";
 import { MoreMoviesWithActor } from "./MoreMoviesWithActor";
-import { useSettings } from "@/utils/atoms/settings";
-import { getDefaultPlaySettings } from "@/utils/jellyfin/getDefaultPlaySettings";
 
 export const ItemContent: React.FC<{ item: BaseItemDto }> = React.memo(
   ({ item }) => {
@@ -135,7 +123,7 @@ export const ItemContent: React.FC<{ item: BaseItemDto }> = React.memo(
       };
     }, []);
 
-    const headerHeightRef = useRef(400);
+    const [headerHeight, setHeaderHeight] = useState(350);
 
     useImageColors({ item });
 
@@ -154,26 +142,18 @@ export const ItemContent: React.FC<{ item: BaseItemDto }> = React.memo(
             </View>
           ),
       });
-
-      // setPlaySettings((prev) => ({
-      //   audioIndex: undefined,
-      //   subtitleIndex: undefined,
-      //   mediaSourceId: undefined,
-      //   bitrate: undefined,
-      //   mediaSource: item.MediaSources?.[0],
-      //   item,
-      // }));
     }, [item]);
 
     useEffect(() => {
+      // If landscape
       if (orientation !== ScreenOrientation.Orientation.PORTRAIT_UP) {
-        headerHeightRef.current = 230;
+        setHeaderHeight(230);
         return;
       }
-      if (item.Type === "Episode") headerHeightRef.current = 400;
-      else if (item.Type === "Movie") headerHeightRef.current = 500;
-      else headerHeightRef.current = 400;
-    }, [item, orientation]);
+
+      if (item.Type === "Movie") setHeaderHeight(500);
+      else setHeaderHeight(350);
+    }, [item.Type, orientation]);
 
     const logoUrl = useMemo(() => getLogoImageUrlById({ api, item }), [item]);
 
@@ -193,22 +173,20 @@ export const ItemContent: React.FC<{ item: BaseItemDto }> = React.memo(
       >
         <ParallaxScrollView
           className={`flex-1 ${loading ? "opacity-0" : "opacity-100"}`}
-          headerHeight={headerHeightRef.current}
+          headerHeight={headerHeight}
           headerImage={
-            <>
-              <Animated.View style={[{ flex: 1 }]}>
-                <ItemImage
-                  variant={
-                    item.Type === "Movie" && logoUrl ? "Backdrop" : "Primary"
-                  }
-                  item={item}
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                  }}
-                />
-              </Animated.View>
-            </>
+            <View style={[{ flex: 1 }]}>
+              <ItemImage
+                variant={
+                  item.Type === "Movie" && logoUrl ? "Backdrop" : "Primary"
+                }
+                item={item}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                }}
+              />
+            </View>
           }
           logo={
             <>
