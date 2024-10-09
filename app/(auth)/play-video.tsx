@@ -22,11 +22,9 @@ import { Dimensions, Pressable, StatusBar, View } from "react-native";
 import { useSharedValue } from "react-native-reanimated";
 import Video, {
   OnProgressData,
-  VideoRef,
-  SelectedTrack,
   SelectedTrackType,
+  VideoRef,
 } from "react-native-video";
-import { WithDefault } from "react-native/Libraries/Types/CodegenTypes";
 
 export default function page() {
   const { playSettings, playUrl, playSessionId } = usePlaySettings();
