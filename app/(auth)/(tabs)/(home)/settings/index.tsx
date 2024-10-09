@@ -1,13 +1,18 @@
 import { Button } from "@/components/Button";
 import { Text } from "@/components/common/Text";
-import { ListItem } from "@/components/ListItem";
+import { ListInputItem } from "@/components/list/ListInputItem";
+import { ListItem } from "@/components/list/ListItem";
+import { ListSection } from "@/components/list/ListSection";
 import { SettingToggles } from "@/components/settings/SettingToggles";
 import { useDownload } from "@/providers/DownloadProvider";
 import { apiAtom, useJellyfin, userAtom } from "@/providers/JellyfinProvider";
+import { useSettings } from "@/utils/atoms/settings";
 import { clearLogs, readFromLog } from "@/utils/log";
+import { Ionicons } from "@expo/vector-icons";
 import { getQuickConnectApi } from "@jellyfin/sdk/lib/utils/api";
 import { useQuery } from "@tanstack/react-query";
 import * as Haptics from "expo-haptics";
+import { useRouter } from "expo-router";
 import { useAtom } from "jotai";
 import { Alert, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -16,6 +21,7 @@ import { toast } from "sonner-native";
 export default function settings() {
   const { logout } = useJellyfin();
   const { deleteAllFiles } = useDownload();
+  const [settings, updateSettings] = useSettings();
 
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
@@ -57,6 +63,8 @@ export default function settings() {
     );
   };
 
+  const router = useRouter();
+
   return (
     <ScrollView
       contentContainerStyle={{
@@ -73,15 +81,46 @@ export default function settings() {
         >
           registerBackgroundFetchAsync
         </Button> */}
-        <View>
-          <Text className="font-bold text-lg mb-2">User Info</Text>
+        <ListSection title="USER INFO">
+          <ListItem title="User" text={user?.Name} />
+          <ListItem title="Server" text={api?.basePath} />
+          <ListItem title="Token" text={api?.accessToken} />
+        </ListSection>
 
-          <View className="flex flex-col rounded-xl overflow-hidden border-neutral-800 divide-y-2 divide-solid divide-neutral-800 ">
-            <ListItem title="User" subTitle={user?.Name} />
-            <ListItem title="Server" subTitle={api?.basePath} />
-            <ListItem title="Token" subTitle={api?.accessToken} />
-          </View>
-        </View>
+        <ListSection title="MEDIA">
+          <ListItem
+            title="Audio language"
+            iconAfter={
+              <Ionicons name="chevron-forward" size={20} color="white" />
+            }
+            onPress={() => router.push("/settings/audio-language")}
+          />
+          <ListItem
+            title="Subtitle language"
+            iconAfter={
+              <Ionicons name="chevron-forward" size={20} color="white" />
+            }
+            onPress={() => router.push("/settings/subtitle-language")}
+          />
+          <ListInputItem
+            textInputProps={{
+              placeholder: "30",
+              clearButtonMode: "never",
+              returnKeyType: "done",
+            }}
+            defaultValue={(settings?.forwardSkipTime || "").toString()}
+            title={"Forward skip"}
+            onChange={(val) => {
+              // 1. validate positive number
+              // 2. save settings
+              if (val.length === 0) return;
+              if (val.match(/^\d+$/)) {
+              } else {
+                toast.error("Invalid number");
+              }
+            }}
+          />
+        </ListSection>
 
         <View>
           <Text className="font-bold text-lg mb-2">Quick connect</Text>

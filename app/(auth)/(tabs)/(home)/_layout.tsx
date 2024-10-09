@@ -42,9 +42,15 @@ export default function IndexLayout() {
         }}
       />
       <Stack.Screen
-        name="settings"
+        name="settings/index"
         options={{
           title: "Settings",
+        }}
+      />
+      <Stack.Screen
+        name="settings/audio-language"
+        options={{
+          title: "Audio Language",
         }}
       />
       {Object.entries(nestedTabPageScreenOptions).map(([name, options]) => (

@@ -10,6 +10,7 @@ import {
   registerBackgroundFetchAsync,
   unregisterBackgroundFetchAsync,
 } from "@/utils/background-tasks";
+import { getStatistics } from "@/utils/optimize-server";
 import { getItemsApi } from "@jellyfin/sdk/lib/utils/api";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import * as BackgroundFetch from "expo-background-fetch";
@@ -18,7 +19,6 @@ import * as TaskManager from "expo-task-manager";
 import { useAtom } from "jotai";
 import { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
   Linking,
   Switch,
   TouchableOpacity,
@@ -32,8 +32,6 @@ import { Input } from "../common/Input";
 import { Text } from "../common/Text";
 import { Loader } from "../Loader";
 import { MediaToggles } from "./MediaToggles";
-import axios from "axios";
-import { getStatistics } from "@/utils/optimize-server";
 
 interface Props extends ViewProps {}
 
