@@ -214,18 +214,28 @@ export default function page() {
   return (
     <View
       style={{
+        flex: 1,
+        flexDirection: "column",
+        justifyContent: "center",
+        alignItems: "center",
         width: screenDimensions.width,
         height: screenDimensions.height,
         position: "relative",
       }}
-      className="flex flex-col items-center justify-center"
     >
       <StatusBar hidden />
       <Pressable
         onPress={() => {
           setShowControls(!showControls);
         }}
-        className="absolute z-0 h-full w-full"
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: screenDimensions.width,
+          height: screenDimensions.height,
+          zIndex: 0,
+        }}
       >
         <Video
           ref={videoRef}
