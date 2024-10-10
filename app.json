@@ -13,18 +13,13 @@
       "backgroundColor": "#2E2E2E"
     },
     "jsEngine": "hermes",
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "requireFullScreen": true,
       "infoPlist": {
         "NSCameraUsageDescription": "The app needs access to your camera to scan barcodes.",
         "NSMicrophoneUsageDescription": "The app needs access to your microphone.",
-        "UIBackgroundModes": [
-          "audio",
-          "fetch"
-        ],
+        "UIBackgroundModes": ["audio", "fetch"],
         "NSLocalNetworkUsageDescription": "The app needs access to your local network to connect to your Jellyfin server.",
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true
@@ -77,9 +72,7 @@
           "com.reactnative.googlecast.RNGCExpandedControllerActivity": true
         }
       ],
-      [
-        "./plugins/withExpandedController.js"
-      ],
+      ["./plugins/withExpandedController.js"],
       [
         "expo-build-properties",
         {
@@ -113,8 +106,7 @@
         {
           "motionPermission": "Allow Streamyfin to access your device motion for landscape video watching."
         }
-      ],
-      "expo-video"
+      ]
     ],
     "experiments": {
       "typedRoutes": true
