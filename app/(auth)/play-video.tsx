@@ -2,6 +2,7 @@ import { Controls } from "@/components/video-player/Controls";
 import { useAndroidNavigationBar } from "@/hooks/useAndroidNavigationBar";
 import { useOrientation } from "@/hooks/useOrientation";
 import { useOrientationSettings } from "@/hooks/useOrientationSettings";
+import useScreenDimensions from "@/hooks/useScreenDimensions";
 import { useWebSocket } from "@/hooks/useWebsockets";
 import { apiAtom } from "@/providers/JellyfinProvider";
 import {
@@ -40,25 +41,7 @@ export default function page() {
   const poster = usePoster(playSettings, api);
   const videoSource = useVideoSource(playSettings, api, poster, playUrl);
   const firstTime = useRef(true);
-
-  const [screenDimensions, setScreenDimensions] = useState(
-    Dimensions.get("screen")
-  );
-
-  useEffect(() => {
-    const updateDimensions = () => {
-      setScreenDimensions(Dimensions.get("screen"));
-    };
-
-    const dimensionsListener = Dimensions.addEventListener(
-      "change",
-      updateDimensions
-    );
-
-    return () => {
-      dimensionsListener.remove();
-    };
-  }, []);
+  const screenDimensions = useScreenDimensions();
 
   const [isPlaybackStopped, setIsPlaybackStopped] = useState(false);
   const [showControls, setShowControls] = useState(true);
