@@ -10,6 +10,7 @@ import { useAtom } from "jotai";
 import { useEffect, useMemo } from "react";
 import { Linking, TouchableOpacity, View } from "react-native";
 import CastContext, {
+  CastButton,
   PlayServicesState,
   useMediaStatus,
   useRemoteMediaClient,
@@ -318,6 +319,7 @@ export const PlayButton: React.FC<Props> = ({ item, url, ...props }) => {
             {client && (
               <Animated.Text style={animatedTextStyle}>
                 <Feather name="cast" size={22} />
+                <CastButton tintColor="transparent" />
               </Animated.Text>
             )}
             {!client && settings?.openInVLC && (
