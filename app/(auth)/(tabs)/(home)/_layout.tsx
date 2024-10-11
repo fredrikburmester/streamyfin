@@ -2,7 +2,7 @@ import { Chromecast } from "@/components/Chromecast";
 import { HeaderBackButton } from "@/components/common/HeaderBackButton";
 import { nestedTabPageScreenOptions } from "@/components/stacks/NestedTabPageStack";
 import { useDownload } from "@/providers/DownloadProvider";
-import { Feather } from "@expo/vector-icons";
+import { Feather, Ionicons } from "@expo/vector-icons";
 import { Stack, useRouter } from "expo-router";
 import { Platform, TouchableOpacity, View } from "react-native";
 
@@ -45,6 +45,18 @@ export default function IndexLayout() {
         name="settings"
         options={{
           title: "Settings",
+          headerRight: () => (
+            <View className="">
+              <Ionicons
+                name="file-tray-full-outline"
+                size={22}
+                color="white"
+                onPress={() => {
+                  router.push("/logs");
+                }}
+              />
+            </View>
+          ),
         }}
       />
       {Object.entries(nestedTabPageScreenOptions).map(([name, options]) => (

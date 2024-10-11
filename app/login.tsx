@@ -2,11 +2,12 @@ import { Button } from "@/components/Button";
 import { Input } from "@/components/common/Input";
 import { Text } from "@/components/common/Text";
 import { apiAtom, useJellyfin } from "@/providers/JellyfinProvider";
+import { writeToLog } from "@/utils/log";
 import { Ionicons } from "@expo/vector-icons";
 import { PublicSystemInfo } from "@jellyfin/sdk/lib/generated-client";
 import { getSystemApi } from "@jellyfin/sdk/lib/utils/api";
 import { Image } from "expo-image";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useAtom } from "jotai";
 import React, { useEffect, useState } from "react";
 import {
@@ -27,6 +28,7 @@ const Login: React.FC = () => {
   const { setServer, login, removeServer, initiateQuickConnect } =
     useJellyfin();
   const [api] = useAtom(apiAtom);
+  const router = useRouter();
   const params = useLocalSearchParams();
 
   const {
@@ -72,7 +74,17 @@ const Login: React.FC = () => {
     try {
       const result = CredentialsSchema.safeParse(credentials);
       if (result.success) {
-        await login(credentials.username, credentials.password);
+        try {
+          await login(credentials.username, credentials.password);
+        } catch (loginError) {
+          if (loginError instanceof Error) {
+            setError(loginError.message);
+          } else {
+            setError("An unexpected error occurred during login");
+          }
+        }
+      } else {
+        setError("Invalid credentials format");
       }
     } catch (error) {
       if (error instanceof Error) {
@@ -105,37 +117,72 @@ const Login: React.FC = () => {
   async function checkUrl(url: string) {
     url = url.endsWith("/") ? url.slice(0, -1) : url;
     setLoadingServerCheck(true);
+    writeToLog("INFO", `Checking URL: ${url}`);
 
-    const protocols = ["https://", "http://"];
-    const timeout = 2000; // 2 seconds timeout for long 404 responses
+    const timeout = 5000; // 5 seconds timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
 
     try {
-      for (const protocol of protocols) {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), timeout);
-
-        try {
-          const response = await fetch(`${protocol}${url}/System/Info/Public`, {
-            mode: "cors",
-            signal: controller.signal,
-          });
-          clearTimeout(timeoutId);
-          if (response.ok) {
-            const data = (await response.json()) as PublicSystemInfo;
-            setServerName(data.ServerName || "");
-            return `${protocol}${url}`;
-          }
-        } catch (e) {
-          const error = e as Error;
-          if (error.name === "AbortError") {
-            console.log(`Request to ${protocol}${url} timed out`);
-          } else {
-            console.log(`Error checking ${protocol}${url}:`, error);
-          }
+      // Try HTTPS first
+      const httpsUrl = `https://${url}/System/Info/Public`;
+      try {
+        const response = await fetch(httpsUrl, {
+          mode: "cors",
+          signal: controller.signal,
+        });
+        if (response.ok) {
+          const data = (await response.json()) as PublicSystemInfo;
+          setServerName(data.ServerName || "");
+          return `https://${url}`;
+        } else {
+          writeToLog(
+            "WARN",
+            `HTTPS connection failed with status: ${response.status}`
+          );
         }
+      } catch (e) {
+        writeToLog("WARN", "HTTPS connection failed - trying HTTP", e);
+      }
+
+      // If HTTPS didn't work, try HTTP
+      const httpUrl = `http://${url}/System/Info/Public`;
+      try {
+        const response = await fetch(httpUrl, {
+          mode: "cors",
+          signal: controller.signal,
+        });
+        writeToLog("INFO", `HTTP response status: ${response.status}`);
+        if (response.ok) {
+          const data = (await response.json()) as PublicSystemInfo;
+          setServerName(data.ServerName || "");
+          return `http://${url}`;
+        } else {
+          writeToLog(
+            "WARN",
+            `HTTP connection failed with status: ${response.status}`
+          );
+        }
+      } catch (e) {
+        writeToLog("ERROR", "HTTP connection failed", e);
+      }
+
+      // If neither worked, return undefined
+      writeToLog(
+        "ERROR",
+        `Failed to connect to ${url} using both HTTPS and HTTP`
+      );
+      return undefined;
+    } catch (e) {
+      const error = e as Error;
+      if (error.name === "AbortError") {
+        writeToLog("ERROR", `Request to ${url} timed out`, error);
+      } else {
+        writeToLog("ERROR", `Unexpected error checking ${url}`, error);
       }
       return undefined;
     } finally {
+      clearTimeout(timeoutId);
       setLoadingServerCheck(false);
     }
   }
@@ -197,6 +244,16 @@ const Login: React.FC = () => {
           style={{ flex: 1, height: "100%" }}
         >
           <View className="flex flex-col w-full h-full relative items-center justify-center">
+            <View className="absolute top-4 right-4">
+              <Ionicons
+                name="file-tray-full-outline"
+                size={22}
+                color="white"
+                onPress={() => {
+                  router.push("/logs");
+                }}
+              />
+            </View>
             <View className="px-4 -mt-20">
               <View className="mb-4">
                 <Text className="text-3xl font-bold mb-1">

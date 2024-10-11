@@ -29,7 +29,7 @@ export const writeToLog = async (
   const logs: LogEntry[] = currentLogs ? JSON.parse(currentLogs) : [];
   logs.push(newEntry);
 
-  const maxLogs = 100;
+  const maxLogs = 1000;
   const recentLogs = logs.slice(Math.max(logs.length - maxLogs, 0));
 
   await AsyncStorage.setItem("logs", JSON.stringify(recentLogs));
