@@ -1,0 +1,38 @@
+{
+  "login": {
+    "username_required": "Benutzername benötigt",
+    "error_title": "Fehler",
+    "url_error_message": "URL muss mit http oder https beginnen.",
+    "login": "Log in",
+    "login_subtitle": "Logge dich in einen Account ein",
+    "username_placeholder": "Benutzer",
+    "password_placeholder": "Passwort",
+    "login_button": "Log in"
+  },
+  "server": {
+    "server_label": "Server: {{serverURL}}",
+    "change_server": "Server ändern",
+    "connect_to_server": "Verbinde deinen Jellyfin Server",
+    "server_url_placeholder": "Server URL",
+    "server_url_hint": "Server URL benötigt http oder https",
+    "connect_button": "Verbinden"
+  },
+  "home": {
+    "home": "Home",
+    "noInternet": "Kein Internet",
+    "noInternetMessage": "Keine Sorge, du kannst heruntergeladene \nInhalte anschauen.",
+    "goToDownloads": "Gehe zu Downloads",
+    "oops": "Upsi!",
+    "errorMessage": "Irgendwas ist schiefgegangen.\nBitte logge dich aus und wieder ein.",
+    "continueWatching": "Anschauen fortsetzen",
+    "nextUp": "Als nächstes"
+    "recentlyAddedMovies": "Hinzugefügt in Filme",
+    "recentlyAddedTVShows": "Hinzugefügt in Serien",
+    "suggestions": "Vorschläge"
+  },
+  "tabs": {
+    "home": "Home",
+    "search": "Suche",
+    "library": "Bibliothek"
+  }
+}
