@@ -17,7 +17,13 @@ import { getPlaystateApi } from "@jellyfin/sdk/lib/utils/api";
 import * as Haptics from "expo-haptics";
 import { useFocusEffect } from "expo-router";
 import { useAtomValue } from "jotai";
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Dimensions, Pressable, StatusBar, View } from "react-native";
 import { useSharedValue } from "react-native-reanimated";
 import Video, {
@@ -35,7 +41,24 @@ export default function page() {
   const videoSource = useVideoSource(playSettings, api, poster, playUrl);
   const firstTime = useRef(true);
 
-  const screenDimensions = Dimensions.get("screen");
+  const [screenDimensions, setScreenDimensions] = useState(
+    Dimensions.get("screen")
+  );
+
+  useEffect(() => {
+    const updateDimensions = () => {
+      setScreenDimensions(Dimensions.get("screen"));
+    };
+
+    const dimensionsListener = Dimensions.addEventListener(
+      "change",
+      updateDimensions
+    );
+
+    return () => {
+      dimensionsListener.remove();
+    };
+  }, []);
 
   const [isPlaybackStopped, setIsPlaybackStopped] = useState(false);
   const [showControls, setShowControls] = useState(true);
