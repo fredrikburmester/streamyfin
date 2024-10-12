@@ -8,25 +8,13 @@ import {
   PlaybackType,
   usePlaySettings,
 } from "@/providers/PlaySettingsProvider";
-import { useSettings } from "@/utils/atoms/settings";
-import { getBackdropUrl } from "@/utils/jellyfin/image/getBackdropUrl";
-import orientationToOrientationLock from "@/utils/OrientationLockConverter";
 import { secondsToTicks } from "@/utils/secondsToTicks";
 import { Api } from "@jellyfin/sdk";
 import * as Haptics from "expo-haptics";
-import * as NavigationBar from "expo-navigation-bar";
 import { useFocusEffect } from "expo-router";
-import * as ScreenOrientation from "expo-screen-orientation";
 import { useAtomValue } from "jotai";
-import React, {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import { Dimensions, Platform, Pressable, StatusBar, View } from "react-native";
+import React, { useCallback, useMemo, useRef, useState } from "react";
+import { Pressable, StatusBar, View } from "react-native";
 import { useSharedValue } from "react-native-reanimated";
 import Video, { OnProgressData, VideoRef } from "react-native-video";
 
