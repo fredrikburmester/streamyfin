@@ -2,6 +2,7 @@ import { Controls } from "@/components/video-player/Controls";
 import { useAndroidNavigationBar } from "@/hooks/useAndroidNavigationBar";
 import { useOrientation } from "@/hooks/useOrientation";
 import { useOrientationSettings } from "@/hooks/useOrientationSettings";
+import useScreenDimensions from "@/hooks/useScreenDimensions";
 import { apiAtom } from "@/providers/JellyfinProvider";
 import {
   PlaybackType,
@@ -37,7 +38,10 @@ export default function page() {
   const videoSource = useVideoSource(playSettings, api, playUrl);
   const firstTime = useRef(true);
 
-  const screenDimensions = Dimensions.get("screen");
+  const screenDimensions = useScreenDimensions();
+  useOrientation();
+  useOrientationSettings();
+  useAndroidNavigationBar();
 
   const [showControls, setShowControls] = useState(true);
   const [ignoreSafeAreas, setIgnoreSafeAreas] = useState(false);
@@ -76,10 +80,6 @@ export default function page() {
       };
     }, [play, stop])
   );
-
-  const { orientation } = useOrientation();
-  useOrientationSettings();
-  useAndroidNavigationBar();
 
   const onProgress = useCallback(async (data: OnProgressData) => {
     if (isSeeking.value === true) return;
