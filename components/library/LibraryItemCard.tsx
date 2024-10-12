@@ -68,6 +68,7 @@ export const LibraryItemCard: React.FC<Props> = ({ library, ...props }) => {
       });
       return response.data.TotalRecordCount;
     },
+    staleTime: 1000 * 60 * 60,
   });
 
   if (!url) return null;
