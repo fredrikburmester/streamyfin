@@ -292,6 +292,7 @@ export const Controls: React.FC<Props> = ({
               left: 0,
               width: windowDimensions.width + 100,
               height: windowDimensions.height + 100,
+              opacity: showControls ? 1 : 0,
             },
           ]}
           className={`bg-black/50 z-0`}
