@@ -1,10 +1,30 @@
-import { TabBarIcon } from "@/components/navigation/TabBarIcon";
-import { Colors } from "@/constants/Colors";
-import { BlurView } from "expo-blur";
 import * as NavigationBar from "expo-navigation-bar";
-import { Tabs } from "expo-router";
 import React, { useEffect } from "react";
-import { Platform, StyleSheet } from "react-native";
+import { Platform, View } from "react-native";
+
+import { withLayoutContext } from "expo-router";
+
+import {
+  createNativeBottomTabNavigator,
+  NativeBottomTabNavigationEventMap,
+} from "react-native-bottom-tabs/react-navigation";
+
+const { Navigator } = createNativeBottomTabNavigator();
+
+import { BottomTabNavigationOptions } from "@react-navigation/bottom-tabs";
+
+import type {
+  ParamListBase,
+  TabNavigationState,
+} from "@react-navigation/native";
+import {} from "@expo/vector-icons/Ionicons";
+
+export const NativeTabs = withLayoutContext<
+  BottomTabNavigationOptions,
+  typeof Navigator,
+  TabNavigationState<ParamListBase>,
+  NativeBottomTabNavigationEventMap
+>(Navigator);
 
 export default function TabLayout() {
   useEffect(() => {
@@ -15,73 +35,32 @@ export default function TabLayout() {
   }, []);
 
   return (
-    <Tabs
-      initialRouteName="home"
-      screenOptions={{
-        tabBarActiveTintColor: Colors.tabIconSelected,
-        headerShown: false,
-        tabBarStyle: {
-          position: "absolute",
-          borderTopLeftRadius: 0,
-          borderTopRightRadius: 0,
-          borderTopWidth: 0,
-          paddingTop: 8,
-          paddingBottom: Platform.OS === "android" ? 8 : 26,
-          height: Platform.OS === "android" ? 58 : 74,
-        },
-        tabBarBackground: () =>
-          Platform.OS === "ios" ? (
-            <BlurView
-              experimentalBlurMethod="dimezisBlurView"
-              intensity={95}
-              style={{
-                ...StyleSheet.absoluteFillObject,
-                overflow: "hidden",
-                borderTopLeftRadius: 0,
-                borderTopRightRadius: 0,
-                backgroundColor: "black",
-              }}
-            />
-          ) : undefined,
-      }}
-    >
-      <Tabs.Screen redirect name="index" />
-      <Tabs.Screen
+    <NativeTabs sidebarAdaptable ignoresTopSafeArea>
+      <NativeTabs.Screen redirect name="index" />
+      <NativeTabs.Screen
         name="(home)"
         options={{
-          headerShown: false,
           title: "Home",
-          tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon
-              name={focused ? "home" : "home-outline"}
-              color={color}
-            />
-          ),
+          tabBarIcon: ({ color, focused, size }) =>
+            require("@/assets/icons/house.fill.png"),
         }}
       />
-      <Tabs.Screen
+      <NativeTabs.Screen
         name="(search)"
         options={{
-          headerShown: false,
           title: "Search",
-          tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name={focused ? "search" : "search"} color={color} />
-          ),
+          tabBarIcon: ({ color, focused, size }) =>
+            require("@/assets/icons/magnifyingglass.png"),
         }}
       />
-      <Tabs.Screen
+      <NativeTabs.Screen
         name="(libraries)"
         options={{
-          headerShown: false,
           title: "Library",
-          tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon
-              name={focused ? "apps" : "apps-outline"}
-              color={color}
-            />
-          ),
+          tabBarIcon: ({ color, focused, size }) =>
+            require("@/assets/icons/server.rack.png"),
         }}
       />
-    </Tabs>
+    </NativeTabs>
   );
 }
