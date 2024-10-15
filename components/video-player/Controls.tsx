@@ -11,10 +11,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-<<<<<<< HEAD
 import { EpisodeList } from "@/components/EpisodeList";
-=======
->>>>>>> bbd12c540ad2cb9085f228be164479ac59788039
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Dimensions,
@@ -36,10 +33,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { VideoRef } from "react-native-video";
 import { Text } from "../common/Text";
 import { Loader } from "../Loader";
-<<<<<<< HEAD
 import { EpisodeCard } from "../downloads/EpisodeCard";
-=======
->>>>>>> bbd12c540ad2cb9085f228be164479ac59788039
 
 interface Props {
   item: BaseItemDto;
@@ -88,12 +82,9 @@ export const Controls: React.FC<Props> = ({
   const [currentTime, setCurrentTime] = useState(0); // Seconds
   const [remainingTime, setRemainingTime] = useState(0); // Seconds
 
-<<<<<<< HEAD
   const [EpisodeView, setEpisodeView] = useState(false);
   
 
-=======
->>>>>>> bbd12c540ad2cb9085f228be164479ac59788039
   const min = useSharedValue(0);
   const max = useSharedValue(item.RunTimeTicks || 0);
 
@@ -105,10 +96,6 @@ export const Controls: React.FC<Props> = ({
     videoRef
   );
 
-<<<<<<< HEAD
-
-=======
->>>>>>> bbd12c540ad2cb9085f228be164479ac59788039
   const { showSkipCreditButton, skipCredit } = useCreditSkipper(
     item.Id,
     currentTime,
@@ -245,13 +232,10 @@ export const Controls: React.FC<Props> = ({
     setIgnoreSafeAreas((prev) => !prev);
   }, []);
 
-<<<<<<< HEAD
   const toggleEpisodeView = useCallback(() => {
     setEpisodeView((prev) => !prev);
   }, []);
 
-=======
->>>>>>> bbd12c540ad2cb9085f228be164479ac59788039
   return (
     <View
       style={[
