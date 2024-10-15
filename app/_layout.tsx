@@ -346,6 +346,13 @@ function Layout() {
                           }}
                         />
                         <Stack.Screen
+                          name="logs"
+                          options={{
+                            presentation: "modal",
+                            title: "Logs",
+                          }}
+                        />
+                        <Stack.Screen
                           name="(auth)/play-offline-video"
                           options={{
                             headerShown: false,

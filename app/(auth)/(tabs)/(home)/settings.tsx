@@ -20,12 +20,6 @@ export default function settings() {
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
 
-  const { data: logs } = useQuery({
-    queryKey: ["logs"],
-    queryFn: async () => readFromLog(),
-    refetchInterval: 1000,
-  });
-
   const insets = useSafeAreaInsets();
 
   const openQuickConnectAuthCodeInput = () => {
@@ -127,30 +121,6 @@ export default function settings() {
             >
               Delete all logs
             </Button>
-          </View>
-        </View>
-        <View>
-          <Text className="font-bold text-lg mb-2">Logs</Text>
-          <View className="flex flex-col space-y-2">
-            {logs?.map((log, index) => (
-              <View key={index} className="bg-neutral-900 rounded-xl p-3">
-                <Text
-                  className={`
-                  mb-1
-              ${log.level === "INFO" && "text-blue-500"}
-              ${log.level === "ERROR" && "text-red-500"}
-                `}
-                >
-                  {log.level}
-                </Text>
-                <Text uiTextView selectable className="text-xs">
-                  {log.message}
-                </Text>
-              </View>
-            ))}
-            {logs?.length === 0 && (
-              <Text className="opacity-50">No logs available</Text>
-            )}
           </View>
         </View>
       </View>
