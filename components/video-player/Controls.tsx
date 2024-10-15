@@ -11,6 +11,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
+import { EpisodeList } from "@/components/EpisodeList";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Dimensions,
@@ -32,6 +33,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { VideoRef } from "react-native-video";
 import { Text } from "../common/Text";
 import { Loader } from "../Loader";
+import { EpisodeCard } from "../downloads/EpisodeCard";
 
 interface Props {
   item: BaseItemDto;
@@ -80,6 +82,9 @@ export const Controls: React.FC<Props> = ({
   const [currentTime, setCurrentTime] = useState(0); // Seconds
   const [remainingTime, setRemainingTime] = useState(0); // Seconds
 
+  const [EpisodeView, setEpisodeView] = useState(false);
+  
+
   const min = useSharedValue(0);
   const max = useSharedValue(item.RunTimeTicks || 0);
 
@@ -90,6 +95,7 @@ export const Controls: React.FC<Props> = ({
     currentTime,
     videoRef
   );
+
 
   const { showSkipCreditButton, skipCredit } = useCreditSkipper(
     item.Id,
@@ -227,6 +233,10 @@ export const Controls: React.FC<Props> = ({
     setIgnoreSafeAreas((prev) => !prev);
   }, []);
 
+  const toggleEpisodeView = useCallback(() => {
+    setEpisodeView((prev) => !prev);
+  }, []);
+
   return (
     <View
       style={[
@@ -327,6 +337,26 @@ export const Controls: React.FC<Props> = ({
         pointerEvents={showControls ? "auto" : "none"}
         className={`flex flex-row items-center space-x-2 z-10 p-4`}
       >
+        {item?.Type === "Episode" && (
+          <TouchableOpacity
+          onPress={() => {setEpisodeView((prev) => !prev)}}
+          className="aspect-square flex flex-col bg-neutral-800/90 rounded-xl items-center justify-center p-2"
+          >
+          <Ionicons name="list" size={24} color="white" />
+        </TouchableOpacity>
+      )}
+      {EpisodeView && (
+        <View style={{
+          position: 'absolute',
+          top: 60, 
+          left: 0,
+          right: 0,
+        }}>
+          <EpisodeList
+            showId={item.SeriesId}
+          />
+        </View>
+      )}
         <TouchableOpacity
           onPress={toggleIgnoreSafeAreas}
           className="aspect-square flex flex-col bg-neutral-800/90 rounded-xl items-center justify-center p-2"
