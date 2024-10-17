@@ -1,3 +1,5 @@
+import { Text } from "@/components/common/Text";
+import AlbumCover from "@/components/posters/AlbumCover";
 import { Controls } from "@/components/video-player/Controls";
 import { useAndroidNavigationBar } from "@/hooks/useAndroidNavigationBar";
 import { useOrientation } from "@/hooks/useOrientation";
@@ -15,16 +17,14 @@ import { secondsToTicks } from "@/utils/secondsToTicks";
 import { Api } from "@jellyfin/sdk";
 import { getPlaystateApi } from "@jellyfin/sdk/lib/utils/api";
 import * as Haptics from "expo-haptics";
+import { Image } from "expo-image";
 import { useFocusEffect } from "expo-router";
 import { useAtomValue } from "jotai";
+import { debounce } from "lodash";
 import React, { useCallback, useMemo, useRef, useState } from "react";
-import { Pressable, StatusBar, useWindowDimensions, View } from "react-native";
+import { Dimensions, Pressable, StatusBar, View } from "react-native";
 import { useSharedValue } from "react-native-reanimated";
-import Video, {
-  OnProgressData,
-  SelectedTrackType,
-  VideoRef,
-} from "react-native-video";
+import Video, { OnProgressData, VideoRef } from "react-native-video";
 
 export default function page() {
   const { playSettings, playUrl, playSessionId } = usePlaySettings();
@@ -34,7 +34,8 @@ export default function page() {
   const poster = usePoster(playSettings, api);
   const videoSource = useVideoSource(playSettings, api, poster, playUrl);
   const firstTime = useRef(true);
-  const dimensions = useWindowDimensions();
+
+  const screenDimensions = Dimensions.get("screen");
 
   const [isPlaybackStopped, setIsPlaybackStopped] = useState(false);
   const [showControls, setShowControls] = useState(true);
@@ -90,15 +91,18 @@ export default function page() {
   );
 
   const play = useCallback(() => {
+    console.log("play");
     videoRef.current?.resume();
     reportPlaybackStart();
   }, [videoRef]);
 
   const pause = useCallback(() => {
+    console.log("play");
     videoRef.current?.pause();
   }, [videoRef]);
 
   const stop = useCallback(() => {
+    console.log("stop");
     setIsPlaybackStopped(true);
     videoRef.current?.pause();
     reportPlaybackStopped();
@@ -169,7 +173,7 @@ export default function page() {
     }, [play, stop])
   );
 
-  useOrientation();
+  const { orientation } = useOrientation();
   useOrientationSettings();
   useAndroidNavigationBar();
 
@@ -180,69 +184,34 @@ export default function page() {
     stopPlayback: stop,
   });
 
-  const selectedSubtitleTrack = useMemo(() => {
-    const a = playSettings?.mediaSource?.MediaStreams?.find(
-      (s) => s.Index === playSettings.subtitleIndex
-    );
-    console.log(a);
-    return a;
-  }, [playSettings]);
-
-  const [hlsSubTracks, setHlsSubTracks] = useState<
-    {
-      index: number;
-      language?: string | undefined;
-      selected?: boolean | undefined;
-      title?: string | undefined;
-      type: any;
-    }[]
-  >([]);
-
-  const selectedTextTrack = useMemo(() => {
-    for (let st of hlsSubTracks) {
-      if (st.title === selectedSubtitleTrack?.DisplayTitle) {
-        return {
-          type: SelectedTrackType.TITLE,
-          value: selectedSubtitleTrack?.DisplayTitle ?? "",
-        };
-      }
-    }
-    return undefined;
-  }, [hlsSubTracks]);
-
   return (
     <View
       style={{
-        flex: 1,
-        flexDirection: "column",
-        justifyContent: "center",
-        alignItems: "center",
-        width: dimensions.width,
-        height: dimensions.height,
+        width: screenDimensions.width,
+        height: screenDimensions.height,
         position: "relative",
       }}
+      className="flex flex-col items-center justify-center"
     >
       <StatusBar hidden />
+
+      <View className="h-screen w-screen top-0 left-0 flex flex-col items-center justify-center p-4 absolute z-0">
+        <Image
+          source={poster}
+          style={{ width: "100%", height: "100%", resizeMode: "contain" }}
+        />
+      </View>
+
       <Pressable
         onPress={() => {
           setShowControls(!showControls);
         }}
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: dimensions.width,
-          height: dimensions.height,
-          zIndex: 0,
-        }}
+        className="absolute z-0 h-full w-full opacity-0"
       >
         <Video
           ref={videoRef}
           source={videoSource}
-          style={{
-            width: dimensions.width,
-            height: dimensions.height,
-          }}
+          style={{ width: "100%", height: "100%" }}
           resizeMode={ignoreSafeAreas ? "cover" : "contain"}
           onProgress={onProgress}
           onError={() => {}}
@@ -261,13 +230,8 @@ export default function page() {
           ignoreSilentSwitch="ignore"
           fullscreen={false}
           onPlaybackStateChanged={(state) => {
-            if (isSeeking.value === false) setIsPlaying(state.isPlaying);
+            setIsPlaying(state.isPlaying);
           }}
-          onTextTracks={(data) => {
-            console.log("onTextTracks ~", data);
-            setHlsSubTracks(data.textTracks as any);
-          }}
-          selectedTextTrack={selectedTextTrack}
         />
       </Pressable>
 
@@ -284,6 +248,7 @@ export default function page() {
         setShowControls={setShowControls}
         setIgnoreSafeAreas={setIgnoreSafeAreas}
         ignoreSafeAreas={ignoreSafeAreas}
+        enableTrickplay={false}
       />
     </View>
   );

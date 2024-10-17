@@ -103,12 +103,6 @@ TaskManager.defineTask(BACKGROUND_FETCH_TASK, async () => {
   if (!token || !deviceId || !baseDirectory)
     return BackgroundFetch.BackgroundFetchResult.NoData;
 
-  console.log({
-    token,
-    url,
-    deviceId,
-  });
-
   const jobs = await getAllJobsByDeviceId({
     deviceId,
     authHeader: token,
@@ -120,14 +114,6 @@ TaskManager.defineTask(BACKGROUND_FETCH_TASK, async () => {
   for (let job of jobs) {
     if (job.status === "completed") {
       const downloadUrl = url + "download/" + job.id;
-      console.log({
-        token,
-        deviceId,
-        baseDirectory,
-        url,
-        downloadUrl,
-      });
-
       const tasks = await checkForExistingDownloads();
 
       if (tasks.find((task) => task.id === job.id)) {
@@ -137,7 +123,7 @@ TaskManager.defineTask(BACKGROUND_FETCH_TASK, async () => {
 
       download({
         id: job.id,
-        url: url + "download/" + job.id,
+        url: downloadUrl,
         destination: `${baseDirectory}${job.item.Id}.mp4`,
         headers: {
           Authorization: token,
@@ -337,7 +323,7 @@ function Layout() {
                           }}
                         />
                         <Stack.Screen
-                          name="(auth)/play-video"
+                          name="(auth)/player"
                           options={{
                             headerShown: false,
                             autoHideHomeIndicator: true,
@@ -346,7 +332,7 @@ function Layout() {
                           }}
                         />
                         <Stack.Screen
-                          name="(auth)/play-offline-video"
+                          name="(auth)/vlc-player"
                           options={{
                             headerShown: false,
                             autoHideHomeIndicator: true,
@@ -355,7 +341,25 @@ function Layout() {
                           }}
                         />
                         <Stack.Screen
-                          name="(auth)/play-music"
+                          name="(auth)/offline-player"
+                          options={{
+                            headerShown: false,
+                            autoHideHomeIndicator: true,
+                            title: "",
+                            animation: "fade",
+                          }}
+                        />
+                        <Stack.Screen
+                          name="(auth)/offline-vlc-player"
+                          options={{
+                            headerShown: false,
+                            autoHideHomeIndicator: true,
+                            title: "",
+                            animation: "fade",
+                          }}
+                        />
+                        <Stack.Screen
+                          name="(auth)/music-player"
                           options={{
                             headerShown: false,
                             autoHideHomeIndicator: true,

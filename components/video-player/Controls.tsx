@@ -85,16 +85,22 @@ export const Controls: React.FC<Props> = ({
 
   const wasPlayingRef = useRef(false);
 
+  const seek = (ticks: number) => {
+    videoRef.current?.seek(ticks);
+  };
+
   const { showSkipButton, skipIntro } = useIntroSkipper(
     item.Id,
     currentTime,
-    videoRef
+    seek,
+    () => videoRef.current?.resume()
   );
 
   const { showSkipCreditButton, skipCredit } = useCreditSkipper(
     item.Id,
     currentTime,
-    videoRef
+    seek,
+    () => videoRef.current?.resume()
   );
 
   const goToPreviousItem = useCallback(() => {
