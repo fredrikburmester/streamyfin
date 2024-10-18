@@ -21,7 +21,8 @@ interface CreditTimestamps {
 export const useCreditSkipper = (
   itemId: string | undefined,
   currentTime: number,
-  videoRef: React.RefObject<any>
+  seek: (time: number) => void,
+  play: () => void
 ) => {
   const [api] = useAtom(apiAtom);
   const [showSkipCreditButton, setShowSkipCreditButton] = useState(false);
@@ -30,7 +31,6 @@ export const useCreditSkipper = (
     queryKey: ["creditTimestamps", itemId],
     queryFn: async () => {
       if (!itemId) {
-        console.log("No item id");
         return null;
       }
 
@@ -61,17 +61,16 @@ export const useCreditSkipper = (
   }, [creditTimestamps, currentTime]);
 
   const skipCredit = useCallback(() => {
-    console.log("skipCredits");
-    if (!creditTimestamps || !videoRef.current) return;
+    if (!creditTimestamps) return;
     try {
-      videoRef.current.seek(creditTimestamps.Credits.End);
+      seek(creditTimestamps.Credits.End);
       setTimeout(() => {
-        videoRef.current?.resume();
+        play();
       }, 200);
     } catch (error) {
       writeToLog("ERROR", "Error skipping intro", error);
     }
-  }, [creditTimestamps, videoRef]);
+  }, [creditTimestamps]);
 
   return { showSkipCreditButton, skipCredit };
 };

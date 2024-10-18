@@ -1,53 +1,66 @@
 import { Controls } from "@/components/video-player/Controls";
+import { VlcControls } from "@/components/video-player/VlcControls";
 import { useAndroidNavigationBar } from "@/hooks/useAndroidNavigationBar";
 import { useOrientation } from "@/hooks/useOrientation";
 import { useOrientationSettings } from "@/hooks/useOrientationSettings";
 import { useWebSocket } from "@/hooks/useWebsockets";
+import { VlcPlayerView } from "@/modules/vlc-player";
+import {
+  PlaybackStatePayload,
+  ProgressUpdatePayload,
+  VlcPlayerViewRef,
+} from "@/modules/vlc-player/src/VlcPlayer.types";
 import { apiAtom } from "@/providers/JellyfinProvider";
 import {
   PlaybackType,
   usePlaySettings,
 } from "@/providers/PlaySettingsProvider";
-import { useSettings } from "@/utils/atoms/settings";
 import { getBackdropUrl } from "@/utils/jellyfin/image/getBackdropUrl";
-import { getAuthHeaders } from "@/utils/jellyfin/jellyfin";
-import { secondsToTicks } from "@/utils/secondsToTicks";
+import { writeToLog } from "@/utils/log";
+import { msToTicks, ticksToMs } from "@/utils/time";
 import { Api } from "@jellyfin/sdk";
 import { getPlaystateApi } from "@jellyfin/sdk/lib/utils/api";
 import * as Haptics from "expo-haptics";
-import { useFocusEffect } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { useAtomValue } from "jotai";
-import React, { useCallback, useMemo, useRef, useState } from "react";
-import { Pressable, StatusBar, useWindowDimensions, View } from "react-native";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { Alert, Dimensions, Pressable, StatusBar, View } from "react-native";
 import { useSharedValue } from "react-native-reanimated";
-import Video, {
-  OnProgressData,
-  SelectedTrackType,
-  VideoRef,
-} from "react-native-video";
 
 export default function page() {
-  const { playSettings, playUrl, playSessionId } = usePlaySettings();
+  const { playSettings, playUrl, playSessionId, mediaSource } =
+    usePlaySettings();
   const api = useAtomValue(apiAtom);
-  const [settings] = useSettings();
-  const videoRef = useRef<VideoRef | null>(null);
-  const poster = usePoster(playSettings, api);
-  const videoSource = useVideoSource(playSettings, api, poster, playUrl);
-  const firstTime = useRef(true);
-  const dimensions = useWindowDimensions();
+  const videoRef = useRef<VlcPlayerViewRef>(null);
+  // const poster = usePoster(playSettings, api);
+  // const user = useAtomValue(userAtom);
+
+  const router = useRouter();
+
+  const screenDimensions = Dimensions.get("screen");
 
   const [isPlaybackStopped, setIsPlaybackStopped] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const [ignoreSafeAreas, setIgnoreSafeAreas] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isBuffering, setIsBuffering] = useState(true);
+  const [isVideoLoaded, setIsVideoLoaded] = useState(false);
 
   const progress = useSharedValue(0);
   const isSeeking = useSharedValue(false);
   const cacheProgress = useSharedValue(0);
 
-  if (!playSettings || !playUrl || !api || !videoSource || !playSettings.item)
+  if (!playSettings || !playUrl || !api || !playSettings.item || !mediaSource) {
+    Alert.alert("Error", "Invalid play settings");
+    router.back();
     return null;
+  }
 
   const togglePlay = useCallback(
     async (ticks: number) => {
@@ -69,7 +82,7 @@ export default function page() {
           playSessionId: playSessionId ? playSessionId : undefined,
         });
       } else {
-        videoRef.current?.resume();
+        videoRef.current?.play();
         await getPlaystateApi(api).onPlaybackProgress({
           itemId: playSettings.item?.Id!,
           audioStreamIndex: playSettings.audioIndex
@@ -86,11 +99,11 @@ export default function page() {
         });
       }
     },
-    [isPlaying, api, playSettings?.item?.Id, videoRef, settings]
+    [isPlaying, api, playSettings?.item?.Id, videoRef]
   );
 
   const play = useCallback(() => {
-    videoRef.current?.resume();
+    videoRef.current?.play();
     reportPlaybackStart();
   }, [videoRef]);
 
@@ -100,7 +113,7 @@ export default function page() {
 
   const stop = useCallback(() => {
     setIsPlaybackStopped(true);
-    videoRef.current?.pause();
+    videoRef.current?.stop();
     reportPlaybackStopped();
   }, [videoRef]);
 
@@ -129,17 +142,15 @@ export default function page() {
   };
 
   const onProgress = useCallback(
-    async (data: OnProgressData) => {
+    async (data: ProgressUpdatePayload) => {
       if (isSeeking.value === true) return;
       if (isPlaybackStopped === true) return;
+      if (!playSettings.item?.Id) return;
 
-      const ticks = data.currentTime * 10000000;
+      const { currentTime, isPlaying } = data.nativeEvent;
 
-      progress.value = secondsToTicks(data.currentTime);
-      cacheProgress.value = secondsToTicks(data.playableDuration);
-      setIsBuffering(data.playableDuration === 0);
-
-      if (!playSettings?.item?.Id || data.currentTime === 0) return;
+      progress.value = currentTime;
+      const currentTimeInTicks = msToTicks(currentTime);
 
       await getPlaystateApi(api).onPlaybackProgress({
         itemId: playSettings.item.Id,
@@ -150,7 +161,7 @@ export default function page() {
           ? playSettings.subtitleIndex
           : undefined,
         mediaSourceId: playSettings.mediaSource?.Id!,
-        positionTicks: Math.round(ticks),
+        positionTicks: Math.floor(currentTimeInTicks),
         isPaused: !isPlaying,
         playMethod: playUrl.includes("m3u8") ? "Transcode" : "DirectStream",
         playSessionId: playSessionId ? playSessionId : undefined,
@@ -180,111 +191,109 @@ export default function page() {
     stopPlayback: stop,
   });
 
-  const selectedSubtitleTrack = useMemo(() => {
-    const a = playSettings?.mediaSource?.MediaStreams?.find(
-      (s) => s.Index === playSettings.subtitleIndex
-    );
-    console.log(a);
-    return a;
-  }, [playSettings]);
+  const onPlaybackStateChanged = (e: PlaybackStatePayload) => {
+    const { state, isBuffering, isPlaying } = e.nativeEvent;
 
-  const [hlsSubTracks, setHlsSubTracks] = useState<
-    {
-      index: number;
-      language?: string | undefined;
-      selected?: boolean | undefined;
-      title?: string | undefined;
-      type: any;
-    }[]
-  >([]);
-
-  const selectedTextTrack = useMemo(() => {
-    for (let st of hlsSubTracks) {
-      if (st.title === selectedSubtitleTrack?.DisplayTitle) {
-        return {
-          type: SelectedTrackType.TITLE,
-          value: selectedSubtitleTrack?.DisplayTitle ?? "",
-        };
-      }
+    if (state === "Playing") {
+      setIsPlaying(true);
+      return;
     }
-    return undefined;
-  }, [hlsSubTracks]);
+
+    if (state === "Paused") {
+      setIsPlaying(false);
+      return;
+    }
+
+    if (isPlaying) {
+      setIsPlaying(true);
+      setIsBuffering(false);
+    } else if (isBuffering) {
+      setIsBuffering(true);
+    }
+  };
+
+  useEffect(() => {
+    console.log(
+      "PlaybackPositionTicks",
+      playSettings.item?.UserData?.PlaybackPositionTicks
+    );
+  }, [playSettings.item]);
 
   return (
     <View
       style={{
-        flex: 1,
-        flexDirection: "column",
-        justifyContent: "center",
-        alignItems: "center",
-        width: dimensions.width,
-        height: dimensions.height,
+        width: screenDimensions.width,
+        height: screenDimensions.height,
         position: "relative",
       }}
+      className="flex flex-col items-center justify-center"
     >
       <StatusBar hidden />
       <Pressable
         onPress={() => {
           setShowControls(!showControls);
         }}
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: dimensions.width,
-          height: dimensions.height,
-          zIndex: 0,
-        }}
+        className="absolute z-0 h-full w-full"
       >
-        <Video
+        <VlcPlayerView
           ref={videoRef}
-          source={videoSource}
-          style={{
-            width: dimensions.width,
-            height: dimensions.height,
+          source={{
+            uri: playUrl,
+            autoplay: true,
+            isNetwork: true,
+            startPosition: ticksToMs(
+              playSettings.item.UserData?.PlaybackPositionTicks
+            ),
           }}
-          resizeMode={ignoreSafeAreas ? "cover" : "contain"}
-          onProgress={onProgress}
-          onError={() => {}}
-          onLoad={() => {
-            if (firstTime.current === true) {
-              play();
-              firstTime.current = false;
-            }
+          style={{ width: "100%", height: "100%" }}
+          onVideoProgress={onProgress}
+          progressUpdateInterval={1000}
+          onVideoStateChange={onPlaybackStateChanged}
+          onVideoLoadStart={() => {}}
+          onVideoLoadEnd={() => {
+            setIsVideoLoaded(true);
           }}
-          progressUpdateInterval={500}
-          playWhenInactive={true}
-          allowsExternalPlayback={true}
-          playInBackground={true}
-          pictureInPicture={true}
-          showNotificationControls={true}
-          ignoreSilentSwitch="ignore"
-          fullscreen={false}
-          onPlaybackStateChanged={(state) => {
-            if (isSeeking.value === false) setIsPlaying(state.isPlaying);
+          onVideoError={(e) => {
+            console.error("Video Error:", e.nativeEvent);
+            Alert.alert(
+              "Error",
+              "An error occurred while playing the video. Check logs in settings."
+            );
+            writeToLog("ERROR", "Video Error", e.nativeEvent);
           }}
-          onTextTracks={(data) => {
-            console.log("onTextTracks ~", data);
-            setHlsSubTracks(data.textTracks as any);
-          }}
-          selectedTextTrack={selectedTextTrack}
         />
       </Pressable>
 
-      <Controls
-        item={playSettings.item}
-        videoRef={videoRef}
-        togglePlay={togglePlay}
-        isPlaying={isPlaying}
-        isSeeking={isSeeking}
-        progress={progress}
-        cacheProgress={cacheProgress}
-        isBuffering={isBuffering}
-        showControls={showControls}
-        setShowControls={setShowControls}
-        setIgnoreSafeAreas={setIgnoreSafeAreas}
-        ignoreSafeAreas={ignoreSafeAreas}
-      />
+      {videoRef.current && (
+        <Controls
+          mediaSource={mediaSource}
+          item={playSettings.item}
+          videoRef={videoRef}
+          togglePlay={togglePlay}
+          isPlaying={isPlaying}
+          isSeeking={isSeeking}
+          progress={progress}
+          cacheProgress={cacheProgress}
+          isBuffering={isBuffering}
+          showControls={showControls}
+          setShowControls={setShowControls}
+          setIgnoreSafeAreas={setIgnoreSafeAreas}
+          ignoreSafeAreas={ignoreSafeAreas}
+          isVideoLoaded={isVideoLoaded}
+          play={videoRef.current?.play}
+          pause={videoRef.current?.pause}
+          seek={videoRef.current?.seekTo}
+          enableTrickplay={true}
+          getAudioTracks={videoRef.current?.getAudioTracks}
+          getSubtitleTracks={videoRef.current?.getSubtitleTracks}
+          offline={false}
+          setSubtitleTrack={videoRef.current.setSubtitleTrack}
+          setSubtitleURL={videoRef.current.setSubtitleURL}
+          setAudioTrack={videoRef.current.setAudioTrack}
+          stop={videoRef.current.stop}
+          isVlc
+        />
+      )}
     </View>
   );
 }
@@ -306,37 +315,4 @@ export function usePoster(
   }, [playSettings?.item, api]);
 
   return poster ?? undefined;
-}
-
-export function useVideoSource(
-  playSettings: PlaybackType | null,
-  api: Api | null,
-  poster: string | undefined,
-  playUrl?: string | null
-) {
-  const videoSource = useMemo(() => {
-    if (!playSettings || !api || !playUrl) {
-      return null;
-    }
-
-    const startPosition = playSettings.item?.UserData?.PlaybackPositionTicks
-      ? Math.round(playSettings.item.UserData.PlaybackPositionTicks / 10000)
-      : 0;
-
-    return {
-      uri: playUrl,
-      isNetwork: true,
-      startPosition,
-      headers: getAuthHeaders(api),
-      metadata: {
-        artist: playSettings.item?.AlbumArtist ?? undefined,
-        title: playSettings.item?.Name || "Unknown",
-        description: playSettings.item?.Overview ?? undefined,
-        imageUri: poster,
-        subtitle: playSettings.item?.Album ?? undefined,
-      },
-    };
-  }, [playSettings, api, poster]);
-
-  return videoSource;
 }
