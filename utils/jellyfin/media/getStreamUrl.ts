@@ -7,6 +7,7 @@ import {
 } from "@jellyfin/sdk/lib/generated-client/models";
 import { getMediaInfoApi } from "@jellyfin/sdk/lib/utils/api";
 import { getAuthHeaders } from "../jellyfin";
+import native from "@/utils/profiles/native";
 
 export const getStreamUrl = async ({
   api,
@@ -15,10 +16,9 @@ export const getStreamUrl = async ({
   startTimeTicks = 0,
   maxStreamingBitrate,
   sessionData,
-  deviceProfile = iosFmp4,
+  deviceProfile = native,
   audioStreamIndex = 0,
   subtitleStreamIndex = undefined,
-  forceDirectPlay = false,
   mediaSourceId,
 }: {
   api: Api | null | undefined;
@@ -27,22 +27,21 @@ export const getStreamUrl = async ({
   startTimeTicks: number;
   maxStreamingBitrate?: number;
   sessionData?: PlaybackInfoResponse | null;
-  deviceProfile: any;
+  deviceProfile?: any;
   audioStreamIndex?: number;
   subtitleStreamIndex?: number;
-  forceDirectPlay?: boolean;
   height?: number;
   mediaSourceId?: string | null;
 }): Promise<{
   url: string | null;
   sessionId: string | null;
+  mediaSource: MediaSourceInfo | undefined;
 } | null> => {
   if (!api || !userId || !item?.Id) {
     return null;
   }
 
   let mediaSource: MediaSourceInfo | undefined;
-  let url: string | null | undefined;
   let sessionId: string | null | undefined;
 
   if (item.Type === "Program") {
@@ -69,7 +68,11 @@ export const getStreamUrl = async ({
     sessionId = res0.data.PlaySessionId || null;
 
     if (transcodeUrl) {
-      return { url: `${api.basePath}${transcodeUrl}`, sessionId };
+      return {
+        url: `${api.basePath}${transcodeUrl}`,
+        sessionId,
+        mediaSource: res0.data.MediaSources?.[0],
+      };
     }
   }
 
@@ -83,21 +86,14 @@ export const getStreamUrl = async ({
     {
       method: "POST",
       data: {
-        deviceProfile,
+        deviceProfile: native,
         userId,
         maxStreamingBitrate,
         startTimeTicks,
-        enableTranscoding: maxStreamingBitrate ? true : undefined,
         autoOpenLiveStream: true,
         mediaSourceId,
-        allowVideoStreamCopy: maxStreamingBitrate ? false : true,
         audioStreamIndex,
         subtitleStreamIndex,
-        deInterlace: true,
-        breakOnNonKeyFrames: false,
-        copyTimestamps: false,
-        enableMpegtsM2TsMode: false,
-
       },
     }
   );
@@ -108,29 +104,39 @@ export const getStreamUrl = async ({
     (source: MediaSourceInfo) => source.Id === mediaSourceId
   );
 
-  console.log("getStreamUrl ~ ", item.MediaType);
-
   if (item.MediaType === "Video") {
     if (mediaSource?.TranscodingUrl) {
+      console.log(
+        "Video has transcoding URL:",
+        `${api.basePath}${mediaSource.TranscodingUrl}`
+      );
       return {
         url: `${api.basePath}${mediaSource.TranscodingUrl}`,
         sessionId: sessionId,
+        mediaSource,
       };
     }
 
-    if (mediaSource?.SupportsDirectPlay || forceDirectPlay === true) {
+    if (mediaSource?.SupportsDirectPlay) {
+      console.log(
+        "Video is being direct played:",
+        `${api.basePath}/Videos/${itemId}/stream.mp4?playSessionId=${sessionData?.PlaySessionId}&mediaSourceId=${mediaSource?.Id}&static=true&subtitleStreamIndex=${subtitleStreamIndex}&audioStreamIndex=${audioStreamIndex}&deviceId=${api.deviceInfo.id}&api_key=${api.accessToken}`
+      );
       return {
         url: `${api.basePath}/Videos/${itemId}/stream.mp4?playSessionId=${sessionData?.PlaySessionId}&mediaSourceId=${mediaSource?.Id}&static=true&subtitleStreamIndex=${subtitleStreamIndex}&audioStreamIndex=${audioStreamIndex}&deviceId=${api.deviceInfo.id}&api_key=${api.accessToken}`,
         sessionId: sessionId,
+        mediaSource,
       };
     }
   }
 
   if (item.MediaType === "Audio") {
-    console.log("getStreamUrl ~ Audio");
-
     if (mediaSource?.TranscodingUrl) {
-      return { url: `${api.basePath}${mediaSource.TranscodingUrl}`, sessionId };
+      return {
+        url: `${api.basePath}${mediaSource.TranscodingUrl}`,
+        sessionId,
+        mediaSource,
+      };
     }
 
     const searchParams = new URLSearchParams({
@@ -153,6 +159,7 @@ export const getStreamUrl = async ({
         api.basePath
       }/Audio/${itemId}/universal?${searchParams.toString()}`,
       sessionId,
+      mediaSource,
     };
   }
 

@@ -17,7 +17,8 @@ interface IntroTimestamps {
 export const useIntroSkipper = (
   itemId: string | undefined,
   currentTime: number,
-  videoRef: React.RefObject<any>
+  seek: (ticks: number) => void,
+  play: () => void
 ) => {
   const [api] = useAtom(apiAtom);
   const [showSkipButton, setShowSkipButton] = useState(false);
@@ -26,7 +27,6 @@ export const useIntroSkipper = (
     queryKey: ["introTimestamps", itemId],
     queryFn: async () => {
       if (!itemId) {
-        console.log("No item id");
         return null;
       }
 
@@ -58,16 +58,16 @@ export const useIntroSkipper = (
 
   const skipIntro = useCallback(() => {
     console.log("skipIntro");
-    if (!introTimestamps || !videoRef.current) return;
+    if (!introTimestamps) return;
     try {
-      videoRef.current.seek(introTimestamps.IntroEnd);
+      seek(introTimestamps.IntroEnd);
       setTimeout(() => {
-        videoRef.current?.resume();
+        play();
       }, 200);
     } catch (error) {
       writeToLog("ERROR", "Error skipping intro", error);
     }
-  }, [introTimestamps, videoRef]);
+  }, [introTimestamps]);
 
   return { showSkipButton, skipIntro };
 };
