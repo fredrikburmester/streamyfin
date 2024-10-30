@@ -1,4 +1,5 @@
 import { useInterval } from "@/hooks/useInterval";
+import { writeToLog } from "@/utils/log";
 import { Api, Jellyfin } from "@jellyfin/sdk";
 import { UserDto } from "@jellyfin/sdk/lib/generated-client/models";
 import { getUserApi } from "@jellyfin/sdk/lib/utils/api";
@@ -212,20 +213,35 @@ export const JellyfinProvider: React.FC<{ children: ReactNode }> = ({
         if (axios.isAxiosError(error)) {
           switch (error.response?.status) {
             case 401:
+              writeToLog("ERROR", "Invalid username or password");
               throw new Error("Invalid username or password");
             case 403:
+              writeToLog("ERROR", "User does not have permission to log in");
               throw new Error("User does not have permission to log in");
             case 408:
+              writeToLog(
+                "WARN",
+                "Server is taking too long to respond, try again later"
+              );
               throw new Error(
                 "Server is taking too long to respond, try again later"
               );
             case 429:
+              writeToLog(
+                "WARN",
+                "Server received too many requests, try again later"
+              );
               throw new Error(
                 "Server received too many requests, try again later"
               );
             case 500:
+              writeToLog("ERROR", "There is a server error");
               throw new Error("There is a server error");
             default:
+              writeToLog(
+                "ERROR",
+                "An unexpected error occurred. Did you enter the server URL correctly?"
+              );
               throw new Error(
                 "An unexpected error occurred. Did you enter the server URL correctly?"
               );
@@ -312,6 +328,9 @@ function useProtectedRoute(user: UserDto | null, loading = false) {
     if (loading) return;
 
     const inAuthGroup = segments[0] === "(auth)";
+    const inLogs = segments[0] === "logs";
+
+    if (inLogs) return;
 
     if (!user?.Id && inAuthGroup) {
       router.replace("/login");
