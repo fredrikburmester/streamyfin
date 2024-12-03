@@ -403,7 +403,7 @@ function useDownloadProvider() {
     });
   };
 
-  const forEveryDirectory = async (callback: (dir: FileInfo) => void) => {
+  const forEveryDirectoryFile = async (includeMMKV: boolean = true, callback: (file: FileInfo) => void) => {
     const baseDirectory = FileSystem.documentDirectory;
     if (!baseDirectory) {
       throw new Error("Base directory not found");
@@ -413,7 +413,7 @@ function useDownloadProvider() {
     for (const item of dirContents) {
       // Exclude mmkv directory.
       // Deleting this deletes all user information as well. Logout should handle this.
-      if (item == "mmkv")
+      if (item == "mmkv" && !includeMMKV)
         continue
       const itemInfo = await FileSystem.getInfoAsync(`${baseDirectory}${item}`);
       if (itemInfo.exists) {
@@ -423,9 +423,9 @@ function useDownloadProvider() {
   }
 
   const deleteLocalFiles = async (): Promise<void> => {
-    await forEveryDirectory((dir) => {
-        console.warn("Deleting file", dir.uri)
-        FileSystem.deleteAsync(dir.uri, {idempotent: true})
+    await forEveryDirectoryFile(false, (file) => {
+        console.warn("Deleting file", file.uri)
+        FileSystem.deleteAsync(file.uri, {idempotent: true})
       }
     )
   };
@@ -536,10 +536,12 @@ function useDownloadProvider() {
 
   const getAppSizeUsage = async () => {
     const sizes: number[] = [];
-    await forEveryDirectory(dir => {
-      if (dir.exists)
-        sizes.push(dir.size)
-    })
+    await forEveryDirectoryFile(
+      true,
+      file => {
+        if (file.exists) sizes.push(file.size)
+      }
+    )
 
     return sizes.reduce((sum, size) => sum + size, 0);
   }
@@ -646,9 +648,17 @@ export function useDownload() {
 }
 
 export function bytesToReadable(bytes: number): string {
-  const gb = bytes / 1e+9;
+  const gb = bytes / 1e9;
 
   if (gb >= 1)
     return `${gb.toFixed(2)} GB`
-  return `${(bytes / 1024 / 1024).toFixed(2)} MB`
+
+  const mb = bytes / 1024 / 1024
+  if (mb >= 1)
+    return `${mb.toFixed(2)} MB`
+
+  const kb = bytes / 1024
+  if (kb >= 1)
+    return `${kb.toFixed(2)} KB`
+  return `${bytes.toFixed(2)} B`
 }
