@@ -231,7 +231,7 @@ export const DownloadItems: React.FC<DownloadProps> = ({
         if (usingOptimizedServer) {
           await startBackgroundDownload(url, item, source);
         } else {
-          await startRemuxing(item, url, source);
+          await startRemuxing(item, url);
         }
       }
     },
