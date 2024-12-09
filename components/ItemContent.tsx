@@ -151,7 +151,26 @@ export const ItemContent: React.FC<{ item: BaseItemDto }> = React.memo(
               {logoUrl ? (
                 <ColorMatrix
                   matrix={[
-                    1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, -1,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0, // Red channel remains unchanged
+                    0,
+                    1,
+                    0,
+                    0,
+                    0, // Green channel remains unchanged
+                    0,
+                    0,
+                    1,
+                    0,
+                    0, // Blue channel remains unchanged
+                    1,
+                    1,
+                    1,
+                    1,
+                    -1, // Make black (R=0, G=0, B=0) transparent
                   ]}
                   style={{
                     height: 130,
