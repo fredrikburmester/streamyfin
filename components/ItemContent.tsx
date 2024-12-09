@@ -32,6 +32,16 @@ import { Chromecast } from "./Chromecast";
 import { ItemHeader } from "./ItemHeader";
 import { MediaSourceSelector } from "./MediaSourceSelector";
 import { MoreMoviesWithActor } from "./MoreMoviesWithActor";
+import {
+  brightness,
+  ColorMatrix,
+  colorTone,
+  concatColorMatrices,
+  contrast,
+  saturate,
+  sepia,
+  tint,
+} from "react-native-color-matrix-image-filters";
 
 export type SelectedOptions = {
   bitrate: Bitrate;
@@ -49,7 +59,7 @@ export const ItemContent: React.FC<{ item: BaseItemDto }> = React.memo(
     const insets = useSafeAreaInsets();
     useImageColors({ item });
 
-    const [loadingLogo, setLoadingLogo] = useState(true);
+    const [loadingLogo, setLoadingLogo] = useState(false);
     const [headerHeight, setHeaderHeight] = useState(350);
 
     const [selectedOptions, setSelectedOptions] = useState<
@@ -139,18 +149,26 @@ export const ItemContent: React.FC<{ item: BaseItemDto }> = React.memo(
           logo={
             <>
               {logoUrl ? (
-                <Image
-                  source={{
-                    uri: logoUrl,
-                  }}
+                <ColorMatrix
+                  matrix={[
+                    1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, -1,
+                  ]}
                   style={{
                     height: 130,
                     width: "100%",
-                    resizeMode: "contain",
                   }}
-                  onLoad={() => setLoadingLogo(false)}
-                  onError={() => setLoadingLogo(false)}
-                />
+                >
+                  <Image
+                    source={{
+                      uri: logoUrl,
+                    }}
+                    style={{
+                      height: 130,
+                      width: "100%",
+                      resizeMode: "contain",
+                    }}
+                  />
+                </ColorMatrix>
               ) : null}
             </>
           }
