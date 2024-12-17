@@ -85,7 +85,6 @@ export const getStreamUrl = async ({
     {
       method: "POST",
       data: {
-        deviceProfile,
         userId,
         maxStreamingBitrate,
         startTimeTicks,
