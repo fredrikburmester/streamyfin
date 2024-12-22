@@ -606,24 +606,21 @@ export const Controls: React.FC<Props> = ({
             style={{
               position: "absolute",
               top: "50%", // Center vertically
-              left: 0,
-              right: 0,
+              left: insets.left,
+              right: insets.right,
               flexDirection: "row",
               justifyContent: "space-between",
               alignItems: "center",
               transform: [{ translateY: -22.5 }], // Adjust for the button's height (half of 45)
-              paddingHorizontal: "28%", // Add some padding to the left and right
             }}
             pointerEvents={showControls ? "box-none" : "none"}
           >
             <View
               style={{
-                position: "absolute",
                 alignItems: "center",
-                transform: [{ rotate: "270deg" }], // Rotate the slider to make it vertical
-                left: 0,
-                bottom: 30,
+                bottom: 10,
                 opacity: showControls ? 1 : 0,
+                transform: [{ rotate: "270deg" }],
               }}
             >
               <BrightnessSlider />
@@ -704,11 +701,9 @@ export const Controls: React.FC<Props> = ({
 
             <View
               style={{
-                position: "absolute",
                 alignItems: "center",
                 transform: [{ rotate: "270deg" }], // Rotate the slider to make it vertical
-                bottom: 30,
-                right: 0,
+                bottom: 10,
                 opacity: showAudioSlider || showControls ? 1 : 0,
               }}
             >

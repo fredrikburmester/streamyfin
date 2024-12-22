@@ -81,6 +81,7 @@ const AudioSlider: React.FC<AudioSliderProps> = ({ setVisibility }) => {
         onValueChange={handleValueChange}
         containerStyle={{
           borderRadius: 50,
+          width: 125,
         }}
         theme={{
           minimumTrackTintColor: "#FDFDFD",
@@ -94,7 +95,7 @@ const AudioSlider: React.FC<AudioSliderProps> = ({ setVisibility }) => {
         size={20}
         color="#FDFDFD"
         style={{
-          marginLeft: 8,
+          left: 70,
         }}
       />
     </View>
@@ -103,10 +104,8 @@ const AudioSlider: React.FC<AudioSliderProps> = ({ setVisibility }) => {
 
 const styles = StyleSheet.create({
   sliderContainer: {
-    width: 150,
     display: "flex",
     flexDirection: "row",
-    justifyContent: "center",
     alignItems: "center",
   },
 });
