@@ -514,11 +514,11 @@ export const Controls: React.FC<Props> = ({
                 {
                   position: "absolute",
                   top: insets.top,
-                  left: insets.left,
+                  left: 0,
                   opacity: showControls ? 1 : 0,
-                  zIndex: 1000,
                 },
               ]}
+              className={`flex flex-row items-center space-x-2 z-10 p-4 `}
             >
               {!mediaSource?.TranscodingUrl ? (
                 <DropdownViewDirect showControls={showControls} />
@@ -544,7 +544,7 @@ export const Controls: React.FC<Props> = ({
               {
                 position: "absolute",
                 top: insets.top,
-                right: insets.right,
+                right: 0,
                 opacity: showControls ? 1 : 0,
               },
             ]}
@@ -606,8 +606,8 @@ export const Controls: React.FC<Props> = ({
             style={{
               position: "absolute",
               top: "50%", // Center vertically
-              left: insets.left,
-              right: insets.right,
+              left: 0,
+              right: 0,
               flexDirection: "row",
               justifyContent: "space-between",
               alignItems: "center",
@@ -720,9 +720,9 @@ export const Controls: React.FC<Props> = ({
             style={[
               {
                 position: "absolute",
-                right: insets.right,
-                left: insets.left,
-                bottom: insets.bottom,
+                right: 0,
+                left: 0,
+                bottom: 0,
               },
             ]}
             className={`flex flex-col p-4`}
