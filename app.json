@@ -111,7 +111,8 @@
         { "android": { "parentTheme": "Material3" } }
       ],
       ["react-native-bottom-tabs"],
-      ["./plugins/withChangeNativeAndroidTextToWhite.js"]
+      ["./plugins/withChangeNativeAndroidTextToWhite.js"],
+      ["@react-native-tvos/config-tv"]
     ],
     "experiments": {
       "typedRoutes": true

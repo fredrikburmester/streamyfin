@@ -1,5 +1,5 @@
 import ExpoModulesCore
-import MobileVLCKit
+import TVVLCKit
 import UIKit
 
 class VlcPlayerView: ExpoView {
