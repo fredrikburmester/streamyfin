@@ -1,6 +1,6 @@
 # 📺 Streamyfin
 
-<a href="https://www.buymeacoffee.com/fredrikbur3" target="_blank"><img src="https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png" alt="Buy Me A Coffee" style="height: 41px !important;width: 174px !important;box-shadow: 0px 3px 2px 0px rgba(190, 190, 190, 0.5) !important;-webkit-box-shadow: 0px 3px 2px 0px rgba(190, 190, 190, 0.5) !important;" ></a>
+<a href="https://www.buymeacoffee.com/fredrikbur3" target="_blank"><img src="https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png" alt="Buy Fredrik A Coffee" style="height: 41px !important;width: 174px !important;box-shadow: 0px 3px 2px 0px rgba(190, 190, 190, 0.5) !important;-webkit-box-shadow: 0px 3px 2px 0px rgba(190, 190, 190, 0.5) !important;" ></a>
 
 Welcome to Streamyfin, a simple and user-friendly Jellyfin client built with Expo. If you're looking for an alternative to other Jellyfin clients, we hope you'll find Streamyfin to be a useful addition to your media streaming toolbox.
 
@@ -13,7 +13,7 @@ Welcome to Streamyfin, a simple and user-friendly Jellyfin client built with Exp
 
 ## 🌟 Features
 
-- 🚀 **Skp intro / credits support**
+- 🚀 **Skip Intro / Credits support**: Save time by skipping directly to the action.
 - 🖼️ **Trickplay images**: The new golden standard for chapter previews when seeking.
 - 📺 **Picture in Picture** (iPhone only): Watch movies in PiP mode on your iPhone.
 - 🔊 **Background audio**: Stream music in the background, even when locking the phone.
@@ -46,7 +46,7 @@ Available tags:
 - sf_promoted: will make the collection a row at home
 - sf_carousel: will make the collection a carousel on home.
 
-A plugin exists to create collections based on external sources like mdblist. This make the automatic process of managing collections such as trending, most watched, etc.
+A plugin exists to create collections based on external sources like mdblist. This makes the automatic process of managing collections such as trending, most watched, etc.
 See [Collection Import Plugin](https://github.com/lostb1t/jellyfin-plugin-collection-import) for more info.
 
 ### Jellysearch
@@ -62,18 +62,18 @@ Check out our [Roadmap](https://github.com/users/fredrikburmester/projects/5) to
 ## Get it now
 
 <div style="display: flex; gap: 5px;">
-  <a href="https://apps.apple.com/app/streamyfin/id6593660679?l=en-GB"><img height=50 alt="Get Streamyfin on App Store" src="./assets/Download_on_the_App_Store_Badge.png"/></a>
-  <a href="https://play.google.com/store/apps/details?id=com.fredrikburmester.streamyfin"><img height=50 alt="Get the beta on Google Play" src="./assets/Google_Play_Store_badge_EN.svg"/></a>
+  <a href="https://apps.apple.com/app/streamyfin/id6593660679?l=en-GB"><img height=50 alt="Download Streamyfin on App Store" src="./assets/Download_on_the_App_Store_Badge.png"/></a>
+  <a href="https://play.google.com/store/apps/details?id=com.fredrikburmester.streamyfin"><img height=50 alt="Download Streamyfin on Google Play" src="./assets/Google_Play_Store_badge_EN.svg"/></a>
 </div>
 
-Or download the APKs [here on GitHub](https://github.com/fredrikburmester/streamyfin/releases) for Android.
+Or download the APKs [here on GitHub](https://github.com/streamyfin/streamyfin/releases) for Android.
 
 ### Beta testing
 
 Get the latest updates by using the TestFlight version of the app.
 
 <a href="https://testflight.apple.com/join/CWBaAAK2">
-  <img height=75 alt="Get the beta on TestFlight" src="./assets/Get_the_beta_on_Testflight.svg"/>
+  <img height=55 alt="Get the beta on TestFlight" src="./assets/Get_the_beta_on_Testflight.svg"/>
 </a>
 
 ## 🚀 Getting Started
@@ -85,11 +85,11 @@ Get the latest updates by using the TestFlight version of the app.
 
 ## 🙌 Contributing
 
-We welcome any help to make Streamyfin better. If you'd like to contribute, please fork the repository and submit a pull request. For major changes, it's best to open an issue first to discuss your ideas.
+We welcome any help to make Streamyfin better. If you'd like to contribute, please fork the repository and submit a pull request. For major changes, we recommend opening an issue first to discuss your ideas.
 
 ### Development info
 
-1. Use node `20`
+1. Use Node.js `20`
 2. Install dependencies `bun i`
 3. Create an expo dev build by running `npx expo run:ios` or `npx expo run:android`.
 
@@ -145,7 +145,7 @@ If you have questions or need support, feel free to reach out:
 
 ## 📝 Credits
 
-Streamyfin is developed by Fredrik Burmester and is not affiliated with Jellyfin. The app is built with Expo, React Native, and other open-source libraries.
+Streamyfin is developed by [Fredrik Burmester](https://github.com/fredrikburmester) and is not affiliated with Jellyfin. The app is built with Expo, React Native, and other open-source libraries.
 
 ## ✨ Acknowledgements
 
@@ -157,4 +157,4 @@ I'd like to thank the following people and projects for their contributions to S
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=fredrikburmester/streamyfin&type=Date)](https://star-history.com/#fredrikburmester/streamyfin&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=streamyfin/streamyfin&type=Date)](https://star-history.com/#streamyfin/streamyfin&Date)
