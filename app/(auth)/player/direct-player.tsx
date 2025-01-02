@@ -36,7 +36,7 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { Alert, AppState, AppStateStatus, Platform, View } from "react-native";
+import { Alert, Platform, View } from "react-native";
 import { useSharedValue } from "react-native-reanimated";
 
 export default function page() {
@@ -298,37 +298,6 @@ export default function page() {
       };
     }, [])
   );
-
-  const [appState, setAppState] = useState(AppState.currentState);
-
-  useEffect(() => {
-    const handleAppStateChange = (nextAppState: AppStateStatus) => {
-      if (appState.match(/inactive|background/) && nextAppState === "active") {
-        console.log("App has come to the foreground!");
-        // Handle app coming to the foreground
-      } else if (nextAppState.match(/inactive|background/)) {
-        console.log("App has gone to the background!");
-        // Handle app going to the background
-        if (videoRef.current && videoRef.current.pause) {
-          videoRef.current.pause();
-        }
-      }
-      setAppState(nextAppState);
-    };
-
-    // Use AppState.addEventListener and return a cleanup function
-    const subscription = AppState.addEventListener(
-      "change",
-      handleAppStateChange
-    );
-
-    return () => {
-      // Cleanup the event listener when the component is unmounted
-      subscription.remove();
-    };
-  }, [appState]);
-
-  // Preselection of audio and subtitle tracks.
 
   if (!settings) return null;
 

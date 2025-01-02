@@ -7,7 +7,7 @@ import React, {
   useMemo,
   useCallback,
 } from "react";
-import { Alert, AppState, AppStateStatus } from "react-native";
+import { Alert } from "react-native";
 import { useAtomValue } from "jotai";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -103,28 +103,6 @@ export const WebSocketProvider = ({ children }: WebSocketProviderProps) => {
 
     init();
   }, [api, deviceId]);
-
-  useEffect(() => {
-    const handleAppStateChange = (state: AppStateStatus) => {
-      if (state === "background" || state === "inactive") {
-        console.log("App moving to background, closing WebSocket...");
-        ws?.close();
-      } else if (state === "active") {
-        console.log("App coming to foreground, reconnecting WebSocket...");
-        connectWebSocket();
-      }
-    };
-
-    const subscription = AppState.addEventListener(
-      "change",
-      handleAppStateChange
-    );
-
-    return () => {
-      subscription.remove();
-      ws?.close();
-    };
-  }, [ws, connectWebSocket]);
 
   return (
     <WebSocketContext.Provider value={{ ws, isConnected }}>
