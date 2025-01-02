@@ -9,7 +9,7 @@ import {
 import * as Haptics from "expo-haptics";
 
 interface Props extends TouchableOpacityProps {
-  onPress?: () => void,
+  onPress?: () => void;
   icon?: keyof typeof Ionicons.glyphMap;
   background?: boolean;
   size?: "default" | "large";
@@ -98,7 +98,6 @@ export const RoundButton: React.FC<PropsWithChildren<Props>> = ({
       <BlurView
         intensity={90}
         className={`rounded-full overflow-hidden ${buttonSize} flex items-center justify-center ${fillColorClass}`}
-        {...props}
       >
         {icon ? (
           <Ionicons

@@ -8,11 +8,6 @@ import { useRouter } from "expo-router";
 import { useAtom } from "jotai";
 import { useCallback } from "react";
 import { TouchableOpacity, TouchableOpacityProps, View } from "react-native";
-import CastContext, {
-  PlayServicesState,
-  useCastDevice,
-  useRemoteMediaClient,
-} from "react-native-google-cast";
 
 interface Props extends TouchableOpacityProps {
   collectionId: string;
@@ -32,40 +27,14 @@ export const SongsListItem: React.FC<Props> = ({
 }) => {
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
-  const castDevice = useCastDevice();
   const router = useRouter();
-  const client = useRemoteMediaClient();
   const { showActionSheetWithOptions } = useActionSheet();
 
   const { setPlaySettings } = usePlaySettings();
 
   const openSelect = () => {
-    if (!castDevice?.deviceId) {
-      play("device");
-      return;
-    }
-
-    const options = ["Chromecast", "Device", "Cancel"];
-    const cancelButtonIndex = 2;
-
-    showActionSheetWithOptions(
-      {
-        options,
-        cancelButtonIndex,
-      },
-      (selectedIndex: number | undefined) => {
-        switch (selectedIndex) {
-          case 0:
-            play("cast");
-            break;
-          case 1:
-            play("device");
-            break;
-          case cancelButtonIndex:
-            break;
-        }
-      }
-    );
+    play("device");
+    return;
   };
 
   const play = useCallback(async (type: "device" | "cast") => {

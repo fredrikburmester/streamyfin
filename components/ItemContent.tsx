@@ -28,7 +28,6 @@ import { useAtom } from "jotai";
 import React, { useEffect, useMemo, useState } from "react";
 import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Chromecast } from "./Chromecast";
 import { ItemHeader } from "./ItemHeader";
 import { ItemTechnicalDetails } from "./ItemTechnicalDetails";
 import { MediaSourceSelector } from "./MediaSourceSelector";
@@ -84,7 +83,6 @@ export const ItemContent: React.FC<{ item: BaseItemDto }> = React.memo(
         headerRight: () =>
           item && (
             <View className="flex flex-row items-center space-x-2">
-              <Chromecast background="blur" width={22} height={22} />
               {item.Type !== "Program" && (
                 <View className="flex flex-row items-center space-x-2">
                   <PlayedStatus item={item} />

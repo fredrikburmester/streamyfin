@@ -306,7 +306,6 @@ const Player = () => {
     isPlaying: isPlaying,
     togglePlay: togglePlay,
     stopPlayback: stop,
-    offline: false,
   });
 
   const [selectedTextTrack, setSelectedTextTrack] = useState<
