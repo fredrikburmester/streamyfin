@@ -52,11 +52,6 @@ export default function settings() {
     );
   };
 
-  const onClearLogsClicked = async () => {
-    clearLogs();
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-  };
-
   return (
     <ScrollView
       contentContainerStyle={{
