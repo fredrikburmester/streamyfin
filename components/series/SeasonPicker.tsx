@@ -1,22 +1,21 @@
+import {
+  SeasonDropdown,
+  SeasonIndexState,
+} from "@/components/series/SeasonDropdown";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
+import { getUserItemData } from "@/utils/jellyfin/user-library/getUserItemData";
 import { runtimeTicksToSeconds } from "@/utils/time";
+import { Ionicons } from "@expo/vector-icons";
 import { BaseItemDto } from "@jellyfin/sdk/lib/generated-client/models";
+import { getTvShowsApi } from "@jellyfin/sdk/lib/utils/api";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { atom, useAtom } from "jotai";
 import { useEffect, useMemo, useState } from "react";
 import { View } from "react-native";
 import ContinueWatchingPoster from "../ContinueWatchingPoster";
-import { DownloadItems, DownloadSingleItem } from "../DownloadItem";
 import { Loader } from "../Loader";
 import { Text } from "../common/Text";
-import { getTvShowsApi } from "@jellyfin/sdk/lib/utils/api";
-import { getUserItemData } from "@/utils/jellyfin/user-library/getUserItemData";
 import { TouchableItemRouter } from "../common/TouchableItemRouter";
-import {
-  SeasonDropdown,
-  SeasonIndexState,
-} from "@/components/series/SeasonDropdown";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 
 type Props = {
   item: BaseItemDto;
@@ -143,19 +142,6 @@ export const SeasonPicker: React.FC<Props> = ({ item, initialSeasonIndex }) => {
             }));
           }}
         />
-        {episodes?.length || 0 > 0 ? (
-          <DownloadItems
-            title="Download Season"
-            className="ml-2"
-            items={episodes || []}
-            MissingDownloadIconComponent={() => (
-              <Ionicons name="download" size={20} color="white" />
-            )}
-            DownloadedIconComponent={() => (
-              <Ionicons name="download" size={20} color="#9333ea" />
-            )}
-          />
-        ) : null}
       </View>
       <View className="px-4 flex flex-col mt-4">
         {isFetching ? (
@@ -192,9 +178,6 @@ export const SeasonPicker: React.FC<Props> = ({ item, initialSeasonIndex }) => {
                   <Text className="text-xs text-neutral-500">
                     {runtimeTicksToSeconds(e.RunTimeTicks)}
                   </Text>
-                </View>
-                <View className="self-start ml-auto -mt-0.5">
-                  <DownloadSingleItem item={e} />
                 </View>
               </View>
 

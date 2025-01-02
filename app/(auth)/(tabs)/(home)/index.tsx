@@ -6,7 +6,6 @@ import { Loader } from "@/components/Loader";
 import { MediaListSection } from "@/components/medialists/MediaListSection";
 import { Colors } from "@/constants/Colors";
 import { useInvalidatePlaybackProgressCache } from "@/hooks/useRevalidatePlaybackProgressCache";
-import { useDownload } from "@/providers/DownloadProvider";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import { useSettings } from "@/utils/atoms/settings";
 import { Feather, Ionicons } from "@expo/vector-icons";
@@ -64,30 +63,9 @@ export default function index() {
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
   const [loadingRetry, setLoadingRetry] = useState(false);
 
-  const { downloadedFiles, cleanCacheDirectory } = useDownload();
   const navigation = useNavigation();
 
   const insets = useSafeAreaInsets();
-
-  useEffect(() => {
-    const hasDownloads = downloadedFiles && downloadedFiles.length > 0;
-    navigation.setOptions({
-      headerLeft: () => (
-        <TouchableOpacity
-          onPress={() => {
-            router.push("/(auth)/downloads");
-          }}
-          className="p-2"
-        >
-          <Feather
-            name="download"
-            color={hasDownloads ? Colors.primary : "white"}
-            size={22}
-          />
-        </TouchableOpacity>
-      ),
-    });
-  }, [downloadedFiles, navigation, router]);
 
   const checkConnection = useCallback(async () => {
     setLoadingRetry(true);
@@ -107,9 +85,6 @@ export default function index() {
       setIsConnected(state.isConnected);
     });
 
-    cleanCacheDirectory()
-      .then(r => console.log("Cache directory cleaned"))
-      .catch(e => console.error("Something went wrong cleaning cache directory"))
     return () => {
       unsubscribe();
     };
@@ -307,48 +282,6 @@ export default function index() {
     ];
     return ss;
   }, [api, user?.Id, collections, mediaListCollections]);
-
-  if (isConnected === false) {
-    return (
-      <View className="flex flex-col items-center justify-center h-full -mt-6 px-8">
-        <Text className="text-3xl font-bold mb-2">No Internet</Text>
-        <Text className="text-center opacity-70">
-          No worries, you can still watch{"\n"}downloaded content.
-        </Text>
-        <View className="mt-4">
-          <Button
-            color="purple"
-            onPress={() => router.push("/(auth)/downloads")}
-            justify="center"
-            iconRight={
-              <Ionicons name="arrow-forward" size={20} color="white" />
-            }
-          >
-            Go to downloads
-          </Button>
-          <Button
-            color="black"
-            onPress={() => {
-              checkConnection();
-            }}
-            justify="center"
-            className="mt-2"
-            iconRight={
-              loadingRetry ? null : (
-                <Ionicons name="refresh" size={20} color="white" />
-              )
-            }
-          >
-            {loadingRetry ? (
-              <ActivityIndicator size={"small"} color={"white"} />
-            ) : (
-              "Retry"
-            )}
-          </Button>
-        </View>
-      </View>
-    );
-  }
 
   if (e1 || e2)
     return (

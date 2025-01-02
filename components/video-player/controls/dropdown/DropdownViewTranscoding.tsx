@@ -12,7 +12,6 @@ import { SubtitleHelper } from "@/utils/SubtitleHelper";
 
 interface DropdownViewProps {
   showControls: boolean;
-  offline?: boolean; // used to disable external subs for downloads
 }
 
 const DropdownView: React.FC<DropdownViewProps> = ({ showControls }) => {

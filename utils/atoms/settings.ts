@@ -8,13 +8,6 @@ import {
   SubtitlePlaybackMode,
 } from "@jellyfin/sdk/lib/generated-client";
 
-export type DownloadQuality = "original" | "high" | "low";
-
-export type DownloadOption = {
-  label: string;
-  value: DownloadQuality;
-};
-
 export const ScreenOrientationEnum: Record<
   ScreenOrientation.OrientationLock,
   string
@@ -30,21 +23,6 @@ export const ScreenOrientationEnum: Record<
   [ScreenOrientation.OrientationLock.OTHER]: "Other",
   [ScreenOrientation.OrientationLock.UNKNOWN]: "Unknown",
 };
-
-export const DownloadOptions: DownloadOption[] = [
-  {
-    label: "Original quality",
-    value: "original",
-  },
-  {
-    label: "High quality",
-    value: "high",
-  },
-  {
-    label: "Small file size",
-    value: "low",
-  },
-];
 
 export type LibraryOptions = {
   display: "row" | "list";
@@ -68,7 +46,6 @@ export type Settings = {
   searchEngine: "Marlin" | "Jellyfin";
   marlinServerUrl?: string;
   openInVLC?: boolean;
-  downloadQuality?: DownloadOption;
   libraryOptions: LibraryOptions;
   defaultAudioLanguage: CultureDto | null;
   playDefaultAudioTrack: boolean;
@@ -81,8 +58,6 @@ export type Settings = {
   forwardSkipTime: number;
   rewindSkipTime: number;
   optimizedVersionsServerUrl?: string | null;
-  downloadMethod: "optimized" | "remux";
-  autoDownload: boolean;
   showCustomMenuLinks: boolean;
   subtitleSize: number;
   remuxConcurrentLimit: 1 | 2 | 3 | 4;
@@ -100,7 +75,6 @@ const loadSettings = (): Settings => {
     searchEngine: "Jellyfin",
     marlinServerUrl: "",
     openInVLC: false,
-    downloadQuality: DownloadOptions[0],
     libraryOptions: {
       display: "list",
       cardStyle: "detailed",
@@ -119,8 +93,6 @@ const loadSettings = (): Settings => {
     forwardSkipTime: 30,
     rewindSkipTime: 10,
     optimizedVersionsServerUrl: null,
-    downloadMethod: "remux",
-    autoDownload: false,
     showCustomMenuLinks: false,
     subtitleSize: Platform.OS === "ios" ? 60 : 100,
     remuxConcurrentLimit: 1,

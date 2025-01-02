@@ -2,7 +2,6 @@ import { BITRATES } from "@/components/BitrateSelector";
 import { Text } from "@/components/common/Text";
 import { Loader } from "@/components/Loader";
 import { Controls } from "@/components/video-player/controls/Controls";
-import { getDownloadedFileUrl } from "@/hooks/useDownloadedFileOpener";
 import { useOrientation } from "@/hooks/useOrientation";
 import { useOrientationSettings } from "@/hooks/useOrientationSettings";
 import { useInvalidatePlaybackProgressCache } from "@/hooks/useRevalidatePlaybackProgressCache";
@@ -13,8 +12,8 @@ import {
   ProgressUpdatePayload,
   VlcPlayerViewRef,
 } from "@/modules/vlc-player/src/VlcPlayer.types";
-import { useDownload } from "@/providers/DownloadProvider";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
+import { useSettings } from "@/utils/atoms/settings";
 import { getBackdropUrl } from "@/utils/jellyfin/image/getBackdropUrl";
 import { getStreamUrl } from "@/utils/jellyfin/media/getStreamUrl";
 import { writeToLog } from "@/utils/log";
@@ -32,22 +31,13 @@ import { useFocusEffect, useGlobalSearchParams } from "expo-router";
 import { useAtomValue } from "jotai";
 import React, {
   useCallback,
+  useEffect,
   useMemo,
   useRef,
   useState,
-  useEffect,
 } from "react";
-import {
-  Alert,
-  BackHandler,
-  View,
-  AppState,
-  AppStateStatus,
-  Platform,
-} from "react-native";
+import { Alert, AppState, AppStateStatus, Platform, View } from "react-native";
 import { useSharedValue } from "react-native-reanimated";
-import settings from "../(tabs)/(home)/settings";
-import { useSettings } from "@/utils/atoms/settings";
 
 export default function page() {
   const videoRef = useRef<VlcPlayerViewRef>(null);
@@ -65,7 +55,6 @@ export default function page() {
   const isSeeking = useSharedValue(false);
   const cacheProgress = useSharedValue(0);
 
-  const { getDownloadedItem } = useDownload();
   const revalidateProgressCache = useInvalidatePlaybackProgressCache();
 
   const setShowControls = useCallback((show: boolean) => {
@@ -79,17 +68,14 @@ export default function page() {
     subtitleIndex: subtitleIndexStr,
     mediaSourceId,
     bitrateValue: bitrateValueStr,
-    offline: offlineStr,
   } = useGlobalSearchParams<{
     itemId: string;
     audioIndex: string;
     subtitleIndex: string;
     mediaSourceId: string;
     bitrateValue: string;
-    offline: string;
   }>();
   const [settings] = useSettings();
-  const offline = offlineStr === "true";
 
   const audioIndex = audioIndexStr ? parseInt(audioIndexStr, 10) : undefined;
   const subtitleIndex = subtitleIndexStr ? parseInt(subtitleIndexStr, 10) : -1;
@@ -104,12 +90,6 @@ export default function page() {
   } = useQuery({
     queryKey: ["item", itemId],
     queryFn: async () => {
-      console.log("Offline:", offline);
-      if (offline) {
-        const item = await getDownloadedItem(itemId);
-        if (item) return item.item;
-      }
-
       const res = await getUserLibraryApi(api!).getItem({
         itemId,
         userId: user?.Id,
@@ -128,21 +108,6 @@ export default function page() {
   } = useQuery({
     queryKey: ["stream-url", itemId, mediaSourceId, bitrateValue],
     queryFn: async () => {
-      console.log("Offline:", offline);
-      if (offline) {
-        const data = await getDownloadedItem(itemId);
-        if (!data?.mediaSource) return null;
-
-        const url = await getDownloadedFileUrl(data.item.Id!);
-
-        if (item)
-          return {
-            mediaSource: data.mediaSource,
-            url,
-            sessionId: undefined,
-          };
-      }
-
       const res = await getStreamUrl({
         api,
         item,
@@ -181,7 +146,7 @@ export default function page() {
     if (isPlaying) {
       await videoRef.current?.pause();
 
-      if (!offline && stream) {
+      if (stream) {
         await getPlaystateApi(api).onPlaybackProgress({
           itemId: item?.Id!,
           audioStreamIndex: audioIndex ? audioIndex : undefined,
@@ -199,7 +164,7 @@ export default function page() {
       console.log("Actually marked as paused");
     } else {
       videoRef.current?.play();
-      if (!offline && stream) {
+      if (stream) {
         await getPlaystateApi(api).onPlaybackProgress({
           itemId: item?.Id!,
           audioStreamIndex: audioIndex ? audioIndex : undefined,
@@ -223,13 +188,10 @@ export default function page() {
     audioIndex,
     subtitleIndex,
     mediaSourceId,
-    offline,
     progress.value,
   ]);
 
   const reportPlaybackStopped = useCallback(async () => {
-    if (offline) return;
-
     const currentTimeInTicks = msToTicks(progress.value);
 
     await getPlaystateApi(api!).onPlaybackStopped({
@@ -250,8 +212,6 @@ export default function page() {
 
   // TODO: unused should remove.
   const reportPlaybackStart = useCallback(async () => {
-    if (offline) return;
-
     if (!stream) return;
     await getPlaystateApi(api!).onPlaybackStart({
       itemId: item?.Id!,
@@ -275,8 +235,6 @@ export default function page() {
       }
 
       progress.value = currentTime;
-
-      if (offline) return;
 
       const currentTimeInTicks = msToTicks(currentTime);
 
@@ -303,7 +261,6 @@ export default function page() {
     isPlaying: isPlaying,
     togglePlay: togglePlay,
     stopPlayback: stop,
-    offline,
   });
 
   const onPlaybackStateChanged = useCallback((e: PlaybackStatePayload) => {
@@ -328,8 +285,6 @@ export default function page() {
   }, []);
 
   const startPosition = useMemo(() => {
-    if (offline) return 0;
-
     return item?.UserData?.PlaybackPositionTicks
       ? ticksToSeconds(item.UserData.PlaybackPositionTicks)
       : 0;
@@ -495,7 +450,6 @@ export default function page() {
           enableTrickplay={true}
           getAudioTracks={videoRef.current?.getAudioTracks}
           getSubtitleTracks={videoRef.current?.getSubtitleTracks}
-          offline={offline}
           setSubtitleTrack={videoRef.current.setSubtitleTrack}
           setSubtitleURL={videoRef.current.setSubtitleURL}
           setAudioTrack={videoRef.current.setAudioTrack}

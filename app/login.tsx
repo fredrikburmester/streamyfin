@@ -4,7 +4,6 @@ import { Text } from "@/components/common/Text";
 import { apiAtom, useJellyfin } from "@/providers/JellyfinProvider";
 import { Ionicons } from "@expo/vector-icons";
 import { PublicSystemInfo } from "@jellyfin/sdk/lib/generated-client";
-import { getSystemApi } from "@jellyfin/sdk/lib/utils/api";
 import { Image } from "expo-image";
 import { useLocalSearchParams, useNavigation } from "expo-router";
 import { useAtom } from "jotai";

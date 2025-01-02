@@ -41,33 +41,17 @@
         "foregroundImage": "./assets/images/adaptive_icon.png"
       },
       "package": "com.fredrikburmester.streamyfin",
-      "permissions": [
-        "android.permission.FOREGROUND_SERVICE",
-        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
-        "android.permission.WRITE_SETTINGS"
-      ]
+      "permissions": []
     },
     "plugins": [
       "expo-router",
       "expo-font",
       "@config-plugins/ffmpeg-kit-react-native",
       [
-        "react-native-google-cast",
-        {
-          "useDefaultExpandedMediaControls": true
-        }
-      ],
-      [
         "react-native-video",
         {
           "enableNotificationControls": true,
-          "enableBackgroundAudio": true,
-          "androidExtensions": {
-            "useExoplayerRtsp": false,
-            "useExoplayerSmoothStreaming": false,
-            "useExoplayerHls": true,
-            "useExoplayerDash": false
-          }
+          "enableBackgroundAudio": true
         }
       ],
       [
@@ -76,20 +60,6 @@
           "ios": {
             "deploymentTarget": "15.6",
             "useFrameworks": "static"
-          },
-          "android": {
-            "android": {
-              "compileSdkVersion": 34,
-              "targetSdkVersion": 34,
-              "buildToolsVersion": "34.0.0"
-            },
-            "minSdkVersion": 24,
-            "usesCleartextTraffic": true,
-            "packagingOptions": {
-              "jniLibs": {
-                "useLegacyPackaging": true
-              }
-            }
           }
         }
       ],
@@ -106,12 +76,8 @@
         }
       ],
       "expo-asset",
-      [
-        "react-native-edge-to-edge",
-        { "android": { "parentTheme": "Material3" } }
-      ],
+      ["react-native-edge-to-edge"],
       ["react-native-bottom-tabs"],
-      ["./plugins/withChangeNativeAndroidTextToWhite.js"],
       ["@react-native-tvos/config-tv"]
     ],
     "experiments": {

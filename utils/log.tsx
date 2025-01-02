@@ -1,7 +1,7 @@
 import { atomWithStorage, createJSONStorage } from "jotai/utils";
 import { storage } from "./mmkv";
-import {useQuery} from "@tanstack/react-query";
-import React, {createContext, useContext} from "react";
+import { useQuery } from "@tanstack/react-query";
+import React, { createContext, useContext } from "react";
 
 type LogLevel = "INFO" | "WARN" | "ERROR";
 
@@ -19,10 +19,9 @@ const mmkvStorage = createJSONStorage(() => ({
 }));
 const logsAtom = atomWithStorage("logs", [], mmkvStorage);
 
-const LogContext = createContext<ReturnType<typeof useLogProvider> | null>(null);
-const DownloadContext = createContext<ReturnType<
-  typeof useLogProvider
-> | null>(null);
+const LogContext = createContext<ReturnType<typeof useLogProvider> | null>(
+  null
+);
 
 function useLogProvider() {
   const { data: logs } = useQuery({
@@ -32,10 +31,9 @@ function useLogProvider() {
   });
 
   return {
-    logs
-  }
+    logs,
+  };
 }
-
 
 export const writeToLog = (level: LogLevel, message: string, data?: any) => {
   const newEntry: LogEntry = {
@@ -55,8 +53,10 @@ export const writeToLog = (level: LogLevel, message: string, data?: any) => {
   storage.set("logs", JSON.stringify(recentLogs));
 };
 
-export const writeInfoLog = (message: string, data?: any) => writeToLog("INFO", message, data);
-export const writeErrorLog = (message: string, data?: any) => writeToLog("ERROR", message, data);
+export const writeInfoLog = (message: string, data?: any) =>
+  writeToLog("INFO", message, data);
+export const writeErrorLog = (message: string, data?: any) =>
+  writeToLog("ERROR", message, data);
 
 export const readFromLog = (): LogEntry[] => {
   const logs = storage.getString("logs");
@@ -75,14 +75,10 @@ export function useLog() {
   return context;
 }
 
-export function LogProvider({children}: { children: React.ReactNode }) {
+export function LogProvider({ children }: { children: React.ReactNode }) {
   const provider = useLogProvider();
 
-  return (
-    <LogContext.Provider value={provider}>
-      {children}
-    </LogContext.Provider>
-  )
+  return <LogContext.Provider value={provider}>{children}</LogContext.Provider>;
 }
 
 export default logsAtom;

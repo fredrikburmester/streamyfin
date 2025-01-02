@@ -7,21 +7,18 @@ interface UseWebSocketProps {
   isPlaying: boolean;
   togglePlay: () => void;
   stopPlayback: () => void;
-  offline: boolean;
 }
 
 export const useWebSocket = ({
   isPlaying,
   togglePlay,
   stopPlayback,
-  offline,
 }: UseWebSocketProps) => {
   const router = useRouter();
   const { ws } = useWebSocketContext();
 
   useEffect(() => {
     if (!ws) return;
-    if (offline) return;
 
     ws.onmessage = (e) => {
       const json = JSON.parse(e.data);

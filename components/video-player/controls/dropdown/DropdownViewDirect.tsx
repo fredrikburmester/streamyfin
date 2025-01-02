@@ -11,12 +11,10 @@ import { router, useLocalSearchParams } from "expo-router";
 
 interface DropdownViewDirectProps {
   showControls: boolean;
-  offline?: boolean; // used to disable external subs for downloads
 }
 
 const DropdownViewDirect: React.FC<DropdownViewDirectProps> = ({
   showControls,
-  offline = false,
 }) => {
   const api = useAtomValue(apiAtom);
   const ControlContext = useControlContext();
@@ -54,14 +52,12 @@ const DropdownViewDirect: React.FC<DropdownViewDirectProps> = ({
       })) || [];
 
     // Combine embedded subs with external subs only if not offline
-    if (!offline) {
-      return [...embeddedSubs, ...externalSubs] as (
-        | EmbeddedSubtitle
-        | ExternalSubtitle
-      )[];
-    }
+    return [...embeddedSubs, ...externalSubs] as (
+      | EmbeddedSubtitle
+      | ExternalSubtitle
+    )[];
     return embeddedSubs as EmbeddedSubtitle[];
-  }, [item, isVideoLoaded, subtitleTracks, mediaSource?.MediaStreams, offline]);
+  }, [item, isVideoLoaded, subtitleTracks, mediaSource?.MediaStreams]);
 
   const { subtitleIndex, audioIndex } = useLocalSearchParams<{
     itemId: string;

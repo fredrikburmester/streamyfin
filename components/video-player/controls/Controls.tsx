@@ -109,7 +109,6 @@ export const Controls: React.FC<Props> = ({
   setSubtitleTrack,
   setAudioTrack,
   stop,
-  offline = false,
   enableTrickplay = true,
   isVlc = false,
 }) => {
@@ -124,7 +123,7 @@ export const Controls: React.FC<Props> = ({
     calculateTrickplayUrl,
     trickplayInfo,
     prefetchAllTrickplayImages,
-  } = useTrickplay(item, !offline && enableTrickplay);
+  } = useTrickplay(item, enableTrickplay);
 
   const [currentTime, setCurrentTime] = useState(0);
   const [remainingTime, setRemainingTime] = useState(Infinity);
@@ -142,7 +141,7 @@ export const Controls: React.FC<Props> = ({
   }>();
 
   const { showSkipButton, skipIntro } = useIntroSkipper(
-    offline ? undefined : item.Id,
+    item.Id,
     currentTime,
     seek,
     play,
@@ -150,7 +149,7 @@ export const Controls: React.FC<Props> = ({
   );
 
   const { showSkipCreditButton, skipCredit } = useCreditSkipper(
-    offline ? undefined : item.Id,
+    item.Id,
     currentTime,
     seek,
     play,
@@ -547,7 +546,7 @@ export const Controls: React.FC<Props> = ({
             pointerEvents={showControls ? "auto" : "none"}
             className={`flex flex-row items-center space-x-2 z-10 p-4 `}
           >
-            {item?.Type === "Episode" && !offline && (
+            {item?.Type === "Episode" && (
               <TouchableOpacity
                 onPress={() => {
                   switchOnEpisodeMode();
@@ -557,7 +556,7 @@ export const Controls: React.FC<Props> = ({
                 <Ionicons name="list" size={24} color="white" />
               </TouchableOpacity>
             )}
-            {previousItem && !offline && (
+            {previousItem && (
               <TouchableOpacity
                 onPress={goToPreviousItem}
                 className="aspect-square flex flex-col bg-neutral-800/90 rounded-xl items-center justify-center p-2"
@@ -566,7 +565,7 @@ export const Controls: React.FC<Props> = ({
               </TouchableOpacity>
             )}
 
-            {nextItem && !offline && (
+            {nextItem && (
               <TouchableOpacity
                 onPress={goToNextItem}
                 className="aspect-square flex flex-col bg-neutral-800/90 rounded-xl items-center justify-center p-2"

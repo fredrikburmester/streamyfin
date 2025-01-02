@@ -32,18 +32,6 @@ export default function IndexLayout() {
         }}
       />
       <Stack.Screen
-        name="downloads/index"
-        options={{
-          title: "Downloads",
-        }}
-      />
-      <Stack.Screen
-        name="downloads/[seriesId]"
-        options={{
-          title: "TV-Series",
-        }}
-      />
-      <Stack.Screen
         name="settings"
         options={{
           title: "Settings",

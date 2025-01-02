@@ -2,7 +2,6 @@ import { Button } from "@/components/Button";
 import { Text } from "@/components/common/Text";
 import { ListItem } from "@/components/ListItem";
 import { SettingToggles } from "@/components/settings/SettingToggles";
-import {useDownload} from "@/providers/DownloadProvider";
 import { apiAtom, useJellyfin, userAtom } from "@/providers/JellyfinProvider";
 import { clearLogs, useLog } from "@/utils/log";
 import { getQuickConnectApi } from "@jellyfin/sdk/lib/utils/api";
@@ -17,25 +16,12 @@ import { toast } from "sonner-native";
 
 export default function settings() {
   const { logout } = useJellyfin();
-  const { deleteAllFiles, appSizeUsage } = useDownload();
   const { logs } = useLog();
 
   const [api] = useAtom(apiAtom);
   const [user] = useAtom(userAtom);
 
   const insets = useSafeAreaInsets();
-
-  const { data: size, isLoading: appSizeLoading } = useQuery({
-    queryKey: ["appSize", appSizeUsage],
-    queryFn: async () => {
-      const app = await appSizeUsage;
-
-      const remaining = await FileSystem.getFreeDiskStorageAsync();
-      const total = await FileSystem.getTotalDiskCapacityAsync();
-
-      return { app, remaining, total, used: (total - remaining) / total };
-    },
-  });
 
   const openQuickConnectAuthCodeInput = () => {
     Alert.prompt(
@@ -64,16 +50,6 @@ export default function settings() {
         }
       }
     );
-  };
-
-  const onDeleteClicked = async () => {
-    try {
-      await deleteAllFiles();
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } catch (e) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      toast.error("Error deleting files");
-    }
   };
 
   const onClearLogsClicked = async () => {
@@ -119,34 +95,6 @@ export default function settings() {
 
         <SettingToggles />
 
-        <View className="flex flex-col space-y-2">
-          <Text className="font-bold text-lg mb-2">Storage</Text>
-          <View className="mb-4 space-y-2">
-            {size && <Text>App usage: {size.app.bytesToReadable()}</Text>}
-            <Progress.Bar
-              className="bg-gray-100/10"
-              indeterminate={appSizeLoading}
-              color="#9333ea"
-              width={null}
-              height={10}
-              borderRadius={6}
-              borderWidth={0}
-              progress={size?.used}
-            />
-            {size && (
-              <Text>
-                Available: {size.remaining?.bytesToReadable()}, Total:{" "}
-                {size.total?.bytesToReadable()}
-              </Text>
-            )}
-          </View>
-          <Button color="red" onPress={onDeleteClicked}>
-            Delete all downloaded files
-          </Button>
-          <Button color="red" onPress={onClearLogsClicked}>
-            Delete all logs
-          </Button>
-        </View>
         <View>
           <Text className="font-bold text-lg mb-2">Logs</Text>
           <View className="flex flex-col space-y-2">

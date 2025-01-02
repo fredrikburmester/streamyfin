@@ -1,10 +1,6 @@
-import { Text } from "@/components/common/Text";
-import { DownloadItems } from "@/components/DownloadItem";
 import { ParallaxScrollView } from "@/components/ParallaxPage";
-import { Ratings } from "@/components/Ratings";
 import { NextUp } from "@/components/series/NextUp";
 import { SeasonPicker } from "@/components/series/SeasonPicker";
-import { ItemActions } from "@/components/series/SeriesActions";
 import { SeriesHeader } from "@/components/series/SeriesHeader";
 import { apiAtom, userAtom } from "@/providers/JellyfinProvider";
 import { getBackdropUrl } from "@/utils/jellyfin/image/getBackdropUrl";
@@ -76,32 +72,6 @@ const page: React.FC = () => {
     staleTime: 60,
     enabled: !!api && !!user?.Id && !!item?.Id,
   });
-
-  useEffect(() => {
-    navigation.setOptions({
-      headerRight: () =>
-        !isLoading &&
-        allEpisodes &&
-        allEpisodes.length > 0 && (
-          <View className="flex flex-row items-center space-x-2">
-            <DownloadItems
-              title="Download Series"
-              items={allEpisodes || []}
-              MissingDownloadIconComponent={() => (
-                <Ionicons name="download" size={22} color="white" />
-              )}
-              DownloadedIconComponent={() => (
-                <Ionicons
-                  name="checkmark-done-outline"
-                  size={24}
-                  color="#9333ea"
-                />
-              )}
-            />
-          </View>
-        ),
-    });
-  }, [allEpisodes, isLoading]);
 
   if (!item || !backdropUrl) return null;
 
