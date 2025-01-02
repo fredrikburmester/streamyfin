@@ -58,7 +58,6 @@
     "expo-splash-screen": "~0.27.7",
     "expo-status-bar": "~1.12.1",
     "expo-system-ui": "^3.0.7",
-    "expo-task-manager": "~11.8.2",
     "expo-updates": "~0.25.27",
     "expo-web-browser": "~13.0.3",
     "ffmpeg-kit-react-native": "^6.0.2",

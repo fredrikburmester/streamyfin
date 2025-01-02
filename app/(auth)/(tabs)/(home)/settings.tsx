@@ -66,13 +66,6 @@ export default function settings() {
       }}
     >
       <View className="p-4 flex flex-col gap-y-4">
-        {/* <Button
-          onPress={() => {
-            registerBackgroundFetchAsync();
-          }}
-        >
-          registerBackgroundFetchAsync
-        </Button> */}
         <View>
           <Text className="font-bold text-lg mb-2">User Info</Text>
 
