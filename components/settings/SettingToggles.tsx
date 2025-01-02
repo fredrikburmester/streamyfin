@@ -43,6 +43,8 @@ import { AudioToggles } from "./AudioToggles";
 import { JellyseerrApi, useJellyseerr } from "@/hooks/useJellyseerr";
 import { ListItem } from "@/components/ListItem";
 import { JellyseerrSettings } from "./Jellyseerr";
+import { useTranslation } from "react-i18next";
+import { AppLanguageSelector } from "./AppLanguageSelector";
 
 interface Props extends ViewProps {}
 
@@ -59,6 +61,8 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
 
   const queryClient = useQueryClient();
 
+  const { t } = useTranslation();
+
   /********************
    * Background task
    *******************/
@@ -73,10 +77,10 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
 
       if (settings?.autoDownload === true && !registered) {
         registerBackgroundFetchAsync();
-        toast.success("Background downloads enabled");
+        toast.success(t("home.settings.toasts.background_downloads_enabled"));
       } else if (settings?.autoDownload === false && registered) {
         unregisterBackgroundFetchAsync();
-        toast.info("Background downloads disabled");
+        toast.info(t("home.settings.toasts.background_downloads_disabled"));
       } else if (settings?.autoDownload === true && registered) {
         // Don't to anything
       } else if (settings?.autoDownload === false && !registered) {
@@ -130,6 +134,8 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
         </View>
       </View> */}
 
+      <AppLanguageSelector />
+
       <MediaProvider>
         <MediaToggles />
         <AudioToggles />
@@ -137,15 +143,18 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
       </MediaProvider>
 
       <View>
-        <Text className="text-lg font-bold mb-2">Other</Text>
+        <Text className="text-lg font-bold mb-2">
+          {t("home.settings.other.other_title")}
+        </Text>
 
         <View className="flex flex-col rounded-xl overflow-hidden  divide-y-2 divide-solid divide-neutral-800">
           <View className="flex flex-row items-center justify-between bg-neutral-900 p-4">
             <View className="shrink">
-              <Text className="font-semibold">Auto rotate</Text>
+              <Text className="font-semibold">
+                {t("home.settings.other.auto_rotate")}
+              </Text>
               <Text className="text-xs opacity-50">
-                Important on android since the video player orientation is
-                locked to the app orientation.
+                {t("home.settings.other.auto_rotate_hint")}
               </Text>
             </View>
             <Switch
@@ -166,9 +175,11 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
               `}
           >
             <View className="flex flex-col shrink">
-              <Text className="font-semibold">Video orientation</Text>
+              <Text className="font-semibold">
+                {t("home.settings.other.video_orientation")}
+              </Text>
               <Text className="text-xs opacity-50">
-                Set the full screen video player orientation.
+                {t("home.settings.other.video_orientation_hint")}
               </Text>
             </View>
             <DropdownMenu.Root>
@@ -263,9 +274,11 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
 
           <View className="flex flex-row items-center justify-between bg-neutral-900 p-4">
             <View className="shrink">
-              <Text className="font-semibold">Safe area in controls</Text>
+              <Text className="font-semibold">
+                {t("home.settings.other.safe_area_in_controls")}
+              </Text>
               <Text className="text-xs opacity-50">
-                Enable safe area in video player controls
+                {t("home.settings.other.safe_area_in_controls_hint")}
               </Text>
             </View>
             <Switch
@@ -279,8 +292,12 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
           <View className="flex flex-col">
             <View className="flex flex-row items-center justify-between bg-neutral-900 p-4">
               <View className="flex flex-col">
-                <Text className="font-semibold">Use popular lists plugin</Text>
-                <Text className="text-xs opacity-50">Made by: lostb1t</Text>
+                <Text className="font-semibold">
+                  {t("home.settings.other.use_popular_lists_plugin")}
+                </Text>
+                <Text className="text-xs opacity-50">
+                  {t("home.settings.other.use_popular_lists_plugin_hint")}
+                </Text>
                 <TouchableOpacity
                   onPress={() => {
                     Linking.openURL(
@@ -288,7 +305,9 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
                     );
                   }}
                 >
-                  <Text className="text-xs text-purple-600">More info</Text>
+                  <Text className="text-xs text-purple-600">
+                    {t("home.settings.other.more_info")}
+                  </Text>
                 </TouchableOpacity>
               </View>
               <Switch
@@ -353,9 +372,11 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
               `}
             >
               <View className="flex flex-col shrink">
-                <Text className="font-semibold">Search engine</Text>
+                <Text className="font-semibold">
+                  {t("home.settings.other.search_engine")}
+                </Text>
                 <Text className="text-xs opacity-50">
-                  Choose the search engine you want to use.
+                  {t("home.settings.other.search_engine_hint")}
                 </Text>
               </View>
               <DropdownMenu.Root>
@@ -421,7 +442,7 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
                       });
                     }}
                   >
-                    Save
+                    {t("home.settings.other.save_button")}
                   </Button>
                 </View>
 
@@ -436,10 +457,11 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
 
           <View className="flex flex-row items-center justify-between bg-neutral-900 p-4">
             <View className="shrink">
-              <Text className="font-semibold">Show Custom Menu Links</Text>
+              <Text className="font-semibold">
+                {t("home.settings.other.show_custom_menu_links")}
+              </Text>
               <Text className="text-xs opacity-50">
-                Show custom menu links defined inside your Jellyfin web
-                config.json file
+                {t("home.settings.other.show_custom_menu_links_hint")}
               </Text>
               <TouchableOpacity
                 onPress={() =>
@@ -448,7 +470,9 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
                   )
                 }
               >
-                <Text className="text-xs text-purple-600">More info</Text>
+                <Text className="text-xs text-purple-600">
+                  {t("home.settings.other.more_info")}
+                </Text>
               </TouchableOpacity>
             </View>
             <Switch
@@ -462,7 +486,9 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
       </View>
 
       <View className="mt-4">
-        <Text className="text-lg font-bold mb-2">Downloads</Text>
+        <Text className="text-lg font-bold mb-2">
+          {t("home.settings.downloads.downloads_title")}
+        </Text>
         <View className="flex flex-col rounded-xl overflow-hidden  divide-y-2 divide-solid divide-neutral-800">
           <View
             className={`
@@ -470,10 +496,11 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
               `}
           >
             <View className="flex flex-col shrink">
-              <Text className="font-semibold">Download method</Text>
+              <Text className="font-semibold">
+                {t("home.settings.downloads.download_method")}
+              </Text>
               <Text className="text-xs opacity-50">
-                Choose the download method to use. Optimized requires the
-                optimized server.
+                {t("home.settings.downloads.download_method_hint")}
               </Text>
             </View>
             <DropdownMenu.Root>
@@ -531,10 +558,11 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
               }`}
           >
             <View className="flex flex-col shrink">
-              <Text className="font-semibold">Remux max download</Text>
+              <Text className="font-semibold">
+                {t("home.settings.downloads.remux_max_download")}
+              </Text>
               <Text className="text-xs opacity-50 shrink">
-                This is the total media you want to be able to download at the
-                same time.
+                {t("home.settings.downloads.remux_max_download_hint")}
               </Text>
             </View>
             <Stepper
@@ -563,10 +591,11 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
               }`}
           >
             <View className="flex flex-col shrink">
-              <Text className="font-semibold">Auto download</Text>
+              <Text className="font-semibold">
+                {t("home.settings.downloads.auto_download")}
+              </Text>
               <Text className="text-xs opacity-50 shrink">
-                This will automatically download the media file when it's
-                finished optimizing on the server.
+                {t("home.settings.downloads.auto_download_hint")}
               </Text>
             </View>
             <Switch
@@ -589,11 +618,11 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
               <View className="flex flex-col shrink mb-2">
                 <View className="flex flex-row justify-between items-center">
                   <Text className="font-semibold">
-                    Optimized versions server
+                    {t("home.settings.downloads.optimized_versions_server")}
                   </Text>
                 </View>
                 <Text className="text-xs opacity-50">
-                  Set the URL for the optimized versions server for downloads.
+                  {t("home.settings.downloads.optimized_versions_server_hint")}
                 </Text>
               </View>
               <View></View>
@@ -625,11 +654,11 @@ export const SettingToggles: React.FC<Props> = ({ ...props }) => {
                       deviceId: await getOrSetDeviceId(),
                     });
                     if (res) {
-                      toast.success("Connected");
-                    } else toast.error("Could not connect");
+                      toast.success(t("home.settings.toasts.connected"));
+                    } else toast.error(t("home.settings.toasts.could_not_connect"));
                   }}
                 >
-                  Save
+                  {t("home.settings.downloads.save_button")}
                 </Button>
               </View>
             </View>

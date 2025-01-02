@@ -1,5 +1,6 @@
 import { atom, useAtom } from "jotai";
 import { useEffect } from "react";
+import { getLocales } from "expo-localization";
 import * as ScreenOrientation from "expo-screen-orientation";
 import { storage } from "../mmkv";
 import { Platform } from "react-native";
@@ -65,6 +66,7 @@ export type Settings = {
   usePopularPlugin?: boolean;
   deviceProfile?: "Expo" | "Native" | "Old";
   mediaListCollectionIds?: string[];
+  preferedLanguage?: string;
   searchEngine: "Marlin" | "Jellyfin";
   marlinServerUrl?: string;
   openInVLC?: boolean;
@@ -97,6 +99,7 @@ const loadSettings = (): Settings => {
     usePopularPlugin: false,
     deviceProfile: "Expo",
     mediaListCollectionIds: [],
+    preferedLanguage: undefined,
     searchEngine: "Jellyfin",
     marlinServerUrl: "",
     openInVLC: false,

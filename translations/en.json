@@ -1,0 +1,256 @@
+{
+  "login": {
+    "username_required": "Username is required",
+    "error_title": "Error",
+    "login_title": "Log in",
+    "login_to_title": "Log in to",
+    "username_placeholder": "Username",
+    "password_placeholder": "Password",
+    "use_quick_connect": "Use Quick Connect",
+    "login_button": "Log in",
+    "quick_connect": "Quick Connect",
+    "enter_code_to_login": "Enter code {{code}} to login",
+    "failed_to_initiate_quick_connect": "Failed to initiate Quick Connect",
+    "got_it": "Got it",
+    "connection_failed": "Connection failed",
+    "could_not_connect_to_server": "Could not connect to the server. Please check the URL and your network connection."
+  },
+  "server": {
+    "enter_url_to_jellyfin_server": "Enter the URL to your Jellyfin server",
+    "server_url_placeholder": "Server URL",
+    "server_url_hint": "Make sure to include http or https",
+    "connect_button": "Connect"
+  },
+  "home": {
+    "home": "Home",
+    "no_internet": "No Internet",
+    "no_internet_message": "No worries, you can still watch\ndownloaded content.",
+    "go_to_downloads": "Go to downloads",
+    "oops": "Oops!",
+    "error_message": "Something went wrong.\nPlease log out and in again.",
+    "continue_watching": "Continue Watching",
+    "next_up": "Next Up",
+    "recently_added_in": "Recently Added in {{libraryName}}",
+    "suggested_movies": "Suggested Movies",
+    "suggested_episodes": "Suggested Episodes",
+    "settings": {
+      "settings_title": "Settings",
+      "user_info": {
+        "user_info_title": "User Info",
+        "user": "User",
+        "server": "Server",
+        "log_out_button": "Log out",
+        "token": "Token"
+      },
+      "quick_connect": {
+        "quick_connect_title": "Quick connect",
+        "authorize_button": "Authorize",
+        "enter_the_quick_connect_code": "Enter the Quick Connect code",
+        "success": "Success",
+        "quick_connect_autorized": "Quick Connect authorized",
+        "error": "Error",
+        "invalid_code": "Invalid code"
+      },
+      "media": {
+        "media_title": "Media",
+        "forward_skip_length": "Forward skip length",
+        "forward_skip_length_hint": "Choose length in seconds when skipping in video playback.",
+        "rewind_length": "Rewind length",
+        "rewind_length_hint": "Choose length in seconds when skipping in video playback."
+      },
+      "audio": {
+        "audio_title": "Audio",
+        "audio_language": "Audio language",
+        "audio_language_hint": "Choose a default audio language.",
+        "use_default_audio": "Use Default Audio",
+        "use_default_audio_hint": "Play default audio track regardless of language.",
+        "set_audio_track": "Set Audio Track From Previous Item",
+        "set_audio_track_hint": "Try to set the audio track to the closest match to the last\nvideo."
+      },
+      "subtitles": {
+        "subtitle_title": "Subtitle",
+        "subtitle_language": "Subtitle language",
+        "subtitle_language_hint": "Choose a default subtitle language.",
+        "subtitle_mode": "Subtitle Mode",
+        "subtitle_mode_hint": "Subtitles are loaded based on the default and forced flags in the\nembedded metadata. Language preferences are considered when\nmultiple options are available.",
+        "set_subtitle_track": "Set Subtitle Track From Previous Item",
+        "set_subtitle_track_hint": "Try to set the subtitle track to the closest match to the last\nvideo.",
+        "subtitle_size": "Subtitle Size",
+        "subtitle_size_hint": "Choose a default subtitle size for direct play (only works for\nsome subtitle formats)."
+      },
+      "other": {
+        "other_title": "Other",
+        "auto_rotate": "Auto rotate",
+        "auto_rotate_hint": "Important on android since the video player orientation is locked to the app orientation.",
+        "video_orientation": "Video orientation",
+        "video_orientation_hint": "Set the full screen video player orientation",
+        "safe_area_in_controls": "Safe area in controls",
+        "safe_area_in_controls_hint": "Enable safe area in video player controls",
+        "use_popular_lists_plugin": "Use popular lists plugin",
+        "use_popular_lists_plugin_hint": "Made by: lostb1t",
+        "more_info": "More info",
+        "search_engine": "Search engine",
+        "search_engine_hint": "Choose the search engine you want to use.",
+        "show_custom_menu_links": "Show Custom Menu Links",
+        "show_custom_menu_links_hint": "Show custom menu links defined inside your Jellyfin web config.json file",
+        "save_button": "Save"
+      },
+      "downloads": {
+        "downloads_title": "Downloads",
+        "download_method": "Download method",
+        "download_method_hint": "Choose the download method to use. Optimized requires the optimized server.",
+        "remux_max_download": "Remux max download",
+        "remux_max_download_hint": "This is the total media you want to be able to download at the same time.",
+        "auto_download": "Auto download",
+        "auto_download_hint": "This will automatically download the media file when it's finished optimizing on the server.",
+        "optimized_versions_server": "Optimized versions server",
+        "optimized_versions_server_hint": "Set the URL for the optimized versions server for downloads.",
+        "save_button": "Save"
+      },
+      "jellyseerr": {
+        "jellyseerr_warning": "This integration is in its early stages. Expect things to change.",
+        "server_url": "Server URL",
+        "server_url_hint": "Example: http(s)://your-host.url\n(add port if required)",
+        "server_url_placeholder": "Jellyseerr URL...",
+        "password": "Password",
+        "password_placeholder": "Enter password for Jellyfin user {{username}}",
+        "save_button": "Save",
+        "clear_button": "Clear",
+        "login_button": "Login"
+      },
+      "storage": {
+        "storage_title": "Storage",
+        "app_usage": "App usage: {{usedSpace}}",
+        "available_total": "Available: {{availableSpace}}, Total: {{totalSpace}}",
+        "delete_all_downloaded_files": "Delete all downloaded files",
+        "delete_all_logs": "Delete all logs"
+      },
+      "logs": {
+        "logs_title": "Logs",
+        "no_logs_available": "No logs available"
+      },
+      "languages": {
+        "title": "Languages",
+        "app_language": "App language",
+        "app_language_description": "Select the language for the app.",
+        "system": "System"
+      },
+      "toasts":{
+        "error_deleting_files": "Error deleting files",
+        "background_downloads_enabled": "Background downloads enabled",
+        "background_downloads_disabled": "Background downloads disabled",
+        "connected": "Connected",
+        "could_not_connect": "Could not connect"
+      }
+    },
+    "downloads": {
+      "downloads_title": "Downloads",
+      "tvseries": "TV-Series",
+      "movies": "Movies",
+      "queue": "Queue",
+      "queue_hint": "Queue and downloads will be lost on app restart",
+      "no_items_in_queue": "No items in queue",
+      "no_downloaded_items": "No downloaded items",
+      "delete_all_movies_button": "Delete all Movies",
+      "delete_all_tvseries_button": "Delete all TV-Series",
+      "delete_button": "Delete all",
+      "active_download": "Active download",
+      "no_active_downloads": "No active downloads",
+      "active_downloads": "Active downloads",
+      "new_app_version_requires_re_download": "New app version requires re-download",
+      "new_app_version_requires_re_download_description": "The new update reqires content to be downloaded again. Please remove all downloaded content and try again.",
+      "back": "Back",
+      "delete": "Delete",
+      "something_went_wrong": "Something went wrong",
+      "could_not_get_stream_url_from_jellyfin": "Could not get stream URL from Jellyfin",
+      "toasts": {
+        "you_are_not_allowed_to_download_files": "You are not allowed to download files.",
+        "deleted_all_movies_successfully": "Deleted all movies successfully!",
+        "failed_to_delete_all_movies": "Failed to delete all movies",
+        "deleted_all_tvseries_successfully": "Deleted all TV-Series successfully!",
+        "failed_to_delete_all_tvseries": "Failed to delete all TV-Series",
+        "download_cancelled": "Download cancelled",
+        "could_not_cancel_download": "Could not cancel download",
+        "download_completed": "Download completed",
+        "download_started_for": "Download started for {{item}}",
+        "item_is_ready_to_be_downloaded": "{{item}} is ready to be downloaded",
+        "download_stated_for_item": "Download started for {{item}}",
+        "download_failed_for_item": "Download failed for {{item}} - {{error}}",
+        "download_completed_for_item": "Download completed for {{item}}",
+        "queued_item_for_optimization": "Queued {{item}} for optimization",
+        "failed_to_start_download_for_item": "Failed to start download for {{item}}: {{message}}",
+        "server_responded_with_status_code": "Server responded with status {{statusCode}}",
+        "no_response_received_from_server": "No response received from server",
+        "error_setting_up_the_request": "Error setting up the request",
+        "failed_to_start_download_for_item_unexpected_error": "Failed to start download for {{item}}: Unexpected error",
+        "all_files_folders_and_jobs_deleted_successfully": "All files, folders and jobs deleted successfully",
+        "an_error_occured_while_deleting_files_and_jobs": "An error occurred while deleting files and jobs",
+        "go_to_downloads": "Go to downloads"
+      }
+    }
+  },
+  "search": {
+    "search_title": "Search",
+    "search_here": "Search here...",
+    "search": "Search...",
+    "no_results_found_for": "No results found for"
+  },
+  "library": {
+    "library_title": "Library",
+    "no_items_found": "No items found",
+    "no_results": "No results",
+    "no_libraries_found": "No libraries found",
+    "options": {
+      "display": "Display",
+      "row": "Row",
+      "list": "List",
+      "image_style": "Image style",
+      "poster": "Poster",
+      "cover": "Cover",
+      "show_titles": "Show titles",
+      "show_stats": "Show stats"
+    },
+    "headers": {
+      "genres": "Genres",
+      "years": "Years",
+      "sort_by": "Sort By",
+      "sort_order": "Sort Order",
+      "tags": "Tags"
+    }
+  },
+  "favorites": {
+    "favorites_title": "Favorites"
+  },
+  "player": {
+    "error": "Error",
+    "failed_to_get_stream_url": "Failed to get stream URL",
+    "an_error_occured_while_playing_the_video": "An error occurred while playing the video. Check logs in settings.",
+    "client_error": "Client error",
+    "could_not_create_stream_for_chromecast": "Could not create stream for Chromecast",
+    "message_from_server": "Message from server: {{message}}",
+    "video_has_finished_playing": "Video has finished playing!"
+  },
+  "jellyseerr":{
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "yes": "Yes",
+    "are_you_sure_you_want_to_request_all_seasons": "Are you sure you want to request all seasons?",
+    "failed_to_login": "Failed to login",
+    "toasts": {
+      "jellyseer_does_not_meet_requirements": "Jellyseerr server does not meet minimum version requirements! Please update to at least 2.0.0",
+      "jellyseerr_test_failed": "Jellyseerr test failed. Please try again.",
+      "failed_to_test_jellyseerr_server_url": "Failed to test jellyseerr server url",
+      "issue_submitted": "Issue submitted!",
+      "requested_item": "Requested {{item}}!",
+      "you_dont_have_permission_to_request": "You don't have permission to request!",
+      "something_went_wrong_requesting_media": "Something went wrong requesting media!"
+    }
+  },
+  "tabs": {
+    "home": "Home",
+    "search": "Search",
+    "library": "Library",
+    "custom_links": "Custom Links",
+    "favorites": "Favorites"
+  }
+}

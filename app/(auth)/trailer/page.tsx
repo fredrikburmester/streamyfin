@@ -2,9 +2,11 @@ import { useGlobalSearchParams } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert, Dimensions, View } from "react-native";
 import YoutubePlayer, { PLAYER_STATES } from "react-native-youtube-iframe";
+import { useTranslation } from "react-i18next";
 
 export default function page() {
   const searchParams = useGlobalSearchParams();
+  const { t } = useTranslation();
   console.log(searchParams);
 
   const { url } = searchParams as { url: string };
@@ -18,7 +20,7 @@ export default function page() {
   const onStateChange = useCallback((state: PLAYER_STATES) => {
     if (state === "ended") {
       setPlaying(false);
-      Alert.alert("video has finished playing!");
+      Alert.alert(t("player.video_has_finished_playing"));
     }
   }, []);
 

@@ -19,12 +19,11 @@ import {
 } from "react-native";
 
 import { z } from "zod";
-
+import { t } from 'i18next';
 const CredentialsSchema = z.object({
-  username: z.string().min(1, "Username is required"),
-});
+  username: z.string().min(1, t("login.username_required")),});
 
-const Login: React.FC = () => {
+  const Login: React.FC = () => {
   const { setServer, login, removeServer, initiateQuickConnect } =
     useJellyfin();
   const [api] = useAtom(apiAtom);
@@ -163,8 +162,8 @@ const Login: React.FC = () => {
 
     if (result === undefined) {
       Alert.alert(
-        "Connection failed",
-        "Could not connect to the server. Please check the URL and your network connection."
+        t("login.connection_failed"),
+        t("login.could_not_connect_to_server")
       );
       return;
     }
@@ -176,14 +175,14 @@ const Login: React.FC = () => {
     try {
       const code = await initiateQuickConnect();
       if (code) {
-        Alert.alert("Quick Connect", `Enter code ${code} to login`, [
+        Alert.alert(t("login.quick_connect"), t("login.enter_code_to_login", {code: code}), [
           {
-            text: "Got It",
+            text: t("login.got_it"),
           },
         ]);
       }
     } catch (error) {
-      Alert.alert("Error", "Failed to initiate Quick Connect");
+      Alert.alert(t("login.error_title"), t("login.failed_to_initiate_quick_connect"));
     }
   };
 
@@ -198,19 +197,18 @@ const Login: React.FC = () => {
             <View className="px-4 -mt-20 w-full">
               <View className="flex flex-col space-y-2">
                 <Text className="text-2xl font-bold -mb-2">
-                  Log in
                   <>
                     {serverName ? (
                       <>
-                        {" to "}
+                        {t("login.login_to_title") + " "}
                         <Text className="text-purple-600">{serverName}</Text>
                       </>
-                    ) : null}
+                    ) : t("login.login_title")}
                   </>
                 </Text>
                 <Text className="text-xs text-neutral-400">{serverURL}</Text>
                 <Input
-                  placeholder="Username"
+                  placeholder={t("login.username_placeholder")}
                   onChangeText={(text) =>
                     setCredentials({ ...credentials, username: text })
                   }
@@ -227,7 +225,7 @@ const Login: React.FC = () => {
 
                 <Input
                   className="mb-2"
-                  placeholder="Password"
+                  placeholder={t("login.password_placeholder")}
                   onChangeText={(text) =>
                     setCredentials({ ...credentials, password: text })
                   }
@@ -251,10 +249,10 @@ const Login: React.FC = () => {
                 onPress={handleQuickConnect}
                 className="w-full mb-2"
               >
-                Use Quick Connect
+                {t("login.use_quick_connect")}
               </Button>
               <Button onPress={handleLogin} loading={loading}>
-                Log in
+              {t("login.login_button")}
               </Button>
             </View>
           </View>
@@ -282,10 +280,10 @@ const Login: React.FC = () => {
             />
             <Text className="text-3xl font-bold">Streamyfin</Text>
             <Text className="text-neutral-500">
-              Enter the URL to your Jellyfin server
+              {t("server.enter_url_to_jellyfin_server")}
             </Text>
             <Input
-              placeholder="Server URL"
+              placeholder={t("server.server_url_placeholder")}
               onChangeText={setServerURL}
               value={serverURL}
               keyboardType="url"
@@ -295,7 +293,7 @@ const Login: React.FC = () => {
               maxLength={500}
             />
             <Text className="text-xs text-neutral-500">
-              Make sure to include http or https
+              {t("server.server_url_hint")}
             </Text>
           </View>
           <View className="mb-2 absolute bottom-0 left-0 w-full px-4">
@@ -305,7 +303,7 @@ const Login: React.FC = () => {
               onPress={async () => await handleConnect(serverURL)}
               className="w-full grow"
             >
-              Connect
+              {t("server.connect_button")}
             </Button>
           </View>
         </View>

@@ -36,7 +36,8 @@ import { MediaType } from "@/utils/jellyseerr/server/constants/media";
 import JellyseerrPoster from "@/components/posters/JellyseerrPoster";
 import { Tag } from "@/components/GenreTags";
 import DiscoverSlide from "@/components/jellyseerr/DiscoverSlide";
-import { sortBy } from "lodash";
+import { useTranslation } from "react-i18next";
+import {sortBy} from "lodash";
 
 type SearchType = "Library" | "Discover";
 
@@ -52,6 +53,8 @@ const exampleSearches = [
 export default function search() {
   const params = useLocalSearchParams();
   const insets = useSafeAreaInsets();
+
+  const { t } = useTranslation();
 
   const { q, prev } = params as { q: string; prev: Href<string> };
 
@@ -126,7 +129,7 @@ export default function search() {
     if (Platform.OS === "ios")
       navigation.setOptions({
         headerSearchBarOptions: {
-          placeholder: "Search...",
+          placeholder: t("search.search"),
           onChangeText: (e: any) => {
             router.setParams({ q: "" });
             setSearch(e.nativeEvent.text);
@@ -305,7 +308,7 @@ export default function search() {
                 autoCorrect={false}
                 returnKeyType="done"
                 keyboardType="web-search"
-                placeholder="Search here..."
+                placeholder={t("search.search_here")}
                 value={search}
                 onChangeText={(text) => setSearch(text)}
               />
@@ -494,7 +497,7 @@ export default function search() {
           ) : noResults && debouncedSearch.length > 0 ? (
             <View>
               <Text className="text-center text-lg font-bold mt-4">
-                No results found for
+                {t("search.no_results_found_for")}
               </Text>
               <Text className="text-xs text-purple-600 text-center">
                 "{debouncedSearch}"

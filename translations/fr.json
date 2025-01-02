@@ -1,0 +1,89 @@
+{
+  "login": {
+    "username_required": "Le nom d'utilisateur est requis",
+    "error_title": "Erreur",
+    "login_title": "Se connecter",
+    "login_to_title": "Se connecter à",
+    "username_placeholder": "Nom d'utilisateur",
+    "password_placeholder": "Mot de passe",
+    "use_quick_connect": "Utiliser Quick Connect",
+    "login_button": "Se connecter"
+  },
+  "server": {
+    "enter_url_to_jellyfin_server": "Entrez l'URL de votre serveur Jellyfin",
+    "server_url_placeholder": "URL du serveur",
+    "server_url_hint": "Assurez-vous d'inclure http ou https",
+    "connect_button": "Connexion"
+  },
+  "home": {
+    "home": "Accueil",
+    "no_internet": "Pas d'Internet",
+    "no_internet_message": "Aucun problème, vous pouvez toujours regarder\nle contenu téléchargé.",
+    "go_to_downloads": "Aller aux téléchargements",
+    "oops": "Oups!",
+    "error_message": "Quelque chose s'est mal passé.\nVeuillez vous reconnecter à nouveau.",
+    "continue_watching": "Continuer à regarder",
+    "next_up": "À suivre",
+    "recently_added_in": "Ajoutés récemment dans {{libraryName}}",
+    "suggested_movies": "Films suggérés",
+    "suggested_episodes": "Épisodes suggérés",
+    "settings": {
+      "settings_title": "Paramètres"
+    },
+    "downloads": {
+      "downloads_title": "Téléchargements",
+      "tvseries": "Séries TV",
+      "movies": "Films",
+      "queue": "File d'attente",
+      "queue_hint": "La file d'attente et les téléchargements seront perdus au redémarrage de l'application",
+      "no_items_in_queue": "Aucun item dans la file d'attente",
+      "no_downloaded_items": "Aucun item téléchargé",
+      "delete_all_movies_button": "Supprimer tous les films",
+      "delete_all_tvseries_button": "Supprimer toutes les séries",
+      "delete_all_button": "Supprimer tout",
+      "active_download": "Téléchargement actif",
+      "no_active_downloads": "Aucun téléchargements actifs",
+      "active_downloads": "Téléchargements actifs",
+      "toasts": {}
+    }
+  },
+  "search": {
+    "search_title": "Recherche",
+    "search_here": "Rechercher ici...",
+    "search": "Rechercher...",
+    "no_results_found_for": "Aucun résultat trouvé pour"
+  },
+  "library": {
+    "library_title": "Bibliothèque",
+    "no_items_found": "Aucun item trouvé",
+    "no_results": "Aucun résultat",
+    "no_libraries_found": "Aucune bibliothèque trouvée",
+    "options": {
+      "display": "Affichage",
+      "row": "Rangée",
+      "list": "Liste",
+      "image_style": "Style d'image",
+      "poster": "Affiche",
+      "cover": "Couverture",
+      "show_titles": "Afficher les titres",
+      "show_stats": "Afficher les statistiques"
+    },
+    "headers": {
+      "genres": "Genres",
+      "years": "Années",
+      "sort_by": "Trier par",
+      "sort_order": "Ordre de tri",
+      "tags": "Tags"
+    }
+  },
+  "favorites": {
+    "favorites_title": "Favoris"
+  },
+  "tabs": {
+    "home": "Accueil",
+    "search": "Recherche",
+    "library": "Bibliothèque",
+    "custom_links": "Liens personalisés",
+    "favorites": "Favoris"
+  }
+}
